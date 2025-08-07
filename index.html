@@ -57,7 +57,6 @@
         .prose p { margin-bottom: 1.25em; }
         .prose blockquote { border-left-width: 4px; border-left-color: #3b82f6; padding-left: 1rem; font-style: italic; }
         .prose img { border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-
         /* UI Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -583,7 +582,7 @@
                             To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
                         </p>
                         <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
-                            admin@gcsemate.com
+                            <a href="/cdn-cgi/l/email-protection#e081848d898ea0878393858d819485ce838f8d" class="__cf_email__" data-cfemail="a8c9ccc5c1c6e8cfc7dbcfc7cbdecfd686cbc7c5">[email&#160;protected]</a>
                         </p>
                         <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
                     </div>
@@ -599,18 +598,18 @@
     </div>
     
     <div id="toast-container"></div>
-    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-">
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script>
@@ -704,7 +703,6 @@
                 landingPage.classList.add('fade-in');
             }
         });
-
         function initializeAppState() {
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
@@ -1096,7 +1094,6 @@
                 emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
             }
         }
-
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
             const newPage = document.getElementById(pageId);
@@ -1762,7 +1759,6 @@
                 toast.remove();
             }, 3000);
         }
-
         function initializeTooltips() {
             let tooltipElement;
             document.querySelectorAll('[data-tooltip]').forEach(el => {
@@ -1771,19 +1767,16 @@
                     tooltipElement.className = 'custom-tooltip';
                     tooltipElement.textContent = el.getAttribute('data-tooltip');
                     document.body.appendChild(tooltipElement);
-
                     const targetRect = el.getBoundingClientRect();
                     const tooltipRect = tooltipElement.getBoundingClientRect();
                     
                     let top = targetRect.top - tooltipRect.height - 8;
                     let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
-
                     if (top < 0) { // If not enough space on top, show below
                         top = targetRect.bottom + 8;
                     }
                     if (left < 0) left = 5; // Prevent going off-screen left
                     if (left + tooltipRect.width > window.innerWidth) left = window.innerWidth - tooltipRect.width - 5; // Prevent going off-screen right
-
                     tooltipElement.style.top = `${top}px`;
                     tooltipElement.style.left = `${left}px`;
                     
@@ -1801,7 +1794,6 @@
                 });
             });
         }
-
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
             if(faqContainer) {
@@ -1837,7 +1829,6 @@
                 };
             }
         }
-
         function showDeleteAccountModal() {
             showConfirmationModal(
                 'Are you sure you want to permanently delete your account? This action cannot be undone.',
@@ -1845,7 +1836,6 @@
                 { okText: 'Delete Account' }
             );
         }
-
         async function handleDeleteAccount() {
             if (!currentUser) return;
             try {
@@ -1907,7 +1897,6 @@
                      </div>
                 </div>`;
         }
-
         function showDmcaModal() {
             const modal = document.getElementById('dmca-modal');
             modal.style.display = 'flex';
@@ -2083,7 +2072,6 @@
                 });
             });
             document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
-
             // Setup nav links
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
@@ -2141,7 +2129,6 @@
             // Initialize new features
             initializeTooltips();
             initializeFaqAccordion();
-
             // Load Google Drive API script
             const gapiScript = document.createElement('script');
             gapiScript.src = "https://apis.google.com/js/api.js";
@@ -2304,5 +2291,6 @@
             clockInterval = setInterval(update, 1000);
         }
     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96b99b618b729833","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
 </html>
