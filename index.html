@@ -151,22 +151,102 @@
         }
         /* FAQ Accordion */
         .faq-item .faq-answer {
-            max-height: 0;
+            max-height: 0 !important;
+            opacity: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s cubic-bezier(0.4,0,0.2,1);
+            padding-bottom: 0 !important;
         }
         .faq-item.open .faq-answer {
-            max-height: 500px; /* Adjust as needed */
-            transition: max-height 0.5s ease-in;
+            max-height: 500px !important;
+            opacity: 1;
+            padding-bottom: 20px !important;
+            transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.2s cubic-bezier(0.4,0,0.2,1);
         }
-        .faq-item .faq-arrow {
-            transition: transform 0.3s ease-in-out;
+        /* 1. Subject Icons: Use unique SVGs for each subject */
+        <script>
+        const SUBJECT_ICONS = {
+            Biology: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/dna.svg" alt="Biology" class="h-10 w-10 mb-3" />`,
+            Chemistry: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/flask.svg" alt="Chemistry" class="h-10 w-10 mb-3" />`,
+            Computing: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/code.svg" alt="Computing" class="h-10 w-10 mb-3" />`,
+            English: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/book.svg" alt="English" class="h-10 w-10 mb-3" />`,
+            Geography: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/globe.svg" alt="Geography" class="h-10 w-10 mb-3" />`,
+            German: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/germany.svg" alt="German" class="h-10 w-10 mb-3" />`,
+            History: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/scroll.svg" alt="History" class="h-10 w-10 mb-3" />`,
+            Maths: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/calculator.svg" alt="Maths" class="h-10 w-10 mb-3" />`,
+            Music: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/music.svg" alt="Music" class="h-10 w-10 mb-3" />`,
+            "Philosophy and Ethics": `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/thought.svg" alt="Philosophy" class="h-10 w-10 mb-3" />`,
+            Physics: `<img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/atom.svg" alt="Physics" class="h-10 w-10 mb-3" />`
+        };
+        </script>
+        /* 2. FAQ Accordion: Prevent content leak and improve animation */
+        <style>
+        .faq-item .faq-answer {
+            max-height: 0 !important;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s cubic-bezier(0.4,0,0.2,1);
+            padding-bottom: 0 !important;
         }
-        .faq-item.open .faq-arrow {
-            transform: rotate(180deg);
+        .faq-item.open .faq-answer {
+            max-height: 500px !important;
+            opacity: 1;
+            padding-bottom: 20px !important;
+            transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.2s cubic-bezier(0.4,0,0.2,1);
         }
-    </style>
-</head>
+        </style>
+        <script>
+        function initializeFaqAccordion() {
+            const faqContainer = document.getElementById('faq-container');
+            if (faqContainer) {
+                faqContainer.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('open');
+                    item.querySelector('.faq-answer').style.maxHeight = '0';
+                    item.querySelector('.faq-answer').style.opacity = '0';
+                });
+                faqContainer.addEventListener('click', (e) => {
+                    const questionHeader = e.target.closest('.faq-question');
+                    if (questionHeader) {
+                        const faqItem = questionHeader.parentElement;
+                        // Close all others
+                        faqContainer.querySelectorAll('.faq-item.open').forEach(openItem => {
+                            if (openItem !== faqItem) {
+                                openItem.classList.remove('open');
+                                openItem.querySelector('.faq-answer').style.maxHeight = '0';
+                                openItem.querySelector('.faq-answer').style.opacity = '0';
+                            }
+                        });
+                        // Toggle current
+                        faqItem.classList.toggle('open');
+                        const answer = faqItem.querySelector('.faq-answer');
+                        if (faqItem.classList.contains('open')) {
+                            answer.style.maxHeight = answer.scrollHeight + "px";
+                            answer.style.opacity = "1";
+                        } else {
+                            answer.style.maxHeight = "0";
+                            answer.style.opacity = "0";
+                        }
+                    }
+                });
+            }
+        }
+        </script>
+        /* 3. Animation performance: Use GPU acceleration and reduce animation duration */
+        <style>
+        .fade-in {
+            animation: fadeIn 0.35s cubic-bezier(0.4,0,0.2,1) forwards;
+            will-change: opacity;
+        }
+        .slide-in-up {
+            animation: slideInUp 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
+            will-change: transform, opacity;
+        }
+        .animate-feature-card {
+            animation: slideInUp 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
+            will-change: transform, opacity;
+        }
+        </style>
+    </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
@@ -1180,9 +1260,10 @@
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
                     const card = document.createElement('div');
-                    card.innerHTML = `${uniformSubjectIcon}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
+                    const iconHTML = SUBJECT_ICONS[subject] || uniformSubjectIcon;
+                    card.innerHTML = `${iconHTML}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
                     if (subjectId) {
-                        card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
+                        card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
                         card.addEventListener('click', () => {
                             if (currentUser.tier === 'free') {
@@ -1389,7 +1470,7 @@
             }
             playlists.forEach(playlist => {
                 const card = document.createElement('div');
-                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform hover:scale-105';
                 card.onclick = () => handlePlaylistClick(playlist);
                 card.innerHTML = `
                     <div class="flex-grow flex flex-col justify-center items-center text-center">
@@ -1555,7 +1636,7 @@
                 const linkElement = document.createElement('div');
                 linkElement.className = 'p-4 rounded-lg bg-gray-100/50';
                 let contentHTML = '';
-                const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : '';
+                const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-1.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : '';
                 if (link.type === 'youtube_video' || link.type === 'youtube_playlist') {
                     contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div><div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md"><iframe src="${link.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
                 } else {
@@ -1640,7 +1721,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536a2 2 0 002.828 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg>
                             </button>
                             <button onclick="event.stopPropagation(); deleteBlogPost('${post.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Post">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-1.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
                     `;
@@ -1804,12 +1885,34 @@
 
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
-            if(faqContainer) {
+            if (faqContainer) {
+                faqContainer.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('open');
+                    item.querySelector('.faq-answer').style.maxHeight = '0';
+                    item.querySelector('.faq-answer').style.opacity = '0';
+                });
                 faqContainer.addEventListener('click', (e) => {
                     const questionHeader = e.target.closest('.faq-question');
                     if (questionHeader) {
                         const faqItem = questionHeader.parentElement;
+                        // Close all others
+                        faqContainer.querySelectorAll('.faq-item.open').forEach(openItem => {
+                            if (openItem !== faqItem) {
+                                openItem.classList.remove('open');
+                                openItem.querySelector('.faq-answer').style.maxHeight = '0';
+                                openItem.querySelector('.faq-answer').style.opacity = '0';
+                            }
+                        });
+                        // Toggle current
                         faqItem.classList.toggle('open');
+                        const answer = faqItem.querySelector('.faq-answer');
+                        if (faqItem.classList.contains('open')) {
+                            answer.style.maxHeight = answer.scrollHeight + "px";
+                            answer.style.opacity = "1";
+                        } else {
+                            answer.style.maxHeight = "0";
+                            answer.style.opacity = "0";
+                        }
                     }
                 });
             }
