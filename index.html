@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="google-adsense-account" content="ca-pub-3142302168894001">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
+     crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
+    <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
+    <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
+    <meta name="author" content="GCSEMate">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
+    <style>
+        /* Base styles for a polished look */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom scrollbar for a modern feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        /* Loader animation */
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Active navigation link style */
+        .nav-link.active {
+            color: #2563eb;
+            font-weight: 700;
+        }
+        /* Prose styles for text content pages */
+        .prose { max-width: 65ch; }
+        .prose-lg { font-size: 1.125rem; line-height: 1.777; }
+        .prose h2 { font-size: 2.25rem; line-height: 2.5rem; margin-bottom: 1rem; font-weight: 800; }
+        .prose h3 { font-size: 1.5rem; line-height: 2rem; margin-top: 2rem; margin-bottom: 1rem; font-weight: 700; }
+        .prose p { margin-bottom: 1.25em; }
+        .prose blockquote { border-left-width: 4px; border-left-color: #3b82f6; padding-left: 1rem; font-style: italic; }
+        .prose img { border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+        /* UI Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        .slide-in-up { animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        /* Star icon animation */
+        .star-icon { transition: transform 0.2s ease, color 0.2s ease; }
+        .star-icon.starred { color: #facc15; transform: scale(1.2); }
+        .star-icon:hover { transform: scale(1.4); }
+        .star-icon.pop-animation { animation: pop 0.3s ease-out forwards; }
+        /* Aspect ratio for embeds */
+        .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
+        .aspect-h-9 { position: relative; padding-bottom: 56.25%; height: 0; }
+        .aspect-w-16 > iframe, .aspect-h-9 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* Calendar styles */
+        .calendar-day.today { background-color: #bfdbfe; color: #1e40af; font-weight: bold; }
+        .calendar-day.has-event { position: relative; }
+        .calendar-day.has-event::after {
+            content: ''; position: absolute; bottom: 6px; left: 50%;
+            transform: translateX(-50%); width: 6px; height: 6px;
+            border-radius: 50%; background-color: #3b82f6;
+        }
+        .calendar-day.has-global-event::after { background-color: #16a34a; }
+        /* Landing Page Specific Animations */
+        .animate-hero-title { animation: slideInUp 0.8s ease-out 0.2s forwards; opacity: 0; }
+        .animate-hero-subtitle { animation: slideInUp 0.8s ease-out 0.4s forwards; opacity: 0; }
+        .animate-hero-buttons { animation: slideInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
+        .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
+        /* Clock styles */
+        #dashboard-clock {
+            font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
+        }
+        /* Custom Tooltip */
+        .custom-tooltip {
+            position: absolute;
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+        }
+        .toast.success { background-color: #22c55e; }
+        .toast.error { background-color: #ef4444; }
+        /* Skeleton Loader Shimmer Effect */
+        .skeleton {
+            background-color: #e5e7eb;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        /* FAQ Accordion */
+        .faq-item .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 500px; /* Adjust as needed */
+            transition: max-height 0.5s ease-in;
+        }
+        .faq-item .faq-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        .faq-item.open .faq-arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
+    <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
+    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
+        <header class="flex justify-between items-center py-4">
+              <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+              <div>
+                  <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors mr-4">Login</button>
+                  <button onclick="showAuthPage(false)" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 transition-all transform hover:scale-105">Sign Up Free</button>
+              </div>
+        </header>
+        <main class="mt-16 sm:mt-24">
+            <div class="animate-hero-title">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+                    Stop Searching, <span class="text-blue-600">Start Revising.</span>
+                </h1>
+            </div>
+            <div class="animate-hero-subtitle">
+                <p class="mt-4 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600">
+                    GCSEMate is the all-in-one digital hub that organizes your entire academic life. All your subjects, notes, past papers, and resources—perfectly structured and instantly accessible.
+                </p>
+            </div>
+            <div class="mt-8 flex justify-center items-center gap-4 animate-hero-buttons">
+                <button onclick="showAuthPage(false)" class="px-8 py-3 text-base font-bold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Create your free account now">
+                    Get Started for Free
+                </button>
+                <button onclick="showAuthPage(true)" class="px-8 py-3 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors">
+                    Login
+                </button>
+            </div>
+            <div class="mt-20 sm:mt-32">
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything You Need to Ace Your Exams</h2>
+                <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
+                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralized Hub</h3>
+                        <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
+                    </div>
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.2s;">
+                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600">
+                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                         </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
+                        <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
+                    </div>
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600">
+                           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Integrated Calendar</h3>
+                        <p class="mt-2 text-gray-600">Keep track of homework, deadlines, and exam dates with a personal and global calendar system.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="mt-24 text-center text-gray-500 text-sm">
+             <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
+        </footer>
+    </div>
+    
+    <div id="email-verify-page" class="hidden w-full max-w-md fade-in text-center">
+        <div class="bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+            <p id="verification-email-display" class="text-gray-600 mb-6">We've sent a verification link to your email address. Please check your inbox (and spam folder) and click the link to activate your account.</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="resendVerificationEmail()" id="resend-verification-btn" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Resend Verification Email</button>
+                <button onclick="handleLogout()" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Back to Login</button>
+            </div>
+             <p id="resend-message" class="text-sm text-green-600 mt-4 h-4"></p>
+        </div>
+    </div>
+    <div id="login-page" class="hidden w-full max-w-sm fade-in">
+        <div class="bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+            <div class="flex justify-center items-center mb-4">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+            </div>
+            <h2 id="form-title" class="text-center text-gray-700 mb-6 text-xl">Your Ultimate Revision Hub</h2>
+            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
+                <div id="recaptcha-container"></div>
+                <input id="email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your email">
+                <div class="relative">
+                    <input id="password" type="password" placeholder="Password" autocomplete="current-password" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your password">
+                    <button type="button" id="show-password-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-600" data-tooltip="Show/Hide password">
+                        <svg id="eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        <svg id="eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.11 3.586-5.416 6.66-6.325M16.5 5.5c2.25 1.06 4.103 2.9 5.042 5.5-1.274 4.057-5.064 7-9.542 7a10.02 10.02 0 01-2.09-.25M9 12a3 3 0 116 0 3 3 0 01-6 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"></path></svg>
+                    </button>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <label class="flex items-center text-gray-600 select-none">
+                        <input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-tooltip="Keep me logged in">
+                        <span class="ml-2">Remember Me</span>
+                    </label>
+                    <a href="#" onclick="event.preventDefault(); showPasswordResetModal()" class="font-semibold text-blue-600 hover:underline">Forgot Password?</a>
+                </div>
+                <button type="submit" id="login-button" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Click to log in">Login</button>
+                <p id="auth-error" class="text-red-500 text-sm text-center h-4"></p>
+                <p class="text-center text-sm text-gray-600">Don't have an account? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Register</a></p>
+            </form>
+            <form id="register-form" class="hidden space-y-4" onsubmit="event.preventDefault(); handleRegister();">
+                <input id="register-displayname" type="text" placeholder="Your Name" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your full name">
+                <input id="register-email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose an email">
+                <input id="register-password" type="password" placeholder="Password (min. 6 characters)" autocomplete="new-password" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose a password">
+                <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
+                <button type="submit" id="register-button" class="w-full p-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105" data-tooltip="Click to create your account">Create Free Account</button>
+                <p id="register-error" class="text-red-500 text-sm text-center h-4"></p>
+                <p class="text-center text-sm text-gray-600">Already have an account? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Login</a></p>
+            </form>
+        </div>
+    </div>
+    <div id="main-app" class="hidden w-full h-screen bg-white/70 backdrop-blur-xl flex flex-col border border-white/30 rounded-xl shadow-2xl overflow-hidden">
+        <div id="event-countdown-banner" class="hidden"></div>
+        <div id="site-announcement-banner" class="hidden"></div>
+        
+        <header class="bg-white/50 backdrop-blur-lg p-4 border-b border-gray-200/50 text-gray-800 flex justify-between items-center flex-shrink-0 relative">
+            <div class="flex-shrink-0">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+            </div>
+            <nav class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-6 text-sm font-semibold">
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="videos-page" data-tooltip="View Videos">Videos</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="blog-page" data-tooltip="View Blog">Blog</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
+                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="about-page" data-tooltip="Learn about us">About Us</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
+            </nav>
+            <div class="hidden lg:flex items-center">
+                <span id="welcome-message" class="text-sm mr-3 font-semibold text-gray-700"></span>
+                <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4">
+                <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
+                <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors" data-tooltip="End your session">Logout</button>
+            </div>
+            <div class="lg:hidden flex items-center">
+                <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50">
+            <div class="flex justify-between items-center p-4 border-b">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto">
+                <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Close menu">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <nav class="flex flex-col items-center space-y-6 text-lg font-semibold p-8">
+                <a href="#" class="nav-link" data-page="subject-dashboard-page">Subjects</a>
+                <a href="#" class="nav-link" data-page="videos-page">Videos</a>
+                <a href="#" class="nav-link" data-page="blog-page">Blog</a>
+                <a href="#" class="nav-link" data-page="calendar-page">Calendar</a>
+                <a href="#" class="nav-link" data-page="useful-links-page">Useful Links</a>
+                <a href="#" class="nav-link" data-page="about-page">About Us</a>
+                <a href="#" class="nav-link" data-page="features-page">Features & Pricing</a>
+                <a href="#" class="nav-link" data-page="help-page">Help/FAQ</a>
+            </nav>
+            <div class="flex flex-col items-center space-y-4 p-8 border-t">
+                 <a href="#" class="nav-link text-lg font-semibold" data-page="account-settings-page">Account</a>
+                 <button id="mobile-logout-button" class="w-full max-w-xs p-3 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700">Logout</button>
+            </div>
+        </div>
+        <main id="page-content" class="flex-grow overflow-y-auto bg-transparent">
+            <div id="page-container" class="relative">
+                <div id="subject-dashboard-page" class="page p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+                        <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
+                        <div id="dashboard-clock" class="bg-white/50 backdrop-blur-lg p-3 rounded-xl shadow-md border border-white/30 text-center">
+                            <p id="clock-time" class="text-2xl font-bold text-gray-800 tracking-wider"></p>
+                            <p id="clock-date" class="text-xs text-gray-500 font-semibold uppercase tracking-widest"></p>
+                        </div>
+                    </div>
+                    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+                </div>
+                <div id="videos-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Revision Video Playlists</h2>
+                     <div id="add-playlist-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                         <h3 class="text-xl font-semibold mb-4">Add New YouTube Playlist</h3>
+                         <form id="add-playlist-form" class="space-y-4" onsubmit="event.preventDefault(); handleAddPlaylist();">
+                             <input id="playlist-title" type="text" placeholder="Playlist Title (e.g., 'AQA Physics Paper 1')" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter a descriptive title for the playlist">
+                             <input id="playlist-url" type="url" placeholder="YouTube Playlist URL" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full YouTube playlist URL">
+                             <label class="flex items-center text-sm text-gray-700 select-none">
+                                 <input id="playlist-sync-confirm" type="checkbox" required class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                 <span class="ml-2">I confirm this playlist is for all paid users.</span>
+                             </label>
+                             <button type="submit" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new playlist">Add Playlist</button>
+                         </form>
+                         <p id="add-playlist-message" class="text-sm mt-2 h-4"></p>
+                     </div>
+                    <div id="playlist-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        </div>
+                </div>
+                <div id="blog-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
+                    <div id="add-blog-post-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                        <h3 id="blog-form-title" class="text-xl font-semibold mb-4">Create New Blog Post</h3>
+                        <form id="add-blog-post-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveBlogPost();">
+                            <input type="hidden" id="blog-post-id">
+                            <input id="blog-post-title" type="text" placeholder="Post Title" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input id="blog-post-image" type="url" placeholder="Optional: Image URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <textarea id="blog-post-content" placeholder="Write your blog content here... Supports basic HTML." required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 h-64 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            <div class="flex justify-end gap-3">
+                                <button type="button" onclick="resetBlogPostForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Post</button>
+                            </div>
+                        </form>
+                        <p id="add-blog-post-message" class="text-sm mt-2 h-4"></p>
+                    </div>
+                    <div id="blog-post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        </div>
+                </div>
+                <div id="calendar-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Calendar</h2>
+                        <div class="flex items-center space-x-2">
+                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                            <h3 id="month-year-header" class="text-xl font-semibold text-gray-700 w-40 text-center"></h3>
+                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="bg-white/50 p-4 rounded-xl shadow-md border border-white/30">
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-px"></div>
+                    </div>
+                </div>
+                <div id="useful-links-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Useful Links</h2>
+                    <div id="add-link-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Add a New Link or Video</h3>
+                        <div class="space-y-4">
+                            <input id="link-title" type="text" placeholder="Title (e.g., 'BBC Bitesize Physics')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link">
+                            <input id="link-url" type="url" placeholder="URL (Standard link or YouTube video/playlist)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL">
+                            <button id="add-link-btn" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new link">Add Link</button>
+                        </div>
+                        <p id="add-link-message" class="text-sm mt-2 h-4"></p>
+                    </div>
+                    <div class="bg-white/50 p-6 rounded-xl shadow-md border border-white/30">
+                        <h3 class="text-xl font-semibold mb-4">Saved Links & Resources</h3>
+                        <div id="links-container" class="space-y-4"></div>
+                    </div>
+                </div>
+                <div id="file-browser-page" class="page hidden h-full flex flex-col">
+                    <div id="breadcrumb" class="p-3 border-b border-gray-200/50 text-sm flex-shrink-0 text-gray-800 bg-gray-100/30"></div>
+                    <div id="file-browser-controls" class="p-3 border-b border-gray-200/50 flex-shrink-0 bg-gray-50/20 flex flex-col sm:flex-row items-center gap-3">
+                        <div class="relative flex-grow w-full sm:w-auto">
+                            <input type="search" id="file-search-input" placeholder="Search in folder..." class="pl-10 pr-4 py-2 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-2">
+                                <option value="az">Sort A-Z</option>
+                                <option value="za">Sort Z-A</option>
+                            </select>
+                            <div id="view-toggle" class="flex items-center rounded-lg border border-gray-300/50 bg-white/50 p-1">
+                                <button class="view-btn p-1 rounded-md" data-view="list" data-tooltip="List View">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                                </button>
+                                <button class="view-btn p-1 rounded-md" data-view="grid" data-tooltip="Grid View">
+                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="file-list" class="p-4 overflow-y-auto flex-grow"></div>
+                </div>
+                <div id="account-settings-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Account Management</h2>
+                    <div id="admin-panel" class="hidden space-y-10">
+                        <div class="bg-white/50 p-8 rounded-xl shadow-lg border border-white/30">
+                            <h3 class="text-2xl font-bold mb-6 text-gray-800">User Accounts</h3>
+                            <div id="user-management-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                             <div class="bg-white/50 p-8 rounded-xl shadow-lg border border-white/30">
+                                 <h3 class="text-2xl font-bold mb-6 text-gray-800">Create New User</h3>
+                                 <div class="text-center p-6 bg-yellow-100/50 border border-yellow-200/50 rounded-lg">
+                                     <p class="text-yellow-800 font-semibold">This feature is unavailable.</p>
+                                     <p class="text-sm text-yellow-700 mt-2">For security reasons, new users must register themselves through the main registration form. Admins can then edit user permissions.</p>
+                                 </div>
+                             </div>
+                            <div class="bg-white/50 p-8 rounded-xl shadow-lg border border-white/30">
+                                <h3 class="text-2xl font-bold mb-6 text-gray-800">Site-Wide Announcement</h3>
+                                <textarea id="announcement-text" placeholder="Enter announcement text here..." class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 h-40"></textarea>
+                                <div class="flex space-x-2 mt-4">
+                                    <button id="post-announcement-btn" class="flex-grow p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">Post Banner</button>
+                                    <button id="clear-announcement-btn" class="flex-grow p-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-700">Clear Banner</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="user-settings-panel" class="hidden bg-white/50 p-8 rounded-xl shadow-lg border border-white/30 max-w-lg mx-auto">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Account</h3>
+                        <form id="user-details-form" class="space-y-4" onsubmit="event.preventDefault(); handleUpdateUserSettings();">
+                            <div>
+                                <label for="user-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
+                                <input id="user-displayname" type="text" required class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                             <div>
+                                <label for="user-email" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input id="user-email" type="email" required disabled class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-gray-200/50 text-gray-500 cursor-not-allowed">
+                            </div>
+                             <div>
+                                <label for="user-password" class="block text-sm font-medium text-gray-700">New Password (optional)</label>
+                                <input id="user-password" type="password" placeholder="Leave blank to keep current password" class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                            <button type="submit" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Save Changes</button>
+                            <p id="user-settings-message" class="text-sm text-center h-4"></p>
+                        </form>
+                        <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
+                              <div>
+                                <h4 class="text-lg font-semibold text-gray-800">Account Actions</h4>
+                                <p class="text-sm text-gray-500 mt-1">Manage your account security and data.</p>
+                            </div>
+                            <button onclick="showPasswordResetModal(currentUser.email)" class="w-full p-3 rounded-lg bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-colors">Reset Password</button>
+                             <div class="mt-6 pt-6 border-t border-red-200">
+                                <h4 class="text-lg font-semibold text-red-700">Danger Zone</h4>
+                                <p class="text-sm text-red-500 mt-1">This action is permanent and cannot be undone.</p>
+                                <button onclick="showDeleteAccountModal()" class="mt-4 w-full p-3 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors">Delete My Account</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="about-page" class="page hidden p-8 max-w-4xl mx-auto text-gray-800">
+                    <div class="prose prose-lg max-w-none">
+                        <h2 class="text-4xl font-extrabold text-gray-900 mb-4 text-center">The GCSEMate Story</h2>
+                        <p class="text-center text-xl text-gray-600">From a student's frustration to a nationwide tool.</p>
+                        <figure class="my-8">
+                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop" alt="A group of students studying together in a library." class="rounded-xl shadow-lg w-full h-auto">
+                            <figcaption class="text-center text-gray-500 mt-2">Built by a student, for students.</figcaption>
+                        </figure>
+                        <h3>The Spark of an Idea</h3>
+                        <p>GCSEMate wasn't born in a boardroom; it was conceived during late-night revision sessions. As a Year 10 student, our founder found himself drowning in a sea of digital chaos. Revision notes were in one app, past papers downloaded into another folder, useful websites were lost in a long list of bookmarks, and collaborating with friends meant endless email chains. He knew there had to be a better way. Armed with a passion for coding and a clear problem to solve, he began building the first version of GCSEMate.</p>
+                        <h3>Our Mission: Simplify to Succeed</h3>
+                        <p>This journey started with a simple idea: to empower fellow students to cut through the revision clutter and achieve their full potential. We believe that your focus should be on learning, not on fighting with disorganized files. GCSEMate eliminates the friction of traditional study methods by providing a single, intelligent source of truth for all subjects, curated and organized for maximum impact. Every feature is built with the student experience at its core, ensuring GCSEMate is a tool that genuinely helps, not hinders, your path to success.</p>
+                    </div>
+                </div>
+                <div id="features-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Features & Pricing</h2>
+                    <div class="grid md:grid-cols-3 gap-8 text-center">
+                        <div class="bg-white/50 p-6 rounded-xl shadow-md border border-white/30 backdrop-blur-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><h3 class="text-xl font-semibold">Centralized Subject Hubs</h3><p class="mt-2 text-gray-600">Access all your notes, past papers, and resources for every subject, neatly organized in one place.</p></div>
+                        <div class="bg-white/50 p-6 rounded-xl shadow-md border border-white/30 backdrop-blur-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg><h3 class="text-xl font-semibold">File Starring & Download</h3><p class="mt-2 text-gray-600">Pin your most important files to the top of any folder and download them with a single click.</p></div>
+                        <div class="bg-white/50 p-6 rounded-xl shadow-md border border-white/30 backdrop-blur-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg><h3 class="text-xl font-semibold">Seamless Previews</h3><p class="mt-2 text-gray-600">Preview documents, images, and PDFs directly within the app without needing to download them first.</p></div>
+                    </div>
+                    <div class="text-center mt-12 p-8 bg-white/60 rounded-2xl shadow-xl border border-white/30 backdrop-blur-lg">
+                        <h3 class="text-2xl font-bold">Get Full Access</h3><p class="text-5xl font-extrabold my-4 text-blue-600">£1<span class="text-xl font-medium text-gray-500">/month</span></p><p class="mb-6 text-gray-600">For less than the price of a coffee, unlock unlimited access to all features and ensure you have the best tools for your GCSE success.</p>
+                        <button class="w-full max-w-xs p-4 rounded-lg bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-colors" data-tooltip="Subscribe to get full access" onclick="showPage('checkout-page')">Subscribe Now</button>
+                    </div>
+                </div>
+                 <div id="help-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
+                    <div id="faq-container" class="space-y-4">
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                                <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">What is the 'Star' icon for?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                                <p>Clicking the star icon next to a file pins it to the top of its current folder. This is a great way to mark important documents like exam papers or key notes for quick access. Starred items are always displayed first in both list and grid views.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How does the Calendar work?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                                <p>The calendar helps you track important dates. Click on any day to add a personal event, like homework deadlines or revision topics. You can also enable a 'Countdown Banner' for specific events. Admins may add 'Global Events', like exam dates, which appear for all users and are marked with a green dot.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I upload my own files?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                                <p>Currently, file uploading is not a feature for users. The file structure is managed by administrators to ensure all resources are relevant, high-quality, and well-organized for all students. This helps maintain a consistent and reliable revision library.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I delete my account?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                                <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="checkout-page" class="page hidden p-8 max-w-lg mx-auto text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Upgrade to Pro</h2>
+                    <div class="bg-white/50 p-8 rounded-xl shadow-md border border-white/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-gray-700 mb-6">
+                            To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
+                        </p>
+                        <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
+                            admin@gcsemate.com
+                        </p>
+                        <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer id="page-footer" class="bg-gray-100/50 p-4 text-center text-sm text-gray-600 border-t border-gray-200/50 flex-shrink-0">
+            <div id="footer-content" class="space-y-2">
+                <p>Made with ❤️</p>
+                <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
+            </div>
+        </footer>
+    </div>
+    
+    <div id="toast-container"></div>
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-">
+        <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",
+        authDomain: "gcsemate.firebaseapp.com",
+        projectId: "gcsemate",
+        storageBucket: "gcsemate.appspot.com",
+        messagingSenderId: "704190559234",
+        appId: "1:704190559234:web:dd6ecc107df886c70b231b",
+        measurementId: "G-NSRF8YLS2N"
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+    </script>
+    <script>
+        // --- APP STATE---
+        let currentUser = null;
+        let isGapiReady = false;
+        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
+        let currentFolderFiles = [];
+        let fileBrowserView = 'list'; // 'list' or 'grid'
+        let allSubjectFolders = {};
+        let allBlogPosts = [];
+        let currentDate = new Date();
+        let activeCountdowns = [];
+        let currentCountdownIndex = 0;
+        let clockInterval = null;
+        let unsubscribeUserManagement;
+        let unsubscribeUsefulLinks;
+        let unsubscribeVideoPlaylists;
+        let unsubscribeBlogPosts;
+        let unsubscribeUserEvents;
+        let unsubscribeGlobalEvents;
+        let unsubscribeAnnouncement;
+        let recaptchaVerifier;
+        // --- CONFIGURATION ---
+        const API_KEY = 'AIzaSyD_AO6WlNO9djpVSngjrnvPecXsZtjXchA'; // Replace with your actual key
+        const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
+        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+        const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+        // =================================================================================
+        // CORE INITIALIZATION & AUTHENTICATION
+        // =================================================================================
+        auth.onAuthStateChanged(async (user) => {
+            // Detach old listeners to prevent memory leaks on re-login
+            if (unsubscribeUserManagement) unsubscribeUserManagement();
+            if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
+            if (unsubscribeVideoPlaylists) unsubscribeVideoPlaylists();
+            if (unsubscribeBlogPosts) unsubscribeBlogPosts();
+            if (unsubscribeUserEvents) unsubscribeUserEvents();
+            if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
+            if (unsubscribeAnnouncement) unsubscribeAnnouncement();
+            if (clockInterval) clearInterval(clockInterval);
+            if (user && user.emailVerified) {
+                // User is signed in AND verified.
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        currentUser = {
+                            uid: user.uid,
+                            email: user.email,
+                            emailVerified: user.emailVerified,
+                            ...userDoc.data()
+                        };
+                        initializeAppState();
+                    } else {
+                        console.error("User authenticated but no profile found in Firestore.");
+                        await handleLogout();
+                    }
+                } catch (error) {
+                    console.error("Error fetching user profile:", error);
+                    showErrorPage("Login Error", "Could not fetch your user profile. Please try again later.");
+                    await handleLogout();
+                }
+            } else if (user && !user.emailVerified) {
+                // User is signed in but NOT verified.
+                console.log("User is not verified.");
+                showVerificationMessagePage(user.email);
+            } else {
+                // User is signed out.
+                currentUser = null;
+                document.getElementById('main-app').classList.add('hidden');
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('email-verify-page').classList.add('hidden');
+                const landingPage = document.getElementById('landing-page');
+                landingPage.classList.remove('hidden');
+                landingPage.classList.add('fade-in');
+            }
+        });
+
+        function initializeAppState() {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('email-verify-page').classList.add('hidden');
+            
+            const mainApp = document.getElementById('main-app');
+            mainApp.classList.remove('hidden');
+            mainApp.style.display = 'flex';
+            mainApp.classList.add('fade-in');
+            updateWelcomeMessage();
+            setupRealtimeListeners();
+            startClock();
+            
+            if (isGapiReady && currentUser) {
+                 renderDashboard();
+            }
+        }
+        function setupRealtimeListeners() {
+            // Listen for announcements
+            unsubscribeAnnouncement = db.collection('settings').doc('announcement')
+                .onSnapshot(doc => {
+                    const data = doc.data();
+                    showAnnouncement(data ? data.message : '');
+                }, err => console.error("Error fetching announcement:", err));
+            // Admin listeners
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('user-settings-panel').classList.add('hidden');
+                document.getElementById('add-link-form-container').classList.remove('hidden');
+                document.getElementById('add-blog-post-form-container').classList.remove('hidden');
+                
+                // Listen for all users for the management panel
+                unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
+                    const allUsers = {};
+                    snapshot.forEach(doc => {
+                        allUsers[doc.id] = { id: doc.id, ...doc.data() };
+                    });
+                    renderUserManagementPanel(allUsers);
+                }, err => console.error("Error fetching users:", err));
+            } else {
+                document.getElementById('admin-panel').classList.add('hidden');
+                document.getElementById('user-settings-panel').classList.remove('hidden');
+                document.getElementById('add-link-form-container').classList.add('hidden');
+                document.getElementById('add-blog-post-form-container').classList.add('hidden');
+            }
+            // Listen for useful links
+            unsubscribeUsefulLinks = db.collection('usefulLinks').orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    const links = {};
+                    snapshot.forEach(doc => {
+                        links[doc.id] = doc.data();
+                    });
+                    renderUsefulLinks(links);
+                }, err => console.error("Error fetching useful links:", err));
+                
+            // Listen for video playlists
+            unsubscribeVideoPlaylists = db.collection('videoPlaylists').orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    const playlists = [];
+                    snapshot.forEach(doc => {
+                        playlists.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderVideosPage(playlists);
+                }, err => console.error("Error fetching video playlists:", err));
+            // Listen for blog posts
+            unsubscribeBlogPosts = db.collection('blogPosts').orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    const posts = [];
+                    snapshot.forEach(doc => {
+                        posts.push({ id: doc.id, ...doc.data() });
+                    });
+                    allBlogPosts = posts; // Store globally for modal access
+                    renderBlogPage(posts);
+                }, err => console.error("Error fetching blog posts:", err));
+            // Listen for user-specific events
+            unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
+                .onSnapshot(snapshot => {
+                    const events = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!events[data.date]) events[data.date] = [];
+                        events[data.date].push({ id: doc.id, ...data });
+                    });
+                    renderCalendar(events, null); // Re-render with new user events
+                    updateCountdownBanner(); // Update countdown when events change
+                }, err => console.error("Error fetching user events:", err));
+            // Listen for global events
+            unsubscribeGlobalEvents = db.collection('globalEvents')
+                .onSnapshot(snapshot => {
+                    const events = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!events[data.date]) events[data.date] = [];
+                        events[data.date].push({ id: doc.id, ...data, isGlobal: true });
+                    });
+                    renderCalendar(null, events); // Re-render with new global events
+                    updateCountdownBanner(); // Update countdown when events change
+                }, err => console.error("Error fetching global events:", err));
+        }
+        async function handleRegister() {
+            const displayName = document.getElementById('register-displayname').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const messageEl = document.getElementById('register-error');
+            messageEl.textContent = '';
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                // Send verification email
+                await user.sendEmailVerification();
+                
+                // Update Firebase Auth profile
+                await user.updateProfile({ displayName: displayName });
+                // Save user profile to Firestore
+                await db.collection('users').doc(user.uid).set({
+                    displayName: displayName,
+                    email: email,
+                    tier: 'free',
+                    role: 'user',
+                    starredFiles: [],
+                    allowedSubjects: null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                // onAuthStateChanged will redirect to the verification page
+                showVerificationMessagePage(email);
+            } catch (error) {
+                messageEl.textContent = error.message;
+            }
+        }
+        async function handleLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            const messageEl = document.getElementById('auth-error');
+            messageEl.textContent = '';
+            try {
+                const persistence = rememberMe 
+                    ? firebase.auth.Auth.Persistence.LOCAL 
+                    : firebase.auth.Auth.Persistence.SESSION;
+                
+                await auth.setPersistence(persistence);
+                
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                if (!userCredential.user.emailVerified) {
+                    messageEl.textContent = 'Please verify your email before logging in.';
+                    // The onAuthStateChanged listener will handle redirecting them to the verification page.
+                    return;
+                }
+                // onAuthStateChanged will handle successful, verified login.
+            } catch (error) {
+                console.error("Login Error:", error);
+                messageEl.textContent = 'Invalid email or password.';
+                if (recaptchaVerifier) {
+                    recaptchaVerifier.render().then(widgetId => {
+                        grecaptcha.reset(widgetId);
+                    });
+                }
+            }
+        }
+        
+        async function handleLogout() {
+            try {
+                // Destroy reCAPTCHA verifier
+                if (recaptchaVerifier) {
+                    recaptchaVerifier.clear();
+                    recaptchaVerifier = null;
+                }
+                
+                await auth.signOut();
+                // onAuthStateChanged will handle UI changes
+                path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
+                currentFolderFiles = [];
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        }
+        
+        async function resendVerificationEmail() {
+            const button = document.getElementById('resend-verification-btn');
+            const messageEl = document.getElementById('resend-message');
+            if (auth.currentUser && !auth.currentUser.emailVerified) {
+                try {
+                    button.disabled = true;
+                    button.textContent = 'Sending...';
+                    await auth.currentUser.sendEmailVerification();
+                    messageEl.textContent = 'A new verification link has been sent.';
+                    setTimeout(() => {
+                        messageEl.textContent = '';
+                        button.disabled = false;
+                        button.textContent = 'Resend Verification Email';
+                    }, 5000);
+                } catch (error) {
+                    messageEl.textContent = 'Error sending email. Please try again later.';
+                    console.error("Error resending verification email:", error);
+                    button.disabled = false;
+                    button.textContent = 'Resend Verification Email';
+                }
+            }
+        }
+        // =================================================================================
+        // ADMIN & USER SETTINGS
+        // =================================================================================
+        function renderUserManagementPanel(allUsers) {
+            const container = document.getElementById('user-management-grid');
+            container.innerHTML = '';
+            Object.values(allUsers).forEach(user => {
+                if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-md flex flex-col';
+                card.innerHTML = `
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
+                        <p class="text-sm text-gray-500">${user.email}</p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
+                        </div>
+                    </div>
+                    <button onclick="openEditUserModal('${user.id}')" class="mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors text-sm">Edit User</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        async function openEditUserModal(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (!userDoc.exists) {
+                    showToast("User not found!", 'error');
+                    return;
+                }
+                const user = { id: userDoc.id, ...userDoc.data() };
+                const modal = document.getElementById('edit-user-modal');
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
+                         <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                             <h3 class="text-lg font-semibold text-gray-800">Edit User: ${user.displayName}</h3>
+                             <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                         </div>
+                         <div class="p-6 space-y-4 overflow-y-auto">
+                             <form id="edit-user-form" onsubmit="event.preventDefault(); handleUpdateUser('${user.id}')">
+                                 <div>
+                                     <label for="edit-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
+                                     <input id="edit-displayname" type="text" value="${user.displayName}" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                 </div>
+                                 <div>
+                                     <label for="edit-tier" class="block text-sm font-medium text-gray-700">User Tier</label>
+                                     <select id="edit-tier" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                         <option value="free" ${user.tier === 'free' ? 'selected' : ''}>Free</option>
+                                         <option value="paid" ${user.tier === 'paid' ? 'selected' : ''}>Paid</option>
+                                     </select>
+                                 </div>
+                                  <div>
+                                     <label for="edit-role" class="block text-sm font-medium text-gray-700">User Role</label>
+                                     <select id="edit-role" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                         <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                         <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                     </select>
+                                 </div>
+                                 <div>
+                                     <label class="block text-sm font-medium text-gray-700">Allowed Subjects</label>
+                                     <div id="edit-subject-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-sm border-t pt-2"></div>
+                                 </div>
+                                 <div class="flex justify-end gap-3 pt-4">
+                                     <button type="button" onclick="document.getElementById('edit-user-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                                     <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
+                                 </div>
+                             </form>
+                         </div>
+                    </div>
+                `;
+                const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
+                const userSubjects = user.allowedSubjects || [];
+                SUBJECTS.forEach(subject => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center space-x-2 cursor-pointer';
+                    label.innerHTML = `
+                        <input type="checkbox" name="edit-subjects" value="${subject.toLowerCase()}" ${userSubjects.includes(subject.toLowerCase()) ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span>${subject}</span>
+                    `;
+                    subjectContainer.appendChild(label);
+                });
+            } catch (error) {
+                console.error("Error opening edit modal:", error);
+                showToast("Could not load user data for editing.", 'error');
+            }
+        }
+        async function handleUpdateUser(userId) {
+            try {
+                const newDisplayName = document.getElementById('edit-displayname').value;
+                const newTier = document.getElementById('edit-tier').value;
+                const newRole = document.getElementById('edit-role').value;
+                const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
+                await db.collection('users').doc(userId).update({
+                    displayName: newDisplayName,
+                    tier: newTier,
+                    role: newRole,
+                    allowedSubjects: newSubjects.length > 0 ? newSubjects : null
+                });
+                
+                document.getElementById('edit-user-modal').style.display = 'none';
+                showToast('User updated successfully!', 'success');
+            } catch (error) {
+                console.error("Failed to update user:", error);
+                showToast("Failed to save changes.", 'error');
+            }
+        }
+        async function handleUpdateUserSettings() {
+            const displayName = document.getElementById('user-displayname').value.trim();
+            const newPassword = document.getElementById('user-password').value;
+            const messageEl = document.getElementById('user-settings-message');
+            messageEl.textContent = '';
+            try {
+                // Update Firestore display name
+                await db.collection('users').doc(currentUser.uid).update({ displayName });
+                await auth.currentUser.updateProfile({ displayName: displayName });
+                
+                // Update password if provided
+                if (newPassword) {
+                    await auth.currentUser.updatePassword(newPassword);
+                }
+                
+                // Update local state
+                currentUser.displayName = displayName;
+                updateWelcomeMessage();
+                messageEl.textContent = 'Settings saved successfully!';
+                messageEl.className = 'text-green-600 text-sm text-center h-4';
+                setTimeout(() => messageEl.textContent = '', 3000);
+            } catch (error) {
+                console.error("Error updating user settings:", error);
+                messageEl.textContent = error.message;
+                messageEl.className = 'text-red-600 text-sm text-center h-4';
+            }
+        }
+        // =================================================================================
+        // PAGE/VIEW MANAGEMENT & RENDERING
+        // =================================================================================
+        function capitalizeFirstLetter(string) {
+            if (!string) return '';
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+        function generatePfpUrl(email) {
+            const initial = (email ? email.charAt(0) : '?').toUpperCase();
+            return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
+        }
+        function updateWelcomeMessage() {
+            if (currentUser) {
+                document.getElementById('welcome-message').textContent = `Welcome, ${capitalizeFirstLetter(currentUser.displayName)}!`;
+                document.getElementById('profile-picture').src = generatePfpUrl(currentUser.email);
+                document.getElementById('user-displayname').value = currentUser.displayName;
+                document.getElementById('user-email').value = currentUser.email;
+            }
+        }
+        function renderError(container, message) {
+            if (container) {
+                const colSpanClass = container.id === 'subject-grid' || container.id === 'playlist-grid' ? 'col-span-full' : '';
+                container.innerHTML = `<div class="${colSpanClass} text-center text-red-600 p-8 bg-red-50/70 rounded-2xl border border-red-200/50"><h3 class="font-bold text-xl text-red-800">Oops! Something went wrong.</h3><p class="mt-2 text-sm text-red-700">${message}</p></div>`;
+            }
+        }
+        
+        function showAuthPage(showLogin = true) {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('login-page').classList.remove('hidden');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const formTitle = document.getElementById('form-title');
+            if (showLogin) {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                formTitle.textContent = 'Your Ultimate Revision Hub';
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                formTitle.textContent = 'Create a Free Account';
+            }
+            document.getElementById('auth-error').textContent = '';
+            document.getElementById('register-error').textContent = '';
+        }
+        
+        function showVerificationMessagePage(email) {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('email-verify-page').classList.remove('hidden');
+            const emailDisplay = document.getElementById('verification-email-display');
+            if (email) {
+                emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
+            }
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+            const newPage = document.getElementById(pageId);
+            if (newPage) {
+                newPage.classList.remove('hidden');
+                newPage.classList.remove('slide-in-up');
+                void newPage.offsetWidth;
+                newPage.classList.add('slide-in-up');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('active');
+                if (l.dataset.page === pageId) l.classList.add('active');
+            });
+             // Close mobile menu on navigation
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+            }
+        }
+        function showAnnouncement(message) {
+            const announcementBanner = document.getElementById('site-announcement-banner');
+            if (message && message.trim() !== '') {
+                announcementBanner.innerHTML = `<div class="bg-blue-600 text-white p-3 text-center text-sm font-semibold flex justify-center items-center relative"><span>${message}</span><button onclick="this.parentElement.parentElement.style.display='none'" class="font-bold text-xl px-2 absolute right-2" data-tooltip="Dismiss">×</button></div>`;
+                announcementBanner.classList.remove('hidden');
+            } else {
+                announcementBanner.classList.add('hidden');
+            }
+        }
+        async function postAnnouncement() {
+            if (currentUser.role !== 'admin') return;
+            const text = document.getElementById('announcement-text').value.trim();
+            try {
+                await db.collection('settings').doc('announcement').set({ message: text });
+                 showToast('Announcement posted!', 'success');
+            } catch (error) {
+                console.error("Error posting announcement:", error);
+                showToast("Could not post announcement.", 'error');
+            }
+        }
+        
+        async function clearAnnouncement() {
+            if (currentUser.role !== 'admin') return;
+            try {
+                await db.collection('settings').doc('announcement').set({ message: '' });
+                document.getElementById('announcement-text').value = '';
+                showToast('Announcement cleared!', 'success');
+            } catch (error) {
+                console.error("Error clearing announcement:", error);
+                showToast("Could not clear announcement.", 'error');
+            }
+        }
+        async function renderDashboard() {
+            const subjectGrid = document.getElementById('subject-grid');
+            if (!subjectGrid) return;
+            // Render skeleton loader
+            let skeletonHTML = '';
+            for (let i = 0; i < 10; i++) {
+                skeletonHTML += '<div class="h-36 skeleton"></div>';
+            }
+            subjectGrid.innerHTML = skeletonHTML;
+            
+            try {
+                const url = `https://www.googleapis.com/drive/v3/files?q='${ROOT_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'&key=${API_KEY}&fields=files(id,name)`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(await response.text());
+                const data = await response.json();
+                allSubjectFolders = {};
+                if (data.files) {
+                    data.files.forEach(folder => {
+                        allSubjectFolders[folder.name.toLowerCase()] = folder.id;
+                    });
+                }
+                
+                subjectGrid.innerHTML = '';
+                const userAllowedSubjects = currentUser.allowedSubjects;
+                let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
+                if (subjectsToShow.length === 0) {
+                    subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
+                    return;
+                }
+                subjectsToShow.forEach(subject => {
+                    const subjectId = allSubjectFolders[subject.toLowerCase()];
+                    const card = document.createElement('div');
+                    card.innerHTML = `${uniformSubjectIcon}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
+                    if (subjectId) {
+                        card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
+                        card.setAttribute('data-tooltip', `Open ${subject} folder`);
+                        card.addEventListener('click', () => {
+                            if (currentUser.tier === 'free') {
+                                document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
+                                document.getElementById('upgrade-modal').style.display = 'flex';
+                                return;
+                            }
+                            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
+                            handleNavigation(subjectId);
+                            showPage('file-browser-page');
+                        });
+                    } else {
+                        card.className = 'p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed';
+                        card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
+                    }
+                    subjectGrid.appendChild(card);
+                });
+            } catch (err) {
+                renderError(subjectGrid, `Could not load subjects. ${err.message}. The API key may be invalid or you might be offline.`);
+            }
+        }
+        async function handleNavigation(folderId) {
+            await fetchAndRenderFiles(folderId);
+        }
+        async function fetchAndRenderFiles(folderId) {
+            const fileListContainer = document.getElementById('file-list');
+            fileListContainer.innerHTML = '<div class="flex justify-center p-10"><div class="loader"></div></div>';
+            try {
+                const fields = "files(id,name,mimeType,iconLink,webViewLink,webContentLink,hasThumbnail,thumbnailLink)";
+                const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&key=${API_KEY}&fields=${fields}&orderBy=folder,name`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error((await response.json()).error.message);
+                const data = await response.json();
+                currentFolderFiles = data.files;
+                renderItems();
+            } catch (err) {
+                renderError(fileListContainer, err.message);
+            } finally {
+                renderBreadcrumbs();
+            }
+        }
+        
+        function renderItems() {
+            const container = document.getElementById('file-list');
+            const searchInput = document.getElementById('file-search-input').value.toLowerCase();
+            const sortOrder = document.getElementById('file-sort-select').value;
+        
+            container.innerHTML = ''; // Clear previous items
+        
+            // 1. Filter
+            let filteredFiles = currentFolderFiles.filter(file => 
+                file.name.toLowerCase().includes(searchInput)
+            );
+        
+            if (!filteredFiles || filteredFiles.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No files found.</h3></div>`;
+                return;
+            }
+        
+            // 2. Sort
+            const starredFiles = currentUser.starredFiles || [];
+            filteredFiles.sort((a, b) => {
+                const a_isStarred = starredFiles.includes(a.id);
+                const b_isStarred = starredFiles.includes(b.id);
+                const a_isFolder = a.mimeType === 'application/vnd.google-apps.folder';
+                const b_isFolder = b.mimeType === 'application/vnd.google-apps.folder';
+        
+                if (a_isStarred !== b_isStarred) return a_isStarred ? -1 : 1;
+                if (a_isFolder !== b_isFolder) return a_isFolder ? -1 : 1;
+        
+                return sortOrder === 'az'
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            });
+        
+            // 3. Render (based on view)
+            if (fileBrowserView === 'grid') {
+                container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+                filteredFiles.forEach(file => {
+                    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+                    const isStarred = starredFiles.includes(file.id);
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `relative p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg`;
+                    
+                    const mainInfo = document.createElement('div');
+                    mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
+                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-12 h-12 mb-2"><p class="text-sm font-medium text-gray-800 break-words w-full">${file.name}</p>`;
+        
+                    if (isFolder) {
+                        itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
+                    } else {
+                        itemElement.addEventListener('click', () => showPreview(file));
+                    }
+                    
+                    if (!isFolder) {
+                        const actions = document.createElement('div');
+                        actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
+                        actions.innerHTML = `
+                            <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
+                            <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                        itemElement.appendChild(actions);
+                    }
+                    itemElement.appendChild(mainInfo);
+                    container.appendChild(itemElement);
+                });
+            } else { // List view
+                container.className = 'p-4 overflow-y-auto flex-grow';
+                filteredFiles.forEach(file => {
+                    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+                    const isStarred = starredFiles.includes(file.id);
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `flex items-center p-3 rounded-lg hover:bg-black/5 transition-colors duration-150 ${isStarred ? 'bg-yellow-100/50' : ''}`;
+                    const mainInfo = document.createElement('div');
+                    mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
+                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0"><span class="truncate font-medium text-gray-800">${file.name}</span>`;
+                    
+                    if (isFolder) {
+                        mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
+                    } else {
+                        mainInfo.addEventListener('click', () => showPreview(file));
+                    }
+                    const actions = document.createElement('div');
+                    actions.className = 'flex items-center space-x-2 flex-shrink-0 ml-4';
+                    if (!isFolder) {
+                        actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                        const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
+                        actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                    }
+                    itemElement.appendChild(mainInfo);
+                    itemElement.appendChild(actions);
+                    container.appendChild(itemElement);
+                });
+            }
+            initializeTooltips(); // Re-initialize tooltips for new elements
+        }
+        async function handleToggleStar(fileId, event) {
+            event.stopPropagation();
+            const starButton = event.currentTarget;
+            const userRef = db.collection('users').doc(currentUser.uid);
+            const starredFiles = currentUser.starredFiles || [];
+            const isCurrentlyStarred = starredFiles.includes(fileId);
+            const updateAction = isCurrentlyStarred 
+                ? firebase.firestore.FieldValue.arrayRemove(fileId)
+                : firebase.firestore.FieldValue.arrayUnion(fileId);
+            try {
+                await userRef.update({ starredFiles: updateAction });
+                // Optimistically update UI
+                if (isCurrentlyStarred) {
+                    currentUser.starredFiles = starredFiles.filter(id => id !== fileId);
+                } else {
+                    currentUser.starredFiles.push(fileId);
+                    starButton.classList.add('pop-animation');
+                    setTimeout(() => starButton.classList.remove('pop-animation'), 300);
+                }
+                renderItems();
+            } catch (error) {
+                console.error("Error updating starred files:", error);
+                showToast("Could not update star status.", 'error');
+            }
+        }
+        function renderBreadcrumbs() {
+            const breadcrumbContainer = document.getElementById('breadcrumb');
+            breadcrumbContainer.innerHTML = '';
+            path.forEach((crumb, index) => {
+                const isLast = index === path.length - 1;
+                const crumbElement = document.createElement(isLast ? 'span' : 'a');
+                crumbElement.textContent = crumb.name;
+                crumbElement.className = isLast ? "font-semibold text-gray-700" : 'cursor-pointer hover:underline text-blue-700';
+                if (!isLast) {
+                    crumbElement.href = '#';
+                    crumbElement.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        path = path.slice(0, index + 1);
+                        if (path.length <= 1) {
+                            showPage('subject-dashboard-page');
+                        } else {
+                            fetchAndRenderFiles(crumb.id);
+                        }
+                    });
+                }
+                breadcrumbContainer.appendChild(crumbElement);
+                if (!isLast) {
+                    const separator = document.createElement('span');
+                    separator.textContent = ' / ';
+                    separator.className = 'mx-2 text-gray-400';
+                    breadcrumbContainer.appendChild(separator);
+                }
+            });
+        }
+        
+        // =================================================================================
+        // VIDEOS LOGIC
+        // =================================================================================
+        function renderVideosPage(playlists) {
+            const grid = document.getElementById('playlist-grid');
+            const adminForm = document.getElementById('add-playlist-form-container');
+            if (!grid || !adminForm) return;
+            // Show admin form if user is admin
+            adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+            grid.innerHTML = '';
+            if (!playlists || playlists.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Available Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for curated revision videos.</p></div>`;
+                return;
+            }
+            playlists.forEach(playlist => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+                card.onclick = () => handlePlaylistClick(playlist);
+                card.innerHTML = `
+                    <div class="flex-grow flex flex-col justify-center items-center text-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="font-bold text-gray-800 leading-tight">${playlist.title}</h3>
+                    </div>
+                     <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center text-xs text-gray-500 font-semibold">
+                         <span>YOUTUBE PLAYLIST</span>
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                         </svg>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        async function handleAddPlaylist() {
+            if (currentUser.role !== 'admin') return;
+            const form = document.getElementById('add-playlist-form');
+            const titleInput = document.getElementById('playlist-title');
+            const urlInput = document.getElementById('playlist-url');
+            const messageEl = document.getElementById('add-playlist-message');
+            
+            const title = titleInput.value.trim();
+            const url = urlInput.value.trim();
+            if (!title || !url) {
+                messageEl.textContent = 'Please fill in both title and URL.';
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+                return;
+            }
+            const youtubeData = parseYoutubeUrl(url);
+            if (!youtubeData || youtubeData.type !== 'youtube_playlist') {
+                 messageEl.textContent = 'Please enter a valid YouTube Playlist URL.';
+                 messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+                 return;
+            }
+            try {
+                const playlistData = {
+                    title: title,
+                    playlistId: youtubeData.id,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('videoPlaylists').add(playlistData);
+                messageEl.textContent = 'Playlist added successfully!';
+                messageEl.className = 'text-green-600 text-sm mt-2 h-4';
+                form.reset();
+                setTimeout(() => messageEl.textContent = '', 3000);
+            } catch (error) {
+                console.error("Error adding playlist:", error);
+                messageEl.textContent = 'An error occurred. Please try again.';
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+            }
+        }
+        function handlePlaylistClick(playlist) {
+            if (currentUser.tier === 'free') {
+                document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
+                document.getElementById('upgrade-modal').style.display = 'flex';
+                return;
+            }
+            showPlaylistViewer(playlist);
+        }
+        function showPlaylistViewer(playlist) {
+            const modal = document.getElementById('playlist-viewer-modal');
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">${playlist.title}</h3>
+                        <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                    </div>
+                    <div class="aspect-w-16 aspect-h-9 bg-black">
+                        <iframe 
+                            src="https://www.youtube.com/embed/videoseries?list=${playlist.playlistId}" 
+                            title="YouTube video player" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+        // =================================================================================
+        // USEFUL LINKS LOGIC (SHARED PARSER)
+        // =================================================================================
+        
+        function parseYoutubeUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+                    const playlistId = urlObj.searchParams.get('list');
+                    if (playlistId) {
+                        return { type: 'youtube_playlist', id: playlistId, embedUrl: `https://www.youtube.com/embed/videoseries?list=${playlistId}` };
+                    }
+                    let videoId = urlObj.searchParams.get('v');
+                    if (!videoId && urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.slice(1);
+                    if (videoId) {
+                        return { type: 'youtube_video', id: videoId, embedUrl: `https://www.youtube.com/embed/${videoId}` };
+                    }
+                }
+            } catch (e) { console.error("Could not parse URL", e); }
+            return null;
+        }
+        async function handleAddLink() {
+            if (currentUser.role !== 'admin') return;
+            const titleInput = document.getElementById('link-title');
+            const urlInput = document.getElementById('link-url');
+            const messageEl = document.getElementById('add-link-message');
+            const title = titleInput.value.trim();
+            const url = urlInput.value.trim();
+            if (!title || !url) {
+                messageEl.textContent = 'Please fill in both title and URL.';
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+                return;
+            }
+            try {
+                new URL(url); // Validate URL
+                const youtubeData = parseYoutubeUrl(url);
+                const linkData = {
+                    title,
+                    url,
+                    type: youtubeData ? youtubeData.type : 'link',
+                    embedUrl: youtubeData ? youtubeData.embedUrl : null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('usefulLinks').add(linkData);
+                messageEl.textContent = 'Link added successfully!';
+                messageEl.className = 'text-green-600 text-sm mt-2 h-4';
+                titleInput.value = '';
+                urlInput.value = '';
+                setTimeout(() => messageEl.textContent = '', 3000);
+            } catch (error) {
+                console.error("Error adding link:", error);
+                messageEl.textContent = 'Please enter a valid URL.';
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+            }
+        }
+        async function handleRemoveLink(id) {
+            if (currentUser.role !== 'admin') return;
+             showConfirmationModal('Are you sure you want to delete this link?', async () => {
+                try {
+                    await db.collection('usefulLinks').doc(id).delete();
+                    showToast('Link removed.', 'success');
+                } catch (error) {
+                    console.error("Error removing link:", error);
+                    showToast("Could not remove the link.", 'error');
+                }
+            });
+        }
+        function renderUsefulLinks(usefulLinks) {
+            const linksContainer = document.getElementById('links-container');
+            linksContainer.innerHTML = '';
+            if (Object.keys(usefulLinks).length === 0) {
+                linksContainer.innerHTML = `<div class="text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Links Yet</h3></div>`;
+                return;
+            }
+            
+            Object.entries(usefulLinks).forEach(([id, link]) => {
+                const linkElement = document.createElement('div');
+                linkElement.className = 'p-4 rounded-lg bg-gray-100/50';
+                let contentHTML = '';
+                const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
+                if (link.type === 'youtube_video' || link.type === 'youtube_playlist') {
+                    contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div><div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md"><iframe src="${link.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
+                } else {
+                    contentHTML = `<div class="flex items-center justify-between"><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="flex items-center min-w-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="font-semibold text-gray-800 truncate" data-tooltip="${link.url}">${link.title}</span></a>${removeBtn}</div>`;
+                }
+                linkElement.innerHTML = contentHTML;
+                linksContainer.appendChild(linkElement);
+            });
+            initializeTooltips();
+        }
+        // =================================================================================
+        // CALENDAR LOGIC
+        // =================================================================================
+        let calendarUserEvents = {};
+        let calendarGlobalEvents = {};
+        function renderCalendar(userEvents, globalEvents) {
+            if (userEvents) calendarUserEvents = userEvents;
+            if (globalEvents) calendarGlobalEvents = globalEvents;
+            const calendarGrid = document.getElementById('calendar-grid');
+            const monthYearHeader = document.getElementById('month-year-header');
+            if (!calendarGrid || !monthYearHeader) return;
+            calendarGrid.innerHTML = '';
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            monthYearHeader.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'text-center font-semibold text-gray-600 text-sm py-2';
+                dayEl.textContent = day;
+                calendarGrid.appendChild(dayEl);
+            });
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let i = 0; i < firstDayOfMonth; i++) calendarGrid.appendChild(document.createElement('div'));
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                dayEl.className = 'calendar-day text-center py-4 border-t border-l border-gray-200/50 cursor-pointer hover:bg-blue-100/50 transition-colors';
+                dayEl.textContent = day;
+                dayEl.dataset.date = dateKey;
+                const today = new Date();
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayEl.classList.add('today');
+                }
+                
+                if ((calendarUserEvents[dateKey] && calendarUserEvents[dateKey].length > 0) || (calendarGlobalEvents[dateKey] && calendarGlobalEvents[dateKey].length > 0)) {
+                    dayEl.classList.add('has-event');
+                    if (calendarGlobalEvents[dateKey] && calendarGlobalEvents[dateKey].length > 0) {
+                        dayEl.classList.add('has-global-event');
+                    }
+                }
+                
+                dayEl.addEventListener('click', () => openEventModal(dateKey));
+                calendarGrid.appendChild(dayEl);
+            }
+            updateCountdownBanner();
+        }
+        
+        // =================================================================================
+        // BLOG LOGIC
+        // =================================================================================
+        function renderBlogPage(posts) {
+            const grid = document.getElementById('blog-post-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            if (!posts || posts.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Blog Posts Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for news and revision tips.</p></div>`;
+                return;
+            }
+            posts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg flex flex-col overflow-hidden';
+                const contentPreview = post.content.replace(/<[^>]+>/g, '').substring(0, 100);
+                const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB') : 'Just now';
+                let adminButtons = '';
+                if(currentUser.role === 'admin') {
+                    adminButtons = `
+                        <div class="absolute top-2 right-2 flex gap-1">
+                            <button onclick="event.stopPropagation(); editBlogPost('${post.id}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Post">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteBlogPost('${post.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Post">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    `;
+                }
+                card.innerHTML = `
+                    <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
+                        <div class="p-6 flex-grow flex flex-col">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">${post.title}</h3>
+                            <p class="text-gray-600 text-sm flex-grow">${contentPreview}...</p>
+                            <p class="text-xs text-gray-500 mt-4">${postDate}</p>
+                        </div>
+                        ${adminButtons}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+             initializeTooltips();
+        }
+        
+        async function handleSaveBlogPost() {
+            if (currentUser.role !== 'admin') return;
+            
+            const postId = document.getElementById('blog-post-id').value;
+            const title = document.getElementById('blog-post-title').value.trim();
+            const content = document.getElementById('blog-post-content').value.trim();
+            const image = document.getElementById('blog-post-image').value.trim();
+            const messageEl = document.getElementById('add-blog-post-message');
+            if (!title || !content) {
+                messageEl.textContent = "Title and content are required.";
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+                return;
+            }
+            const postData = {
+                title,
+                content,
+                image: image || null,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            try {
+                if (postId) { // Update existing post
+                    await db.collection('blogPosts').doc(postId).update(postData);
+                } else { // Create new post
+                    postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('blogPosts').add(postData);
+                }
+                resetBlogPostForm();
+                messageEl.textContent = "Blog post saved successfully!";
+                messageEl.className = 'text-green-600 text-sm mt-2 h-4';
+                setTimeout(() => messageEl.textContent = '', 3000);
+            } catch (error) {
+                console.error("Error saving blog post:", error);
+                messageEl.textContent = "An error occurred. Please try again.";
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+            }
+        }
+        function resetBlogPostForm() {
+            document.getElementById('add-blog-post-form').reset();
+            document.getElementById('blog-post-id').value = '';
+            document.getElementById('blog-form-title').textContent = 'Create New Blog Post';
+        }
+        function editBlogPost(postId) {
+            const post = allBlogPosts.find(p => p.id === postId);
+            if (!post) return;
+            
+            document.getElementById('blog-form-title').textContent = 'Edit Blog Post';
+            document.getElementById('blog-post-id').value = post.id;
+            document.getElementById('blog-post-title').value = post.title;
+            document.getElementById('blog-post-content').value = post.content;
+            document.getElementById('blog-post-image').value = post.image || '';
+            document.getElementById('add-blog-post-form-container').scrollIntoView({ behavior: 'smooth' });
+        }
+        async function deleteBlogPost(postId) {
+            if (currentUser.role !== 'admin') return;
+            showConfirmationModal('Are you sure you want to delete this blog post? This cannot be undone.', async () => {
+                try {
+                    await db.collection('blogPosts').doc(postId).delete();
+                    showToast('Blog post deleted.', 'success');
+                } catch (error) {
+                    console.error("Error deleting blog post:", error);
+                    showToast("Could not delete blog post.", 'error');
+                }
+            });
+        }
+        function showBlogPostViewer(postId) {
+            const post = allBlogPosts.find(p => p.id === postId);
+            if (!post) return;
+            const modal = document.getElementById('blog-viewer-modal');
+            const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">${post.title}</h3>
+                        <button onclick="document.getElementById('blog-viewer-modal').style.display='none'; document.getElementById('blog-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                    </div>
+                    <div class="overflow-y-auto">
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover">` : ''}
+                        <div class="p-8 prose prose-lg max-w-none">
+                            <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
+                            ${post.content}
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+        // =================================================================================
+        // MODAL, UTILITY & NEW FEATURE FUNCTIONS
+        // =================================================================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function initializeTooltips() {
+            let tooltipElement;
+            document.querySelectorAll('[data-tooltip]').forEach(el => {
+                el.addEventListener('mouseenter', e => {
+                    tooltipElement = document.createElement('div');
+                    tooltipElement.className = 'custom-tooltip';
+                    tooltipElement.textContent = el.getAttribute('data-tooltip');
+                    document.body.appendChild(tooltipElement);
+
+                    const targetRect = el.getBoundingClientRect();
+                    const tooltipRect = tooltipElement.getBoundingClientRect();
+                    
+                    let top = targetRect.top - tooltipRect.height - 8;
+                    let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+
+                    if (top < 0) { // If not enough space on top, show below
+                        top = targetRect.bottom + 8;
+                    }
+                    if (left < 0) left = 5; // Prevent going off-screen left
+                    if (left + tooltipRect.width > window.innerWidth) left = window.innerWidth - tooltipRect.width - 5; // Prevent going off-screen right
+
+                    tooltipElement.style.top = `${top}px`;
+                    tooltipElement.style.left = `${left}px`;
+                    
+                    setTimeout(() => { tooltipElement.style.opacity = '1'; }, 10);
+                });
+                
+                el.addEventListener('mouseleave', () => {
+                    if (tooltipElement) {
+                        tooltipElement.style.opacity = '0';
+                        setTimeout(() => {
+                            tooltipElement.remove();
+                            tooltipElement = null;
+                        }, 200);
+                    }
+                });
+            });
+        }
+
+        function initializeFaqAccordion() {
+            const faqContainer = document.getElementById('faq-container');
+            if(faqContainer) {
+                faqContainer.addEventListener('click', (e) => {
+                    const questionHeader = e.target.closest('.faq-question');
+                    if (questionHeader) {
+                        const faqItem = questionHeader.parentElement;
+                        faqItem.classList.toggle('open');
+                    }
+                });
+            }
+        }
+        function showConfirmationModal(message, onConfirm, options = {}) {
+            const { okText = 'OK', cancelText = 'Cancel', showCancel = true } = options;
+            const modal = document.getElementById('confirmation-modal');
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-sm p-6 text-center fade-in">
+                    <p class="text-lg font-semibold text-gray-800 mb-6">${message}</p>
+                    <div class="flex justify-center gap-4">
+                        ${showCancel ? `<button id="confirm-cancel" class="px-6 py-2 bg-gray-200 text-gray-800 font-bold rounded-md hover:bg-gray-300">${cancelText}</button>` : ''}
+                        <button id="confirm-yes" class="px-6 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700">${okText}</button>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+            document.getElementById('confirm-yes').onclick = () => {
+                onConfirm();
+                modal.style.display = 'none';
+            };
+            if (showCancel) {
+                document.getElementById('confirm-cancel').onclick = () => {
+                    modal.style.display = 'none';
+                };
+            }
+        }
+
+        function showDeleteAccountModal() {
+            showConfirmationModal(
+                'Are you sure you want to permanently delete your account? This action cannot be undone.',
+                handleDeleteAccount,
+                { okText: 'Delete Account' }
+            );
+        }
+
+        async function handleDeleteAccount() {
+            if (!currentUser) return;
+            try {
+                const userId = currentUser.uid;
+                // First delete Firestore document
+                await db.collection('users').doc(userId).delete();
+                // Then delete auth user
+                await auth.currentUser.delete();
+                showToast('Your account has been successfully deleted.', 'success');
+                // onAuthStateChanged will handle the UI redirect
+            } catch (error) {
+                console.error("Account deletion failed:", error);
+                showToast(`Error deleting account: ${error.message}`, 'error');
+                // Handle re-authentication if needed
+                if (error.code === 'auth/requires-recent-login') {
+                    showToast('Please log out and log back in to delete your account.', 'error');
+                }
+            }
+        }
+        function showTermsOfServiceModal() {
+            const modal = document.getElementById('legal-modal');
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl flex flex-col fade-in max-h-[90vh]">
+                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                         <h3 class="text-lg font-semibold text-gray-800">Terms of Service</h3>
+                         <button onclick="document.getElementById('legal-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                     </div>
+                     <div class="p-6 space-y-4 overflow-y-auto prose">
+                        <p>Welcome to GCSEMate. By using our service, you agree to these terms. Please read them carefully.</p>
+                        <h4>1. Your Account</h4>
+                        <p>You are responsible for safeguarding your account. You agree not to disclose your password to any third party and to take sole responsibility for any activities or actions under your account.</p>
+                        <h4>2. Content</h4>
+                        <p>All content provided on GCSEMate is for informational and educational purposes only. We do not guarantee the accuracy or completeness of any information provided.</p>
+                        <h4>3. Termination</h4>
+                        <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+                        <p><em>Last updated: August 2025</em></p>
+                     </div>
+                </div>`;
+        }
+        function showPrivacyPolicyModal() {
+            const modal = document.getElementById('legal-modal');
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl flex flex-col fade-in max-h-[90vh]">
+                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                         <h3 class="text-lg font-semibold text-gray-800">Privacy Policy</h3>
+                         <button onclick="document.getElementById('legal-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                     </div>
+                     <div class="p-6 space-y-4 overflow-y-auto prose">
+                        <p>Your privacy is important to us. It is GCSEMate's policy to respect your privacy regarding any information we may collect from you across our website.</p>
+                        <h4>1. Information We Collect</h4>
+                        <p>We only collect information about you that is necessary for providing our service. This includes your name, email address, and user preferences (like starred files).</p>
+                        <h4>2. How We Use Information</h4>
+                        <p>We use the information we collect to operate, maintain, and provide you with the features and functionality of the service.</p>
+                        <h4>3. Data Deletion</h4>
+                        <p>You may request deletion of your personal data at any time through the account settings page. Upon confirmation, we will delete your user account and associated data from our systems.</p>
+                         <p><em>Last updated: August 2025</em></p>
+                     </div>
+                </div>`;
+        }
+
+        function showDmcaModal() {
+            const modal = document.getElementById('dmca-modal');
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl flex flex-col fade-in max-h-[90vh]">
+                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                         <h3 class="text-lg font-semibold text-gray-800">DMCA & Content Removal Policy</h3>
+                         <button onclick="document.getElementById('dmca-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                     </div>
+                     <div class="p-6 space-y-4 overflow-y-auto">
+                         <p>GCSEMate respects the intellectual property rights of others and expects its users to do the same. In accordance with the Digital Millennium Copyright Act (DMCA), we will respond promptly to notices of alleged copyright infringement.</p>
+                         <h4 class="font-bold pt-2">Content Removal Requests:</h4>
+                         <p>If you are a copyright owner and believe that your copyrighted work has been used on this site in a way that constitutes copyright infringement, please provide our designated agent with a written communication that includes the following:</p>
+                         <ul class="list-disc list-inside space-y-1 text-sm">
+                             <li>A physical or electronic signature of a person authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.</li>
+                             <li>Identification of the copyrighted work claimed to have been infringed.</li>
+                             <li>Identification of the material that is claimed to be infringing and information reasonably sufficient to permit us to locate the material.</li>
+                             <li>Information reasonably sufficient to permit us to contact you, such as an address, telephone number, and, if available, an email address.</li>
+                             <li>A statement that you have a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.</li>
+                             <li>A statement that the information in the notification is accurate, and under penalty of perjury, that you are authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.</li>
+                         </ul>
+                         <p class="text-sm pt-2">Please send your notice to our designated agent at: <strong>admin@gcsemate.com</strong></p>
+                     </div>
+                </div>`;
+        }
+        function showPasswordResetModal(email = '') {
+            const modal = document.getElementById('legal-modal');
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-sm p-8 space-y-4 fade-in">
+                    <h3 class="text-xl font-bold text-gray-800 text-center">Reset Your Password</h3>
+                    <p class="text-sm text-gray-600 text-center">Enter your account's email address and we will send you a link to reset your password.</p>
+                    <input id="reset-email-input" type="email" value="${email}" placeholder="Enter your email" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <button onclick="handleSendPasswordReset()" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Send Reset Link</button>
+                    <p id="reset-message" class="text-sm text-center h-4"></p>
+                    <div class="text-center">
+                        <button onclick="document.getElementById('legal-modal').style.display='none'" class="text-sm text-gray-600 hover:underline">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
+        async function handleSendPasswordReset() {
+            const emailInput = document.getElementById('reset-email-input');
+            const messageEl = document.getElementById('reset-message');
+            const email = emailInput.value.trim();
+            if (!email) {
+                messageEl.textContent = 'Please enter an email address.';
+                messageEl.className = 'text-red-600 text-sm text-center h-4';
+                return;
+            }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                messageEl.textContent = 'Reset link sent! Check your inbox.';
+                messageEl.className = 'text-green-600 text-sm text-center h-4';
+                emailInput.disabled = true;
+            } catch (error) {
+                console.error("Password reset error:", error);
+                messageEl.textContent = error.message;
+                messageEl.className = 'text-red-600 text-sm text-center h-4';
+            }
+        }
+        function showPreview(file) {
+            const modal = document.getElementById('preview-modal');
+            let content = '';
+            const canEmbed = file.mimeType.startsWith('image/') || file.mimeType === 'application/pdf';
+            if (canEmbed) {
+                const embedUrl = `https://drive.google.com/file/d/${file.id}/preview`;
+                content = `<iframe src="${embedUrl}" class="w-full h-full border-0"></iframe>`;
+            } else {
+                content = `
+                    <div class="text-center bg-gray-100 p-8 rounded-lg">
+                        <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4">
+                        <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
+                        <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
+                        <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
+                            Open in Google Drive
+                        </a>
+                    </div>
+                `;
+            }
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
+                        <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
+                        <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
+                    </div>
+                    <div class="flex-grow bg-gray-800">${content}</div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+        
+        function showErrorPage(title, message) {
+            document.body.innerHTML = `
+                <div class="w-full h-screen flex items-center justify-center bg-gray-100 p-4">
+                     <div class="bg-white p-8 rounded-xl shadow-md border max-w-lg w-full text-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                         <h2 class="text-3xl font-bold text-gray-800 mb-2">${title}</h2>
+                         <p class="text-gray-600 mb-6">${message}</p>
+                         <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Go to Homepage</a>
+                     </div>
+                </div>`;
+        }
+        
+        // --- GAPI LOADER ---
+        window.gapiLoaded = function() {
+            isGapiReady = true;
+            if (currentUser && currentUser.emailVerified) {
+                renderDashboard();
+            }
+        }
+        // --- RUN ON STARTUP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('copyright-year').textContent = new Date().getFullYear();
+            document.getElementById('landing-copyright-year').textContent = new Date().getFullYear();
+            // Initialize reCAPTCHA
+            recaptchaVerifier = new firebase.auth.RecaptchaVerifier('login-button', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // reCAPTCHA solved, allow signInWithEmailAndPassword.
+                }
+            });
+            // Setup login/register form toggling
+            document.getElementById('show-register-form').addEventListener('click', (e) => {
+                e.preventDefault();
+                showAuthPage(false);
+            });
+            document.getElementById('show-login-form').addEventListener('click', (e) => {
+                e.preventDefault();
+                showAuthPage(true);
+            });
+            // Setup password visibility toggle
+            document.getElementById('show-password-btn').addEventListener('click', () => {
+                const passwordInput = document.getElementById('password');
+                const eyeOpen = document.getElementById('eye-open');
+                const eyeClosed = document.getElementById('eye-closed');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            });
+            
+            // Setup other buttons
+            document.getElementById('logout-button').addEventListener('click', handleLogout);
+            document.getElementById('mobile-logout-button').addEventListener('click', handleLogout);
+            document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
+            document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
+            document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
+            document.getElementById('prev-month-btn').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar(calendarUserEvents, calendarGlobalEvents);
+                updateCountdownBanner(); // Update countdown when month changes
+            });
+            document.getElementById('next-month-btn').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar(calendarUserEvents, calendarGlobalEvents);
+                updateCountdownBanner(); // Update countdown when month changes
+            });
+            // Setup file browser controls
+            document.getElementById('file-search-input').addEventListener('input', () => renderItems());
+            document.getElementById('file-sort-select').addEventListener('change', () => renderItems());
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelector('.view-btn.bg-blue-100')?.classList.remove('bg-blue-100', 'text-blue-700');
+                    btn.classList.add('bg-blue-100', 'text-blue-700');
+                    fileBrowserView = btn.dataset.view;
+                    renderItems();
+                });
+            });
+            document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+
+            // Setup nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPage(link.dataset.page);
+                });
+            });
+            // Setup modals
+            ['preview-modal', 'playlist-viewer-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
+                const modal = document.getElementById(id);
+                if(modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target.id === id) {
+                            modal.style.display = 'none';
+                            // Special case for viewers to stop media playback
+                            if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
+                                modal.innerHTML = '';
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Setup Hamburger Menu
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const closeMenuButton = document.getElementById('close-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuLinks = mobileMenu.querySelectorAll('.nav-link, button');
+            hamburgerButton.addEventListener('click', () => {
+                mobileMenu.classList.remove('hidden');
+            });
+            closeMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!mobileMenu.contains(e.target) && !hamburgerButton.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+            
+            // Close mobile menu when resizing to desktop
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024 && !mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+            
+            // Initialize new features
+            initializeTooltips();
+            initializeFaqAccordion();
+
+            // Load Google Drive API script
+            const gapiScript = document.createElement('script');
+            gapiScript.src = "https://apis.google.com/js/api.js";
+            gapiScript.onload = () => window.gapiLoaded();
+            document.head.appendChild(gapiScript);
+        });
+        
+        // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
+        function openEventModal(date) {
+            const modal = document.getElementById('event-modal');
+            const userIsAdmin = currentUser.role === 'admin';
+            const eventsForDay = calendarUserEvents[date] || [];
+            const globalEventsForDay = calendarGlobalEvents[date] || [];
+            
+            let eventsHtml = '<p class="text-gray-500 text-sm">No events for this day.</p>';
+            if (eventsForDay.length > 0 || globalEventsForDay.length > 0) {
+                eventsHtml = [...globalEventsForDay, ...eventsForDay].map(event => `
+                    <div class="p-3 rounded-lg ${event.isGlobal ? 'bg-green-100' : 'bg-blue-100'}">
+                        <p class="font-bold text-gray-800">${event.title}</p>
+                        <p class="text-sm text-gray-600">${event.description || ''}</p>
+                        <div class="text-right mt-2">
+                            <button onclick="editEvent('${date}', '${event.id}', ${event.isGlobal})" class="text-sm font-semibold text-blue-600 hover:underline">Edit</button>
+                            <button onclick="deleteEvent('${date}', '${event.id}', ${event.isGlobal})" class="text-sm font-semibold text-red-600 hover:underline ml-2">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Events for ${new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                        <button onclick="document.getElementById('event-modal').style.display='none'; resetEventForm();" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                    </div>
+                    <div class="p-6 space-y-4 overflow-y-auto">
+                        <div class="space-y-3">${eventsHtml}</div>
+                        <hr class="my-4">
+                        <h4 class="font-bold text-gray-800" id="event-form-title">Add New Event</h4>
+                        <form id="event-form" class="space-y-3" onsubmit="event.preventDefault(); handleSaveEvent('${date}')">
+                             <input type="hidden" id="event-id">
+                             <input id="event-title" type="text" placeholder="Event Title" required class="w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             <textarea id="event-description" placeholder="Description (optional)" class="w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 h-24"></textarea>
+                             <div class="space-y-2">
+                                 <label class="flex items-center text-sm text-gray-700 select-none">
+                                     <input id="event-countdown" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                                     <span class="ml-2 font-semibold">Enable Countdown Banner</span>
+                                 </label>
+                                 ${userIsAdmin ? `
+                                     <label class="flex items-center text-sm text-gray-700 select-none">
+                                         <input id="event-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                         <span class="ml-2 font-semibold">Sync to all users (Global Event)</span>
+                                     </label>
+                                 ` : ''}
+                             </div>
+                             <div class="flex justify-end gap-3 pt-2">
+                                 <button type="button" onclick="resetEventForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Event</button>
+                             </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+        async function handleSaveEvent(date) {
+            const title = document.getElementById('event-title').value.trim();
+            if (!title) return;
+            const eventId = document.getElementById('event-id').value || db.collection('dummy').doc().id;
+            const isGlobal = document.getElementById('event-sync')?.checked || false;
+            
+            const eventData = {
+                title,
+                description: document.getElementById('event-description').value.trim(),
+                enableCountdown: document.getElementById('event-countdown').checked,
+                date: date
+            };
+            try {
+                const collectionRef = isGlobal 
+                    ? db.collection('globalEvents')
+                    : db.collection('users').doc(currentUser.uid).collection('events');
+                
+                await collectionRef.doc(eventId).set(eventData);
+                document.getElementById('event-modal').style.display = 'none';
+                resetEventForm();
+                 showToast('Event saved!', 'success');
+            } catch (error) {
+                console.error("Error saving event:", error);
+                showToast("Could not save the event.", 'error');
+            }
+        }
+        function editEvent(date, eventId, isGlobal) {
+            const eventList = isGlobal ? calendarGlobalEvents[date] : calendarUserEvents[date];
+            const event = eventList?.find(e => e.id === eventId);
+            if (!event) return;
+            document.getElementById('event-form-title').textContent = 'Edit Event';
+            document.getElementById('event-id').value = event.id;
+            document.getElementById('event-title').value = event.title;
+            document.getElementById('event-description').value = event.description;
+            document.getElementById('event-countdown').checked = event.enableCountdown;
+            if (document.getElementById('event-sync')) {
+                document.getElementById('event-sync').checked = isGlobal;
+            }
+        }
+        async function deleteEvent(date, eventId, isGlobal) {
+            showConfirmationModal("Are you sure you want to delete this event?", async () => {
+                try {
+                    const collectionRef = isGlobal
+                        ? db.collection('globalEvents')
+                        : db.collection('users').doc(currentUser.uid).collection('events');
+                    await collectionRef.doc(eventId).delete();
+                    openEventModal(date); // Re-open modal to show updated list
+                    showToast('Event deleted.', 'success');
+                } catch (error) {
+                    console.error("Error deleting event:", error);
+                    showToast("Could not delete the event.", 'error');
+                }
+            });
+        }
+        function resetEventForm() {
+            document.getElementById('event-form-title').textContent = 'Add New Event';
+            document.getElementById('event-form').reset();
+            document.getElementById('event-id').value = '';
+        }
+        function updateCountdownBanner() {
+            // This function combines both global and user events to find active countdowns
+            const banner = document.getElementById('event-countdown-banner');
+            activeCountdowns = [];
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const allEvents = [];
+            Object.values(calendarGlobalEvents).flat().forEach(event => allEvents.push({ ...event, dateObj: new Date(event.date + 'T00:00:00') }));
+            Object.values(calendarUserEvents).flat().forEach(event => allEvents.push({ ...event, dateObj: new Date(event.date + 'T00:00:00') }));
+            
+            activeCountdowns = allEvents
+                .filter(event => event.enableCountdown && event.dateObj >= now)
+                .sort((a, b) => a.dateObj - b.dateObj);
+            if (activeCountdowns.length > 0) {
+                currentCountdownIndex = Math.min(currentCountdownIndex, activeCountdowns.length - 1);
+                const nextEvent = activeCountdowns[currentCountdownIndex];
+                const diffTime = nextEvent.dateObj - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let countdownText = `${diffDays} day${diffDays !== 1 ? 's' : ''} until ${nextEvent.title}!`;
+                if (diffDays === 0) countdownText = `Today: ${nextEvent.title}!`;
+                banner.innerHTML = `<div class="bg-yellow-400 text-yellow-900 p-3 text-center text-sm font-semibold flex justify-center items-center relative"><span>${countdownText}</span></div>`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+        // --- Clock Function ---
+        function startClock() {
+            const timeEl = document.getElementById('clock-time');
+            const dateEl = document.getElementById('clock-date');
+            if (!timeEl || !dateEl) return;
+            function update() {
+                const now = new Date();
+                timeEl.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            update();
+            clockInterval = setInterval(update, 1000);
+        }
+    </script>
+</body>
+</html>
