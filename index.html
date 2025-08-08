@@ -1,3 +1,4 @@
+@ -1,2308 +1,2296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,52 +58,42 @@
         .prose p { margin-bottom: 1.25em; }
         .prose blockquote { border-left-width: 4px; border-left-color: #3b82f6; padding-left: 1rem; font-style: italic; }
         .prose img { border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        /* Smooth animations */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out forwards;
-        }
-        .fade-out {
-            animation: fadeOut 0.5s ease-in-out forwards;
-        }
-        .slide-in-up {
-            animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .slide-out-down {
-            animation: slideOutDown 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .scale-in {
-            animation: scaleIn 0.4s ease-out forwards;
-        }
-        .scale-out {
-            animation: scaleOut 0.4s ease-in forwards;
-        }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* UI Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        .slide-in-up { animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        /* Star icon animation */
+        .star-icon { transition: transform 0.2s ease, color 0.2s ease; }
+        .star-icon.starred { color: #facc15; transform: scale(1.2); }
+        .star-icon:hover { transform: scale(1.4); }
+        .star-icon.pop-animation { animation: pop 0.3s ease-out forwards; }
+        /* Aspect ratio for embeds */
+        .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
+        .aspect-h-9 { position: relative; padding-bottom: 56.25%; height: 0; }
+        .aspect-w-16 > iframe, .aspect-h-9 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* Calendar styles */
+        .calendar-day.today { background-color: #bfdbfe; color: #1e40af; font-weight: bold; }
+        .calendar-day.has-event { position: relative; }
+        .calendar-day.has-event::after {
+            content: ''; position: absolute; bottom: 6px; left: 50%;
+            transform: translateX(-50%); width: 6px; height: 6px;
+            border-radius: 50%; background-color: #3b82f6;
         }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+        .calendar-day.has-global-event::after { background-color: #16a34a; }
+        /* Landing Page Specific Animations */
+        .animate-hero-title { animation: slideInUp 0.8s ease-out 0.2s forwards; opacity: 0; }
+        .animate-hero-subtitle { animation: slideInUp 0.8s ease-out 0.4s forwards; opacity: 0; }
+        .animate-hero-buttons { animation: slideInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
+        .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
+        /* Clock styles */
+        #dashboard-clock {
+            font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
         }
-        @keyframes slideInUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideOutDown {
-            from { transform: translateY(0); opacity: 1; }
-            to { transform: translateY(20px); opacity: 0; }
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes scaleOut {
-            from { transform: scale(1); opacity: 1; }
-            to { transform: scale(0.8); opacity: 0; }
-        }
-
-        /* Tooltip fixes */
+        /* Custom Tooltip */
         .custom-tooltip {
             position: absolute;
             background-color: #1f2937;
@@ -112,24 +103,68 @@
             font-size: 0.875rem;
             z-index: 100;
             opacity: 0;
-            transition: opacity 0.2s, transform 0.2s;
+            transition: opacity 0.2s;
             pointer-events: none;
             white-space: nowrap;
-            transform: translateY(-10px);
         }
-        .custom-tooltip.visible {
-            opacity: 1;
-            transform: translateY(0);
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-
-        /* Responsive fixes */
-        @media (max-width: 768px) {
-            .nav-link {
-                font-size: 0.875rem;
+        .toast {
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+        }
+        .toast.success { background-color: #22c55e; }
+        .toast.error { background-color: #ef4444; }
+        /* Skeleton Loader Shimmer Effect */
+        .skeleton {
+            background-color: #e5e7eb;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
             }
-            .page {
-                padding: 4px;
-            }
+        }
+        /* FAQ Accordion */
+        .faq-item .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 500px; /* Adjust as needed */
+            transition: max-height 0.5s ease-in;
+        }
+        .faq-item .faq-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        .faq-item.open .faq-arrow {
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -152,7 +187,7 @@
             </div>
             <div class="animate-hero-subtitle">
                 <p class="mt-4 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600">
-                    GCSEMate is the all-in-one website that organizes your entire academic life. All your subjects, notes, past papers, and resources—perfectly structured and instantly accessible.
+                    GCSEMate is the all-in-one digital hub that organizes your entire academic life. All your subjects, notes, past papers, and resources—perfectly structured and instantly accessible.
                 </p>
             </div>
             <div class="mt-8 flex justify-center items-center gap-4 animate-hero-buttons">
@@ -171,22 +206,22 @@
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600">
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
-                        <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p> 
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralized Hub</h3>
+                        <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
                     </div>
                     <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.2s;">
                          <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600">
                              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                          </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Instant Previews</h3>
-                        <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching, and wasting your precious storage.</p>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
+                        <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
                     </div>
                     <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.3s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600">
                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Integrated Calendar</h3>
-                        <p class="mt-2 text-gray-600">Keep track of homework, deadlines, and exam dates with a personal calendar system, regularly updated with GCSE Dates</p>
+                        <p class="mt-2 text-gray-600">Keep track of homework, deadlines, and exam dates with a personal and global calendar system.</p>
                     </div>
                 </div>
             </div>
@@ -549,6 +584,7 @@
                             To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
                         </p>
                         <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
+                            admin@gcsemate.com
                             <a href="/cdn-cgi/l/email-protection#e081848d898ea0878393858d819485ce838f8d" class="__cf_email__" data-cfemail="a8c9ccc5c1c6e8cfc7dbcfc7cbdecfd686cbc7c5">[email&#160;protected]</a>
                         </p>
                         <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
@@ -564,14 +600,16 @@
         </footer>
     </div>
     
-    <!-- 404 Error Page -->
-<div id="error-404-page" class="page hidden p-8 max-w-lg mx-auto text-center">
-    <h1 class="text-6xl font-bold text-gray-800 mb-4">404</h1>
-    <p class="text-lg text-gray-600 mb-6">Oops! The page you're looking for doesn't exist.</p>
-    <img src="https://placehold.co/400x300/FF0000/FFFFFF?text=404+Error" alt="404 Error" class="mx-auto mb-6 rounded-lg shadow-md">
-    <a href="#" onclick="showPage('landing-page')" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all">Go Back to Home</a>
-</div>
     <div id="toast-container"></div>
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-">
     <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
     <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
     <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50"></div>
@@ -583,11 +621,12 @@
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script>
-      // GCSEMate Firebase configuration
+      // Your web app's Firebase configuration
       const firebaseConfig = {
         apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",
         authDomain: "gcsemate.firebaseapp.com",
@@ -624,10 +663,10 @@
         let unsubscribeAnnouncement;
         let recaptchaVerifier;
         // --- CONFIGURATION ---
-        const API_KEY = 'AIzaSyD_AO6WlNO9djpVSngjrnvPecXsZtjXchA'; // Google Drive API key
-        const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc'; // Google Drive root folder ID
+        const API_KEY = 'AIzaSyD_AO6WlNO9djpVSngjrnvPecXsZtjXchA'; // Replace with your actual key
+        const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
         const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
-        const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2v2M7 7h10"></path></svg>`;
+        const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
@@ -677,6 +716,7 @@
                 landingPage.classList.add('fade-in');
             }
         });
+
         function initializeAppState() {
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
@@ -1068,6 +1108,7 @@
                 emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
             }
         }
+
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
             const newPage = document.getElementById(pageId);
@@ -1252,8 +1293,8 @@
                         const actions = document.createElement('div');
                         actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
                         actions.innerHTML = `
-                            <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                            <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                            <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
+                            <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                         itemElement.appendChild(actions);
                     }
                     itemElement.appendChild(mainInfo);
@@ -1366,7 +1407,7 @@
                     <div class="flex-grow flex flex-col justify-center items-center text-center">
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <h3 class="font-bold text-gray-800 leading-tight">${playlist.title}</h3>
                     </div>
@@ -1526,7 +1567,7 @@
                 const linkElement = document.createElement('div');
                 linkElement.className = 'p-4 rounded-lg bg-gray-100/50';
                 let contentHTML = '';
-                const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : '';
+                const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
                 if (link.type === 'youtube_video' || link.type === 'youtube_playlist') {
                     contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div><div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md"><iframe src="${link.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
                 } else {
@@ -1608,7 +1649,7 @@
                     adminButtons = `
                         <div class="absolute top-2 right-2 flex gap-1">
                             <button onclick="event.stopPropagation(); editBlogPost('${post.id}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Post">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536a2 2 0 002.828 0L16 21.414a2 2 0 01-2.828 0l-3.536-3.536a2 2 0 010-2.828l3.536-3.536a2 2 0 012.828 0z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
                             </button>
                             <button onclick="event.stopPropagation(); deleteBlogPost('${post.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Post">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -1733,6 +1774,7 @@
                 toast.remove();
             }, 3000);
         }
+
         function initializeTooltips() {
             let tooltipElement;
             document.querySelectorAll('[data-tooltip]').forEach(el => {
@@ -1741,16 +1783,19 @@
                     tooltipElement.className = 'custom-tooltip';
                     tooltipElement.textContent = el.getAttribute('data-tooltip');
                     document.body.appendChild(tooltipElement);
+
                     const targetRect = el.getBoundingClientRect();
                     const tooltipRect = tooltipElement.getBoundingClientRect();
                     
                     let top = targetRect.top - tooltipRect.height - 8;
                     let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+
                     if (top < 0) { // If not enough space on top, show below
                         top = targetRect.bottom + 8;
                     }
                     if (left < 0) left = 5; // Prevent going off-screen left
                     if (left + tooltipRect.width > window.innerWidth) left = window.innerWidth - tooltipRect.width - 5; // Prevent going off-screen right
+
                     tooltipElement.style.top = `${top}px`;
                     tooltipElement.style.left = `${left}px`;
                     
@@ -1768,6 +1813,7 @@
                 });
             });
         }
+
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
             if(faqContainer) {
@@ -1803,6 +1849,7 @@
                 };
             }
         }
+
         function showDeleteAccountModal() {
             showConfirmationModal(
                 'Are you sure you want to permanently delete your account? This action cannot be undone.',
@@ -1810,6 +1857,7 @@
                 { okText: 'Delete Account' }
             );
         }
+
         async function handleDeleteAccount() {
             if (!currentUser) return;
             try {
@@ -1871,6 +1919,7 @@
                      </div>
                 </div>`;
         }
+
         function showDmcaModal() {
             const modal = document.getElementById('dmca-modal');
             modal.style.display = 'flex';
@@ -1970,7 +2019,7 @@
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                          <h2 class="text-3xl font-bold text-gray-800 mb-2">${title}</h2>
                          <p class="text-gray-600 mb-6">${message}</p>
-                         <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all">Go to Homepage</a>
+                         <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Go to Homepage</a>
                      </div>
                 </div>`;
         }
@@ -2046,6 +2095,7 @@
                 });
             });
             document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+
             // Setup nav links
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
@@ -2103,6 +2153,7 @@
             // Initialize new features
             initializeTooltips();
             initializeFaqAccordion();
+
             // Load Google Drive API script
             const gapiScript = document.createElement('script');
             gapiScript.src = "https://apis.google.com/js/api.js";
@@ -2266,12 +2317,5 @@
         }
     </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96b99b618b729833","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
-<!-- 404 Error Page -->
-<div id="error-404-page" class="page hidden p-8 max-w-lg mx-auto text-center">
-    <h1 class="text-6xl font-bold text-gray-800 mb-4">404</h1>
-    <p class="text-lg text-gray-600 mb-6">Oops! The page you're looking for doesn't exist.</p>
-    <img src="https://placehold.co/400x300/FF0000/FFFFFF?text=404+Error" alt="404 Error" class="mx-auto mb-6 rounded-lg shadow-md">
-    <a href="#" onclick="showPage('landing-page')" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all">Go Back to Home</a>
-</div>
 </body>
 </html>
