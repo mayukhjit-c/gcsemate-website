@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,6 +20,16 @@
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     
     <style>
+        :root {
+            /* Default accent: Tailwind blue-500 rgb */
+            --accent-50: 239 246 255;
+            --accent-100: 219 234 254;
+            --accent-300: 147 197 253;
+            --accent-400: 96 165 250;
+            --accent-500: 59 130 246;
+            --accent-600: 37 99 235;
+            --accent-700: 29 78 216;
+        }
         /* Base styles for a polished look */
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -64,6 +75,20 @@
         .prose blockquote { border-left-width: 4px; border-left-color: #3b82f6; padding-left: 1rem; font-style: italic; }
         .prose img { border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
 
+        /* Accent utility overrides for existing Tailwind blue classes */
+        .text-blue-600 { color: rgb(var(--accent-600)) !important; }
+        .text-blue-700 { color: rgb(var(--accent-700)) !important; }
+        .bg-blue-50 { background-color: rgb(var(--accent-50)) !important; }
+        .bg-blue-100 { background-color: rgb(var(--accent-100)) !important; }
+        .bg-blue-600 { background-color: rgb(var(--accent-600)) !important; }
+        .hover\:bg-blue-700:hover { background-color: rgb(var(--accent-700)) !important; }
+        .focus\:ring-blue-300:focus { --tw-ring-color: rgb(var(--accent-300)) !important; }
+        .focus\:ring-blue-400:focus { --tw-ring-color: rgb(var(--accent-400)) !important; }
+        .ring-blue-300 { --tw-ring-color: rgb(var(--accent-300)) !important; }
+        .ring-blue-400 { --tw-ring-color: rgb(var(--accent-400)) !important; }
+        .border-blue-200 { border-color: rgb(var(--accent-100)) !important; }
+        .border-blue-300 { border-color: rgb(var(--accent-300)) !important; }
+
         /* UI Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -72,10 +97,14 @@
         .fade-in { animation: fadeIn 0.45s ease-out forwards; will-change: opacity; }
         .slide-in-up { animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity; }
         /* Star icon animation */
-        .star-icon { transition: transform 0.2s ease, color 0.2s ease; }
-        .star-icon.starred { color: #facc15; transform: scale(1.2); }
-        .star-icon:hover { transform: scale(1.4); }
-        .star-icon.pop-animation { animation: pop 0.3s ease-out forwards; }
+        .star-icon { transition: transform 0.2s ease, color 0.2s ease; position: relative; }
+        .star-icon.starred { color: #facc15; transform: scale(1.15); }
+        .star-icon:hover { transform: scale(1.35); }
+        .star-icon.pop-animation { animation: pop 0.28s ease-out forwards; }
+        /* Sparkle burst for starring */
+        .sparkle-burst { position: absolute; inset: 0; pointer-events: none; }
+        .sparkle-burst span { position: absolute; width: 6px; height: 6px; border-radius: 9999px; background: #fde68a; opacity: 0; }
+        @keyframes sparkleOut { 0% { transform: translate(0,0) scale(0.4); opacity: 0.9; } 100% { transform: translate(var(--tx), var(--ty)) scale(0.6); opacity: 0; } }
         /* Aspect ratio for embeds */
         .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
         .aspect-h-9 { position: relative; padding-bottom: 56.25%; height: 0; }
@@ -164,6 +193,12 @@
                 transform: translateX(100%);
             }
         }
+        /* Input search inline spinner (dots) */
+        .dots-spinner { display: inline-flex; gap: 3px; align-items: center; }
+        .dots-spinner i { width: 4px; height: 4px; border-radius: 9999px; background: rgb(var(--accent-600)); animation: dotPulse 1s infinite ease-in-out; }
+        .dots-spinner i:nth-child(2) { animation-delay: 0.15s; }
+        .dots-spinner i:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes dotPulse { 0%, 80%, 100% { opacity: .2; transform: scale(1); } 40% { opacity: 1; transform: scale(1.6); } }
         /* FAQ Accordion */
         .faq-item .faq-answer {
             max-height: 0 !important;
@@ -180,6 +215,8 @@
         .faq-item.open .faq-arrow {
             transform: rotate(180deg);
         }
+        /* Highlighting for FAQ search */
+        .faq-item[data-hidden="true"] { display: none; }
 
         /* Page transitions */
         .page-transition-enter { animation: fadeIn 0.22s ease-out both; }
@@ -325,11 +362,16 @@
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
             </nav>
-            <div class="hidden lg:flex items-center min-w-0 flex-shrink-0">
+            <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
                 <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
+                <div class="hidden lg:flex items-center gap-2 ml-2 pl-2 border-l border-gray-200/60">
+                    <label for="accent-picker" class="sr-only">Accent color</label>
+                    <input id="accent-picker" type="color" aria-label="Accent color" class="w-8 h-8 rounded cursor-pointer" data-tooltip="Pick accent colour">
+                    <button id="reset-accent" class="px-2 py-1 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour" data-tooltip="Reset accent colour">Reset</button>
+                </div>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
                 <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
@@ -494,7 +536,7 @@
                             </div>
                         </div>
                     </div>
-                    <div id="file-list" class="p-4 overflow-y-auto flex-grow"></div>
+                    <div id="file-list" class="p-4 overflow-y-auto flex-grow" aria-live="polite" aria-busy="false"></div>
                 </div>
                 <div id="account-settings-page" class="page hidden p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Account Management</h2>
@@ -581,7 +623,28 @@
                 </div>
                 <div id="help-page" class="page hidden p-8 max-w-4xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
-                    <div id="faq-container" class="space-y-4">
+                        <div class="bg-white/60 border border-white/30 backdrop-blur-lg rounded-xl p-4 mb-4">
+                            <div class="flex flex-col gap-3">
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-800">Keyboard shortcuts</h3>
+                                    <ul class="mt-1 text-sm text-gray-700 grid sm:grid-cols-2 gap-1">
+                                        <li><span class="font-semibold">?</span>: Open this Help/FAQ</li>
+                                        <li><span class="font-semibold">/</span>: Focus file search</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">d</span>: Go to Dashboard</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">v</span>: Go to Videos</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">b</span>: Go to Blog</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">c</span>: Go to Calendar</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">l</span>: Go to Lessons</li>
+                                        <li><span class="font-semibold">Esc</span>: Close modals/tooltips</li>
+                                    </ul>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input id="faq-search" type="search" placeholder="Search FAQs..." class="flex-1 px-3 py-2 rounded-lg border border-gray-300/60 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Search FAQs" />
+                                    <span id="faq-results-count" class="text-xs text-gray-500"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="faq-container" class="space-y-4">
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
                             <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
                                 <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
@@ -589,6 +652,42 @@
                             </div>
                             <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I change the accent colour?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Use the colour picker in the top-right of the header (desktop) to pick your accent colour. Your choice is saved on this device. Click Reset to return to the default blue.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Are there keyboard shortcuts?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos).</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I preview files without downloading?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Yes. PDFs and images can be previewed directly in the app. Other file types may open in Google Drive viewer.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I report an issue or suggest a feature?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Please email us via the link on the Upgrade page or use the contact option in the footer. We welcome feedback to improve GCSEMate.</p>
                             </div>
                         </div>
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
@@ -639,7 +738,7 @@
                             To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
                         </p>
                         <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
-                            admin@gcsemate.com
+                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dece9e0e4e3cdeaeefee8e0ecf9e8a3eee2e0">[email&#160;protected]</a>
                         </p>
                         <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
                     </div>
@@ -666,7 +765,7 @@
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script>
@@ -813,6 +912,12 @@
             if (isGapiReady && currentUser) {
                  renderDashboard();
             }
+
+            // Restore accent from localStorage
+            try {
+                const saved = localStorage.getItem('gcsemate_accent');
+                if (saved) applyAccent(JSON.parse(saved));
+            } catch (e) {}
         }
         function setupRealtimeListeners() {
             // Listen for announcements
@@ -1312,11 +1417,25 @@
                     subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
                     return;
                 }
+                const examBoardBySubject = {
+                    // AQA
+                    biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
+                    // Edexcel
+                    music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
+                    // OCR
+                    computing: 'OCR', geography: 'OCR',
+                    // Both
+                    english: 'AQA & Edexcel',
+                    // Eduqas
+                    'philosophy and ethics': 'Eduqas'
+                };
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
                     const card = document.createElement('div');
                     const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
-                    card.innerHTML = `${iconSvg}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
+                    const board = examBoardBySubject[subject.toLowerCase()];
+                    const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
+                    card.innerHTML = `${iconSvg}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>${badge}`;
                     if (subjectId) {
                         card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
@@ -1345,7 +1464,8 @@
         }
         async function fetchAndRenderFiles(folderId) {
             const fileListContainer = document.getElementById('file-list');
-            fileListContainer.innerHTML = '<div class="flex justify-center p-10"><div class="loader"></div></div>';
+            fileListContainer.setAttribute('aria-busy','true');
+            fileListContainer.innerHTML = '<div class="flex flex-col items-center justify-center p-10 gap-3"><div class="loader"></div><p class="text-sm text-gray-500">Loading files...</p></div>';
             try {
                 const fields = "files(id,name,mimeType,iconLink,webViewLink,webContentLink,hasThumbnail,thumbnailLink)";
                 const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&key=${API_KEY}&fields=${fields}&orderBy=folder,name`;
@@ -1362,12 +1482,25 @@
                 renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
             } finally {
                 renderBreadcrumbs();
+                fileListContainer.setAttribute('aria-busy','false');
             }
         }
         
         function renderItems() {
             const container = document.getElementById('file-list');
             const searchInput = document.getElementById('file-search-input').value.toLowerCase();
+            const searchIconHost = document.querySelector('#file-browser-controls .relative');
+            if (searchIconHost && searchInput.length > 0) {
+                if (!searchIconHost.querySelector('.dots-spinner')) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
+                    dot.innerHTML = '<i></i><i></i><i></i>';
+                    searchIconHost.appendChild(dot);
+                }
+            } else if (searchIconHost) {
+                const ds = searchIconHost.querySelector('.dots-spinner');
+                if (ds) ds.remove();
+            }
             const sortOrder = document.getElementById('file-sort-select').value;
         
             container.innerHTML = ''; // Clear previous items
@@ -1474,8 +1607,28 @@
                     currentUser.starredFiles = starredFiles.filter(id => id !== fileId);
                 } else {
                     currentUser.starredFiles.push(fileId);
+                    // Pop + sparkle burst
                     starButton.classList.add('pop-animation');
-                    setTimeout(() => starButton.classList.remove('pop-animation'), 300);
+                    const burst = document.createElement('div');
+                    burst.className = 'sparkle-burst';
+                    const rays = 6;
+                    for (let i = 0; i < rays; i++) {
+                        const s = document.createElement('span');
+                        const angle = (Math.PI * 2 * i) / rays;
+                        const dist = 16;
+                        s.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+                        s.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+                        s.style.left = '50%';
+                        s.style.top = '50%';
+                        s.style.transform = 'translate(-50%,-50%)';
+                        s.style.animation = 'sparkleOut 360ms ease-out forwards';
+                        burst.appendChild(s);
+                    }
+                    starButton.appendChild(burst);
+                    setTimeout(() => {
+                        starButton.classList.remove('pop-animation');
+                        burst.remove();
+                    }, 380);
                 }
                 renderItems();
             } catch (error) {
@@ -2487,6 +2640,70 @@
                     showPage(targetPage);
                 });
             });
+
+            // Keyboard shortcuts
+            let goPrefix = false; // 'g' then key
+            document.addEventListener('keydown', (e) => {
+                if (e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+                if (e.key === '?') {
+                    showPage('help-page');
+                } else if (e.key === '/') {
+                    e.preventDefault();
+                    const fs = document.getElementById('file-search-input');
+                    if (fs) fs.focus();
+                } else if (e.key.toLowerCase() === 'g') {
+                    goPrefix = true;
+                    setTimeout(() => { goPrefix = false; }, 800);
+                } else if (goPrefix) {
+                    const k = e.key.toLowerCase();
+                    goPrefix = false;
+                    const map = { d: 'subject-dashboard-page', v: 'videos-page', b: 'blog-page', c: 'calendar-page', l: 'lessons-page', u: 'useful-links-page', a: 'about-page', f: 'features-page', h: 'help-page' };
+                    const target = map[k];
+                    if (target) {
+                        e.preventDefault();
+                        showPage(target);
+                    }
+                }
+            });
+
+            // FAQ search
+            const faqSearch = document.getElementById('faq-search');
+            const faqContainer = document.getElementById('faq-container');
+            const faqCount = document.getElementById('faq-results-count');
+            if (faqSearch && faqContainer) {
+                faqSearch.addEventListener('input', () => {
+                    const q = faqSearch.value.trim().toLowerCase();
+                    const items = faqContainer.querySelectorAll('.faq-item');
+                    let visible = 0;
+                    items.forEach(item => {
+                        const txt = item.textContent.toLowerCase();
+                        const match = txt.includes(q);
+                        item.dataset.hidden = match ? 'false' : 'true';
+                        if (match) visible++;
+                    });
+                    if (faqCount) faqCount.textContent = q ? `${visible} match${visible!==1?'es':''}` : '';
+                });
+            }
+
+            // Accent color picker handling
+            const picker = document.getElementById('accent-picker');
+            const resetBtn = document.getElementById('reset-accent');
+            if (picker) {
+                picker.addEventListener('input', () => {
+                    const rgb = hexToRgb(picker.value);
+                    if (!rgb) return;
+                    const palette = generateAccentPalette(rgb);
+                    applyAccent(palette);
+                    localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+                });
+            }
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    const def = { fifty:[239,246,255], hundred:[219,234,254], threeHundred:[147,197,253], fourHundred:[96,165,250], fiveHundred:[59,130,246], sixHundred:[37,99,235], sevenHundred:[29,78,216] };
+                    applyAccent(def);
+                    localStorage.removeItem('gcsemate_accent');
+                });
+            }
             // Setup modals
             ['preview-modal', 'playlist-viewer-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
                 const modal = document.getElementById(id);
@@ -2564,6 +2781,36 @@
             console.error('Unhandled promise rejection:', e.reason);
             try { showToast('Something went wrong. Please try again.', 'error'); } catch (_) {}
         });
+        // Accent helpers
+        function hexToRgb(hex) {
+            const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
+        }
+        function mix(a, b, t) { return Math.round(a + (b - a) * t); }
+        function tint([r,g,b], t) { return [mix(r,255,t), mix(g,255,t), mix(b,255,t)]; }
+        function shade([r,g,b], t) { return [mix(r,0,t), mix(g,0,t), mix(b,0,t)]; }
+        function generateAccentPalette(rgb) {
+            return {
+                fifty: tint(rgb, 0.9),
+                hundred: tint(rgb, 0.8),
+                threeHundred: tint(rgb, 0.5),
+                fourHundred: tint(rgb, 0.35),
+                fiveHundred: rgb,
+                sixHundred: shade(rgb, 0.2),
+                sevenHunded: shade(rgb, 0.4)
+            };
+        }
+        function applyAccent(p) {
+            const r = document.documentElement;
+            const get = (k)=>Array.isArray(k)?k:k.split(',');
+            r.style.setProperty('--accent-50', get(p.fifty).join(' '));
+            r.style.setProperty('--accent-100', get(p.hundred).join(' '));
+            r.style.setProperty('--accent-300', get(p.threeHundred).join(' '));
+            r.style.setProperty('--accent-400', get(p.fourHundred).join(' '));
+            r.style.setProperty('--accent-500', get(p.fiveHundred).join(' '));
+            r.style.setProperty('--accent-600', get(p.sixHundred).join(' '));
+            r.style.setProperty('--accent-700', get(p.sevenHundred || p.sevenHunded || p.sixHundred).join(' '));
+        }
         
         // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
         function openEventModal(date) {
@@ -2720,5 +2967,6 @@
             clockInterval = setInterval(update, 1000);
         }
     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
 </html>
