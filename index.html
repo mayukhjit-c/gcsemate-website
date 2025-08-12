@@ -591,7 +591,7 @@
                             <p class="text-gray-600">Choose the plan that supports your goals. Upgrade any time.</p>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm">
+                            <table class="w-full text-left text-sm" id="pricing-compare">
                                 <thead class="bg-gray-50/70">
                                     <tr>
                                         <th class="px-4 py-3">Feature</th>
@@ -600,27 +600,27 @@
                                     </tr>
                                 </thead>
                                 <tbody id="pricing-compare-body" class="divide-y divide-gray-100">
-                                    <tr class="animate-[fadeIn_400ms_ease-out]">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Subjects Dashboard</td>
                                         <td class="px-4 py-3">Limited</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Unlimited</td>
                                     </tr>
-                                    <tr class="animate-[fadeIn_440ms_ease-out]">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">File Browser & Previews</td>
                                         <td class="px-4 py-3">Basic</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Full access with Google Docs/Slides/Sheets preview</td>
                                     </tr>
-                                    <tr class="animate-[fadeIn_480ms_ease-out]">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Videos & Playlists</td>
                                         <td class="px-4 py-3">Included</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
                                     </tr>
-                                    <tr class="animate-[fadeIn_520ms_ease-out]">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Blog Comments</td>
                                         <td class="px-4 py-3 text-gray-500">Read-only</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Post and engage</td>
                                     </tr>
-                                    <tr class="animate-[fadeIn_560ms_ease-out]">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Calendar & Events</td>
                                         <td class="px-4 py-3">Personal events</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Personal + Global events with countdowns</td>
@@ -1517,6 +1517,23 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function timeAgo(date) {
+            try {
+                const now = new Date();
+                const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+                const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+                if (seconds < 60) return rtf.format(-Math.max(1, seconds), 'second');
+                if (seconds < 3600) return rtf.format(-Math.floor(seconds/60), 'minute');
+                if (seconds < 86400) return rtf.format(-Math.floor(seconds/3600), 'hour');
+                if (seconds < 604800) return rtf.format(-Math.floor(seconds/86400), 'day');
+                if (seconds < 2592000) return rtf.format(-Math.floor(seconds/604800), 'week');
+                if (seconds < 31536000) return rtf.format(-Math.floor(seconds/2592000), 'month');
+                return rtf.format(-Math.floor(seconds/31536000), 'year');
+            } catch (_) {
+                return date.toLocaleString();
+            }
+        }
+
         function highlightMatch(text, query) {
             if (!query) return escapeHtml(text);
             const safeText = escapeHtml(text);
@@ -2047,7 +2064,10 @@
                     <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
                         ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
                         <div class="p-6 flex-grow flex flex-col">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">${post.title}</h3>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <h3 class="text-xl font-bold text-gray-900">${post.title}</h3>
+                                <span class="comment-badge text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-1 rounded-full whitespace-nowrap" data-post-id="${post.id}">0 comments</span>
+                            </div>
                             <p class="text-gray-600 text-sm flex-grow">${contentPreview}...</p>
                             <p class="text-xs text-gray-500 mt-4">${postDate}</p>
                         </div>
@@ -2056,7 +2076,23 @@
                 `;
                 grid.appendChild(card);
             });
-             initializeTooltips();
+            // Fetch comment counts (lightweight) and animate badges
+            try {
+                posts.forEach(async (p, i) => {
+                    try {
+                        const snap = await db.collection('blogPosts').doc(p.id).collection('comments').get();
+                        const n = snap.size || 0;
+                        const badge = grid.querySelector(`.comment-badge[data-post-id="${p.id}"]`);
+                        if (badge) {
+                            badge.textContent = n === 1 ? '1 comment' : `${n} comments`;
+                            badge.style.transform = 'scale(0.9)';
+                            badge.style.transition = 'transform 200ms ease';
+                            setTimeout(() => { badge.style.transform = 'scale(1)'; }, 20 + i * 15);
+                        }
+                    } catch (_) {}
+                });
+            } catch (_) {}
+            initializeTooltips();
         }
         
         async function handleSaveBlogPost() {
@@ -2185,12 +2221,13 @@
                     list.innerHTML = comments.map(c => {
                         const name = escapeHtml(c.authorName || 'User');
                         const text = escapeHtml(c.text || '');
-                        const when = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleString() : '';
+                        const when = c.createdAt?.toDate ? c.createdAt.toDate() : null;
+                        const whenRel = when ? timeAgo(when) : '';
                         const canModerate = (currentUser?.role || '').toLowerCase() === 'admin';
                         const canEdit = currentUser && (canModerate || c.authorId === currentUser.uid);
                         return `<div class="bg-white/70 border border-white/40 rounded-lg p-3" data-comment-id="${c.id}">
                             <div class="flex items-center justify-between mb-1">
-                                <div class="text-xs text-gray-500">${name} • ${when}</div>
+                                <div class="text-xs text-gray-500">${name} • ${whenRel}</div>
                                 ${canEdit ? `<div class="flex items-center gap-2 text-xs">
                                     <button class="comment-edit px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-800">Edit</button>
                                     ${canModerate || c.authorId === currentUser.uid ? `<button class="comment-delete px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Delete</button>` : ''}
@@ -2855,6 +2892,28 @@
                 });
             });
             document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+
+            // Animate pricing table rows on intersection
+            try {
+                const body = document.getElementById('pricing-compare-body');
+                if (body) {
+                    const rows = Array.from(body.querySelectorAll('tr'));
+                    const io = new IntersectionObserver((entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                rows.forEach((row, i) => {
+                                    setTimeout(() => {
+                                        row.classList.remove('opacity-0','translate-y-2');
+                                        row.classList.add('opacity-100','translate-y-0');
+                                    }, i * 80);
+                                });
+                                io.disconnect();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    io.observe(body);
+                }
+            } catch (_) {}
 
             // Setup nav links
             document.querySelectorAll('.nav-link').forEach(link => {
