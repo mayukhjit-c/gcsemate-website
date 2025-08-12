@@ -26,11 +26,17 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+        /* Improve layout consistency and resizing */
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; }
         /* Custom scrollbar for a modern feel */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        /* Utility to hide scrollbars for overflow regions */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* Loader animation */
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
@@ -63,8 +69,8 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
-        .slide-in-up { animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .fade-in { animation: fadeIn 0.45s ease-out forwards; will-change: opacity; }
+        .slide-in-up { animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity; }
         /* Star icon animation */
         .star-icon { transition: transform 0.2s ease, color 0.2s ease; }
         .star-icon.starred { color: #facc15; transform: scale(1.2); }
@@ -102,16 +108,19 @@
             font-size: 0.875rem;
             z-index: 100;
             opacity: 0;
-            transition: opacity 0.2s;
+            transform: translateY(-4px);
+            transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+            will-change: opacity, transform;
             pointer-events: none;
             white-space: nowrap;
         }
+        .custom-tooltip.show { opacity: 1; transform: translateY(0); }
         /* Toast Notifications */
         #toast-container {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 10010; /* above modals */
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -122,10 +131,13 @@
             color: white;
             font-weight: 500;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+            animation: toastIn 0.18s ease-out, toastOut 0.22s ease-in 2.6s;
+            will-change: opacity, transform;
         }
         .toast.success { background-color: #22c55e; }
         .toast.error { background-color: #ef4444; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(6px); } }
         /* Skeleton Loader Shimmer Effect */
         .skeleton {
             background-color: #e5e7eb;
@@ -153,17 +165,27 @@
         .faq-item .faq-answer {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.28s ease;
+            will-change: max-height;
         }
         .faq-item.open .faq-answer {
-            max-height: 500px; /* Adjust as needed */
-            transition: max-height 0.5s ease-in;
+            /* Height set dynamically via JS for smooth open/close */
+            transition: max-height 0.32s ease;
         }
         .faq-item .faq-arrow {
             transition: transform 0.3s ease-in-out;
         }
         .faq-item.open .faq-arrow {
             transform: rotate(180deg);
+        }
+
+        /* Page transitions */
+        .page-transition-enter { animation: fadeIn 0.22s ease-out both; }
+        .page-transition-leave { animation: fadeOut 0.18s ease-in both; }
+
+        /* Respect users who prefer reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
         }
     </style>
 </head>
@@ -198,14 +220,14 @@
                 </button>
             </div>
             <div class="mt-20 sm:mt-32">
-                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything You Need to Ace Your Exams</h2>
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything you will need to ace your exams!</h2>
                 <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
                     <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.1s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600">
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralized Hub</h3>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
                         <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
                     </div>
                     <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.2s;">
@@ -236,7 +258,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
-            <p id="verification-email-display" class="text-gray-600 mb-6">We've sent a verification link to your email address. Please check your inbox (and spam folder) and click the link to activate your account.</p>
+            <p id="verification-email-display" class="text-gray-600 mb-6">We've sent a verification link to your email address. Please check your spam/junk folder and inbox and click the link to activate your account.</p>
             <div class="flex flex-col gap-3">
                 <button onclick="resendVerificationEmail()" id="resend-verification-btn" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Resend Verification Email</button>
                 <button onclick="handleLogout()" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Back to Login</button>
@@ -286,25 +308,25 @@
         <div id="event-countdown-banner" class="hidden"></div>
         <div id="site-announcement-banner" class="hidden"></div>
         
-        <header class="bg-white/50 backdrop-blur-lg p-4 border-b border-gray-200/50 text-gray-800 flex justify-between items-center flex-shrink-0 relative">
+        <header class="bg-white/50 backdrop-blur-lg p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-3 flex-shrink-0 relative">
             <div class="flex-shrink-0">
                 <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
             </div>
-            <nav class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-6 text-sm font-semibold">
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="videos-page" data-tooltip="View Videos">Videos</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="blog-page" data-tooltip="View Blog">Blog</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
-                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="about-page" data-tooltip="Learn about us">About Us</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
+            <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
+                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
             </nav>
-            <div class="hidden lg:flex items-center">
-                <span id="welcome-message" class="text-sm mr-3 font-semibold text-gray-700"></span>
-                <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4">
-                <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
-                <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors" data-tooltip="End your session">Logout</button>
+            <div class="hidden lg:flex items-center min-w-0 flex-shrink-0">
+                <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
+                <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
+                <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
+                <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center">
                 <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
@@ -523,7 +545,7 @@
                         <button class="w-full max-w-xs p-4 rounded-lg bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-colors" data-tooltip="Subscribe to get full access" onclick="showPage('checkout-page')">Subscribe Now</button>
                     </div>
                 </div>
-                 <div id="help-page" class="page hidden p-8 max-w-4xl mx-auto">
+                <div id="help-page" class="page hidden p-8 max-w-4xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
                     <div id="faq-container" class="space-y-4">
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
@@ -531,7 +553,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
                             </div>
                         </div>
@@ -540,7 +562,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">What is the 'Star' icon for?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Clicking the star icon next to a file pins it to the top of its current folder. This is a great way to mark important documents like exam papers or key notes for quick access. Starred items are always displayed first in both list and grid views.</p>
                             </div>
                         </div>
@@ -549,7 +571,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How does the Calendar work?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>The calendar helps you track important dates. Click on any day to add a personal event, like homework deadlines or revision topics. You can also enable a 'Countdown Banner' for specific events. Admins may add 'Global Events', like exam dates, which appear for all users and are marked with a green dot.</p>
                             </div>
                         </div>
@@ -558,7 +580,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I upload my own files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Currently, file uploading is not a feature for users. The file structure is managed by administrators to ensure all resources are relevant, high-quality, and well-organized for all students. This helps maintain a consistent and reliable revision library.</p>
                             </div>
                         </div>
@@ -567,7 +589,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I delete my account?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
                             </div>
                         </div>
@@ -599,15 +621,15 @@
     </div>
     
     <div id="toast-container"></div>
-    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-"></div>
-    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-">
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -1053,12 +1075,15 @@
             return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
         }
         function updateWelcomeMessage() {
-            if (currentUser) {
-                document.getElementById('welcome-message').textContent = `Welcome, ${capitalizeFirstLetter(currentUser.displayName)}!`;
-                document.getElementById('profile-picture').src = generatePfpUrl(currentUser.email);
-                document.getElementById('user-displayname').value = currentUser.displayName;
-                document.getElementById('user-email').value = currentUser.email;
-            }
+            if (!currentUser) return;
+            const welcomeEl = document.getElementById('welcome-message');
+            const name = capitalizeFirstLetter(currentUser.displayName);
+            welcomeEl.textContent = `Welcome, ${name}!`;
+            // Ensure truncation has a title tooltip for full name
+            welcomeEl.title = `Welcome, ${name}!`;
+            document.getElementById('profile-picture').src = generatePfpUrl(currentUser.email);
+            document.getElementById('user-displayname').value = currentUser.displayName;
+            document.getElementById('user-email').value = currentUser.email;
         }
         function renderError(container, message) {
             if (container) {
@@ -1098,14 +1123,27 @@
         }
 
         function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+            const pages = document.querySelectorAll('.page');
+            let current = null;
+            pages.forEach(page => {
+                if (!page.classList.contains('hidden')) current = page;
+            });
             const newPage = document.getElementById(pageId);
-            if (newPage) {
-                newPage.classList.remove('hidden');
-                newPage.classList.remove('slide-in-up');
-                void newPage.offsetWidth;
-                newPage.classList.add('slide-in-up');
+            if (!newPage) return;
+
+            if (current && current !== newPage) {
+                current.classList.add('page-transition-leave');
+                setTimeout(() => {
+                    current.classList.add('hidden');
+                    current.classList.remove('page-transition-leave');
+                }, 180);
             }
+
+            newPage.classList.remove('hidden');
+            newPage.classList.add('page-transition-enter');
+            setTimeout(() => newPage.classList.remove('page-transition-enter'), 220);
+
+            // Update nav active state
             document.querySelectorAll('.nav-link').forEach(l => {
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
@@ -1764,55 +1802,99 @@
         }
 
         function initializeTooltips() {
-            let tooltipElement;
-            document.querySelectorAll('[data-tooltip]').forEach(el => {
-                el.addEventListener('mouseenter', e => {
+            // Delegate tooltip handling to the document to cover dynamically added elements
+            let tooltipElement = null;
+            let hideTimeout = null;
+
+            function showTooltip(target) {
+                const text = target.getAttribute('data-tooltip');
+                if (!text) return;
+                if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
+                if (!tooltipElement) {
                     tooltipElement = document.createElement('div');
                     tooltipElement.className = 'custom-tooltip';
-                    tooltipElement.textContent = el.getAttribute('data-tooltip');
                     document.body.appendChild(tooltipElement);
+                }
+                tooltipElement.textContent = text;
+                tooltipElement.classList.remove('show');
+                tooltipElement.style.opacity = '0';
+                const targetRect = target.getBoundingClientRect();
+                // Pre-measure
+                tooltipElement.style.top = '-9999px';
+                tooltipElement.style.left = '-9999px';
+                const tooltipRect = tooltipElement.getBoundingClientRect();
+                let top = targetRect.top - tooltipRect.height - 8 + window.scrollY;
+                let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + window.scrollX;
+                if (top < window.scrollY) top = targetRect.bottom + 8 + window.scrollY;
+                if (left < window.scrollX) left = window.scrollX + 5;
+                const maxLeft = window.scrollX + window.innerWidth - tooltipRect.width - 5;
+                if (left > maxLeft) left = maxLeft;
+                tooltipElement.style.top = `${top}px`;
+                tooltipElement.style.left = `${left}px`;
+                // Animate in
+                requestAnimationFrame(() => tooltipElement.classList.add('show'));
+            }
 
-                    const targetRect = el.getBoundingClientRect();
-                    const tooltipRect = tooltipElement.getBoundingClientRect();
-                    
-                    let top = targetRect.top - tooltipRect.height - 8;
-                    let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
-
-                    if (top < 0) { // If not enough space on top, show below
-                        top = targetRect.bottom + 8;
-                    }
-                    if (left < 0) left = 5; // Prevent going off-screen left
-                    if (left + tooltipRect.width > window.innerWidth) left = window.innerWidth - tooltipRect.width - 5; // Prevent going off-screen right
-
-                    tooltipElement.style.top = `${top}px`;
-                    tooltipElement.style.left = `${left}px`;
-                    
-                    setTimeout(() => { tooltipElement.style.opacity = '1'; }, 10);
-                });
-                
-                el.addEventListener('mouseleave', () => {
+            function hideTooltip() {
+                if (!tooltipElement) return;
+                tooltipElement.classList.remove('show');
+                hideTimeout = setTimeout(() => {
                     if (tooltipElement) {
-                        tooltipElement.style.opacity = '0';
-                        setTimeout(() => {
-                            tooltipElement.remove();
-                            tooltipElement = null;
-                        }, 200);
+                        tooltipElement.remove();
+                        tooltipElement = null;
                     }
-                });
+                }, 180);
+            }
+
+            document.addEventListener('mouseover', (e) => {
+                const target = e.target.closest('[data-tooltip]');
+                if (target) showTooltip(target);
             });
+            document.addEventListener('mouseout', (e) => {
+                const from = e.target.closest('[data-tooltip]');
+                const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('[data-tooltip]') : null;
+                if (from && from !== to) hideTooltip();
+            });
+            window.addEventListener('scroll', () => hideTooltip(), { passive: true });
+            window.addEventListener('resize', () => hideTooltip());
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
         }
 
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
-            if(faqContainer) {
-                faqContainer.addEventListener('click', (e) => {
-                    const questionHeader = e.target.closest('.faq-question');
-                    if (questionHeader) {
-                        const faqItem = questionHeader.parentElement;
-                        faqItem.classList.toggle('open');
+            if (!faqContainer) return;
+            faqContainer.addEventListener('click', (e) => {
+                const questionHeader = e.target.closest('.faq-question');
+                if (!questionHeader) return;
+                const faqItem = questionHeader.parentElement;
+                const answer = faqItem.querySelector('.faq-answer');
+                if (!answer) return;
+                const isOpen = faqItem.classList.contains('open');
+
+                // Close others for an accordion behavior
+                faqContainer.querySelectorAll('.faq-item.open').forEach(openItem => {
+                    if (openItem !== faqItem) {
+                        const openAnswer = openItem.querySelector('.faq-answer');
+                        if (openAnswer) {
+                            openAnswer.style.maxHeight = '0px';
+                            openItem.classList.remove('open');
+                        }
                     }
                 });
-            }
+
+                if (!isOpen) {
+                    faqItem.classList.add('open');
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                } else {
+                    answer.style.maxHeight = '0px';
+                    faqItem.classList.remove('open');
+                }
+            });
+
+            // Initialize heights for already-open items (if any)
+            faqContainer.querySelectorAll('.faq-item.open .faq-answer').forEach(ans => {
+                ans.style.maxHeight = ans.scrollHeight + 'px';
+            });
         }
         function showConfirmationModal(message, onConfirm, options = {}) {
             const { okText = 'OK', cancelText = 'Cancel', showCancel = true } = options;
@@ -1875,13 +1957,47 @@
                          <button onclick="document.getElementById('legal-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                      </div>
                      <div class="p-6 space-y-4 overflow-y-auto prose">
-                        <p>Welcome to GCSEMate. By using our service, you agree to these terms. Please read them carefully.</p>
-                        <h4>1. Your Account</h4>
-                        <p>You are responsible for safeguarding your account. You agree not to disclose your password to any third party and to take sole responsibility for any activities or actions under your account.</p>
-                        <h4>2. Content</h4>
-                        <p>All content provided on GCSEMate is for informational and educational purposes only. We do not guarantee the accuracy or completeness of any information provided.</p>
-                        <h4>3. Termination</h4>
-                        <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+                        <p>Welcome to GCSEMate. By accessing or using our website and services, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
+                        <h4>1. Eligibility and Acceptance</h4>
+                        <p>You must be able to enter into a legally binding agreement to use GCSEMate. If you are under 18, you represent that you have consent from a parent or guardian.</p>
+                        <h4>2. Accounts and Security</h4>
+                        <ul>
+                            <li>You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</li>
+                            <li>Notify us immediately at <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> of any unauthorized use or security breach.</li>
+                        </ul>
+                        <h4>3. Subscription and Payment</h4>
+                        <ul>
+                            <li>Some features require a paid subscription ("Pro"). Pricing is displayed within the app.</li>
+                            <li>Payments are handled off-platform by arrangement. Access is provisioned after confirmation.</li>
+                            <li>We may change pricing with reasonable prior notice.</li>
+                        </ul>
+                        <h4>4. Acceptable Use</h4>
+                        <ul>
+                            <li>Do not misuse the service, including attempting to gain unauthorized access, scraping, automated bulk access, or interfering with normal operation.</li>
+                            <li>Do not upload or distribute illegal, infringing, or harmful content.</li>
+                        </ul>
+                        <h4>5. Educational Content and Third‑Party Services</h4>
+                        <p>We organize links and previews to third‑party resources such as Google Drive and YouTube. GCSEMate does not own or control third‑party content and is not responsible for its availability, accuracy, or policies.</p>
+                        <h4>6. Intellectual Property</h4>
+                        <p>All trademarks, branding, UI, and original content on GCSEMate are owned by us or our licensors. You may not copy, modify, distribute, or create derivative works except as permitted by law or with our prior written consent.</p>
+                        <h4>7. User Feedback</h4>
+                        <p>If you provide feedback or suggestions, you grant us a non‑exclusive, worldwide, royalty‑free license to use it for any purpose.</p>
+                        <h4>8. DMCA and Content Removal</h4>
+                        <p>We comply with applicable copyright law. See our DMCA policy for details on submitting notices. We may remove content alleged to infringe and terminate repeat infringers.</p>
+                        <h4>9. Termination</h4>
+                        <p>We may suspend or terminate your access at any time for any reason, including breach of these terms. You may stop using the service at any time. Account deletion removes associated personal data as described in the Privacy Policy.</p>
+                        <h4>10. Disclaimers</h4>
+                        <p>GCSEMate is provided on an "AS IS" and "AS AVAILABLE" basis. We do not warrant uninterrupted, error‑free service or accuracy of content. Your use is at your own risk.</p>
+                        <h4>11. Limitation of Liability</h4>
+                        <p>To the fullest extent permitted by law, GCSEMate and its affiliates shall not be liable for any indirect, incidental, special, consequential, or exemplary damages, or loss of data, profits, or goodwill.</p>
+                        <h4>12. Indemnification</h4>
+                        <p>You agree to defend, indemnify, and hold harmless GCSEMate from claims arising out of your use of the service or violation of these terms.</p>
+                        <h4>13. Changes to the Service and Terms</h4>
+                        <p>We may modify the service or these terms at any time. Continued use after changes constitute acceptance. Material changes will be communicated via the app or email.</p>
+                        <h4>14. Governing Law</h4>
+                        <p>These terms are governed by the laws of England and Wales. Courts located in England shall have exclusive jurisdiction, except where applicable law provides otherwise.</p>
+                        <h4>15. Contact</h4>
+                        <p>Questions? Contact <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
                         <p><em>Last updated: August 2025</em></p>
                      </div>
                 </div>`;
@@ -1896,15 +2012,52 @@
                          <button onclick="document.getElementById('legal-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                      </div>
                      <div class="p-6 space-y-4 overflow-y-auto prose">
-                        <p>Your privacy is important to us. It is GCSEMate's policy to respect your privacy regarding any information we may collect from you across our website.</p>
-                        <h4>1. Information We Collect</h4>
-                        <p>We only collect information about you that is necessary for providing our service. This includes your name, email address, and user preferences (like starred files).</p>
-                        <h4>2. How We Use Information</h4>
-                        <p>We use the information we collect to operate, maintain, and provide you with the features and functionality of the service.</p>
-                        <h4>3. Data Deletion</h4>
-                        <p>You may request deletion of your personal data at any time through the account settings page. Upon confirmation, we will delete your user account and associated data from our systems.</p>
-                         <p><em>Last updated: August 2025</em></p>
-                     </div>
+                        <p>This Privacy Policy explains how GCSEMate ("we", "us") collects, uses, and shares your information when you use our website and services.</p>
+                        <h4>1. Data Controller</h4>
+                        <p>The data controller is GCSEMate. Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
+                        <h4>2. Information We Collect</h4>
+                        <ul>
+                            <li><strong>Account Information</strong>: display name, email address, subscription tier, role, allowed subjects.</li>
+                            <li><strong>Usage Data</strong>: actions within the app (e.g., starred files, calendar events), pages viewed, timestamps.</li>
+                            <li><strong>Device/Technical Data</strong>: IP address, browser type, and device information automatically provided by your browser.</li>
+                            <li><strong>Cookies and Similar Technologies</strong>: used to maintain sessions and preferences.</li>
+                        </ul>
+                        <h4>3. Sources of Information</h4>
+                        <p>Information is provided directly by you or generated when you use the service (e.g., saving preferences). We may also receive limited technical data from service providers.</p>
+                        <h4>4. How We Use Information</h4>
+                        <ul>
+                            <li>Provide and operate the service (authentication, rendering content, saving preferences).</li>
+                            <li>Maintain security, prevent abuse, and troubleshoot issues.</li>
+                            <li>Communicate with you about updates or important service notices.</li>
+                            <li>Comply with legal obligations.</li>
+                        </ul>
+                        <h4>5. Legal Bases</h4>
+                        <p>Under UK/EU GDPR, our processing bases include performance of a contract, legitimate interests (e.g., service improvement, security), and consent where applicable.</p>
+                        <h4>6. Sharing and Processors</h4>
+                        <p>We use third‑party processors to provide the service, including Firebase (authentication and database) and Google services (e.g., Drive and YouTube embeds). These providers process data on our behalf per their terms.</p>
+                        <h4>7. Data Retention</h4>
+                        <p>We retain personal data for as long as necessary to provide the service and comply with legal obligations. You may request deletion at any time via Account settings or by contacting us.</p>
+                        <h4>8. Security</h4>
+                        <p>We take reasonable measures to protect your information; however, no method of transmission or storage is 100% secure.</p>
+                        <h4>9. International Transfers</h4>
+                        <p>Your data may be processed outside your country. Where required, we implement appropriate safeguards.</p>
+                        <h4>10. Your Rights</h4>
+                        <ul>
+                            <li>Access, correction, deletion, and portability of your data.</li>
+                            <li>Restriction or objection to processing in certain circumstances.</li>
+                            <li>Withdraw consent where processing is based on consent.</li>
+                            <li>Lodge a complaint with the UK ICO or your local authority.</li>
+                        </ul>
+                        <h4>11. Children's Privacy</h4>
+                        <p>GCSEMate is designed for students. If you are under 13, use only with parent/guardian consent as required by local laws.</p>
+                        <h4>12. Cookies</h4>
+                        <p>We use cookies essential to the operation of the service. Your browser may allow you to block cookies, but the service may not work properly if you do.</p>
+                        <h4>13. Changes</h4>
+                        <p>We may update this policy to reflect legal or operational changes. We will post updates in the app and update the date below.</p>
+                        <h4>14. Contact</h4>
+                        <p>Questions about privacy? Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
+                        <p><em>Last updated: August 2025</em></p>
+                      </div>
                 </div>`;
         }
 
@@ -2023,13 +2176,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('copyright-year').textContent = new Date().getFullYear();
             document.getElementById('landing-copyright-year').textContent = new Date().getFullYear();
-            // Initialize reCAPTCHA
-            recaptchaVerifier = new firebase.auth.RecaptchaVerifier('login-button', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved, allow signInWithEmailAndPassword.
-                }
-            });
+            // Initialize reCAPTCHA with safe guard
+            try {
+                recaptchaVerifier = new firebase.auth.RecaptchaVerifier('login-button', {
+                    size: 'invisible',
+                    callback: () => {}
+                });
+            } catch (e) {
+                console.error('reCAPTCHA init failed:', e);
+            }
             // Setup login/register form toggling
             document.getElementById('show-register-form').addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2088,7 +2243,9 @@
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
-                    showPage(link.dataset.page);
+                    const targetPage = link.dataset.page;
+                    if (!targetPage) return;
+                    showPage(targetPage);
                 });
             });
             // Setup modals
@@ -2099,6 +2256,15 @@
                         if (e.target.id === id) {
                             modal.style.display = 'none';
                             // Special case for viewers to stop media playback
+                            if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
+                                modal.innerHTML = '';
+                            }
+                        }
+                    });
+                    // Escape to close
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && modal.style.display === 'flex') {
+                            modal.style.display = 'none';
                             if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
                                 modal.innerHTML = '';
                             }
@@ -2146,7 +2312,18 @@
             const gapiScript = document.createElement('script');
             gapiScript.src = "https://apis.google.com/js/api.js";
             gapiScript.onload = () => window.gapiLoaded();
+            gapiScript.onerror = () => console.error('Failed to load Google API script');
             document.head.appendChild(gapiScript);
+        });
+
+        // Global error handling to prevent silent failures
+        window.addEventListener('error', (e) => {
+            console.error('Unhandled error:', e.error || e.message);
+            try { showToast('An unexpected error occurred.', 'error'); } catch (_) {}
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+            try { showToast('Something went wrong. Please try again.', 'error'); } catch (_) {}
         });
         
         // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
