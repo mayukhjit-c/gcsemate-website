@@ -118,11 +118,13 @@
         /* Toast Notifications */
         #toast-container {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 10010; /* above modals */
             display: flex;
             flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
         .toast {
@@ -136,6 +138,7 @@
         }
         .toast.success { background-color: #22c55e; }
         .toast.error { background-color: #ef4444; }
+        .toast.warning { background-color: #f59e0b; }
         @keyframes toastIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(6px); } }
         /* Skeleton Loader Shimmer Effect */
@@ -163,15 +166,14 @@
         }
         /* FAQ Accordion */
         .faq-item .faq-answer {
-            max-height: 0;
+            max-height: 0 !important;
             overflow: hidden;
             transition: max-height 0.28s ease;
             will-change: max-height;
+            padding: 0 1.25rem 0 1.25rem; /* match px-5 to keep layout stable */
+            margin: 0 !important;
         }
-        .faq-item.open .faq-answer {
-            /* Height set dynamically via JS for smooth open/close */
-            transition: max-height 0.32s ease;
-        }
+        .faq-item.open .faq-answer { transition: max-height 0.32s ease; }
         .faq-item .faq-arrow {
             transition: transform 0.3s ease-in-out;
         }
@@ -317,6 +319,7 @@
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="lessons-page" data-tooltip="View Lessons">Lessons</a>
                 <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
@@ -328,7 +331,7 @@
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
-            <div class="lg:hidden flex items-center">
+            <div class="lg:hidden flex items-center ml-auto">
                 <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
@@ -350,6 +353,7 @@
                 <a href="#" class="nav-link" data-page="videos-page">Videos</a>
                 <a href="#" class="nav-link" data-page="blog-page">Blog</a>
                 <a href="#" class="nav-link" data-page="calendar-page">Calendar</a>
+                <a href="#" class="nav-link" data-page="lessons-page">Lessons</a>
                 <a href="#" class="nav-link" data-page="useful-links-page">Useful Links</a>
                 <a href="#" class="nav-link" data-page="about-page">About Us</a>
                 <a href="#" class="nav-link" data-page="features-page">Features & Pricing</a>
@@ -389,6 +393,36 @@
                      </div>
                     <div id="playlist-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         </div>
+                </div>
+                <div id="lessons-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Lessons</h2>
+                    <div id="add-lesson-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                        <h3 id="lesson-form-title" class="text-xl font-semibold mb-4">Create New Lesson</h3>
+                        <form id="add-lesson-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveLesson();">
+                            <input type="hidden" id="lesson-id">
+                            <input id="lesson-title" type="text" placeholder="Lesson Title" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input id="lesson-image" type="url" placeholder="Optional: Image URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input id="lesson-video" type="url" placeholder="Optional: YouTube or video URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div id="lesson-editor-toolbar" class="flex flex-wrap gap-2 text-sm">
+                                <button type="button" data-md="bold" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Bold</button>
+                                <button type="button" data-md="italic" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Italic</button>
+                                <button type="button" data-md="h2" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">H2</button>
+                                <button type="button" data-md="ul" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">List</button>
+                                <button type="button" data-md="code" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Code</button>
+                                <button type="button" data-md="quote" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Quote</button>
+                                <button type="button" data-md="link" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Link</button>
+                                <button type="button" data-md="image" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Image</button>
+                            </div>
+                            <textarea id="lesson-markdown" placeholder="Write your lesson in Markdown... (Paste supported)" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 h-64 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            <div id="lesson-preview" class="p-4 bg-white/60 border border-white/30 rounded-lg prose prose-lg max-w-none"></div>
+                            <div class="flex justify-end gap-3">
+                                <button type="button" onclick="resetLessonForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Lesson</button>
+                            </div>
+                        </form>
+                        <p id="add-lesson-message" class="text-sm mt-2 h-4"></p>
+                    </div>
+                    <div id="lesson-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
                 </div>
                 <div id="blog-page" class="page hidden p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
@@ -671,12 +705,37 @@
         let unsubscribeUserEvents;
         let unsubscribeGlobalEvents;
         let unsubscribeAnnouncement;
+        let unsubscribeLessons;
         let recaptchaVerifier;
         // --- CONFIGURATION ---
         const API_KEY = 'AIzaSyD_AO6WlNO9djpVSngjrnvPecXsZtjXchA'; // Replace with your actual key
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
         const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+        const subjectIconMap = {
+            // Biology: tree icon
+            biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
+            // Physics: thunderbolt
+            physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
+            // Chemistry: conical flask
+            chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
+            // Geography: globe
+            geography: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
+            // English: book lines
+            english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
+            // Maths: pi symbol outline
+            maths: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16"/><path d="M8 8v8"/><path d="M16 8c0 5-2 8-5 8"/></svg>`,
+            // History: outlined clock face with hands
+            history: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
+            // German: flag
+            german: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3" viewBox="0 0 24 24"><rect width="24" height="8" y="0" fill="#000"/><rect width="24" height="8" y="8" fill="#DD0000"/><rect width="24" height="8" y="16" fill="#FFCE00"/></svg>`,
+            // Music: outlined note with circles
+            music: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6l10-2v10"/><circle cx="7" cy="18" r="3" stroke="currentColor"/><circle cx="19" cy="14" r="3" stroke="currentColor"/></svg>`,
+            // Computing: monitor
+            computing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
+            // Philosophy and Ethics: balanced scales outline
+            "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
+        };
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
@@ -791,6 +850,13 @@
                     });
                     renderVideosPage(playlists);
                 }, err => console.error("Error fetching video playlists:", err));
+            // Listen for lessons
+            unsubscribeLessons = db.collection('lessons').orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    const lessons = [];
+                    snapshot.forEach(doc => lessons.push({ id: doc.id, ...doc.data() }));
+                    renderLessonsPage(lessons);
+                }, err => console.error('Error fetching lessons:', err));
             // Listen for blog posts
             unsubscribeBlogPosts = db.collection('blogPosts').orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
@@ -1148,6 +1214,26 @@
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
+            // Gate Lessons access for paid users and admins (case-insensitive role)
+            if (pageId === 'lessons-page' && currentUser) {
+                const role = (currentUser.role || '').toLowerCase();
+                const allowed = role === 'admin' || currentUser.tier === 'paid';
+                if (!allowed) {
+                    document.getElementById('upgrade-modal-message').textContent = 'Lessons are available for Pro users. Upgrade to access all lessons.';
+                    document.getElementById('upgrade-modal').style.display = 'flex';
+                    // Revert to dashboard
+                    document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+                    document.getElementById('subject-dashboard-page').classList.remove('hidden');
+                } else {
+                    // Ensure admin form visibility is correct immediately
+                    const adminForm = document.getElementById('add-lesson-form-container');
+                    if (adminForm) adminForm.style.display = role === 'admin' ? 'block' : 'none';
+                    // Render with whatever we have cached so the page isn't blank before snapshot arrives
+                    if (typeof renderLessonsPage === 'function') {
+                        try { renderLessonsPage(window.allLessons || []); } catch (_) {}
+                    }
+                }
+            }
              // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
             if (!mobileMenu.classList.contains('hidden')) {
@@ -1199,7 +1285,7 @@
             try {
                 const url = `https://www.googleapis.com/drive/v3/files?q='${ROOT_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'&key=${API_KEY}&fields=files(id,name)`;
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(await response.text());
+                if (!response.ok) throw new Error('Failed to load subjects.');
                 const data = await response.json();
                 allSubjectFolders = {};
                 if (data.files) {
@@ -1218,7 +1304,8 @@
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
                     const card = document.createElement('div');
-                    card.innerHTML = `${uniformSubjectIcon}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
+                    const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
+                    card.innerHTML = `${iconSvg}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>`;
                     if (subjectId) {
                         card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
@@ -1239,7 +1326,7 @@
                     subjectGrid.appendChild(card);
                 });
             } catch (err) {
-                renderError(subjectGrid, `Could not load subjects. ${err.message}. The API key may be invalid or you might be offline.`);
+                renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
             }
         }
         async function handleNavigation(folderId) {
@@ -1252,12 +1339,16 @@
                 const fields = "files(id,name,mimeType,iconLink,webViewLink,webContentLink,hasThumbnail,thumbnailLink)";
                 const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&key=${API_KEY}&fields=${fields}&orderBy=folder,name`;
                 const response = await fetch(url);
-                if (!response.ok) throw new Error((await response.json()).error.message);
+                if (!response.ok) {
+                    let msg = 'Failed to fetch files.';
+                    try { msg = (await response.json()).error?.message || msg; } catch (_) {}
+                    throw new Error(msg);
+                }
                 const data = await response.json();
                 currentFolderFiles = data.files;
                 renderItems();
             } catch (err) {
-                renderError(fileListContainer, err.message);
+                renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
             } finally {
                 renderBreadcrumbs();
             }
@@ -1446,6 +1537,137 @@
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        // =================================================================================
+        // LESSONS LOGIC
+        // =================================================================================
+        let allLessons = [];
+        function renderLessonsPage(lessons) {
+            allLessons = lessons;
+            const grid = document.getElementById('lesson-grid');
+            const adminForm = document.getElementById('add-lesson-form-container');
+            if (!grid || !adminForm) return;
+            // Only admins can create lessons
+            adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+            grid.innerHTML = '';
+            if (!lessons || lessons.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Lessons Yet</h3><p class="mt-1 text-sm text-gray-500">Admins can create lessons using the form above.</p></div>`;
+                return;
+            }
+            lessons.forEach(lesson => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg flex flex-col overflow-hidden cursor-pointer';
+                const dateText = lesson.createdAt?.toDate ? lesson.createdAt.toDate().toLocaleDateString('en-GB') : '';
+                card.onclick = () => showLessonViewer(lesson.id);
+                card.innerHTML = `
+                    ${lesson.image ? `<img src="${lesson.image}" alt="${lesson.title}" class="w-full h-40 object-cover">` : ''}
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">${lesson.title}</h3>
+                        <p class="text-xs text-gray-500 mt-auto">${dateText}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function resetLessonForm() {
+            document.getElementById('add-lesson-form').reset();
+            document.getElementById('lesson-id').value = '';
+            document.getElementById('lesson-form-title').textContent = 'Create New Lesson';
+            document.getElementById('add-lesson-message').textContent = '';
+        }
+
+        async function handleSaveLesson() {
+            if (currentUser.role !== 'admin') return;
+            const id = document.getElementById('lesson-id').value;
+            const title = document.getElementById('lesson-title').value.trim();
+            const markdown = document.getElementById('lesson-markdown').value.trim();
+            const image = document.getElementById('lesson-image').value.trim();
+            const videoUrl = document.getElementById('lesson-video').value.trim();
+            const messageEl = document.getElementById('add-lesson-message');
+            if (!title || !markdown) {
+                messageEl.textContent = 'Title and content are required.';
+                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+                return;
+            }
+            const data = {
+                title,
+                markdown,
+                image: image || null,
+                videoUrl: videoUrl || null,
+                audience: 'paid',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: id ? undefined : firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            try {
+                if (id) {
+                    await db.collection('lessons').doc(id).update(data);
+                } else {
+                    await db.collection('lessons').add(data);
+                }
+                resetLessonForm();
+                messageEl.textContent = 'Lesson saved successfully!';
+                messageEl.className = 'text-green-600 text-sm mt-2 h-4';
+                setTimeout(() => messageEl.textContent = '', 3000);
+            } catch (e) {
+                console.error('Error saving lesson', e);
+                showToast('Could not save lesson.', 'error');
+            }
+        }
+
+        function showLessonViewer(lessonId) {
+            const lesson = allLessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+            const modal = document.getElementById('blog-viewer-modal');
+            const mdHtml = renderMarkdown(lesson.markdown);
+            const videoEmbed = lesson.videoUrl ? getVideoEmbed(lesson.videoUrl) : '';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">${lesson.title}</h3>
+                        <button onclick="document.getElementById('blog-viewer-modal').style.display='none'; document.getElementById('blog-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                    </div>
+                    <div class="overflow-y-auto">
+                        ${lesson.image ? `<img src="${lesson.image}" alt="${lesson.title}" class="w-full h-64 object-cover">` : ''}
+                        ${videoEmbed}
+                        <div class="p-8 prose prose-lg max-w-none">${mdHtml}</div>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function getVideoEmbed(url) {
+            try {
+                const data = parseYoutubeUrl(url);
+                if (data && data.type) return `<div class="aspect-w-16 aspect-h-9 bg-black"><iframe src="${data.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
+                // Fallback generic embed
+                return `<div class="aspect-w-16 aspect-h-9 bg-black"><iframe src="${url}" frameborder="0" allowfullscreen class="w-full h-full"></iframe></div>`;
+            } catch { return ''; }
+        }
+
+        // Minimal Markdown renderer for headings, bold, italics, links, lists, code blocks
+        function renderMarkdown(md) {
+            let html = md
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>')
+                       .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
+                       .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+                       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                       .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                       .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                       .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                       .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                       .replace(/`([^`]+)`/gim, '<code>$1</code>')
+                       .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                       .replace(/\n\n/g, '</p><p>')
+                       .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+            html = `<p>${html}</p>`;
+            // Lists
+            html = html.replace(/<p>\s*[-*] (.*)<\/p>/gim, '<ul><li>$1</li></ul>')
+                       .replace(/<\/ul>\s*<ul>/gim, '');
+            return html;
         }
         
         async function handleAddPlaylist() {
@@ -1877,6 +2099,7 @@
                         const openAnswer = openItem.querySelector('.faq-answer');
                         if (openAnswer) {
                             openAnswer.style.maxHeight = '0px';
+                            openAnswer.style.paddingBottom = '0px';
                             openItem.classList.remove('open');
                         }
                     }
@@ -1884,16 +2107,21 @@
 
                 if (!isOpen) {
                     faqItem.classList.add('open');
-                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                    // Set padding first, then measure height so content isn't cut off
+                    answer.style.paddingBottom = '1.25rem'; // pb-5 when open
+                    const h = answer.scrollHeight;
+                    answer.style.maxHeight = h + 'px';
                 } else {
                     answer.style.maxHeight = '0px';
+                    answer.style.paddingBottom = '0px';
                     faqItem.classList.remove('open');
                 }
             });
 
-            // Initialize heights for already-open items (if any)
-            faqContainer.querySelectorAll('.faq-item.open .faq-answer').forEach(ans => {
-                ans.style.maxHeight = ans.scrollHeight + 'px';
+            // Initialize: force closed state first, then compute size on click for accuracy
+            faqContainer.querySelectorAll('.faq-answer').forEach(ans => {
+                ans.style.maxHeight = '0px';
+                ans.style.paddingBottom = '0px';
             });
         }
         function showConfirmationModal(message, onConfirm, options = {}) {
@@ -1958,45 +2186,45 @@
                      </div>
                      <div class="p-6 space-y-4 overflow-y-auto prose">
                         <p>Welcome to GCSEMate. By accessing or using our website and services, you agree to be bound by these Terms of Service. If you do not agree, do not use the service.</p>
-                        <h4>1. Eligibility and Acceptance</h4>
+                        <h4 class="font-bold">1. Eligibility and Acceptance</h4>
                         <p>You must be able to enter into a legally binding agreement to use GCSEMate. If you are under 18, you represent that you have consent from a parent or guardian.</p>
-                        <h4>2. Accounts and Security</h4>
+                        <h4 class="font-bold">2. Accounts and Security</h4>
                         <ul>
                             <li>You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</li>
                             <li>Notify us immediately at <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> of any unauthorized use or security breach.</li>
                         </ul>
-                        <h4>3. Subscription and Payment</h4>
+                        <h4 class="font-bold">3. Subscription and Payment</h4>
                         <ul>
                             <li>Some features require a paid subscription ("Pro"). Pricing is displayed within the app.</li>
                             <li>Payments are handled off-platform by arrangement. Access is provisioned after confirmation.</li>
                             <li>We may change pricing with reasonable prior notice.</li>
                         </ul>
-                        <h4>4. Acceptable Use</h4>
+                        <h4 class="font-bold">4. Acceptable Use</h4>
                         <ul>
                             <li>Do not misuse the service, including attempting to gain unauthorized access, scraping, automated bulk access, or interfering with normal operation.</li>
                             <li>Do not upload or distribute illegal, infringing, or harmful content.</li>
                         </ul>
-                        <h4>5. Educational Content and Third‑Party Services</h4>
+                        <h4 class="font-bold">5. Educational Content and Third‑Party Services</h4>
                         <p>We organize links and previews to third‑party resources such as Google Drive and YouTube. GCSEMate does not own or control third‑party content and is not responsible for its availability, accuracy, or policies.</p>
-                        <h4>6. Intellectual Property</h4>
+                        <h4 class="font-bold">6. Intellectual Property</h4>
                         <p>All trademarks, branding, UI, and original content on GCSEMate are owned by us or our licensors. You may not copy, modify, distribute, or create derivative works except as permitted by law or with our prior written consent.</p>
-                        <h4>7. User Feedback</h4>
+                        <h4 class="font-bold">7. User Feedback</h4>
                         <p>If you provide feedback or suggestions, you grant us a non‑exclusive, worldwide, royalty‑free license to use it for any purpose.</p>
-                        <h4>8. DMCA and Content Removal</h4>
+                        <h4 class="font-bold">8. DMCA and Content Removal</h4>
                         <p>We comply with applicable copyright law. See our DMCA policy for details on submitting notices. We may remove content alleged to infringe and terminate repeat infringers.</p>
-                        <h4>9. Termination</h4>
+                        <h4 class="font-bold">9. Termination</h4>
                         <p>We may suspend or terminate your access at any time for any reason, including breach of these terms. You may stop using the service at any time. Account deletion removes associated personal data as described in the Privacy Policy.</p>
-                        <h4>10. Disclaimers</h4>
+                        <h4 class="font-bold">10. Disclaimers</h4>
                         <p>GCSEMate is provided on an "AS IS" and "AS AVAILABLE" basis. We do not warrant uninterrupted, error‑free service or accuracy of content. Your use is at your own risk.</p>
-                        <h4>11. Limitation of Liability</h4>
+                        <h4 class="font-bold">11. Limitation of Liability</h4>
                         <p>To the fullest extent permitted by law, GCSEMate and its affiliates shall not be liable for any indirect, incidental, special, consequential, or exemplary damages, or loss of data, profits, or goodwill.</p>
-                        <h4>12. Indemnification</h4>
+                        <h4 class="font-bold">12. Indemnification</h4>
                         <p>You agree to defend, indemnify, and hold harmless GCSEMate from claims arising out of your use of the service or violation of these terms.</p>
-                        <h4>13. Changes to the Service and Terms</h4>
+                        <h4 class="font-bold">13. Changes to the Service and Terms</h4>
                         <p>We may modify the service or these terms at any time. Continued use after changes constitute acceptance. Material changes will be communicated via the app or email.</p>
-                        <h4>14. Governing Law</h4>
+                        <h4 class="font-bold">14. Governing Law</h4>
                         <p>These terms are governed by the laws of England and Wales. Courts located in England shall have exclusive jurisdiction, except where applicable law provides otherwise.</p>
-                        <h4>15. Contact</h4>
+                        <h4 class="font-bold">15. Contact</h4>
                         <p>Questions? Contact <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
                         <p><em>Last updated: August 2025</em></p>
                      </div>
@@ -2013,48 +2241,48 @@
                      </div>
                      <div class="p-6 space-y-4 overflow-y-auto prose">
                         <p>This Privacy Policy explains how GCSEMate ("we", "us") collects, uses, and shares your information when you use our website and services.</p>
-                        <h4>1. Data Controller</h4>
+                        <h4 class="font-bold">1. Data Controller</h4>
                         <p>The data controller is GCSEMate. Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
-                        <h4>2. Information We Collect</h4>
+                        <h4 class="font-bold">2. Information We Collect</h4>
                         <ul>
                             <li><strong>Account Information</strong>: display name, email address, subscription tier, role, allowed subjects.</li>
                             <li><strong>Usage Data</strong>: actions within the app (e.g., starred files, calendar events), pages viewed, timestamps.</li>
                             <li><strong>Device/Technical Data</strong>: IP address, browser type, and device information automatically provided by your browser.</li>
                             <li><strong>Cookies and Similar Technologies</strong>: used to maintain sessions and preferences.</li>
                         </ul>
-                        <h4>3. Sources of Information</h4>
+                        <h4 class="font-bold">3. Sources of Information</h4>
                         <p>Information is provided directly by you or generated when you use the service (e.g., saving preferences). We may also receive limited technical data from service providers.</p>
-                        <h4>4. How We Use Information</h4>
+                        <h4 class="font-bold">4. How We Use Information</h4>
                         <ul>
                             <li>Provide and operate the service (authentication, rendering content, saving preferences).</li>
                             <li>Maintain security, prevent abuse, and troubleshoot issues.</li>
                             <li>Communicate with you about updates or important service notices.</li>
                             <li>Comply with legal obligations.</li>
                         </ul>
-                        <h4>5. Legal Bases</h4>
+                        <h4 class="font-bold">5. Legal Bases</h4>
                         <p>Under UK/EU GDPR, our processing bases include performance of a contract, legitimate interests (e.g., service improvement, security), and consent where applicable.</p>
-                        <h4>6. Sharing and Processors</h4>
+                        <h4 class="font-bold">6. Sharing and Processors</h4>
                         <p>We use third‑party processors to provide the service, including Firebase (authentication and database) and Google services (e.g., Drive and YouTube embeds). These providers process data on our behalf per their terms.</p>
-                        <h4>7. Data Retention</h4>
+                        <h4 class="font-bold">7. Data Retention</h4>
                         <p>We retain personal data for as long as necessary to provide the service and comply with legal obligations. You may request deletion at any time via Account settings or by contacting us.</p>
-                        <h4>8. Security</h4>
+                        <h4 class="font-bold">8. Security</h4>
                         <p>We take reasonable measures to protect your information; however, no method of transmission or storage is 100% secure.</p>
-                        <h4>9. International Transfers</h4>
+                        <h4 class="font-bold">9. International Transfers</h4>
                         <p>Your data may be processed outside your country. Where required, we implement appropriate safeguards.</p>
-                        <h4>10. Your Rights</h4>
+                        <h4 class="font-bold">10. Your Rights</h4>
                         <ul>
                             <li>Access, correction, deletion, and portability of your data.</li>
                             <li>Restriction or objection to processing in certain circumstances.</li>
                             <li>Withdraw consent where processing is based on consent.</li>
                             <li>Lodge a complaint with the UK ICO or your local authority.</li>
                         </ul>
-                        <h4>11. Children's Privacy</h4>
+                        <h4 class="font-bold">11. Children's Privacy</h4>
                         <p>GCSEMate is designed for students. If you are under 13, use only with parent/guardian consent as required by local laws.</p>
-                        <h4>12. Cookies</h4>
+                        <h4 class="font-bold">12. Cookies</h4>
                         <p>We use cookies essential to the operation of the service. Your browser may allow you to block cookies, but the service may not work properly if you do.</p>
-                        <h4>13. Changes</h4>
+                        <h4 class="font-bold">13. Changes</h4>
                         <p>We may update this policy to reflect legal or operational changes. We will post updates in the app and update the date below.</p>
-                        <h4>14. Contact</h4>
+                        <h4 class="font-bold">14. Contact</h4>
                         <p>Questions about privacy? Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
                         <p><em>Last updated: August 2025</em></p>
                       </div>
