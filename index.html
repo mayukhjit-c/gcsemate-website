@@ -126,6 +126,7 @@
         /* Clock styles */
         #dashboard-clock {
             font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
+            font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
         }
         /* Custom Tooltip */
         .custom-tooltip {
@@ -367,11 +368,6 @@
                 <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
-                <div class="hidden lg:flex items-center gap-2 ml-2 pl-2 border-l border-gray-200/60">
-                    <label for="accent-picker" class="sr-only">Accent color</label>
-                    <input id="accent-picker" type="color" aria-label="Accent color" class="w-8 h-8 rounded cursor-pointer" data-tooltip="Pick accent colour">
-                    <button id="reset-accent" class="px-2 py-1 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour" data-tooltip="Reset accent colour">Reset</button>
-                </div>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
                 <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
@@ -492,6 +488,7 @@
                             <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
                             <h3 id="month-year-header" class="text-xl font-semibold text-gray-700 w-40 text-center"></h3>
                             <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm"></select>
                         </div>
                     </div>
                     <div class="bg-white/50 p-4 rounded-xl shadow-md border border-white/30">
@@ -545,14 +542,7 @@
                             <h3 class="text-2xl font-bold mb-6 text-gray-800">User Accounts</h3>
                             <div id="user-management-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                         </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                             <div class="bg-white/50 p-8 rounded-xl shadow-lg border border-white/30">
-                                 <h3 class="text-2xl font-bold mb-6 text-gray-800">Create New User</h3>
-                                 <div class="text-center p-6 bg-yellow-100/50 border border-yellow-200/50 rounded-lg">
-                                     <p class="text-yellow-800 font-semibold">This feature is unavailable.</p>
-                                     <p class="text-sm text-yellow-700 mt-2">For security reasons, new users must register themselves through the main registration form. Admins can then edit user permissions.</p>
-                                 </div>
-                             </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-1 gap-10">
                             <div class="bg-white/50 p-8 rounded-xl shadow-lg border border-white/30">
                                 <h3 class="text-2xl font-bold mb-6 text-gray-800">Site-Wide Announcement</h3>
                                 <textarea id="announcement-text" placeholder="Enter announcement text here..." class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 h-40"></textarea>
@@ -581,6 +571,14 @@
                             <button type="submit" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Save Changes</button>
                             <p id="user-settings-message" class="text-sm text-center h-4"></p>
                         </form>
+                        <div class="mt-8 pt-6 border-t border-gray-200 space-y-3">
+                            <h4 class="text-lg font-semibold text-gray-800">Appearance</h4>
+                            <div class="flex items-center gap-3">
+                                <label for="accent-picker" class="text-sm text-gray-700">Accent colour</label>
+                                <input id="accent-picker" type="color" aria-label="Accent color" class="w-9 h-9 rounded cursor-pointer border border-gray-300/70 bg-white" />
+                                <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
+                            </div>
+                        </div>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
                               <div>
                                 <h4 class="text-lg font-semibold text-gray-800">Account Actions</h4>
@@ -807,7 +805,6 @@
         let unsubscribeLessons;
         let recaptchaVerifier;
         // --- CONFIGURATION ---
-        const API_KEY = 'AIzaSyD_AO6WlNO9djpVSngjrnvPecXsZtjXchA'; // Replace with your actual key
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
         const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
@@ -1399,8 +1396,7 @@
             subjectGrid.innerHTML = skeletonHTML;
             
             try {
-                const url = `https://www.googleapis.com/drive/v3/files?q='${ROOT_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'&key=${API_KEY}&fields=files(id,name)`;
-                const response = await fetch(url);
+                const response = await fetch(`/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`);
                 if (!response.ok) throw new Error('Failed to load subjects.');
                 const data = await response.json();
                 allSubjectFolders = {};
@@ -1467,9 +1463,7 @@
             fileListContainer.setAttribute('aria-busy','true');
             fileListContainer.innerHTML = '<div class="flex flex-col items-center justify-center p-10 gap-3"><div class="loader"></div><p class="text-sm text-gray-500">Loading files...</p></div>';
             try {
-                const fields = "files(id,name,mimeType,iconLink,webViewLink,webContentLink,hasThumbnail,thumbnailLink)";
-                const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&key=${API_KEY}&fields=${fields}&orderBy=folder,name`;
-                const response = await fetch(url);
+                const response = await fetch(`/api/drive-files?folderId=${encodeURIComponent(folderId)}`);
                 if (!response.ok) {
                     let msg = 'Failed to fetch files.';
                     try { msg = (await response.json()).error?.message || msg; } catch (_) {}
@@ -2000,11 +1994,30 @@
             if (globalEvents) calendarGlobalEvents = globalEvents;
             const calendarGrid = document.getElementById('calendar-grid');
             const monthYearHeader = document.getElementById('month-year-header');
+            const yearSelect = document.getElementById('calendar-year-select');
             if (!calendarGrid || !monthYearHeader) return;
             calendarGrid.innerHTML = '';
             const month = currentDate.getMonth();
             const year = currentDate.getFullYear();
             monthYearHeader.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            // Populate year dropdown around current year
+            if (yearSelect && yearSelect.childElementCount === 0) {
+                const base = new Date().getFullYear();
+                for (let y = base - 2; y <= base + 3; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = String(y);
+                    opt.textContent = String(y);
+                    yearSelect.appendChild(opt);
+                }
+                yearSelect.value = String(year);
+                yearSelect.addEventListener('change', () => {
+                    const newYear = parseInt(yearSelect.value, 10);
+                    currentDate.setFullYear(newYear);
+                    renderCalendar(calendarUserEvents, calendarGlobalEvents);
+                });
+            } else if (yearSelect) {
+                yearSelect.value = String(year);
+            }
             
             const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             dayHeaders.forEach(day => {
@@ -2696,6 +2709,17 @@
                     applyAccent(palette);
                     localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
                 });
+                // Initialize picker value based on current accent if stored
+                try {
+                    const saved = localStorage.getItem('gcsemate_accent');
+                    if (saved) {
+                        const p = JSON.parse(saved);
+                        const [r,g,b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
+                        if (Array.isArray(p.fiveHundred)) {
+                            picker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2,'0')).join('');
+                        }
+                    }
+                } catch {}
             }
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
@@ -2947,8 +2971,14 @@
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 let countdownText = `${diffDays} day${diffDays !== 1 ? 's' : ''} until ${nextEvent.title}!`;
                 if (diffDays === 0) countdownText = `Today: ${nextEvent.title}!`;
-                banner.innerHTML = `<div class="bg-yellow-400 text-yellow-900 p-3 text-center text-sm font-semibold flex justify-center items-center relative"><span>${countdownText}</span></div>`;
+                banner.innerHTML = `<div class="bg-yellow-400 text-yellow-900 p-3 text-center text-sm font-semibold flex justify-center items-center relative gap-3"><span>${countdownText}</span><button id="dismiss-countdown" class="px-2 py-0.5 rounded bg-yellow-500/40 hover:bg-yellow-500/60 text-yellow-950 text-xs">Dismiss</button></div>`;
                 banner.classList.remove('hidden');
+                const btn = document.getElementById('dismiss-countdown');
+                if (btn) {
+                    btn.onclick = () => {
+                        banner.classList.add('hidden');
+                    };
+                }
             } else {
                 banner.classList.add('hidden');
             }
