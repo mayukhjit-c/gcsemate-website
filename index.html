@@ -2418,17 +2418,50 @@
                 messageEl.className = 'text-red-600 text-sm text-center h-4';
             }
         }
+        // Returns an embeddable preview URL for supported types, or null if not supported
+        function getPreviewEmbedUrl(file) {
+            const mime = (file.mimeType || '').toLowerCase();
+            // Google Workspace native types
+            if (mime === 'application/vnd.google-apps.document') {
+                return `https://docs.google.com/document/d/${file.id}/preview`;
+            }
+            if (mime === 'application/vnd.google-apps.spreadsheet') {
+                return `https://docs.google.com/spreadsheets/d/${file.id}/preview`;
+            }
+            if (mime === 'application/vnd.google-apps.presentation') {
+                return `https://docs.google.com/presentation/d/${file.id}/preview`;
+            }
+            if (mime === 'application/vnd.google-apps.drawing') {
+                return `https://docs.google.com/drawings/d/${file.id}/preview`;
+            }
+            // Common Microsoft Office and text/media types can use Drive's previewer
+            const drivePreviewMimes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'text/plain',
+                'text/csv'
+            ];
+            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || drivePreviewMimes.includes(mime)) {
+                return `https://drive.google.com/file/d/${file.id}/preview`;
+            }
+            return null;
+        }
+
         function showPreview(file) {
             const modal = document.getElementById('preview-modal');
+            const embedUrl = getPreviewEmbedUrl(file);
             let content = '';
-            const canEmbed = file.mimeType.startsWith('image/') || file.mimeType === 'application/pdf';
-            if (canEmbed) {
-                const embedUrl = `https://drive.google.com/file/d/${file.id}/preview`;
-                content = `<iframe src="${embedUrl}" class="w-full h-full border-0"></iframe>`;
+            if (embedUrl) {
+                content = `<iframe src="${embedUrl}" class="w-full h-full border-0" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen></iframe>`;
             } else {
                 content = `
                     <div class="text-center bg-gray-100 p-8 rounded-lg">
-                        <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4">
+                        <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4" alt="${file.name}">
                         <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
                         <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
                         <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
