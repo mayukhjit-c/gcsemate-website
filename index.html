@@ -1458,9 +1458,27 @@
             }
         }
         
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return escapeHtml(text);
+            const safeText = escapeHtml(text);
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(escaped, 'gi');
+            return safeText.replace(re, (m) => `<span class="bg-yellow-200 text-gray-900 rounded px-0.5">${m}</span>`);
+        }
+
         function renderItems() {
             const container = document.getElementById('file-list');
-            const searchInput = document.getElementById('file-search-input').value.toLowerCase();
+            const rawQuery = document.getElementById('file-search-input').value || '';
+            const searchInput = rawQuery.toLowerCase();
             const searchIconHost = document.querySelector('#file-browser-controls .relative');
             if (searchIconHost && searchInput.length > 0) {
                 if (!searchIconHost.querySelector('.dots-spinner')) {
@@ -1506,15 +1524,16 @@
             // 3. Render (based on view)
             if (fileBrowserView === 'grid') {
                 container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
-                filteredFiles.forEach(file => {
+                filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
                     const itemElement = document.createElement('div');
-                    itemElement.className = `relative p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg`;
+                    itemElement.className = `relative p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg opacity-0 translate-y-2`;
                     
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
-                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-12 h-12 mb-2"><p class="text-sm font-medium text-gray-800 break-words w-full">${file.name}</p>`;
+                    const highlightedName = highlightMatch(file.name, rawQuery.trim());
+                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-12 h-12 mb-2" alt="${escapeHtml(file.name)}"><p class="text-sm font-medium text-gray-800 break-words w-full">${highlightedName}</p>`;
         
                     if (isFolder) {
                         itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
@@ -1532,17 +1551,23 @@
                     }
                     itemElement.appendChild(mainInfo);
                     container.appendChild(itemElement);
+                    // animate in, staggered
+                    setTimeout(() => {
+                        itemElement.classList.remove('opacity-0','translate-y-2');
+                        itemElement.classList.add('opacity-100','translate-y-0');
+                    }, Math.min(index, 20) * 15);
                 });
             } else { // List view
                 container.className = 'p-4 overflow-y-auto flex-grow';
-                filteredFiles.forEach(file => {
+                filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
                     const itemElement = document.createElement('div');
-                    itemElement.className = `flex items-center p-3 rounded-lg hover:bg-black/5 transition-colors duration-150 ${isStarred ? 'bg-yellow-100/50' : ''}`;
+                    itemElement.className = `flex items-center p-3 rounded-lg hover:bg-black/5 transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2`;
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
-                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0"><span class="truncate font-medium text-gray-800">${file.name}</span>`;
+                    const highlightedName = highlightMatch(file.name, rawQuery.trim());
+                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0" alt="${escapeHtml(file.name)}"><span class="truncate font-medium text-gray-800">${highlightedName}</span>`;
                     
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
@@ -1559,6 +1584,10 @@
                     itemElement.appendChild(mainInfo);
                     itemElement.appendChild(actions);
                     container.appendChild(itemElement);
+                    setTimeout(() => {
+                        itemElement.classList.remove('opacity-0','translate-y-2');
+                        itemElement.classList.add('opacity-100','translate-y-0');
+                    }, Math.min(index, 20) * 15);
                 });
             }
             initializeTooltips(); // Re-initialize tooltips for new elements
@@ -2423,16 +2452,16 @@
             const mime = (file.mimeType || '').toLowerCase();
             // Google Workspace native types
             if (mime === 'application/vnd.google-apps.document') {
-                return `https://docs.google.com/document/d/${file.id}/preview`;
+                return `https://docs.google.com/document/d/${file.id}/preview?embedded=true`;
             }
             if (mime === 'application/vnd.google-apps.spreadsheet') {
-                return `https://docs.google.com/spreadsheets/d/${file.id}/preview`;
+                return `https://docs.google.com/spreadsheets/d/${file.id}/preview?embedded=true`;
             }
             if (mime === 'application/vnd.google-apps.presentation') {
-                return `https://docs.google.com/presentation/d/${file.id}/preview`;
+                return `https://docs.google.com/presentation/d/${file.id}/preview?embedded=true`;
             }
             if (mime === 'application/vnd.google-apps.drawing') {
-                return `https://docs.google.com/drawings/d/${file.id}/preview`;
+                return `https://docs.google.com/drawings/d/${file.id}/preview?embedded=true`;
             }
             // Common Microsoft Office and text/media types can use Drive's previewer
             const drivePreviewMimes = [
@@ -2447,7 +2476,8 @@
                 'text/csv'
             ];
             if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || drivePreviewMimes.includes(mime)) {
-                return `https://drive.google.com/file/d/${file.id}/preview`;
+                // Use uc?export=preview which is often more reliable than /file/d/.../preview
+                return `https://drive.google.com/uc?export=preview&id=${file.id}`;
             }
             return null;
         }
@@ -2457,7 +2487,25 @@
             const embedUrl = getPreviewEmbedUrl(file);
             let content = '';
             if (embedUrl) {
-                content = `<iframe src="${embedUrl}" class="w-full h-full border-0" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen></iframe>`;
+                const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+                content = `
+                    <div class="w-full h-full relative">
+                        <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div class="dots-spinner"><i></i><i></i><i></i></div>
+                            <span class="ml-2 text-white font-semibold">Loading preview…</span>
+                        </div>
+                        <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
+                            <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md">
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Couldn’t load the preview</h4>
+                                <p class="text-sm text-gray-600 mb-4">If your internet is fine, this can be caused by browser settings blocking third‑party cookies. You can still open the file directly.</p>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Open in Google Drive</a>
+                                    <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Reload Preview</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
             } else {
                 content = `
                     <div class="text-center bg-gray-100 p-8 rounded-lg">
@@ -2470,16 +2518,49 @@
                     </div>
                 `;
             }
+            const externalUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
             modal.innerHTML = `
                 <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
                         <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
-                        <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
+                        <div class="flex items-center gap-2">
+                            <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" data-tooltip="Open in Google Drive">Open</a>
+                            <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
+                        </div>
                     </div>
                     <div class="flex-grow bg-gray-800">${content}</div>
                 </div>
             `;
             modal.style.display = 'flex';
+            // Setup preview load/fallback logic
+            try {
+                const frame = document.getElementById('file-preview-frame');
+                const loading = document.getElementById('preview-loading');
+                const fallback = document.getElementById('preview-fallback');
+                const reloadBtn = document.getElementById('reload-preview-btn');
+                if (reloadBtn && frame && loading && fallback) {
+                    reloadBtn.addEventListener('click', () => {
+                        fallback.classList.add('hidden');
+                        loading.classList.remove('hidden');
+                        frame.src = frame.src;
+                    });
+                }
+                if (frame && loading && fallback) {
+                    let loaded = false;
+                    const timeoutId = setTimeout(() => {
+                        if (!loaded) {
+                            loading.classList.add('hidden');
+                            fallback.classList.remove('hidden');
+                            fallback.classList.add('flex');
+                        }
+                    }, 4500);
+                    frame.addEventListener('load', () => {
+                        loaded = true;
+                        loading.classList.add('hidden');
+                        fallback.classList.add('hidden');
+                    }, { once: true });
+                }
+            } catch (_) {}
         }
         
         // Error pages rendering helpers
@@ -2560,7 +2641,22 @@
                 updateCountdownBanner(); // Update countdown when month changes
             });
             // Setup file browser controls
-            document.getElementById('file-search-input').addEventListener('input', () => renderItems());
+            // Debounced auto-search with smooth feedback
+            let searchDebounce;
+            const searchInputEl = document.getElementById('file-search-input');
+            searchInputEl.addEventListener('input', () => {
+                if (searchDebounce) clearTimeout(searchDebounce);
+                const host = document.querySelector('#file-browser-controls .relative');
+                if (host && !host.querySelector('.dots-spinner')) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
+                    dot.innerHTML = '<i></i><i></i><i></i>';
+                    host.appendChild(dot);
+                }
+                searchDebounce = setTimeout(() => {
+                    renderItems();
+                }, 160);
+            });
             document.getElementById('file-sort-select').addEventListener('change', () => renderItems());
             document.querySelectorAll('.view-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
