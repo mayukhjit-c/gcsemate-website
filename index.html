@@ -157,18 +157,21 @@
             align-items: center;
             gap: 10px;
         }
-        .toast {
-            padding: 16px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            animation: toastIn 0.18s ease-out, toastOut 0.22s ease-in 2.6s;
-            will-change: opacity, transform;
-        }
-        .toast.success { background-color: #22c55e; }
-        .toast.error { background-color: #ef4444; }
-        .toast.warning { background-color: #f59e0b; }
+         .toast {
+             padding: 12px 16px;
+             border-radius: 10px;
+             color: #111827;
+             font-weight: 600;
+             box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+             background-color: #fff;
+             border: 1px solid rgba(255,255,255,0.7);
+             backdrop-filter: blur(8px);
+             animation: toastIn 0.18s ease-out;
+             will-change: opacity, transform;
+         }
+         .toast.success { background: rgba(16,185,129,0.9); color: white; }
+         .toast.error { background: rgba(239,68,68,0.95); color: white; }
+         .toast.warning { background: rgba(245,158,11,0.95); color: #111827; }
         @keyframes toastIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(6px); } }
         /* Skeleton Loader Shimmer Effect */
@@ -202,14 +205,14 @@
         @keyframes dotPulse { 0%, 80%, 100% { opacity: .2; transform: scale(1); } 40% { opacity: 1; transform: scale(1.6); } }
         /* FAQ Accordion */
         .faq-item .faq-answer {
-            max-height: 0 !important;
+            max-height: 0;
             overflow: hidden;
-            transition: max-height 0.28s ease;
+            transition: max-height 0.28s ease, padding 0.2s ease;
             will-change: max-height;
             padding: 0 1.25rem 0 1.25rem; /* match px-5 to keep layout stable */
-            margin: 0 !important;
+            margin: 0;
         }
-        .faq-item.open .faq-answer { transition: max-height 0.32s ease; }
+        .faq-item.open .faq-answer { transition: max-height 0.32s ease, padding 0.2s ease; }
         .faq-item .faq-arrow {
             transition: transform 0.3s ease-in-out;
         }
@@ -377,7 +380,7 @@
                 </button>
             </div>
         </header>
-        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50">
+        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain">
             <div class="flex justify-between items-center p-4 border-b">
                 <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto">
                 <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Close menu">
@@ -906,8 +909,8 @@
             setupRealtimeListeners();
             startClock();
             
-            if (isGapiReady && currentUser) {
-                 renderDashboard();
+            if (currentUser) {
+                renderDashboard();
             }
 
             // Restore accent from localStorage
@@ -1396,9 +1399,27 @@
             subjectGrid.innerHTML = skeletonHTML;
             
             try {
-                const response = await fetch(`/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`);
-                if (!response.ok) throw new Error('Failed to load subjects.');
-                const data = await response.json();
+                // Try multiple function routes in case Pages is configured differently
+                let data = null;
+                const subjectUrls = [
+                    `/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
+                    `/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
+                    `/functions/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`
+                ];
+                let lastErr = null;
+                for (const u of subjectUrls) {
+                    try {
+                        const res = await fetch(u);
+                        if (!res.ok) {
+                            let reason = `HTTP ${res.status}`;
+                            try { const j = await res.json(); reason = j.error || reason; } catch {}
+                            throw new Error(reason);
+                        }
+                        data = await res.json();
+                        break;
+                    } catch (e) { lastErr = e; }
+                }
+                if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
                 allSubjectFolders = {};
                 if (data.files) {
                     data.files.forEach(folder => {
@@ -1453,6 +1474,7 @@
                 });
             } catch (err) {
                 renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
+                showToast(`Subjects failed to load: ${err.message}`, 'error');
             }
         }
         async function handleNavigation(folderId) {
@@ -1463,13 +1485,27 @@
             fileListContainer.setAttribute('aria-busy','true');
             fileListContainer.innerHTML = '<div class="flex flex-col items-center justify-center p-10 gap-3"><div class="loader"></div><p class="text-sm text-gray-500">Loading files...</p></div>';
             try {
-                const response = await fetch(`/api/drive-files?folderId=${encodeURIComponent(folderId)}`);
-                if (!response.ok) {
-                    let msg = 'Failed to fetch files.';
-                    try { msg = (await response.json()).error?.message || msg; } catch (_) {}
-                    throw new Error(msg);
+                // Try multiple function routes in case Pages is configured differently
+                let data = null;
+                const fileUrls = [
+                    `/api/drive-files?folderId=${encodeURIComponent(folderId)}`,
+                    `/drive-files?folderId=${encodeURIComponent(folderId)}`,
+                    `/functions/drive-files?folderId=${encodeURIComponent(folderId)}`
+                ];
+                let lastErr = null;
+                for (const u of fileUrls) {
+                    try {
+                        const res = await fetch(u);
+                        if (!res.ok) {
+                            let reason = `HTTP ${res.status}`;
+                            try { const j = await res.json(); reason = j.error || reason; } catch {}
+                            throw new Error(reason);
+                        }
+                        data = await res.json();
+                        break;
+                    } catch (e) { lastErr = e; }
                 }
-                const data = await response.json();
+                if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
                 currentFolderFiles = data.files;
                 renderItems();
             } catch (err) {
@@ -2189,15 +2225,19 @@
         // =================================================================================
         // MODAL, UTILITY & NEW FEATURE FUNCTIONS
         // =================================================================================
-        function showToast(message, type = 'success') {
+        // Toast notifications (success, error, warning) rendered top-center
+        function showToast(message, type = 'success', options = {}) {
+            const { duration = 3500, title } = options;
             const container = document.getElementById('toast-container');
+            if (!container) return alert(message);
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.textContent = message;
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            toast.innerHTML = title ? `<div class="font-bold mb-0.5">${title}</div><div>${message}</div>` : message;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+            const timeout = setTimeout(() => toast.remove(), duration);
+            toast.addEventListener('click', () => { clearTimeout(timeout); toast.remove(); });
         }
 
         function initializeTooltips() {
@@ -2262,6 +2302,7 @@
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
             if (!faqContainer) return;
+            // Accordion expand/collapse with dynamic height
             faqContainer.addEventListener('click', (e) => {
                 const questionHeader = e.target.closest('.faq-question');
                 if (!questionHeader) return;
@@ -2284,10 +2325,14 @@
 
                 if (!isOpen) {
                     faqItem.classList.add('open');
-                    // Set padding first, then measure height so content isn't cut off
-                    answer.style.paddingBottom = '1.25rem'; // pb-5 when open
-                    const h = answer.scrollHeight;
-                    answer.style.maxHeight = h + 'px';
+                    // Set padding first, then measure height so content isn't cut off.
+                    // Use a temp auto height to get true content height for transitions.
+                    answer.style.paddingBottom = '1.25rem';
+                    answer.style.maxHeight = 'none';
+                    const full = answer.scrollHeight;
+                    answer.style.maxHeight = '0px';
+                    // Next frame set to measured height to animate
+                    requestAnimationFrame(() => { answer.style.maxHeight = full + 'px'; });
                 } else {
                     answer.style.maxHeight = '0px';
                     answer.style.paddingBottom = '0px';
@@ -2558,16 +2603,20 @@
             modal.style.display = 'flex';
         }
         
+        // Error pages rendering helpers
         function showErrorPage(title, message) {
             document.body.innerHTML = `
-                <div class="w-full h-screen flex items-center justify-center bg-gray-100 p-4">
-                     <div class="bg-white p-8 rounded-xl shadow-md border max-w-lg w-full text-center">
+                <div class="w-full min-h-screen flex items-center justify-center bg-gray-100 p-4">
+                     <div class="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-white/40 max-w-lg w-full text-center">
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                          <h2 class="text-3xl font-bold text-gray-800 mb-2">${title}</h2>
                          <p class="text-gray-600 mb-6">${message}</p>
-                         <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Go to Homepage</a>
+                         <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Return Home</a>
                      </div>
                 </div>`;
+        }
+        function showNotFoundPage() {
+            showErrorPage('404 - Page not found', 'The page you are looking for does not exist or has been moved.');
         }
         
         // --- GAPI LOADER ---
