@@ -12,10 +12,24 @@
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
     <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="canonical" href="/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
+    <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
+    <meta name="twitter:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     
@@ -353,7 +367,7 @@
         
         <header class="bg-white/50 backdrop-blur-lg p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-3 flex-shrink-0 relative">
             <div class="flex-shrink-0">
-                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
             </div>
             <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
@@ -381,7 +395,7 @@
         </header>
         <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain">
             <div class="flex justify-between items-center p-4 border-b">
-                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" loading="lazy" decoding="async">
                 <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Close menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -404,6 +418,9 @@
             </div>
         </div>
         <main id="page-content" class="flex-grow overflow-y-auto bg-transparent">
+            <button id="scroll-top" class="hidden fixed bottom-6 right-6 z-[1000] p-3 rounded-full shadow-lg bg-blue-600 text-white hover:bg-blue-700 transition-all" aria-label="Scroll to top">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12z"/></svg>
+            </button>
             <div id="page-container" class="relative">
                 <div id="subject-dashboard-page" class="page p-8 max-w-7xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
@@ -1341,6 +1358,8 @@
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
+            // Update document title
+            try { if (pageTitles[pageId]) document.title = pageTitles[pageId]; } catch (_) {}
             // Lessons removed
              // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
@@ -1750,7 +1769,7 @@
             }
             playlists.forEach(playlist => {
                 const card = document.createElement('div');
-                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+                card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
                 card.onclick = () => handlePlaylistClick(playlist);
                 card.innerHTML = `
                     <div class="flex-grow flex flex-col justify-center items-center text-center">
@@ -1766,6 +1785,15 @@
                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
                          </svg>
                     </div>
+                    ${currentUser.role === 'admin' ? `
+                    <div class="absolute top-2 right-2 flex gap-1">
+                        <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
+                            <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z\" /></svg>
+                        </button>
+                        <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
+                            <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\" /></svg>
+                        </button>
+                    </div>` : ''}
                 `;
                 grid.appendChild(card);
             });
@@ -1842,6 +1870,47 @@
                 messageEl.textContent = 'An error occurred. Please try again.';
                 messageEl.className = 'text-red-600 text-sm mt-2 h-4';
             }
+        }
+        function editPlaylist(id, currentTitle) {
+            if (currentUser.role !== 'admin') return;
+            const modal = document.getElementById('confirmation-modal');
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-md p-6 fade-in">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Playlist</h3>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${currentTitle}" />
+                    <p class="text-xs text-gray-500 mt-2">Playlist ID cannot be changed here. To replace a playlist, delete and add a new one.</p>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button id="edit-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
+                        <button id="edit-save" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Save</button>
+                    </div>
+                </div>`;
+            modal.style.display = 'flex';
+            document.getElementById('edit-cancel').onclick = () => { modal.style.display = 'none'; };
+            document.getElementById('edit-save').onclick = async () => {
+                const newTitle = document.getElementById('edit-playlist-title').value.trim();
+                if (!newTitle) return;
+                try {
+                    await db.collection('videoPlaylists').doc(id).update({ title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    showToast('Playlist updated', 'success');
+                    modal.style.display = 'none';
+                } catch (e) {
+                    console.error('Update failed', e);
+                    showToast('Could not update playlist', 'error');
+                }
+            };
+        }
+        function deletePlaylist(id) {
+            if (currentUser.role !== 'admin') return;
+            showConfirmationModal('Delete this playlist?', async () => {
+                try {
+                    await db.collection('videoPlaylists').doc(id).delete();
+                    showToast('Playlist deleted', 'success');
+                } catch (e) {
+                    console.error('Delete failed', e);
+                    showToast('Could not delete playlist', 'error');
+                }
+            }, { okText: 'Delete' });
         }
         function handlePlaylistClick(playlist) {
             if (currentUser.tier === 'free') {
@@ -2062,7 +2131,7 @@
                 }
                 card.innerHTML = `
                     <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
-                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover" loading="lazy" decoding="async">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
                         <div class="p-6 flex-grow flex flex-col">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <h3 class="text-xl font-bold text-gray-900">${post.title}</h3>
@@ -2182,10 +2251,13 @@
                         <button onclick="handleCloseBlogViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                     </div>
                     <div class="overflow-y-auto">
-                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover">` : ''}
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
                         <div class="p-8 prose prose-lg max-w-none">
                             <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
                             ${post.content}
+                            <div class="mt-6 flex items-center gap-2">
+                                <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
+                            </div>
                         </div>
                         <div class="px-8 pb-8">
                             <h4 class="text-xl font-bold text-gray-800 mb-3">Comments</h4>
@@ -2398,6 +2470,21 @@
             window.addEventListener('resize', () => hideTooltip());
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
         }
+
+        // Dynamic document title per page
+        const pageTitles = {
+            'subject-dashboard-page': 'Subjects - GCSEMate',
+            'videos-page': 'Videos - GCSEMate',
+            'blog-page': 'Blog - GCSEMate',
+            'calendar-page': 'Calendar - GCSEMate',
+            'useful-links-page': 'Useful Links - GCSEMate',
+            'file-browser-page': 'Files - GCSEMate',
+            'account-settings-page': 'Account - GCSEMate',
+            'about-page': 'About - GCSEMate',
+            'features-page': 'Features & Pricing - GCSEMate',
+            'help-page': 'Help/FAQ - GCSEMate',
+            'checkout-page': 'Upgrade - GCSEMate'
+        };
 
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
@@ -2892,6 +2979,23 @@
                 });
             });
             document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+
+            // Scroll-to-top button
+            const scrollTopBtn = document.getElementById('scroll-top');
+            const contentArea = document.getElementById('page-content');
+            if (scrollTopBtn && contentArea) {
+                contentArea.addEventListener('scroll', () => {
+                    if (contentArea.scrollTop > 400) {
+                        scrollTopBtn.classList.remove('hidden');
+                        scrollTopBtn.classList.add('fade-in');
+                    } else {
+                        scrollTopBtn.classList.add('hidden');
+                    }
+                }, { passive: true });
+                scrollTopBtn.addEventListener('click', () => {
+                    contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
 
             // Animate pricing table rows on intersection
             try {
