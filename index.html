@@ -12,27 +12,12 @@
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#2563eb">
-    <link rel="canonical" href="/">
-    <!-- Open Graph -->
-    <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
-    <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
-    <meta name="twitter:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
-    <meta name="twitter:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <script async defer src="https://apis.google.com/js/api.js"></script>
     
     <style>
         :root {
@@ -160,12 +145,6 @@
             white-space: nowrap;
         }
         .custom-tooltip.show { opacity: 1; transform: translateY(0); }
-        /* Reduced motion support */
-        body[data-reduced-motion="true"] *, body[data-reduced-motion="true"] {
-            animation: none !important;
-            transition: none !important;
-            scroll-behavior: auto !important;
-        }
         /* Toast Notifications */
         #toast-container {
             position: fixed;
@@ -374,13 +353,12 @@
         
         <header class="bg-white/50 backdrop-blur-lg p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-3 flex-shrink-0 relative">
             <div class="flex-shrink-0">
-                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
             </div>
             <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="storage-page" data-tooltip="Your Storage">Storage</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
                 <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
@@ -403,7 +381,7 @@
         </header>
         <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain">
             <div class="flex justify-between items-center p-4 border-b">
-                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto" loading="lazy" decoding="async">
+                <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-10 w-auto">
                 <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Close menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -414,7 +392,6 @@
                 <a href="#" class="nav-link" data-page="subject-dashboard-page">Subjects</a>
                 <a href="#" class="nav-link" data-page="videos-page">Videos</a>
                 <a href="#" class="nav-link" data-page="blog-page">Blog</a>
-                <a href="#" class="nav-link" data-page="storage-page">Storage</a>
                 <a href="#" class="nav-link" data-page="calendar-page">Calendar</a>
                 <a href="#" class="nav-link" data-page="useful-links-page">Useful Links</a>
                 <a href="#" class="nav-link" data-page="about-page">About Us</a>
@@ -427,41 +404,7 @@
             </div>
         </div>
         <main id="page-content" class="flex-grow overflow-y-auto bg-transparent">
-            <button id="scroll-top" class="hidden fixed bottom-6 right-6 z-[1000] p-3 rounded-full shadow-lg bg-blue-600 text-white hover:bg-blue-700 transition-all" aria-label="Scroll to top">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12z"/></svg>
-            </button>
             <div id="page-container" class="relative">
-                <div id="storage-page" class="page hidden p-8 max-w-7xl mx-auto">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Your Storage</h2>
-                        <div class="flex gap-2">
-                            <button id="storage-connect-gdrive" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold">Connect Google Drive</button>
-                            <button id="storage-refresh" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold">Refresh</button>
-                        </div>
-                    </div>
-                    <div id="storage-banner" class="mb-4 text-sm text-gray-600"></div>
-                    <div class="bg-white/60 border border-white/30 rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-800">Items</p>
-                                <p id="storage-quota" class="text-xs text-gray-500"></p>
-                            </div>
-                            <div class="flex gap-2">
-                                <label class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 cursor-pointer">
-                                    Upload
-                                    <input id="storage-upload-input" type="file" class="hidden" />
-                                </label>
-                                <button id="storage-new-folder" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold">New Folder</button>
-                            </div>
-                        </div>
-                        <div id="storage-upload-progress" class="hidden w-full bg-gray-200 rounded-full h-2 mb-3">
-                            <div id="storage-upload-bar" class="bg-blue-600 h-2 rounded-full" style="width:0%"></div>
-                        </div>
-                        <div id="storage-breadcrumbs" class="text-sm text-gray-700 mb-2"></div>
-                        <div id="storage-list" class="divide-y divide-gray-100"></div>
-                        <p id="storage-message" class="text-sm h-4 mt-2"></p>
-                    </div>
-                </div>
                 <div id="subject-dashboard-page" class="page p-8 max-w-7xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
                         <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
@@ -581,7 +524,7 @@
                             </div>
                         </div>
                     </div>
-                    <div id="user-settings-panel" class="hidden bg-white/50 p-8 rounded-xl shadow-lg border border-white/30 max-w-3xl mx-auto">
+                    <div id="user-settings-panel" class="hidden bg-white/50 p-8 rounded-xl shadow-lg border border-white/30 max-w-lg mx-auto">
                         <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Account</h3>
                         <form id="user-details-form" class="space-y-4" onsubmit="event.preventDefault(); handleUpdateUserSettings();">
                             <div>
@@ -606,57 +549,6 @@
                                 <input id="accent-picker" type="color" aria-label="Accent color" class="w-9 h-9 rounded cursor-pointer border border-gray-300/70 bg-white" />
                                 <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
                             </div>
-                            <div class="grid sm:grid-cols-2 gap-4 mt-4">
-                                <label class="flex items-center gap-2 text-sm text-gray-700 select-none">
-                                    <input id="pref-reduced-motion" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span>Reduce animations</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-sm text-gray-700 select-none">
-                                    <input id="pref-compact-layout" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span>Compact layout (denser lists)</span>
-                                </label>
-                                <div class="sm:col-span-2">
-                                    <label class="block text-sm text-gray-700 mb-1">Default landing page</label>
-                                    <select id="pref-landing-page" class="w-full rounded-lg border-gray-300/60 bg-white/70 px-3 py-2 text-sm">
-                                        <option value="subject-dashboard-page">Subjects</option>
-                                        <option value="videos-page">Videos</option>
-                                        <option value="blog-page">Blog</option>
-                                        <option value="calendar-page">Calendar</option>
-                                        <option value="useful-links-page">Useful Links</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-6 flex justify-end">
-                            <button id="save-preferences" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">Save Preferences</button>
-                            <span id="preferences-message" class="ml-2 text-sm"></span>
-                        </div>
-                        <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
-                              <div>
-                                <h4 class="text-lg font-semibold text-gray-800">Storage (Pro users)</h4>
-                                <p class="text-sm text-gray-500 mt-1">Link your own cloud storage to upload and manage your files.</p>
-                              </div>
-                              <div class="grid sm:grid-cols-2 gap-4">
-                                <button id="connect-gdrive" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold">Connect Google Drive</button>
-                              </div>
-                              <div id="storage-status" class="text-sm text-gray-600"></div>
-                              <div id="upload-panel" class="hidden bg-white/60 border border-white/30 rounded-xl p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-800">Your Files</p>
-                                        <p id="quota-text" class="text-xs text-gray-500"></p>
-                                    </div>
-                                    <label class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 cursor-pointer">
-                                        Upload File
-                                        <input id="file-input" type="file" class="hidden" />
-                                    </label>
-                                </div>
-                                <div id="upload-progress" class="hidden w-full bg-gray-200 rounded-full h-2">
-                                    <div id="upload-progress-bar" class="bg-blue-600 h-2 rounded-full" style="width:0%"></div>
-                                </div>
-                                <div id="user-file-list" class="mt-4 space-y-2"></div>
-                                <p id="upload-message" class="text-sm h-4 mt-2"></p>
-                              </div>
                         </div>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
                               <div>
@@ -912,11 +804,6 @@
     <script>
         // --- APP STATE---
         let currentUser = null;
-        let gapiReady = false;
-        let gapiAuthInstance = null;
-        const GDRIVE_CLIENT_ID = '704190559234-1s7iorinn92jfbh06nr7qm0gijmu8ec7.apps.googleusercontent.com';
-        const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-        // Dropbox removed
         let isGapiReady = false;
         let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
         let currentFolderFiles = [];
@@ -1040,13 +927,7 @@
             startClock();
             
             if (currentUser) {
-                // Honor user preferred landing page
-                try {
-                    const pref = (currentUser.preferences && currentUser.preferences.landingPage) || 'subject-dashboard-page';
-                    showPage(pref);
-                } catch (_) {
-                    renderDashboard();
-                }
+                renderDashboard();
             }
 
             // Restore accent from localStorage
@@ -1054,15 +935,6 @@
                 const saved = localStorage.getItem('gcsemate_accent');
                 if (saved) applyAccent(JSON.parse(saved));
             } catch (e) {}
-            applyPreferences();
-        }
-
-        function applyPreferences() {
-            try {
-                const prefs = currentUser && currentUser.preferences ? currentUser.preferences : {};
-                document.body.dataset.reducedMotion = prefs.reducedMotion ? 'true' : 'false';
-                document.body.classList.toggle('compact', !!prefs.compactLayout);
-            } catch (_) {}
         }
         function setupRealtimeListeners() {
             // Listen for announcements
@@ -1071,38 +943,6 @@
                     const data = doc.data();
                     showAnnouncement(data ? data.message : '');
                 }, err => console.error("Error fetching announcement:", err));
-            // Site controls for admin
-            db.collection('settings').doc('siteControls').onSnapshot(doc => {
-                const data = doc.data() || {};
-                const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
-                if (data.maintenance && !isAdmin) {
-                    showErrorPage('Maintenance', 'The site is currently in maintenance mode. Please check back later.');
-                }
-                // Toggle registration UI (prevent register form visibility)
-                const registerForm = document.getElementById('register-form');
-                const showRegisterLink = document.getElementById('show-register-form');
-                if (registerForm && showRegisterLink) {
-                    if (data.registration === false) {
-                        registerForm.classList.add('hidden');
-                        showRegisterLink.closest('p')?.classList.add('hidden');
-                    } else {
-                        showRegisterLink.closest('p')?.classList.remove('hidden');
-                    }
-                }
-                // Lock accent
-                if (data.lockAccent) {
-                    localStorage.removeItem('gcsemate_accent');
-                    applyAccent({
-                        50: [239,246,255], 100: [219,234,254], 300: [147,197,253], 400: [96,165,250], 500: [59,130,246], 600: [37,99,235], 700: [29,78,216]
-                    });
-                }
-                // Reflect admin toggles if panel visible
-                try {
-                    document.getElementById('maintenance-toggle').checked = !!data.maintenance;
-                    document.getElementById('registration-toggle').checked = data.registration !== false;
-                    document.getElementById('lock-accent-toggle').checked = !!data.lockAccent;
-                } catch (_) {}
-            });
             // Admin listeners
             if (currentUser.role === 'admin') {
                 document.getElementById('admin-panel').classList.remove('hidden');
@@ -1256,189 +1096,6 @@
             } catch (error) {
                 console.error("Logout failed:", error);
             }
-        }
-
-        // =====================
-        // USER STORAGE (BYO)
-        // =====================
-        async function handleConnectGDrive() {
-            if ((currentUser.tier || '') !== 'paid') { showToast('Pro required', 'warning'); return; }
-            try {
-                await new Promise((resolve, reject) => {
-                    gapi.load('client:auth2', async () => {
-                        try {
-                            await gapi.client.init({ clientId: GDRIVE_CLIENT_ID, scope: GDRIVE_SCOPES, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
-                            gapiAuthInstance = gapi.auth2.getAuthInstance();
-                            if (!gapiAuthInstance.isSignedIn.get()) {
-                                gapiAuthInstance.signIn();
-                            }
-                            resolve();
-                        } catch (e) { reject(e); }
-                    });
-                });
-                const about = await gapi.client.drive.about.get({ fields: 'user,storageQuota' });
-                // Ensure folder
-                const folderId = await ensureDriveFolder('GCSEMate');
-                await db.collection('users').doc(currentUser.uid).set({ storage: { provider: 'gdrive', folderId, usedBytes: 0, limitBytes: 262144000 } }, { merge: true });
-                currentUser.storage = { provider: 'gdrive', folderId, usedBytes: 0, limitBytes: 262144000 };
-                updateStorageUI();
-                showToast('Google Drive connected', 'success');
-            } catch (e) {
-                console.error('GDrive connect failed', e);
-                showToast('Could not connect Google Drive', 'error');
-            }
-        }
-        async function ensureDriveFolder(name) {
-            const q = `name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-            const res = await gapi.client.drive.files.list({ q, fields: 'files(id,name)' });
-            if (res.result.files && res.result.files.length) return res.result.files[0].id;
-            const created = await gapi.client.drive.files.create({
-                resource: { name, mimeType: 'application/vnd.google-apps.folder' },
-                fields: 'id'
-            });
-            return created.result.id;
-        }
-        async function handleUploadSelectedFile(e) {
-            const file = e.target.files && e.target.files[0];
-            if (!file) return;
-            try {
-                if (!currentUser.storage || !currentUser.storage.provider) { showToast('Connect storage first', 'warning'); return; }
-                const { usedBytes = 0, limitBytes = 262144000 } = currentUser.storage;
-                if (usedBytes + file.size > limitBytes) { showToast('Storage limit reached (250MB).', 'error'); return; }
-                if (currentUser.storage.provider === 'gdrive') {
-                    await uploadToDriveResumable(file, currentUser.storage.folderId);
-                }
-                await db.collection('users').doc(currentUser.uid).set({ storage: { usedBytes: usedBytes + file.size } }, { merge: true });
-                currentUser.storage.usedBytes = usedBytes + file.size;
-                await db.collection('users').doc(currentUser.uid).collection('userFiles').add({ name: file.name, size: file.size, provider: currentUser.storage.provider, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                updateStorageUI();
-                showToast('Upload complete', 'success');
-                e.target.value = '';
-            } catch (err) {
-                console.error('Upload failed', err);
-                showToast('Upload failed', 'error');
-            }
-        }
-        async function uploadToDriveResumable(file, folderId) {
-            const accessToken = gapi.client.getToken().access_token;
-            const initRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json; charset=UTF-8' },
-                body: JSON.stringify({ name: file.name, parents: [folderId] })
-            });
-            const sessionUri = initRes.headers.get('Location');
-            const chunkSize = 256 * 1024; // 256KB
-            let offset = 0;
-            const bar = document.getElementById('upload-progress-bar');
-            const wrap = document.getElementById('upload-progress');
-            wrap.classList.remove('hidden');
-            while (offset < file.size) {
-                const chunk = file.slice(offset, Math.min(offset + chunkSize, file.size));
-                const res = await fetch(sessionUri, {
-                    method: 'PUT',
-                    headers: { 'Content-Range': `bytes ${offset}-${offset + chunk.size - 1}/${file.size}` },
-                    body: chunk
-                });
-                offset += chunk.size;
-                bar.style.width = `${Math.floor((offset / file.size) * 100)}%`;
-                if (res.status === 200 || res.status === 201) break;
-            }
-            setTimeout(() => { wrap.classList.add('hidden'); bar.style.width = '0%'; }, 500);
-            // Fetch uploaded file metadata to retrieve webViewLink
-            try {
-                const list = await gapi.client.drive.files.list({ q: `name='${file.name.replace(/'/g, "\\'")}' and '${folderId}' in parents and trashed=false`, fields: 'files(id,webViewLink,name,size)' });
-                const f = (list.result.files || [])[0];
-                if (f) {
-                    await db.collection('users').doc(currentUser.uid).collection('userFiles').add({ name: f.name, size: Number(f.size||0), provider: 'gdrive', webViewLink: `https://drive.google.com/file/d/${f.id}/view`, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                }
-            } catch (e) { console.warn('Could not fetch webViewLink', e); }
-        }
-        // Dropbox removed
-        async function updateStorageUI() {
-            const status = document.getElementById('storage-status');
-            const panel = document.getElementById('upload-panel');
-            const quota = document.getElementById('quota-text');
-            if (!status || !panel) return;
-            if (!currentUser || !currentUser.storage || !currentUser.storage.provider) {
-                status.textContent = 'No storage connected.';
-                panel.classList.add('hidden');
-                return;
-            }
-            const { provider, usedBytes = 0, limitBytes = 262144000 } = currentUser.storage;
-            status.textContent = `Connected: ${provider === 'gdrive' ? 'Google Drive' : 'Dropbox'}`;
-            quota.textContent = `${(usedBytes/1048576).toFixed(1)} MB used of ${(limitBytes/1048576).toFixed(0)} MB`;
-            panel.classList.remove('hidden');
-            // Render file list (shallow index)
-            const list = document.getElementById('user-file-list') || document.getElementById('storage-list');
-            const snap = await db.collection('users').doc(currentUser.uid).collection('userFiles').orderBy('createdAt', 'desc').limit(50).get();
-            list.innerHTML = snap.empty ? '<div class="text-sm text-gray-500">No files yet.</div>' : '';
-            snap.forEach(d => {
-                const f = d.data();
-                const id = d.id;
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between gap-3 p-2 rounded bg-white/70 border border-white/40';
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'text-sm text-gray-800 truncate flex-1';
-                nameSpan.textContent = f.name || 'Untitled';
-                const sizeSpan = document.createElement('span');
-                sizeSpan.className = 'text-xs text-gray-500';
-                sizeSpan.textContent = `${((f.size||0)/1048576).toFixed(1)} MB`;
-                const linkA = document.createElement('a');
-                linkA.className = 'text-xs text-blue-600 hover:underline';
-                linkA.textContent = 'Open';
-                linkA.target = '_blank';
-                linkA.rel = 'noopener';
-                linkA.href = f.webViewLink || '#';
-                const actions = document.createElement('div');
-                actions.className = 'flex items-center gap-2';
-                const renameBtn = document.createElement('button');
-                renameBtn.className = 'px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-xs';
-                renameBtn.textContent = 'Rename';
-                const delBtn = document.createElement('button');
-                delBtn.className = 'px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs';
-                delBtn.textContent = 'Delete';
-                actions.appendChild(renameBtn);
-                actions.appendChild(delBtn);
-                row.appendChild(nameSpan);
-                row.appendChild(sizeSpan);
-                if (f.webViewLink) row.appendChild(linkA);
-                row.appendChild(actions);
-                list.appendChild(row);
-                // rename
-                renameBtn.addEventListener('click', async () => {
-                    const newName = prompt('Rename file', f.name || 'Untitled');
-                    if (!newName || newName === f.name) return;
-                    try {
-                        await db.collection('users').doc(currentUser.uid).collection('userFiles').doc(id).update({ name: newName });
-                        nameSpan.textContent = newName;
-                        showToast('Renamed', 'success');
-                    } catch (e) { showToast('Rename failed', 'error'); }
-                });
-                // delete index only
-                delBtn.addEventListener('click', async () => {
-                    showConfirmationModal('Remove from list? (does not delete from provider)', async () => {
-                        try {
-                            await db.collection('users').doc(currentUser.uid).collection('userFiles').doc(id).delete();
-                            row.remove();
-                            showToast('Removed', 'success');
-                        } catch (e) { showToast('Delete failed', 'error'); }
-                    }, { okText: 'Remove' });
-                });
-            });
-            // Update storage page quota
-            const quotaEl = document.getElementById('storage-quota');
-            if (quotaEl) quotaEl.textContent = `${((currentUser.storage.usedBytes||0)/1048576).toFixed(1)} MB used of ${((currentUser.storage.limitBytes||262144000)/1048576).toFixed(0)} MB`;
-        }
-
-        async function renderStorageListing() {
-            if (!currentUser || !currentUser.storage || currentUser.storage.provider !== 'gdrive') {
-                const banner = document.getElementById('storage-banner');
-                if (banner) banner.textContent = 'Connect Google Drive to browse your storage.';
-                return;
-            }
-            const banner = document.getElementById('storage-banner');
-            if (banner) banner.textContent = '';
-            await updateStorageUI();
         }
         
         async function resendVerificationEmail() {
@@ -1684,17 +1341,11 @@
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
-            // Update document title
-            try { if (pageTitles[pageId]) document.title = pageTitles[pageId]; } catch (_) {}
             // Lessons removed
              // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
             if (!mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.add('hidden');
-            }
-            // Render storage when entering storage page
-            if (pageId === 'storage-page') {
-                renderStorageListing();
             }
         }
         function showAnnouncement(message) {
@@ -2099,7 +1750,7 @@
             }
             playlists.forEach(playlist => {
                 const card = document.createElement('div');
-                card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
                 card.onclick = () => handlePlaylistClick(playlist);
                 card.innerHTML = `
                     <div class="flex-grow flex flex-col justify-center items-center text-center">
@@ -2115,15 +1766,6 @@
                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
                          </svg>
                     </div>
-                    ${currentUser.role === 'admin' ? `
-                    <div class="absolute top-2 right-2 flex gap-1">
-                        <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
-                            <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z\" /></svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
-                            <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\" /></svg>
-                        </button>
-                    </div>` : ''}
                 `;
                 grid.appendChild(card);
             });
@@ -2200,47 +1842,6 @@
                 messageEl.textContent = 'An error occurred. Please try again.';
                 messageEl.className = 'text-red-600 text-sm mt-2 h-4';
             }
-        }
-        function editPlaylist(id, currentTitle) {
-            if (currentUser.role !== 'admin') return;
-            const modal = document.getElementById('confirmation-modal');
-            modal.innerHTML = `
-                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-md p-6 fade-in">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Playlist</h3>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${currentTitle}" />
-                    <p class="text-xs text-gray-500 mt-2">Playlist ID cannot be changed here. To replace a playlist, delete and add a new one.</p>
-                    <div class="flex justify-end gap-2 mt-4">
-                        <button id="edit-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
-                        <button id="edit-save" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Save</button>
-                    </div>
-                </div>`;
-            modal.style.display = 'flex';
-            document.getElementById('edit-cancel').onclick = () => { modal.style.display = 'none'; };
-            document.getElementById('edit-save').onclick = async () => {
-                const newTitle = document.getElementById('edit-playlist-title').value.trim();
-                if (!newTitle) return;
-                try {
-                    await db.collection('videoPlaylists').doc(id).update({ title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    showToast('Playlist updated', 'success');
-                    modal.style.display = 'none';
-                } catch (e) {
-                    console.error('Update failed', e);
-                    showToast('Could not update playlist', 'error');
-                }
-            };
-        }
-        function deletePlaylist(id) {
-            if (currentUser.role !== 'admin') return;
-            showConfirmationModal('Delete this playlist?', async () => {
-                try {
-                    await db.collection('videoPlaylists').doc(id).delete();
-                    showToast('Playlist deleted', 'success');
-                } catch (e) {
-                    console.error('Delete failed', e);
-                    showToast('Could not delete playlist', 'error');
-                }
-            }, { okText: 'Delete' });
         }
         function handlePlaylistClick(playlist) {
             if (currentUser.tier === 'free') {
@@ -2461,7 +2062,7 @@
                 }
                 card.innerHTML = `
                     <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
-                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover" loading="lazy" decoding="async">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
                         <div class="p-6 flex-grow flex flex-col">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <h3 class="text-xl font-bold text-gray-900">${post.title}</h3>
@@ -2581,13 +2182,10 @@
                         <button onclick="handleCloseBlogViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                     </div>
                     <div class="overflow-y-auto">
-                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover">` : ''}
                         <div class="p-8 prose prose-lg max-w-none">
                             <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
                             ${post.content}
-                            <div class="mt-6 flex items-center gap-2">
-                                <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
-                            </div>
                         </div>
                         <div class="px-8 pb-8">
                             <h4 class="text-xl font-bold text-gray-800 mb-3">Comments</h4>
@@ -2800,21 +2398,6 @@
             window.addEventListener('resize', () => hideTooltip());
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
         }
-
-        // Dynamic document title per page
-        const pageTitles = {
-            'subject-dashboard-page': 'Subjects - GCSEMate',
-            'videos-page': 'Videos - GCSEMate',
-            'blog-page': 'Blog - GCSEMate',
-            'calendar-page': 'Calendar - GCSEMate',
-            'useful-links-page': 'Useful Links - GCSEMate',
-            'file-browser-page': 'Files - GCSEMate',
-            'account-settings-page': 'Account - GCSEMate',
-            'about-page': 'About - GCSEMate',
-            'features-page': 'Features & Pricing - GCSEMate',
-            'help-page': 'Help/FAQ - GCSEMate',
-            'checkout-page': 'Upgrade - GCSEMate'
-        };
 
         function initializeFaqAccordion() {
             const faqContainer = document.getElementById('faq-container');
@@ -3224,7 +2807,6 @@
         // --- GAPI LOADER ---
         window.gapiLoaded = function() {
             isGapiReady = true;
-            gapiReady = true;
             if (currentUser && currentUser.emailVerified) {
                 renderDashboard();
             }
@@ -3273,53 +2855,6 @@
             document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
             document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
             document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
-            // Save site controls (admin)
-            const saveSiteControls = document.getElementById('save-site-controls');
-            if (saveSiteControls) {
-                saveSiteControls.addEventListener('click', async () => {
-                    if ((currentUser.role || '').toLowerCase() !== 'admin') return;
-                    const maintenance = document.getElementById('maintenance-toggle').checked;
-                    const registration = document.getElementById('registration-toggle').checked;
-                    const lockAccent = document.getElementById('lock-accent-toggle').checked;
-                    const msg = document.getElementById('site-controls-message');
-                    try {
-                        await db.collection('settings').doc('siteControls').set({ maintenance, registration, lockAccent }, { merge: true });
-                        msg.textContent = 'Saved!';
-                        msg.className = 'text-green-600';
-                        setTimeout(() => msg.textContent = '', 2000);
-                    } catch (e) {
-                        msg.textContent = 'Failed to save';
-                        msg.className = 'text-red-600';
-                    }
-                });
-            }
-            // Save user preferences
-            const savePrefs = document.getElementById('save-preferences');
-            if (savePrefs) {
-                savePrefs.addEventListener('click', async () => {
-                    const reduced = document.getElementById('pref-reduced-motion').checked;
-                    const compact = document.getElementById('pref-compact-layout').checked;
-                    const landing = document.getElementById('pref-landing-page').value;
-                    const msg = document.getElementById('preferences-message');
-                    try {
-                        await db.collection('users').doc(currentUser.uid).set({ preferences: { reducedMotion: reduced, compactLayout: compact, landingPage: landing } }, { merge: true });
-                        currentUser.preferences = { reducedMotion: reduced, compactLayout: compact, landingPage: landing };
-                        applyPreferences();
-                        msg.textContent = 'Saved!';
-                        msg.className = 'text-green-600';
-                        setTimeout(() => msg.textContent = '', 2000);
-                    } catch (e) {
-                        msg.textContent = 'Failed to save';
-                        msg.className = 'text-red-600';
-                    }
-                });
-            }
-
-            // Storage connections
-            const gbtn = document.getElementById('connect-gdrive');
-            if (gbtn) gbtn.addEventListener('click', handleConnectGDrive);
-            const finput = document.getElementById('file-input');
-            if (finput) finput.addEventListener('change', handleUploadSelectedFile);
             document.getElementById('prev-month-btn').addEventListener('click', () => {
                 currentDate.setMonth(currentDate.getMonth() - 1);
                 renderCalendar(calendarUserEvents, calendarGlobalEvents);
@@ -3358,48 +2893,6 @@
             });
             document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
 
-            // Storage page handlers
-            const storageConnect = document.getElementById('storage-connect-gdrive');
-            if (storageConnect) storageConnect.addEventListener('click', handleConnectGDrive);
-            const storageUpload = document.getElementById('storage-upload-input');
-            if (storageUpload) storageUpload.addEventListener('change', async (e) => {
-                const f = e.target.files && e.target.files[0];
-                if (!f) return;
-                document.getElementById('file-input').files = e.target.files; // reuse existing uploader
-                await handleUploadSelectedFile(e);
-                await renderStorageListing();
-            });
-            const newFolderBtn = document.getElementById('storage-new-folder');
-            if (newFolderBtn) newFolderBtn.addEventListener('click', async () => {
-                if (!currentUser.storage || currentUser.storage.provider !== 'gdrive') return showToast('Connect Google Drive first', 'warning');
-                const name = prompt('Folder name');
-                if (!name) return;
-                try {
-                    await gapi.client.drive.files.create({ resource: { name, mimeType: 'application/vnd.google-apps.folder', parents: [currentUser.storage.folderId] }, fields: 'id' });
-                    showToast('Folder created', 'success');
-                    await renderStorageListing();
-                } catch (e) { showToast('Could not create folder', 'error'); }
-            });
-            const refreshBtn = document.getElementById('storage-refresh');
-            if (refreshBtn) refreshBtn.addEventListener('click', renderStorageListing);
-
-            // Scroll-to-top button
-            const scrollTopBtn = document.getElementById('scroll-top');
-            const contentArea = document.getElementById('page-content');
-            if (scrollTopBtn && contentArea) {
-                contentArea.addEventListener('scroll', () => {
-                    if (contentArea.scrollTop > 400) {
-                        scrollTopBtn.classList.remove('hidden');
-                        scrollTopBtn.classList.add('fade-in');
-                    } else {
-                        scrollTopBtn.classList.add('hidden');
-                    }
-                }, { passive: true });
-                scrollTopBtn.addEventListener('click', () => {
-                    contentArea.scrollTo({ top: 0, behavior: 'smooth' });
-                });
-            }
-
             // Animate pricing table rows on intersection
             try {
                 const body = document.getElementById('pricing-compare-body');
@@ -3436,12 +2929,6 @@
             let goPrefix = false; // 'g' then key
             document.addEventListener('keydown', (e) => {
                 if (e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
-                // Basic devtools shortcut blocker (not a security boundary)
-                if ((e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j' || e.key.toLowerCase() === 'c')) || e.key === 'F12') {
-                    e.preventDefault();
-                    showToast('Developer shortcuts are disabled.', 'warning');
-                    return;
-                }
                 if (e.key === '?') {
                     showPage('help-page');
                 } else if (e.key === '/') {
