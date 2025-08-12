@@ -360,7 +360,6 @@
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="lessons-page" data-tooltip="View Lessons">Lessons</a>
                 <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
@@ -394,7 +393,6 @@
                 <a href="#" class="nav-link" data-page="videos-page">Videos</a>
                 <a href="#" class="nav-link" data-page="blog-page">Blog</a>
                 <a href="#" class="nav-link" data-page="calendar-page">Calendar</a>
-                <a href="#" class="nav-link" data-page="lessons-page">Lessons</a>
                 <a href="#" class="nav-link" data-page="useful-links-page">Useful Links</a>
                 <a href="#" class="nav-link" data-page="about-page">About Us</a>
                 <a href="#" class="nav-link" data-page="features-page">Features & Pricing</a>
@@ -434,36 +432,6 @@
                      </div>
                     <div id="playlist-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         </div>
-                </div>
-                <div id="lessons-page" class="page hidden p-8 max-w-7xl mx-auto">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Lessons</h2>
-                    <div id="add-lesson-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
-                        <h3 id="lesson-form-title" class="text-xl font-semibold mb-4">Create New Lesson</h3>
-                        <form id="add-lesson-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveLesson();">
-                            <input type="hidden" id="lesson-id">
-                            <input id="lesson-title" type="text" placeholder="Lesson Title" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <input id="lesson-image" type="url" placeholder="Optional: Image URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <input id="lesson-video" type="url" placeholder="Optional: YouTube or video URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <div id="lesson-editor-toolbar" class="flex flex-wrap gap-2 text-sm">
-                                <button type="button" data-md="bold" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Bold</button>
-                                <button type="button" data-md="italic" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Italic</button>
-                                <button type="button" data-md="h2" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">H2</button>
-                                <button type="button" data-md="ul" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">List</button>
-                                <button type="button" data-md="code" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Code</button>
-                                <button type="button" data-md="quote" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Quote</button>
-                                <button type="button" data-md="link" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Link</button>
-                                <button type="button" data-md="image" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Image</button>
-                            </div>
-                            <textarea id="lesson-markdown" placeholder="Write your lesson in Markdown... (Paste supported)" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 h-64 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                            <div id="lesson-preview" class="p-4 bg-white/60 border border-white/30 rounded-lg prose prose-lg max-w-none"></div>
-                            <div class="flex justify-end gap-3">
-                                <button type="button" onclick="resetLessonForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Lesson</button>
-                            </div>
-                        </form>
-                        <p id="add-lesson-message" class="text-sm mt-2 h-4"></p>
-                    </div>
-                    <div id="lesson-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
                 </div>
                 <div id="blog-page" class="page hidden p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
@@ -635,7 +603,7 @@
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">v</span>: Go to Videos</li>
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">b</span>: Go to Blog</li>
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">c</span>: Go to Calendar</li>
-                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">l</span>: Go to Lessons</li>
+                                        
                                         <li><span class="font-semibold">Esc</span>: Close modals/tooltips</li>
                                     </ul>
                                 </div>
@@ -805,7 +773,6 @@
         let unsubscribeUserEvents;
         let unsubscribeGlobalEvents;
         let unsubscribeAnnouncement;
-        let unsubscribeLessons;
         let recaptchaVerifier;
         // --- CONFIGURATION ---
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
@@ -966,13 +933,7 @@
                     });
                     renderVideosPage(playlists);
                 }, err => console.error("Error fetching video playlists:", err));
-            // Listen for lessons
-            unsubscribeLessons = db.collection('lessons').orderBy('createdAt', 'desc')
-                .onSnapshot(snapshot => {
-                    const lessons = [];
-                    snapshot.forEach(doc => lessons.push({ id: doc.id, ...doc.data() }));
-                    renderLessonsPage(lessons);
-                }, err => console.error('Error fetching lessons:', err));
+            // Lessons removed
             // Listen for blog posts
             unsubscribeBlogPosts = db.collection('blogPosts').orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
@@ -1330,26 +1291,7 @@
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
-            // Gate Lessons access for paid users and admins (case-insensitive role)
-            if (pageId === 'lessons-page' && currentUser) {
-                const role = (currentUser.role || '').toLowerCase();
-                const allowed = role === 'admin' || currentUser.tier === 'paid';
-                if (!allowed) {
-                    document.getElementById('upgrade-modal-message').textContent = 'Lessons are available for Pro users. Upgrade to access all lessons.';
-                    document.getElementById('upgrade-modal').style.display = 'flex';
-                    // Revert to dashboard
-                    document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
-                    document.getElementById('subject-dashboard-page').classList.remove('hidden');
-                } else {
-                    // Ensure admin form visibility is correct immediately
-                    const adminForm = document.getElementById('add-lesson-form-container');
-                    if (adminForm) adminForm.style.display = role === 'admin' ? 'block' : 'none';
-                    // Render with whatever we have cached so the page isn't blank before snapshot arrives
-                    if (typeof renderLessonsPage === 'function') {
-                        try { renderLessonsPage(window.allLessons || []); } catch (_) {}
-                    }
-                }
-            }
+            // Lessons removed
              // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
             if (!mobileMenu.classList.contains('hidden')) {
@@ -1734,103 +1676,7 @@
         }
 
         // =================================================================================
-        // LESSONS LOGIC
-        // =================================================================================
-        let allLessons = [];
-        function renderLessonsPage(lessons) {
-            allLessons = lessons;
-            const grid = document.getElementById('lesson-grid');
-            const adminForm = document.getElementById('add-lesson-form-container');
-            if (!grid || !adminForm) return;
-            // Only admins can create lessons
-            adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-            grid.innerHTML = '';
-            if (!lessons || lessons.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Lessons Yet</h3><p class="mt-1 text-sm text-gray-500">Admins can create lessons using the form above.</p></div>`;
-                return;
-            }
-            lessons.forEach(lesson => {
-                const card = document.createElement('div');
-                card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg flex flex-col overflow-hidden cursor-pointer';
-                const dateText = lesson.createdAt?.toDate ? lesson.createdAt.toDate().toLocaleDateString('en-GB') : '';
-                card.onclick = () => showLessonViewer(lesson.id);
-                card.innerHTML = `
-                    ${lesson.image ? `<img src="${lesson.image}" alt="${lesson.title}" class="w-full h-40 object-cover">` : ''}
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">${lesson.title}</h3>
-                        <p class="text-xs text-gray-500 mt-auto">${dateText}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function resetLessonForm() {
-            document.getElementById('add-lesson-form').reset();
-            document.getElementById('lesson-id').value = '';
-            document.getElementById('lesson-form-title').textContent = 'Create New Lesson';
-            document.getElementById('add-lesson-message').textContent = '';
-        }
-
-        async function handleSaveLesson() {
-            if (currentUser.role !== 'admin') return;
-            const id = document.getElementById('lesson-id').value;
-            const title = document.getElementById('lesson-title').value.trim();
-            const markdown = document.getElementById('lesson-markdown').value.trim();
-            const image = document.getElementById('lesson-image').value.trim();
-            const videoUrl = document.getElementById('lesson-video').value.trim();
-            const messageEl = document.getElementById('add-lesson-message');
-            if (!title || !markdown) {
-                messageEl.textContent = 'Title and content are required.';
-                messageEl.className = 'text-red-600 text-sm mt-2 h-4';
-                return;
-            }
-            const data = {
-                title,
-                markdown,
-                image: image || null,
-                videoUrl: videoUrl || null,
-                audience: 'paid',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                createdAt: id ? undefined : firebase.firestore.FieldValue.serverTimestamp(),
-            };
-            try {
-                if (id) {
-                    await db.collection('lessons').doc(id).update(data);
-                } else {
-                    await db.collection('lessons').add(data);
-                }
-                resetLessonForm();
-                messageEl.textContent = 'Lesson saved successfully!';
-                messageEl.className = 'text-green-600 text-sm mt-2 h-4';
-                setTimeout(() => messageEl.textContent = '', 3000);
-            } catch (e) {
-                console.error('Error saving lesson', e);
-                showToast('Could not save lesson.', 'error');
-            }
-        }
-
-        function showLessonViewer(lessonId) {
-            const lesson = allLessons.find(l => l.id === lessonId);
-            if (!lesson) return;
-            const modal = document.getElementById('blog-viewer-modal');
-            const mdHtml = renderMarkdown(lesson.markdown);
-            const videoEmbed = lesson.videoUrl ? getVideoEmbed(lesson.videoUrl) : '';
-            modal.innerHTML = `
-                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
-                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-800">${lesson.title}</h3>
-                        <button onclick="document.getElementById('blog-viewer-modal').style.display='none'; document.getElementById('blog-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
-                    </div>
-                    <div class="overflow-y-auto">
-                        ${lesson.image ? `<img src="${lesson.image}" alt="${lesson.title}" class="w-full h-64 object-cover">` : ''}
-                        ${videoEmbed}
-                        <div class="p-8 prose prose-lg max-w-none">${mdHtml}</div>
-                    </div>
-                </div>
-            `;
-            modal.style.display = 'flex';
-        }
+            // Lessons removed
 
         function getVideoEmbed(url) {
             try {
@@ -2719,7 +2565,7 @@
                 } else if (goPrefix) {
                     const k = e.key.toLowerCase();
                     goPrefix = false;
-                    const map = { d: 'subject-dashboard-page', v: 'videos-page', b: 'blog-page', c: 'calendar-page', l: 'lessons-page', u: 'useful-links-page', a: 'about-page', f: 'features-page', h: 'help-page' };
+                    const map = { d: 'subject-dashboard-page', v: 'videos-page', b: 'blog-page', c: 'calendar-page', u: 'useful-links-page', a: 'about-page', f: 'features-page', h: 'help-page' };
                     const target = map[k];
                     if (target) {
                         e.preventDefault();
