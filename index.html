@@ -777,12 +777,23 @@
             } else {
                 // User is signed out.
                 currentUser = null;
-                document.getElementById('main-app').classList.add('hidden');
-                document.getElementById('login-page').classList.add('hidden');
-                document.getElementById('email-verify-page').classList.add('hidden');
+                const mainApp = document.getElementById('main-app');
+                if (mainApp) {
+                    mainApp.classList.add('hidden');
+                    mainApp.style.display = 'none'; // ensure inline display doesn't override hidden
+                }
+                const loginPage = document.getElementById('login-page');
+                const verifyPage = document.getElementById('email-verify-page');
+                if (loginPage) loginPage.classList.add('hidden');
+                if (verifyPage) verifyPage.classList.add('hidden');
+                // Close any open modals and mobile menu
+                ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+                    .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
                 const landingPage = document.getElementById('landing-page');
-                landingPage.classList.remove('hidden');
-                landingPage.classList.add('fade-in');
+                if (landingPage) {
+                    landingPage.classList.remove('hidden');
+                    landingPage.classList.add('fade-in');
+                }
             }
         });
 
