@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
-    <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
+    <meta name="description" content="Your ultimate partner for GCSE success. Handcrafted by human developers, not AI. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
     <link rel="preconnect" href="https://drive.google.com">
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
@@ -492,6 +492,7 @@
         </main>
         <footer class="mt-24 text-center text-gray-500 text-sm">
              <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
+             <p class="mt-2 text-xs text-gray-400">💻 Proudly crafted by human developers - not AI generated. Every line of code written with care by Mayukhjit.</p>
         </footer>
     </div>
     
@@ -1117,34 +1118,37 @@
       const db = firebase.firestore();
     </script>
     <script>
-        // --- APP STATE---
-        let currentUser = null;
-        let isGapiReady = false;
-        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
-        let currentFolderFiles = [];
-        let fileBrowserView = 'list'; // 'list' or 'grid'
-        let allSubjectFolders = {};
-        let allBlogPosts = [];
-        let currentDate = new Date();
-        let activeCountdowns = [];
-        let currentCountdownIndex = 0;
-        let clockInterval = null;
-        let unsubscribeUserManagement;
-        let unsubscribeUsefulLinks;
-        let unsubscribeVideoPlaylists;
-        let unsubscribeBlogPosts;
-        let unsubscribeUserEvents;
-        let unsubscribeGlobalEvents;
-        let unsubscribeAnnouncement;
-        let unsubscribeBlogComments;
-        let recaptchaVerifier;
-        // --- CONFIGURATION ---
-        const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
-        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
-        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+        // --- APP STATE --- written by Mayu
+        // Global variables that track the current state of the application
+        let currentUser = null;                // Currently logged in user object
+        let isGapiReady = false;              // Whether Google API is loaded
+        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }]; // File browser navigation path
+        let currentFolderFiles = [];          // Files in the current folder
+        let fileBrowserView = 'list';         // 'list' or 'grid' view mode
+        let allSubjectFolders = {};           // Mapping of subject names to folder IDs
+        let allBlogPosts = [];                // Cache of all blog posts
+        let currentDate = new Date();         // Current date for calendar
+        let activeCountdowns = [];            // Active event countdowns
+        let currentCountdownIndex = 0;        // Which countdown to show
+        let clockInterval = null;             // Timer for the live clock
+        // Real-time database listeners (to clean up on logout)
+        let unsubscribeUserManagement;       // Admin user management listener
+        let unsubscribeUsefulLinks;          // Useful links listener 
+        let unsubscribeVideoPlaylists;       // Video playlists listener
+        let unsubscribeBlogPosts;           // Blog posts listener
+        let unsubscribeUserEvents;          // User events listener
+        let unsubscribeGlobalEvents;        // Global events listener
+        let unsubscribeAnnouncement;        // Announcements listener
+        let unsubscribeBlogComments;        // Blog comments listener
+        let recaptchaVerifier;              // reCAPTCHA verification object
+        // --- CONFIGURATION --- written by Mayu for the UK GCSE system
+        const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc'; // Main Google Drive folder
+        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // Google reCAPTCHA key
+        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics']; // All available GCSE subjects
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+        // Custom icons for each subject - hand-picked SVGs by Mayu for visual clarity
         const subjectIconMap = {
-            // Biology: tree icon
+            // Biology: tree icon (represents life and growth)
             biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
             // Physics: thunderbolt
             physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
@@ -1169,28 +1173,69 @@
         };
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
+        // These functions handle app startup and user login/logout - written by Mayu
         // =================================================================================
+        /**
+         * This function makes sure we always have something visible on the screen
+         * Think of it as a safety net - sometimes when the app is loading or switching between
+         * different pages (like login, main app, etc.), all pages might accidentally get hidden
+         * This function checks if any page is currently visible, and if not, it shows the landing page
+         * It's like having a fallback plan so users never see a blank screen
+         */
         function ensureInitialView() {
             try {
+                // Get references to all the main pages in our app
                 const landing = document.getElementById('landing-page');
                 const app = document.getElementById('main-app');
                 const login = document.getElementById('login-page');
                 const verify = document.getElementById('email-verify-page');
+                
+                // This helper function checks if an element exists and is visible (not hidden)
                 const isVisible = (el) => el && !el.classList.contains('hidden');
+                
+                // Check if any of our main pages are currently visible
                 const anyVisible = [app, login, verify, landing].some(isVisible);
+                
+                // If nothing is visible and we have a landing page, show it
+                // This prevents users from seeing a blank screen
                 if (!anyVisible && landing) landing.classList.remove('hidden');
-            } catch (_) {}
+            } catch (_) {
+                // If anything goes wrong, just ignore it - this is a safety function
+                // We don't want to crash the app if there's an issue here
+            }
         }
 
+        /**
+         * This function handles hiding the loading screen with a smooth animation
+         * When the app finishes loading, we want to gracefully fade out the loading overlay
+         * instead of just making it disappear instantly (which would look jarring)
+         * It also ensures the logo animation completes properly and makes sure
+         * we have a visible page after the loading screen is gone
+         */
         function hideAppLoading() {
+            // Find the loading overlay element
             const overlay = document.getElementById('app-loading');
-            if (!overlay) return;
+            if (!overlay) return; // If there's no loading overlay, nothing to do
+            
+            // Find the animated logo inside the loading screen
             const logo = overlay.querySelector('.animate-logo');
-            if (logo) { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }
+            if (logo) { 
+                // Make sure the logo is fully visible and in its final position
+                logo.style.opacity = '1'; 
+                logo.style.transform = 'translateY(0)'; 
+            }
+            
+            // Make sure we have a page visible before hiding the loading screen
             ensureInitialView();
+            
+            // Start fading out the loading overlay smoothly
             overlay.style.opacity = '0';
             overlay.style.transition = 'opacity 200ms ease-out';
-            setTimeout(() => { overlay.style.display = 'none'; }, 220);
+            
+            // After the fade animation completes, completely hide the overlay
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+            }, 220); // Wait a bit longer than the transition to ensure it's complete
         }
 
         // Fallback: ensure hide after window load
@@ -1274,29 +1319,50 @@
             }
         });
 
+        /**
+         * This is the main function that sets up the app after a user successfully logs in
+         * Think of it as the "grand opening" function - it hides all the login/landing pages
+         * and reveals the main application interface with all its features
+         * It also starts all the background processes that keep the app running smoothly
+         */
         function initializeAppState() {
+            // Hide all the pages we don't need anymore (landing, login, verification)
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('email-verify-page').classList.add('hidden');
             
+            // Show the main application interface
             const mainApp = document.getElementById('main-app');
             mainApp.classList.remove('hidden');
-            mainApp.style.display = 'flex';
-            mainApp.classList.add('fade-in');
+            mainApp.style.display = 'flex'; // Make sure it's displayed as a flex container
+            mainApp.classList.add('fade-in'); // Add a nice fade-in animation
+            
+            // Set up the personalized welcome message for the user
             updateWelcomeMessage();
+            
+            // Start listening for real-time updates from the database
+            // This keeps the app synchronized with changes made by other users or admins
             setupRealtimeListeners();
+            
+            // Start the clock that updates time displays and countdowns
             startClock();
+            
+            // Hide the loading screen since we're done initializing
             hideAppLoading();
             
+            // If we have a logged-in user, show their personalized dashboard
             if (currentUser) {
                 renderDashboard();
             }
 
-            // Restore accent from localStorage
+            // Restore the user's preferred color theme if they had one saved
             try {
                 const saved = localStorage.getItem('gcsemate_accent');
                 if (saved) applyAccent(JSON.parse(saved));
-            } catch (e) {}
+            } catch (e) {
+                // If there's an issue with the saved theme, just ignore it
+                // The app will use the default theme instead
+            }
         }
         function setupRealtimeListeners() {
             // Listen for announcements
@@ -1381,115 +1447,204 @@
                     updateCountdownBanner(); // Update countdown when events change
                 }, err => console.error("Error fetching global events:", err));
         }
+        /**
+         * This function handles user registration - it's like the "sign up" process
+         * When someone wants to create a new account, this function does all the heavy lifting:
+         * 1. Gets their info from the registration form
+         * 2. Creates their account with Firebase (Google's authentication service)
+         * 3. Sends them a verification email (to make sure they own the email address)
+         * 4. Saves their profile information to our database
+         * 5. Shows them the "check your email" page
+         */
         async function handleRegister() {
+            // Get all the information the user entered in the registration form
             const displayName = document.getElementById('register-displayname').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             const messageEl = document.getElementById('register-error');
+            
+            // Clear any previous error messages
             messageEl.textContent = '';
+            
             try {
+                // Create the user account with Firebase Authentication
+                // This is like signing them up for an account with Google's secure system
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
-                // Send verification email
+                
+                // Send them an email to verify they own this email address
+                // This prevents people from using fake email addresses
                 await user.sendEmailVerification();
                 
-                // Update Firebase Auth profile
+                // Update their profile in Firebase Auth with their display name
                 await user.updateProfile({ displayName: displayName });
-                // Save user profile to Firestore
+                
+                // Save their complete profile to our database (Firestore)
+                // This includes additional info that Firebase Auth doesn't store
                 await db.collection('users').doc(user.uid).set({
                     displayName: displayName,
                     email: email,
-                    tier: 'free',
-                    role: 'user',
-                    starredFiles: [],
-                    allowedSubjects: null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    tier: 'free',        // New users start with free tier
+                    role: 'user',        // Regular user (not admin)
+                    starredFiles: [],    // No starred files yet
+                    allowedSubjects: null, // Can access all subjects
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Record when they signed up
                 });
-                // onAuthStateChanged will redirect to the verification page
+                
+                // Show them the "check your email" page
+                // The onAuthStateChanged listener will automatically handle this redirect
                 showVerificationMessagePage(email);
             } catch (error) {
+                // If something went wrong, show the user what happened
+                // Firebase gives us helpful error messages like "email already in use"
                 messageEl.textContent = error.message;
             }
         }
+        /**
+         * This function handles user login - when someone wants to sign into their existing account
+         * It's more complex than registration because we need to check several things:
+         * 1. Verify they're not a robot (reCAPTCHA protection)
+         * 2. Check if they want to stay logged in (remember me)
+         * 3. Make sure their email is verified
+         * 4. Actually log them in with their credentials
+         */
         async function handleLogin() {
+            // Get the login information from the form
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember-me').checked;
             const messageEl = document.getElementById('auth-error');
+            
+            // Clear any previous error messages
             messageEl.textContent = '';
+            
             try {
-                // Enterprise reCAPTCHA token acquisition
+                // First, let's check if they're a real person using reCAPTCHA
+                // This helps protect against automated attacks and bots
                 try {
                     if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
                         await grecaptcha.ready();
+                        // Get a token from Google that proves they're probably human
                         const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
+                        
+                        // Send this token to our server to verify it's legitimate
                         const verifyRes = await fetch('/api/recaptcha-verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ token, expectedAction: 'LOGIN' })
                         });
                         const verifyData = await verifyRes.json();
+                        
+                        // If Google thinks this might be a bot, don't let them log in
                         if (!verifyRes.ok || !verifyData.allowed) {
                             messageEl.textContent = 'Suspicious activity detected. Please try again.';
                             return;
                         }
                     }
                 } catch (e) {
+                    // If reCAPTCHA fails, just log it but don't stop the login
+                    // We don't want to completely block users if reCAPTCHA has issues
                     console.warn('reCAPTCHA token acquisition failed:', e);
                 }
+                
+                // Set up how long they stay logged in
+                // LOCAL = stays logged in even after closing browser (remember me checked)
+                // SESSION = logs out when they close the browser (remember me unchecked)
                 const persistence = rememberMe 
                     ? firebase.auth.Auth.Persistence.LOCAL 
                     : firebase.auth.Auth.Persistence.SESSION;
                 
                 await auth.setPersistence(persistence);
                 
+                // Try to actually log them in with their email and password
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
+                // Check if they've verified their email address
+                // We require email verification for security
                 if (!userCredential.user.emailVerified) {
                     messageEl.textContent = 'Please verify your email before logging in.';
-                    // The onAuthStateChanged listener will handle redirecting them to the verification page.
+                    // The onAuthStateChanged listener will automatically redirect them to verification page
                     return;
                 }
-                // onAuthStateChanged will handle successful, verified login.
+                
+                // If we get here, login was successful!
+                // The onAuthStateChanged listener will handle showing them the app
             } catch (error) {
+                // If login failed, show them a user-friendly error message
                 console.error("Login Error:", error);
                 messageEl.textContent = 'Invalid email or password.';
-                // v3 tokens are single-use; nothing to reset on client
+                // Note: reCAPTCHA v3 tokens are single-use, so we don't need to reset anything
             }
         }
         
+        /**
+         * This function handles logging the user out of their account
+         * It's like the "sign out" button - it cleans up everything and returns them to the landing page
+         * We need to clean up various things to make sure no personal data stays in memory
+         */
         async function handleLogout() {
             try {
-                // Destroy reCAPTCHA verifier
+                // Clean up the reCAPTCHA verifier if it exists
+                // This prevents memory leaks and ensures fresh verification on next login
                 if (recaptchaVerifier) {
                     recaptchaVerifier.clear();
                     recaptchaVerifier = null;
                 }
                 
+                // Actually sign the user out using Firebase
+                // This tells Google's servers that this user is no longer logged in
                 await auth.signOut();
-                // onAuthStateChanged will handle UI changes
+                
+                // Reset the app state to starting conditions
+                // Clear the file browser path back to the root folder
                 path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
                 currentFolderFiles = [];
+                
+                // Note: The onAuthStateChanged listener will automatically handle:
+                // - Hiding the main app
+                // - Showing the landing page
+                // - Cleaning up real-time listeners
+                // - Clearing user data from memory
             } catch (error) {
+                // If something goes wrong with logout, log it but don't crash the app
                 console.error("Logout failed:", error);
             }
         }
         
+        /**
+         * This function sends another verification email to the user
+         * Sometimes emails get lost in spam folders or users miss them
+         * This gives them a way to request a new verification email
+         * We include some user-friendly feedback and prevent spam by disabling the button temporarily
+         */
         async function resendVerificationEmail() {
+            // Get references to the button and message elements
             const button = document.getElementById('resend-verification-btn');
             const messageEl = document.getElementById('resend-message');
+            
+            // Only allow resending if there's a logged-in user who isn't verified yet
             if (auth.currentUser && !auth.currentUser.emailVerified) {
                 try {
+                    // Disable the button and show "Sending..." to prevent multiple clicks
+                    // This prevents users from accidentally sending multiple emails
                     button.disabled = true;
                     button.textContent = 'Sending...';
+                    
+                    // Actually send the verification email using Firebase
                     await auth.currentUser.sendEmailVerification();
+                    
+                    // Show success message to the user
                     messageEl.textContent = 'A new verification link has been sent.';
+                    
+                    // After 5 seconds, clear the message and re-enable the button
+                    // This gives the user time to read the message and prevents button spam
                     setTimeout(() => {
                         messageEl.textContent = '';
                         button.disabled = false;
                         button.textContent = 'Resend Verification Email';
                     }, 5000);
                 } catch (error) {
+                    // If sending failed, show an error and restore the button
                     messageEl.textContent = 'Error sending email. Please try again later.';
                     console.error("Error resending verification email:", error);
                     button.disabled = false;
@@ -1499,25 +1654,45 @@
         }
         // =================================================================================
         // ADMIN & USER SETTINGS
+        // User management panel and settings functions - written by Mayu for admin control
         // =================================================================================
+        /**
+         * This function creates the admin panel that shows all users in the system
+         * It's like a contact list but for admins to manage users
+         * Each user gets their own card showing their info and an edit button
+         * Only admins can see this panel, and they can't edit themselves from here
+         */
         function renderUserManagementPanel(allUsers) {
+            // Find the container where we'll put all the user cards
             const container = document.getElementById('user-management-grid');
-            container.innerHTML = '';
+            container.innerHTML = ''; // Clear any existing cards first
+            
+            // Go through each user and create a card for them
             Object.values(allUsers).forEach(user => {
-                if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+                // Skip the current admin user - they shouldn't edit themselves here
+                if (user.id === currentUser.uid) return;
+                
+                // Create a new card element for this user
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-lg shadow-md flex flex-col';
+                
+                // Fill the card with the user's information
                 card.innerHTML = `
                     <div class="flex-grow">
                         <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
                         <p class="text-sm text-gray-500">${user.email}</p>
                         <div class="mt-2 flex gap-2">
+                            <!-- Show their subscription tier with color coding -->
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
+                            <!-- Show their role (admin/user) with color coding -->
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
                         </div>
                     </div>
+                    <!-- Edit button that opens the user editing modal -->
                     <button onclick="openEditUserModal('${user.id}')" class="mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors text-sm">Edit User</button>
                 `;
+                
+                // Add this user's card to the container
                 container.appendChild(card);
             });
         }
@@ -1658,23 +1833,34 @@
         }
         
         // Enhanced toast notification system
+        /**
+         * This function shows notification messages to users - like "Login successful!" or "Error occurred"
+         * Think of it like the notifications you see on your phone, but for the website
+         * It creates a colored popup that slides in from the right, stays for a few seconds, then disappears
+         * Different types (success, error, warning, info) get different colors and icons
+         */
         function showToast(message, type = 'info', duration = 4000) {
+            // Find or create the container where all toast notifications live
             const toastContainer = document.getElementById('toast-container') || createToastContainer();
             
+            // Create a new toast notification element
             const toast = document.createElement('div');
-            const bgColor = {
-                'success': 'bg-green-600',
-                'error': 'bg-red-600',
-                'warning': 'bg-yellow-600',
-                'info': 'bg-blue-600'
-            }[type] || 'bg-blue-600';
             
+            // Choose the background color based on the message type
+            const bgColor = {
+                'success': 'bg-green-600',  // Green for good news
+                'error': 'bg-red-600',     // Red for errors
+                'warning': 'bg-yellow-600', // Yellow for warnings
+                'info': 'bg-blue-600'      // Blue for general info
+            }[type] || 'bg-blue-600';      // Default to blue if type is unknown
+            
+            // Choose an icon that matches the message type
             const icon = {
-                'success': '✓',
-                'error': '✕',
-                'warning': '⚠',
-                'info': 'ℹ'
-            }[type] || 'ℹ';
+                'success': '✓',  // Checkmark for success
+                'error': '✕',    // X for errors
+                'warning': '⚠',  // Warning triangle
+                'info': 'ℹ'      // Info symbol
+            }[type] || 'ℹ';      // Default to info icon
             
             toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out`;
             toast.innerHTML = `
@@ -1726,10 +1912,20 @@
         }
         
         // =================================================================================
-        // PAGE/VIEW MANAGEMENT & RENDERING
+        // PAGE/VIEW MANAGEMENT & RENDERING 
+        // Functions for switching between different pages and rendering content - written by Mayu
         // =================================================================================
+        /**
+         * This tiny helper function capitalizes the first letter of any text
+         * For example: "hello world" becomes "Hello world"
+         * It's used throughout the app to make text look more professional
+         * Like converting "free" to "Free" or "admin" to "Admin" in user badges
+         */
         function capitalizeFirstLetter(string) {
+            // If there's no string or it's empty, just return empty string
             if (!string) return '';
+            
+            // Take the first character, make it uppercase, then add the rest of the string
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
         function generatePfpUrl(email) {
@@ -1853,10 +2049,20 @@
                 showToast("Could not clear announcement.", 'error');
             }
         }
+        /**
+         * This function creates the main dashboard that students see when they log in
+         * It shows all the GCSE subjects available (like Maths, Science, English, etc.)
+         * Each subject is displayed as a card with an icon and folder count
+         * The function loads data from Google Drive and handles different server configurations
+         * Written by Mayu - this dashboard is the heart of the student experience
+         */
         async function renderDashboard() {
+            // Find the container where we'll put all the subject cards
             const subjectGrid = document.getElementById('subject-grid');
-            if (!subjectGrid) return;
-            // Render skeleton loader
+            if (!subjectGrid) return; // Exit if the container doesn't exist
+            
+            // Show skeleton loading animation while we fetch the real data
+            // This gives users immediate feedback that something is happening
             let skeletonHTML = '';
             for (let i = 0; i < 10; i++) {
                 skeletonHTML += '<div class="h-36 skeleton"></div>';
@@ -1864,51 +2070,67 @@
             subjectGrid.innerHTML = skeletonHTML;
             
             try {
-                // Try multiple function routes in case Pages is configured differently
+                // Try multiple API endpoints because different hosting setups use different paths
+                // This makes the app work whether it's on Netlify, Vercel, GitHub Pages, etc.
                 let data = null;
                 const subjectUrls = [
-                    `/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
-                    `/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
-                    `/functions/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`
+                    `/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,     // Netlify/Vercel style
+                    `/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,        // Basic serverless
+                    `/functions/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}` // Firebase style
                 ];
                 let lastErr = null;
+                
+                // Try each URL until one works - written by Mayu for maximum compatibility
                 for (const u of subjectUrls) {
                     try {
                         const res = await fetch(u);
                         if (!res.ok) {
+                            // Extract error message from response if possible
                             let reason = `HTTP ${res.status}`;
                             try { const j = await res.json(); reason = j.error || reason; } catch {}
                             throw new Error(reason);
                         }
                         data = await res.json();
-                        break;
-                    } catch (e) { lastErr = e; }
+                        break; // Success! Stop trying other URLs
+                    } catch (e) { lastErr = e; } // Keep track of the last error for debugging
                 }
                 if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
+                // Store all the subject folder IDs we got from Google Drive
                 allSubjectFolders = {};
                 if (data.files) {
                     data.files.forEach(folder => {
+                        // Convert to lowercase for easy matching later
                         allSubjectFolders[folder.name.toLowerCase()] = folder.id;
                     });
                 }
                 
+                // Clear the skeleton loader since we have real data now
                 subjectGrid.innerHTML = '';
+                
+                // Check which subjects this user is allowed to see
+                // Admins can see everything, but regular users might have restrictions
                 const userAllowedSubjects = currentUser.allowedSubjects;
-                let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
+                let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined 
+                    ? SUBJECTS  // Show all subjects if no restrictions
+                    : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase())); // Filter to allowed only
+                
+                // If user has no subjects available, show a helpful message - written by Mayu
                 if (subjectsToShow.length === 0) {
                     subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
                     return;
                 }
+                // Map each subject to its exam board - this helps students know which papers they need
+                // Manually curated by Mayu to ensure accuracy for UK GCSE system
                 const examBoardBySubject = {
-                    // AQA
+                    // AQA exam board subjects
                     biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
-                    // Edexcel
+                    // Edexcel exam board subjects  
                     music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
-                    // OCR
+                    // OCR exam board subjects
                     computing: 'OCR', geography: 'OCR',
-                    // Both
+                    // Subjects available on multiple boards
                     english: 'AQA & Edexcel',
-                    // Eduqas
+                    // Eduqas exam board subjects
                     'philosophy and ethics': 'Eduqas'
                 };
                 subjectsToShow.forEach(subject => {
@@ -1981,37 +2203,72 @@
             }
         }
         
+        /**
+         * This function protects us from XSS attacks by cleaning up user input
+         * XSS = Cross-Site Scripting, where bad actors try to inject malicious code
+         * It converts dangerous characters like < and > into safe HTML entities
+         * For example: "<script>alert('hack')</script>" becomes harmless text
+         * This is essential whenever we display user-generated content
+         */
         function escapeHtml(str) {
             return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+                .replace(/&/g, '&amp;')   // & becomes &amp; (must be first!)
+                .replace(/</g, '&lt;')    // < becomes &lt;
+                .replace(/>/g, '&gt;')    // > becomes &gt;
+                .replace(/"/g, '&quot;')  // " becomes &quot;
+                .replace(/'/g, '&#39;');  // ' becomes &#39;
         }
 
+        /**
+         * This function converts timestamps into human-friendly text like "2 hours ago"
+         * Instead of showing "2024-01-15 14:30:22", it shows "3 minutes ago"
+         * It uses the browser's built-in internationalization to handle different languages
+         * The function automatically picks the best unit (seconds, minutes, hours, etc.)
+         */
         function timeAgo(date) {
             try {
                 const now = new Date();
+                // Calculate how many seconds have passed since the given date
                 const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+                
+                // Use the browser's RelativeTimeFormat for localized "time ago" strings
                 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-                if (seconds < 60) return rtf.format(-Math.max(1, seconds), 'second');
-                if (seconds < 3600) return rtf.format(-Math.floor(seconds/60), 'minute');
-                if (seconds < 86400) return rtf.format(-Math.floor(seconds/3600), 'hour');
-                if (seconds < 604800) return rtf.format(-Math.floor(seconds/86400), 'day');
-                if (seconds < 2592000) return rtf.format(-Math.floor(seconds/604800), 'week');
-                if (seconds < 31536000) return rtf.format(-Math.floor(seconds/2592000), 'month');
-                return rtf.format(-Math.floor(seconds/31536000), 'year');
+                
+                // Pick the appropriate time unit based on how much time has passed
+                if (seconds < 60) return rtf.format(-Math.max(1, seconds), 'second');      // "30 seconds ago"
+                if (seconds < 3600) return rtf.format(-Math.floor(seconds/60), 'minute');   // "15 minutes ago"
+                if (seconds < 86400) return rtf.format(-Math.floor(seconds/3600), 'hour');  // "3 hours ago"
+                if (seconds < 604800) return rtf.format(-Math.floor(seconds/86400), 'day'); // "2 days ago"
+                if (seconds < 2592000) return rtf.format(-Math.floor(seconds/604800), 'week'); // "1 week ago"
+                if (seconds < 31536000) return rtf.format(-Math.floor(seconds/2592000), 'month'); // "5 months ago"
+                return rtf.format(-Math.floor(seconds/31536000), 'year'); // "2 years ago"
             } catch (_) {
+                // If anything goes wrong, fallback to showing the full date and time
                 return date.toLocaleString();
             }
         }
 
+        /**
+         * This function highlights search terms in text, like when you search Google
+         * It makes matching words stand out with a yellow background
+         * For example: searching "math" in "Mathematics Tutorial" would highlight "Math"
+         * It's case-insensitive and handles special characters safely
+         */
         function highlightMatch(text, query) {
+            // If there's no search query, just return the escaped text
             if (!query) return escapeHtml(text);
+            
+            // First, make the text safe from XSS attacks
             const safeText = escapeHtml(text);
+            
+            // Escape special regex characters in the search query
+            // This prevents errors if someone searches for characters like [, ], *, etc.
             const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Create a case-insensitive regex pattern to find matches
             const re = new RegExp(escaped, 'gi');
+            
+            // Replace all matches with highlighted versions (yellow background)
             return safeText.replace(re, (m) => `<span class="bg-yellow-200 text-gray-900 rounded px-0.5">${m}</span>`);
         }
 
@@ -3271,9 +3528,16 @@
             return null;
         }
 
+        /**
+         * This function opens a modal window to preview files without downloading them
+         * It's like looking through a window - you can see the content but not edit it
+         * Works with PDFs, Word docs, PowerPoints, images, videos, and more
+         * If preview fails, it shows helpful fallback options to the user
+         * Written by Mayu to make studying more convenient - no more downloading just to peek at files!
+         */
         function showPreview(file) {
             const modal = document.getElementById('preview-modal');
-                const embedUrl = getPreviewEmbedUrl(file);
+            const embedUrl = getPreviewEmbedUrl(file);
             let content = '';
             if (embedUrl) {
                 const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
@@ -3918,6 +4182,12 @@
             document.getElementById('event-form').reset();
             document.getElementById('event-id').value = '';
         }
+        /**
+         * This function creates and updates the countdown banner at the top of the app
+         * It shows how many days are left until important events (like exam dates)
+         * It combines both personal events and school-wide events to find the next important deadline
+         * The banner automatically updates and shows different countdowns if there are multiple events
+         */
         function updateCountdownBanner() {
             // This function combines both global and user events to find active countdowns
             const banner = document.getElementById('event-countdown-banner');
@@ -3955,17 +4225,33 @@
                 banner.classList.add('hidden');
             }
         }
-        // --- Clock Function ---
+        /**
+         * This function starts a live clock that updates every second
+         * It shows both the current time and date in a nice format
+         * The clock appears in the top corner of the app to keep users oriented
+         * It uses British format (24-hour time, day-month-year) for consistency
+         */
         function startClock() {
+            // Find the HTML elements where we'll display the time and date
             const timeEl = document.getElementById('clock-time');
             const dateEl = document.getElementById('clock-date');
+            
+            // If we can't find the elements, don't start the clock
             if (!timeEl || !dateEl) return;
+            
+            // This inner function updates the displayed time and date
             function update() {
                 const now = new Date();
+                // Format time as HH:MM (24-hour format, British style)
                 timeEl.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                // Format date as "Monday, 15 January 2024" (British style)
                 dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             }
+            
+            // Update immediately when the clock starts
             update();
+            
+            // Then update every second (1000 milliseconds)
             clockInterval = setInterval(update, 1000);
         }
     </script>
