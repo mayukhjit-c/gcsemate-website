@@ -2976,7 +2976,10 @@
             modal.innerHTML = `
                 <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
-                        <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
+                        <div class="flex items-center min-w-0 gap-2">
+                            <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
+                            <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
+                        </div>
                         <div class="flex items-center gap-2">
                             <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" data-tooltip="Open in Google Drive">Open</a>
                             <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
@@ -3012,6 +3015,12 @@
                         loaded = true;
                         loading.classList.add('hidden');
                         fallback.classList.add('hidden');
+                    }, { once: true });
+                    frame.addEventListener('error', () => {
+                        loaded = false;
+                        loading.classList.add('hidden');
+                        fallback.classList.remove('hidden');
+                        fallback.classList.add('flex');
                     }, { once: true });
                 }
             } catch (_) {}
@@ -3095,12 +3104,25 @@
                 const brandedName = `${base}${suffix}${ext ? '.' + ext : ''}`;
 
                 const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                const res = await fetch(url, { credentials: 'omit' });
-                const blob = await res.blob();
+                async function fetchBinary(urlToFetch) {
+                    try {
+                        const r = await fetch(urlToFetch, { credentials: 'omit' });
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return await r.arrayBuffer();
+                    } catch (e) {
+                        return null;
+                    }
+                }
+                let ab = await fetchBinary(url);
+                if (!ab) {
+                    // Try public CORS proxy fallback for GET (no cookies, no credentials)
+                    ab = await fetchBinary(`https://cors.isomorphic-git.org/${url}`);
+                }
+                if (!ab) throw new Error('Unable to fetch file for branding');
+                const blob = new Blob([ab]);
 
                 if (ext.toLowerCase() === 'pdf') {
                     try {
-                        const ab = await blob.arrayBuffer();
                         const stampedBytes = await stampPdfBytesWithBranding(ab);
                         const brandedBlob = new Blob([stampedBytes], { type: 'application/pdf' });
                         const a = document.createElement('a');
@@ -3115,7 +3137,7 @@
                 }
 
                 const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
+                a.href = URL.createObjectURL(new Blob([ab]));
                 a.download = brandedName;
                 document.body.appendChild(a);
                 a.click();
