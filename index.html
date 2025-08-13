@@ -31,7 +31,7 @@
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
     <style>
         :root {
@@ -361,7 +361,8 @@
             </div>
             <h2 id="form-title" class="text-center text-gray-700 mb-6 text-xl">Your Ultimate Revision Hub</h2>
             <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
-                <div id="recaptcha-container" class="g-recaptcha" data-sitekey="6Le135YrAAAAAPDkrrZydpDcchppOQjSrorF1M2T" data-action="LOGIN"></div>
+                <!-- reCAPTCHA v3 runs invisibly; no widget needed -->
+                <div id="recaptcha-container" class="hidden"></div>
                 <input id="email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your email">
                 <div class="relative">
                     <input id="password" type="password" placeholder="Password" autocomplete="current-password" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your password">
@@ -873,7 +874,7 @@
         let recaptchaVerifier;
         // --- CONFIGURATION ---
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
-        const RECAPTCHA_SITE_KEY = '6Le135YrAAAAAPDkrrZydpDcchppOQjSrorF1M2T';
+        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
         const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
         const subjectIconMap = {
@@ -1153,11 +1154,19 @@
             try {
                 // Enterprise reCAPTCHA token acquisition
                 try {
-                    if (window.grecaptcha?.enterprise && RECAPTCHA_SITE_KEY) {
-                        await grecaptcha.enterprise.ready?.();
-                        const token = await grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
-                        // Optionally send token to your backend for verification
-                        window._lastRecaptchaToken = token;
+                    if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
+                        await grecaptcha.ready();
+                        const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
+                        const verifyRes = await fetch('/api/recaptcha-verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token, expectedAction: 'LOGIN' })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (!verifyRes.ok || !verifyData.allowed) {
+                            messageEl.textContent = 'Suspicious activity detected. Please try again.';
+                            return;
+                        }
                     }
                 } catch (e) {
                     console.warn('reCAPTCHA token acquisition failed:', e);
@@ -1179,7 +1188,7 @@
             } catch (error) {
                 console.error("Login Error:", error);
                 messageEl.textContent = 'Invalid email or password.';
-                try { if (window.grecaptcha?.enterprise) grecaptcha.enterprise.reset(); } catch (_) {}
+                // v3 tokens are single-use; nothing to reset on client
             }
         }
         
