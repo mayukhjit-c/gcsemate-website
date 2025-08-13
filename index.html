@@ -628,7 +628,7 @@
                         <div class="flex flex-col items-center text-center gap-4">
                             <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="h-9 w-9" aria-hidden="true">
-                                    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 6a1 1 0 112 0v3.586l1.707 1.707a1 1 0 01-1.414 1.414l-2.414-2.414A1 1 0 0110 12V8z"/>
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
                                 </svg>
                             </span>
                             <h3 class="text-2xl font-bold text-gray-800">Open GCSEMateGPT in a new tab</h3>
@@ -3237,9 +3237,19 @@
             if (mime === 'application/vnd.google-apps.drawing') {
                 return `https://docs.google.com/drawings/d/${file.id}/preview?embedded=true`;
             }
-            // Common Microsoft Office and text/media types can use Drive's previewer
+            // Special handling for PDFs to prevent auto-download
+            if (mime === 'application/pdf') {
+                // Use the file/d/ID/preview format which is better for embedding and doesn't auto-download
+                return `https://drive.google.com/file/d/${file.id}/preview`;
+            }
+            
+            // Image types - use drive preview that doesn't trigger downloads
+            if (mime.startsWith('image/')) {
+                return `https://drive.google.com/uc?export=view&id=${file.id}`;
+            }
+            
+            // Microsoft Office and other document types
             const drivePreviewMimes = [
-                'application/pdf',
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'application/vnd.ms-excel',
@@ -3249,9 +3259,14 @@
                 'text/plain',
                 'text/csv'
             ];
-            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || drivePreviewMimes.includes(mime)) {
-                // Use uc?export=preview which is often more reliable than /file/d/.../preview
-                return `https://drive.google.com/uc?export=preview&id=${file.id}`;
+            
+            if (drivePreviewMimes.includes(mime)) {
+                return `https://drive.google.com/file/d/${file.id}/preview`;
+            }
+            
+            // Video and audio files
+            if (mime.startsWith('video/') || mime.startsWith('audio/')) {
+                return `https://drive.google.com/uc?export=view&id=${file.id}`;
             }
             return null;
         }
@@ -3274,7 +3289,7 @@
                             <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
                                 <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
                                     <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.732 8.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 </div>
                                 <h4 class="text-lg font-bold text-gray-800 mb-2">Preview Unavailable</h4>
@@ -3374,32 +3389,20 @@
                     
                     // Handle successful load
                     frame.addEventListener('load', () => {
-                        try {
-                            // Check if iframe content is accessible (not blocked)
-                            const iframeDoc = frame.contentDocument || frame.contentWindow?.document;
-                            if (iframeDoc && iframeDoc.location.href !== 'about:blank') {
-                                loaded = true;
-                                clearTimeout(timeoutId);
-                                hideLoading();
-                                console.log('Preview loaded successfully');
-                            } else {
-                                throw new Error('Iframe content blocked or empty');
+                        // For cross-origin iframes (like Google Drive), we can't access contentDocument
+                        // but the load event still fires when the iframe loads successfully
+                        loaded = true;
+                        clearTimeout(timeoutId);
+                        hideLoading();
+                        console.log('Preview loaded successfully');
+                        
+                        // Double-check after a short delay to ensure content is visible
+                        setTimeout(() => {
+                            if (frame.style.display !== 'none' && frame.offsetHeight > 0) {
+                                // Frame is visible and has content
+                                console.log('Preview confirmed visible');
                             }
-                        } catch (e) {
-                            // Cross-origin restriction or other access issue
-                            if (retryCount < maxRetries) {
-                                retryCount++;
-                                console.warn(`Preview access restricted, retry ${retryCount}/${maxRetries}`);
-                                setTimeout(() => {
-                                    if (!loaded) {
-                                        frame.src = frame.src + (frame.src.includes('?') ? '&' : '?') + 'retry=' + retryCount;
-                                    }
-                                }, 1000);
-                            } else {
-                                console.warn('Preview blocked after retries');
-                                showFallback();
-                            }
-                        }
+                        }, 500);
                     }, { once: true });
                     
                     // Handle load errors
@@ -3466,7 +3469,7 @@
             document.body.innerHTML = `
                 <div class="w-full min-h-screen flex items-center justify-center bg-gray-100 p-4">
                      <div class="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-white/40 max-w-lg w-full text-center">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2L2 22h20L12 2z" /></svg>
                          <h2 class="text-3xl font-bold text-gray-800 mb-2">${title}</h2>
                          <p class="text-gray-600 mb-6">${message}</p>
                          <a href="/" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Return Home</a>
