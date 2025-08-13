@@ -2936,7 +2936,7 @@
 
         function showPreview(file) {
             const modal = document.getElementById('preview-modal');
-            const embedUrl = getPreviewEmbedUrl(file);
+                const embedUrl = getPreviewEmbedUrl(file);
             let content = '';
             if (embedUrl) {
                 const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
@@ -2954,6 +2954,7 @@
                                 <p class="text-sm text-gray-600 mb-4">If your internet is fine, this can be caused by browser settings blocking third‑party cookies. You can still open the file directly.</p>
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Open in Google Drive</a>
+                                    <button id="download-fallback" class="px-4 py-2 rounded-md bg-gray-800 text-white font-semibold hover:bg-gray-900">Download</button>
                                     <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Reload Preview</button>
                                 </div>
                             </div>
@@ -3002,6 +3003,14 @@
                         frame.src = frame.src;
                     });
                 }
+                try {
+                    const dfb = document.getElementById('download-fallback');
+                    if (dfb) {
+                        dfb.addEventListener('click', () => {
+                            handleBrandedDownload(file.id, file.name);
+                        });
+                    }
+                } catch(_) {}
                 if (frame && loading && fallback) {
                     let loaded = false;
                     const timeoutId = setTimeout(() => {
@@ -3113,11 +3122,8 @@
                         return null;
                     }
                 }
-                let ab = await fetchBinary(url);
-                if (!ab) {
-                    // Try public CORS proxy fallback for GET (no cookies, no credentials)
-                    ab = await fetchBinary(`https://cors.isomorphic-git.org/${url}`);
-                }
+                let ab = await fetchBinary('/api/proxy-drive?id=' + encodeURIComponent(fileId));
+                if (!ab) ab = await fetchBinary(url);
                 if (!ab) throw new Error('Unable to fetch file for branding');
                 const blob = new Blob([ab]);
 
