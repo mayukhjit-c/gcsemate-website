@@ -243,6 +243,11 @@
         /* Respect users who prefer reduced motion */
         @media (prefers-reduced-motion: reduce) {
             * { animation: none !important; transition: none !important; }
+            /* Ensure elements that normally fade in via animation are visible */
+            .animate-hero-title,
+            .animate-hero-subtitle,
+            .animate-hero-buttons,
+            .animate-feature-card { opacity: 1 !important; }
         }
     </style>
 </head>
@@ -3342,10 +3347,15 @@
             if (activeCountdowns.length > 0) {
                 currentCountdownIndex = Math.min(currentCountdownIndex, activeCountdowns.length - 1);
                 const nextEvent = activeCountdowns[currentCountdownIndex];
-                const diffTime = nextEvent.dateObj - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const diffTime = (nextEvent?.dateObj instanceof Date ? nextEvent.dateObj.getTime() : new Date(nextEvent?.dateObj).getTime()) - now.getTime();
+                const msPerDay = 1000 * 60 * 60 * 24;
+                const rawDays = Number.isFinite(diffTime) ? diffTime / msPerDay : NaN;
+                const diffDays = Number.isFinite(rawDays) ? Math.max(0, Math.ceil(rawDays)) : null;
                 let countdownText = `${diffDays} day${diffDays !== 1 ? 's' : ''} until ${nextEvent.title}!`;
                 if (diffDays === 0) countdownText = `Today: ${nextEvent.title}!`;
+                if (diffDays === null) {
+                    countdownText = `${nextEvent?.title ? nextEvent.title : 'Upcoming event'}`;
+                }
                 banner.innerHTML = `<div class="bg-yellow-400 text-yellow-900 p-3 text-center text-sm font-semibold flex justify-center items-center relative gap-3"><span>${countdownText}</span><button id="dismiss-countdown" class="px-2 py-0.5 rounded bg-yellow-500/40 hover:bg-yellow-500/60 text-yellow-950 text-xs">Dismiss</button></div>`;
                 banner.classList.remove('hidden');
                 const btn = document.getElementById('dismiss-countdown');
