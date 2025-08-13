@@ -138,6 +138,21 @@
         .animate-hero-buttons { animation: slideInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
         .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
         /* Clock styles */
+        /* Gmail-style indeterminate progress bar */
+        .progress-bar { position: relative; height: 3px; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
+        .progress-bar .bar { position: absolute; height: 100%; background: #2563eb; will-change: left, right; }
+        .progress-bar .bar1 { animation: indeterminate1 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite; }
+        .progress-bar .bar2 { animation: indeterminate2 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite; background: rgba(37, 99, 235, 0.7); }
+        @keyframes indeterminate1 {
+            0% { left: -35%; right: 100%; }
+            60% { left: 100%; right: -90%; }
+            100% { left: 100%; right: -90%; }
+        }
+        @keyframes indeterminate2 {
+            0% { left: -200%; right: 100%; }
+            60% { left: 107%; right: -8%; }
+            100% { left: 107%; right: -8%; }
+        }
         #dashboard-clock {
             font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
             font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
@@ -250,8 +265,17 @@
             .animate-feature-card { opacity: 1 !important; }
         }
     </style>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    </head>
+    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
+        <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-12 w-auto mb-4" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
+        <div class="w-[220px] progress-bar">
+            <div class="bar bar1"></div>
+            <div class="bar bar2"></div>
+        </div>
+        <p class="mt-3 text-xs text-gray-500">Loading GCSEMate…</p>
+    </div>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
     <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
@@ -876,6 +900,20 @@
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
+        function hideAppLoading() {
+            const overlay = document.getElementById('app-loading');
+            if (!overlay) return;
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 200ms ease-out';
+            setTimeout(() => { overlay.style.display = 'none'; }, 220);
+        }
+
+        // Fallback: ensure hide after window load
+        window.addEventListener('load', () => {
+            // if auth callback hasn't hidden it within a second, hide anyway
+            setTimeout(hideAppLoading, 1000);
+        }, { once: true });
+
         auth.onAuthStateChanged(async (user) => {
             // Detach old listeners to prevent memory leaks on re-login
             if (unsubscribeUserManagement) unsubscribeUserManagement();
@@ -898,19 +936,23 @@
                             ...userDoc.data()
                         };
                         initializeAppState();
+                        hideAppLoading();
                     } else {
                         console.error("User authenticated but no profile found in Firestore.");
                         await handleLogout();
+                        hideAppLoading();
                     }
                 } catch (error) {
                     console.error("Error fetching user profile:", error);
                     showErrorPage("Login Error", "Could not fetch your user profile. Please try again later.");
                     await handleLogout();
+                    hideAppLoading();
                 }
             } else if (user && !user.emailVerified) {
                 // User is signed in but NOT verified.
                 console.log("User is not verified.");
                 showVerificationMessagePage(user.email);
+                hideAppLoading();
             } else {
                 // User is signed out.
                 currentUser = null;
@@ -932,6 +974,7 @@
                     landingPage.classList.remove('hidden');
                     landingPage.classList.add('fade-in');
                 }
+                hideAppLoading();
             }
         });
 
