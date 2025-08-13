@@ -110,6 +110,7 @@
         @keyframes pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
         .fade-in { animation: fadeIn 0.45s ease-out forwards; will-change: opacity; }
         .slide-in-up { animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity; }
+        .page-transition-enter { animation: slideInUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, opacity; }
         /* Star icon animation */
         .star-icon { transition: transform 0.2s ease, color 0.2s ease; position: relative; }
         .star-icon.starred { color: #facc15; transform: scale(1.15); }
@@ -139,7 +140,7 @@
         .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
         /* Clock styles */
         /* Gmail-style indeterminate progress bar */
-        .progress-bar { position: relative; height: 3px; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
+        .progress-bar { position: relative; height: 6px; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
         .progress-bar .bar { position: absolute; height: 100%; background: #2563eb; will-change: left, right; }
         .progress-bar .bar1 { animation: indeterminate1 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite; }
         .progress-bar .bar2 { animation: indeterminate2 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite; background: rgba(37, 99, 235, 0.7); }
@@ -262,19 +263,20 @@
             .animate-hero-title,
             .animate-hero-subtitle,
             .animate-hero-buttons,
-            .animate-feature-card { opacity: 1 !important; }
+            .animate-feature-card,
+            .animate-logo { opacity: 1 !important; }
         }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
-        <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-12 w-auto mb-4" onerror="this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate';">
-        <div class="w-[220px] progress-bar">
+        <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo" onerror="this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate';" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
+        <div class="w-[300px] max-w-[80vw] progress-bar">
             <div class="bar bar1"></div>
             <div class="bar bar2"></div>
         </div>
-        <p class="mt-3 text-xs text-gray-500">Loading GCSEMate…</p>
+        <p class="mt-4 text-sm text-gray-500">Loading GCSEMate…</p>
     </div>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
@@ -903,6 +905,8 @@
         function hideAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
+            const logo = overlay.querySelector('.animate-logo');
+            if (logo) { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }
             overlay.style.opacity = '0';
             overlay.style.transition = 'opacity 200ms ease-out';
             setTimeout(() => { overlay.style.display = 'none'; }, 220);
@@ -910,8 +914,12 @@
 
         // Fallback: ensure hide after window load
         window.addEventListener('load', () => {
-            // if auth callback hasn't hidden it within a second, hide anyway
-            setTimeout(hideAppLoading, 1000);
+            // Trigger logo slide-in immediately on load
+            const overlay = document.getElementById('app-loading');
+            const logo = overlay?.querySelector?.('.animate-logo');
+            if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
+            // If auth callback hasn't hidden it within a second, hide anyway
+            setTimeout(hideAppLoading, 1200);
         }, { once: true });
 
         auth.onAuthStateChanged(async (user) => {
@@ -1394,12 +1402,14 @@
                 setTimeout(() => {
                     current.classList.add('hidden');
                     current.classList.remove('page-transition-leave');
-                }, 180);
+                }, 160);
             }
 
+            // Force layout reflow so the animation restarts reliably
+            void newPage.offsetWidth;
             newPage.classList.remove('hidden');
             newPage.classList.add('page-transition-enter');
-            setTimeout(() => newPage.classList.remove('page-transition-enter'), 220);
+            setTimeout(() => newPage.classList.remove('page-transition-enter'), 260);
 
             // Update nav active state
             document.querySelectorAll('.nav-link').forEach(l => {
