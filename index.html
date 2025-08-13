@@ -63,7 +63,7 @@
         /* Utility to hide scrollbars for overflow regions */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Loader animation */
+        /* Enhanced Loader animations */
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
             border-top: 4px solid #3b82f6;
@@ -72,9 +72,154 @@
             height: 32px;
             animation: spin 1s linear infinite;
         }
+        
+        /* Professional dots spinner for preview loading */
+        .dots-spinner {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .dots-spinner i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: dot-pulse 1.4s ease-in-out infinite both;
+        }
+        .dots-spinner i:nth-child(1) { animation-delay: -0.32s; }
+        .dots-spinner i:nth-child(2) { animation-delay: -0.16s; }
+        .dots-spinner i:nth-child(3) { animation-delay: 0s; }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes dot-pulse {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+            40% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+        
+        /* Smooth transitions for better UX */
+        .transition-all { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .transition-transform { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .transition-opacity { transition: opacity 0.3s ease-in-out; }
+        .transition-height { transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Enhanced hover effects */
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Professional button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, rgb(var(--accent-700)), rgb(var(--accent-600)));
+            transform: translateY(-1px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #374151;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Card hover effects */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Professional focus states */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 0 0 2px rgb(var(--accent-500));
+        }
+        
+        /* Loading states */
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Performance optimizations */
+        .will-change-transform { will-change: transform; }
+        .will-change-opacity { will-change: opacity; }
+        .gpu-accelerated { transform: translateZ(0); }
+        
+        /* Lazy loading optimization */
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .lazy-image.loaded {
+            opacity: 1;
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .card-hover {
+                border-width: 2px;
+                border-color: #000;
+            }
+            .btn-primary {
+                border: 2px solid #000;
+            }
         }
         /* Active navigation link style */
         .nav-link.active {
@@ -295,7 +440,7 @@
              <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
               <div>
                   <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors mr-4">Login</button>
-                  <button onclick="showAuthPage(false)" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 transition-all transform hover:scale-105">Sign Up Free</button>
+                  <button onclick="showAuthPage(false)" class="btn-primary hover-lift transition-all">Sign Up Free</button>
               </div>
         </header>
         <main class="mt-16 sm:mt-24">
@@ -321,22 +466,22 @@
                 <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything you will need to ace your exams!</h2>
                 <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.1s;">
-                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300">
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
                         <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.2s;">
-                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.2s;">
+                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300">
                              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                          </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
                         <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 animate-feature-card" style="animation-delay: 0.3s;">
-                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300">
                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Integrated Calendar</h3>
@@ -652,8 +797,21 @@
                         </figure>
                         <h3>The Spark of an Idea</h3>
                         <p>GCSEMate wasn't born in a boardroom; it was conceived during late-night revision sessions. As a Year 10 student, our founder found himself drowning in a sea of digital chaos. Revision notes were in one app, past papers downloaded into another folder, useful websites were lost in a long list of bookmarks, and collaborating with friends meant endless email chains. He knew there had to be a better way. Armed with a passion for coding and a clear problem to solve, he began building the first version of GCSEMate.</p>
+                        
                         <h3>Our Mission: Simplify to Succeed</h3>
                         <p>This journey started with a simple idea: to empower fellow students to cut through the revision clutter and achieve their full potential. We believe that your focus should be on learning, not on fighting with disorganized files. GCSEMate eliminates the friction of traditional study methods by providing a single, intelligent source of truth for all subjects, curated and organized for maximum impact. Every feature is built with the student experience at its core, ensuring GCSEMate is a tool that genuinely helps, not hinders, your path to success.</p>
+                        
+                        <h3>Built by Students, For Students</h3>
+                        <p>What makes GCSEMate different isn't just the technology—it's the understanding. Our team consists of current and recent GCSE students who have lived through the stress, the late nights, and the overwhelming feeling of not knowing where to start. We've felt the frustration of finding the perfect revision guide only to lose it in a folder maze, or discovering an amazing YouTube explanation but forgetting to bookmark it. This isn't theoretical for us; it's personal.</p>
+                        
+                        <h3>The Technology Behind the Magic</h3>
+                        <p>Behind the clean interface lies a carefully crafted system designed for speed, reliability, and accessibility. We've integrated with Google Drive's powerful API to provide seamless file access, built intelligent search functionality to help you find exactly what you need, and implemented progressive web app technology so GCSEMate works perfectly on any device. Our AI tutor, GCSEMateGPT, is specifically trained on GCSE curricula to provide targeted, exam-focused assistance.</p>
+                        
+                        <h3>Privacy and Security First</h3>
+                        <p>We understand that your study materials and personal information are precious. That's why GCSEMate is built with privacy by design. We use industry-standard encryption, minimal data collection practices, and transparent policies. You own your data, and we're simply here to help you organize and access it more effectively. Our authentication system is secure, our servers are protected, and your trust is our top priority.</p>
+                        
+                        <h3>Looking Forward</h3>
+                        <p>This is just the beginning. We're constantly listening to feedback from our community of users, implementing new features, and refining existing ones. From interactive revision tools to collaborative study spaces, from AI-powered study plans to comprehensive progress tracking—we're building the future of digital education, one feature at a time. Join us on this journey to make GCSE success accessible to everyone.</p>
                     </div>
                 </div>
                 <div id="features-page" class="page hidden p-8 max-w-4xl mx-auto">
@@ -835,6 +993,69 @@
                             </div>
                             <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">What file types can I preview?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate supports previewing PDFs, Word documents, Google Docs, Google Slides, Google Sheets, PowerPoint presentations, images (JPEG, PNG, GIF), and text files. If a file can't be previewed directly, you can always open it in Google Drive or download it.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I access GCSEMate offline?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate requires an internet connection to access files and sync data. However, you can download files locally for offline study. We're working on offline capabilities for basic features in future updates.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How accurate is GCSEMateGPT?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMateGPT is trained specifically on GCSE curricula and past papers, making it highly accurate for GCSE-level questions. However, always cross-reference important information with official sources and your teachers. It's a powerful study aid, not a replacement for your textbooks.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I share files with classmates?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Currently, file sharing happens through Google Drive's sharing features. Click "Open in Google Drive" on any file to access sharing options. We're developing native sharing features for future releases.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Is my data safe and private?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Absolutely. We use industry-standard encryption, minimal data collection, and transparent privacy policies. Your study materials remain in your Google Drive, and we only access metadata necessary for organization. Read our full Privacy Policy for details.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Why choose GCSEMate over other study apps?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (£1/month), and features designed around the actual GCSE curriculum and exam formats.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I get the most out of GCSEMate?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Start by exploring each subject's file browser, star your most important documents, use the calendar for deadline tracking, engage with GCSEMateGPT for quick explanations, and take advantage of keyboard shortcuts for faster navigation. Regular use builds familiarity and efficiency.</p>
                             </div>
                         </div>
                     </div>
@@ -1408,10 +1629,102 @@
                 setTimeout(() => messageEl.textContent = '', 3000);
             } catch (error) {
                 console.error("Error updating user settings:", error);
-                messageEl.textContent = error.message;
-                messageEl.className = 'text-red-600 text-sm text-center h-4';
+                const friendlyMessage = handleAPIError(error, 'updating settings');
+                messageEl.textContent = friendlyMessage;
+                messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
             }
         }
+        
+        // Enhanced error handling and user feedback system
+        function showErrorMessage(inputElement, message) {
+            const messageEl = inputElement.parentElement.querySelector('.error-message') || inputElement.nextElementSibling;
+            if (messageEl) {
+                messageEl.textContent = message;
+                messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
+                
+                // Add visual feedback to the input field
+                inputElement.classList.add('border-red-500', 'bg-red-50');
+                inputElement.classList.remove('border-gray-300');
+                
+                // Auto-clear error when user starts typing
+                const handleInput = () => {
+                    inputElement.classList.remove('border-red-500', 'bg-red-50');
+                    inputElement.classList.add('border-gray-300');
+                    messageEl.textContent = '';
+                    inputElement.removeEventListener('input', handleInput);
+                };
+                inputElement.addEventListener('input', handleInput);
+            }
+        }
+        
+        // Enhanced toast notification system
+        function showToast(message, type = 'info', duration = 4000) {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            
+            const toast = document.createElement('div');
+            const bgColor = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600',
+                'warning': 'bg-yellow-600',
+                'info': 'bg-blue-600'
+            }[type] || 'bg-blue-600';
+            
+            const icon = {
+                'success': '✓',
+                'error': '✕',
+                'warning': '⚠',
+                'info': 'ℹ'
+            }[type] || 'ℹ';
+            
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out`;
+            toast.innerHTML = `
+                <span class="text-lg font-bold">${icon}</span>
+                <span class="flex-1">${message}</span>
+                <button class="text-white hover:text-gray-200 ml-2" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger slide-in animation
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 10);
+            
+            // Auto remove
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, duration);
+        }
+        
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-4 right-4 z-50 max-w-sm';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        // Global error handler for better user experience
+        function handleAPIError(error, context = '') {
+            console.error(`API Error ${context}:`, error);
+            
+            let userMessage = 'Something went wrong. Please try again.';
+            
+            if (error.message.includes('network') || error.message.includes('fetch')) {
+                userMessage = 'Network error. Please check your connection and try again.';
+            } else if (error.message.includes('permission') || error.message.includes('auth')) {
+                userMessage = 'Authentication error. Please log in again.';
+            } else if (error.message.includes('quota') || error.message.includes('limit')) {
+                userMessage = 'Service temporarily unavailable. Please try again later.';
+            }
+            
+            showToast(userMessage, 'error');
+            return userMessage;
+        }
+        
         // =================================================================================
         // PAGE/VIEW MANAGEMENT & RENDERING
         // =================================================================================
@@ -2903,8 +3216,9 @@
                 emailInput.disabled = true;
             } catch (error) {
                 console.error("Password reset error:", error);
-                messageEl.textContent = error.message;
-                messageEl.className = 'text-red-600 text-sm text-center h-4';
+                const friendlyMessage = handleAPIError(error, 'password reset');
+                messageEl.textContent = friendlyMessage;
+                messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
             }
         }
         // Returns an embeddable preview URL for supported types, or null if not supported
@@ -2957,13 +3271,35 @@
                         </div>
                         <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
                         <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
-                            <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md">
-                                <h4 class="text-lg font-bold text-gray-800 mb-2">Couldn’t load the preview</h4>
-                                <p class="text-sm text-gray-600 mb-4">If your internet is fine, this can be caused by browser settings blocking third‑party cookies. You can still open the file directly.</p>
-                                <div class="flex flex-col sm:flex-row gap-2">
-                                    <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Open in Google Drive</a>
-                                    <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-gray-800 text-white font-semibold hover:bg-gray-900">Download</a>
-                                    <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Reload Preview</button>
+                            <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
+                                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
+                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.732 8.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Preview Unavailable</h4>
+                                <p class="text-sm text-gray-600 mb-4">This file cannot be previewed directly. This might be due to browser security settings, file format limitations, or temporary connectivity issues.</p>
+                                <div class="flex flex-col gap-3">
+                                    <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Try Again
+                                    </button>
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                            View Online
+                                        </a>
+                                        <button onclick="downloadFile('${file.id}', '${file.name}', '${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}')" class="px-4 py-2 rounded-md bg-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Download
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2998,45 +3334,132 @@
                 </div>
             `;
             modal.style.display = 'flex';
-            // Setup preview load/fallback logic
+            // Setup enhanced preview load/fallback logic
             try {
                 const frame = document.getElementById('file-preview-frame');
                 const loading = document.getElementById('preview-loading');
                 const fallback = document.getElementById('preview-fallback');
                 const reloadBtn = document.getElementById('reload-preview-btn');
-                if (reloadBtn && frame && loading && fallback) {
-                    reloadBtn.addEventListener('click', () => {
-                        fallback.classList.add('hidden');
-                        loading.classList.remove('hidden');
-                        frame.src = frame.src;
-                    });
-                }
-                // no-op
+                
                 if (frame && loading && fallback) {
                     let loaded = false;
-                    const timeoutId = setTimeout(() => {
-                        if (!loaded) {
-                            loading.classList.add('hidden');
-                            fallback.classList.remove('hidden');
-                            fallback.classList.add('flex');
-                        }
-                    }, 4500);
-                    frame.addEventListener('load', () => {
-                        loaded = true;
+                    let retryCount = 0;
+                    const maxRetries = 2;
+                    
+                    const hideLoading = () => {
                         loading.classList.add('hidden');
-                        fallback.classList.add('hidden');
-                    }, { once: true });
-                    frame.addEventListener('error', () => {
-                        loaded = false;
-                        loading.classList.add('hidden');
+                        loading.classList.remove('flex');
+                    };
+                    
+                    const showFallback = () => {
+                        hideLoading();
                         fallback.classList.remove('hidden');
                         fallback.classList.add('flex');
+                    };
+                    
+                    const showLoading = () => {
+                        fallback.classList.add('hidden');
+                        fallback.classList.remove('flex');
+                        loading.classList.remove('hidden');
+                        loading.classList.add('flex');
+                    };
+                    
+                    // Enhanced timeout with progressive delays
+                    const timeoutId = setTimeout(() => {
+                        if (!loaded) {
+                            console.warn('Preview load timeout after 6 seconds');
+                            showFallback();
+                        }
+                    }, 6000); // Increased timeout for better reliability
+                    
+                    // Handle successful load
+                    frame.addEventListener('load', () => {
+                        try {
+                            // Check if iframe content is accessible (not blocked)
+                            const iframeDoc = frame.contentDocument || frame.contentWindow?.document;
+                            if (iframeDoc && iframeDoc.location.href !== 'about:blank') {
+                                loaded = true;
+                                clearTimeout(timeoutId);
+                                hideLoading();
+                                console.log('Preview loaded successfully');
+                            } else {
+                                throw new Error('Iframe content blocked or empty');
+                            }
+                        } catch (e) {
+                            // Cross-origin restriction or other access issue
+                            if (retryCount < maxRetries) {
+                                retryCount++;
+                                console.warn(`Preview access restricted, retry ${retryCount}/${maxRetries}`);
+                                setTimeout(() => {
+                                    if (!loaded) {
+                                        frame.src = frame.src + (frame.src.includes('?') ? '&' : '?') + 'retry=' + retryCount;
+                                    }
+                                }, 1000);
+                            } else {
+                                console.warn('Preview blocked after retries');
+                                showFallback();
+                            }
+                        }
                     }, { once: true });
+                    
+                    // Handle load errors
+                    frame.addEventListener('error', (e) => {
+                        loaded = false;
+                        clearTimeout(timeoutId);
+                        console.error('Preview load error:', e);
+                        showFallback();
+                    }, { once: true });
+                    
+                    // Reload button functionality
+                    if (reloadBtn) {
+                        reloadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            loaded = false;
+                            retryCount = 0;
+                            showLoading();
+                            
+                            // Add cache-busting parameter
+                            const originalSrc = frame.src.split('?')[0].split('&')[0];
+                            frame.src = originalSrc + '?reload=' + Date.now();
+                            
+                            console.log('Manual preview reload triggered');
+                        });
+                    }
                 }
-            } catch (_) {}
+            } catch (error) {
+                console.error('Preview setup error:', error);
+            }
         }
 
-        // removed branded download logic to restore original behavior
+        // Controlled download function - only downloads when explicitly requested
+        function downloadFile(fileId, fileName, downloadUrl) {
+            try {
+                // Show download feedback
+                showToast(`Downloading ${fileName}...`, 'info');
+                
+                // Create a temporary link and trigger download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = fileName || 'download';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                
+                // Append to body, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message after a brief delay
+                setTimeout(() => {
+                    showToast(`${fileName} download started`, 'success');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Download failed:', error);
+                showToast('Download failed. Please try again.', 'error');
+            }
+        }
         
         // Error pages rendering helpers
         function showErrorPage(title, message) {
