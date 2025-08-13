@@ -271,7 +271,7 @@
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
-        <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo" onerror="this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate';" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
+        <img src="https://i.imghippo.com/files/IxF8202tcg.jpg" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo" loading="eager" decoding="async" onerror="this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate';" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
         <div class="w-[300px] max-w-[80vw] progress-bar">
             <div class="bar bar1"></div>
             <div class="bar bar2"></div>
@@ -902,24 +902,44 @@
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
+        function ensureInitialView() {
+            try {
+                const landing = document.getElementById('landing-page');
+                const app = document.getElementById('main-app');
+                const login = document.getElementById('login-page');
+                const verify = document.getElementById('email-verify-page');
+                const isVisible = (el) => el && !el.classList.contains('hidden');
+                const anyVisible = [app, login, verify, landing].some(isVisible);
+                if (!anyVisible && landing) landing.classList.remove('hidden');
+            } catch (_) {}
+        }
+
         function hideAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
             const logo = overlay.querySelector('.animate-logo');
             if (logo) { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }
+            ensureInitialView();
             overlay.style.opacity = '0';
             overlay.style.transition = 'opacity 200ms ease-out';
             setTimeout(() => { overlay.style.display = 'none'; }, 220);
         }
 
         // Fallback: ensure hide after window load
+        // Early slide-in on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById('app-loading');
+            const logo = overlay?.querySelector?.('.animate-logo');
+            if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
+        }, { once: true });
+
         window.addEventListener('load', () => {
             // Trigger logo slide-in immediately on load
             const overlay = document.getElementById('app-loading');
             const logo = overlay?.querySelector?.('.animate-logo');
             if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
-            // If auth callback hasn't hidden it within a second, hide anyway
-            setTimeout(hideAppLoading, 1200);
+            // If auth callback hasn't resolved, ensure the landing view is shown and then hide
+            setTimeout(() => { ensureInitialView(); hideAppLoading(); }, 1200);
         }, { once: true });
 
         auth.onAuthStateChanged(async (user) => {
@@ -998,6 +1018,7 @@
             updateWelcomeMessage();
             setupRealtimeListeners();
             startClock();
+            hideAppLoading();
             
             if (currentUser) {
                 renderDashboard();
