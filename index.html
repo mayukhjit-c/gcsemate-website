@@ -20,11 +20,7 @@
     <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
-    <meta name="twitter:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
-    <meta name="twitter:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
+
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -419,6 +415,51 @@
             .animate-feature-card,
             .animate-logo { opacity: 1 !important; }
         }
+        
+        /* Mobile-specific improvements */
+        @media (max-width: 768px) {
+            /* Ensure minimum touch target size */
+            button, a, [role="button"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Improve text readability on mobile */
+            .text-sm { font-size: 0.875rem; }
+            .text-base { font-size: 1rem; }
+            .text-lg { font-size: 1.125rem; }
+            
+            /* Better spacing for mobile */
+            .p-4 { padding: 1rem; }
+            .p-6 { padding: 1.5rem; }
+            .p-8 { padding: 2rem; }
+            
+            /* Ensure buttons are visible */
+            .btn-primary, .btn-secondary {
+                min-height: 48px;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            
+            /* Improve mobile menu visibility */
+            #mobile-menu .nav-link {
+                min-height: 48px;
+                display: flex;
+                align-items: center;
+                font-size: 1.125rem;
+            }
+            
+            /* Better file browser on mobile */
+            #file-list .grid {
+                gap: 0.75rem;
+            }
+            
+            /* Improve form inputs on mobile */
+            input, select, textarea {
+                font-size: 16px !important; /* Prevents zoom on iOS */
+                min-height: 44px;
+            }
+        }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -454,11 +495,11 @@
                     GCSEMate is the all-in-one digital hub that organizes your entire academic life. All your subjects, notes, past papers, and resources—perfectly structured and instantly accessible.
                 </p>
             </div>
-            <div class="mt-8 flex justify-center items-center gap-4 animate-hero-buttons">
-                <button onclick="showAuthPage(false)" class="px-8 py-3 text-base font-bold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Create your free account now">
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons">
+                <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Create your free account now">
                     Get Started for Free
                 </button>
-                <button onclick="showAuthPage(true)" class="px-8 py-3 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors">
+                <button onclick="showAuthPage(true)" class="w-full sm:w-auto px-8 py-4 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors border-2 border-blue-600">
                     Login
                 </button>
             </div>
@@ -533,7 +574,7 @@
                     </label>
                     <a href="#" onclick="event.preventDefault(); showPasswordResetModal()" class="font-semibold text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
-                <button type="submit" id="login-button" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Click to log in">Login</button>
+                <button type="submit" id="login-button" class="w-full p-4 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to log in">Login</button>
                 <p id="auth-error" class="text-red-500 text-sm text-center h-4"></p>
                 <p class="text-center text-sm text-gray-600">Don't have an account? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Register</a></p>
             </form>
@@ -542,7 +583,7 @@
                 <input id="register-email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose an email">
                 <input id="register-password" type="password" placeholder="Password (min. 6 characters)" autocomplete="new-password" required class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose a password">
                 <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
-                <button type="submit" id="register-button" class="w-full p-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105" data-tooltip="Click to create your account">Create Free Account</button>
+                <button type="submit" id="register-button" class="w-full p-4 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to create your account">Create Free Account</button>
                 <p id="register-error" class="text-red-500 text-sm text-center h-4"></p>
                 <p class="text-center text-sm text-gray-600">Already have an account? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Login</a></p>
             </form>
@@ -574,7 +615,7 @@
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
-                <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Open menu">
+                <button id="hamburger-button" class="p-3 rounded-lg text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors border border-gray-200" aria-label="Open menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
                     </svg>
@@ -582,28 +623,28 @@
             </div>
         </header>
         <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain">
-            <div class="flex justify-between items-center p-4 border-b">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" loading="lazy" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
-                <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100" aria-label="Close menu">
+                <button id="close-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors" aria-label="Close menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <nav class="flex flex-col items-center space-y-6 text-lg font-semibold p-8">
-                <a href="#" class="nav-link" data-page="subject-dashboard-page">Subjects</a>
-                <a href="#" class="nav-link" data-page="videos-page">Videos</a>
-                 <a href="#" class="nav-link" data-page="gcsemategpt-page">GCSEMateGPT</a>
-                <a href="#" class="nav-link" data-page="blog-page">Blog</a>
-                <a href="#" class="nav-link" data-page="calendar-page">Calendar</a>
-                <a href="#" class="nav-link" data-page="useful-links-page">Useful Links</a>
-                <a href="#" class="nav-link" data-page="about-page">About Us</a>
-                <a href="#" class="nav-link" data-page="features-page">Features & Pricing</a>
-                <a href="#" class="nav-link" data-page="help-page">Help/FAQ</a>
+            <nav class="flex flex-col p-6 space-y-4">
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="subject-dashboard-page">📚 Subjects</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="videos-page">🎥 Videos</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="gcsemategpt-page">🤖 GCSEMateGPT</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="blog-page">📝 Blog</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="calendar-page">📅 Calendar</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="useful-links-page">🔗 Useful Links</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="about-page">ℹ️ About Us</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="features-page">⭐ Features & Pricing</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="help-page">❓ Help/FAQ</a>
             </nav>
-            <div class="flex flex-col items-center space-y-4 p-8 border-t">
-                 <a href="#" class="nav-link text-lg font-semibold" data-page="account-settings-page">Account</a>
-                 <button id="mobile-logout-button" class="w-full max-w-xs p-3 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700">Logout</button>
+            <div class="flex flex-col p-6 border-t border-gray-200 space-y-4">
+                <a href="#" class="nav-link w-full text-left px-4 py-3 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" data-page="account-settings-page">⚙️ Account</a>
+                <button id="mobile-logout-button" class="w-full px-4 py-3 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-lg">🚪 Logout</button>
             </div>
         </div>
         <main id="page-content" class="flex-grow overflow-y-auto bg-transparent">
@@ -619,7 +660,7 @@
                             <p id="clock-date" class="text-xs text-gray-500 font-semibold uppercase tracking-widest"></p>
                         </div>
                     </div>
-                    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+                    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
                 </div>
                 <div id="gcsemategpt-page" class="page hidden p-8 max-w-5xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-4">GCSEMateGPT</h2>
@@ -709,20 +750,20 @@
                     <div id="breadcrumb" class="p-3 border-b border-gray-200/50 text-sm flex-shrink-0 text-gray-800 bg-gray-100/30"></div>
                     <div id="file-browser-controls" class="p-3 border-b border-gray-200/50 flex-shrink-0 bg-gray-50/20 flex flex-col sm:flex-row items-center gap-3">
                         <div class="relative flex-grow w-full sm:w-auto">
-                            <input type="search" id="file-search-input" placeholder="Search in folder..." class="pl-10 pr-4 py-2 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            <input type="search" id="file-search-input" placeholder="Search in folder..." class="pl-10 pr-4 py-3 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
-                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-2">
+                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base">
                                 <option value="az">Sort A-Z</option>
                                 <option value="za">Sort Z-A</option>
                             </select>
                             <div id="view-toggle" class="flex items-center rounded-lg border border-gray-300/50 bg-white/50 p-1">
-                                <button class="view-btn p-1 rounded-md" data-view="list" data-tooltip="List View">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                                 </button>
-                                <button class="view-btn p-1 rounded-md" data-view="grid" data-tooltip="Grid View">
-                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View">
+                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                                 </button>
                             </div>
                         </div>
@@ -1919,7 +1960,7 @@
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
                     card.innerHTML = `${iconSvg}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>${badge}`;
                     if (subjectId) {
-                        card.className = 'p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg';
+                        card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
                         card.addEventListener('click', () => {
                             if (currentUser.tier === 'free') {
@@ -1932,7 +1973,7 @@
                             showPage('file-browser-page');
                         });
                     } else {
-                        card.className = 'p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed';
+                        card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[120px]';
                         card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
                     }
                     subjectGrid.appendChild(card);
@@ -2063,12 +2104,12 @@
         
             // 3. Render (based on view)
             if (fileBrowserView === 'grid') {
-                container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+                container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
                 filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
                     const itemElement = document.createElement('div');
-                    itemElement.className = `relative p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg opacity-0 translate-y-2`;
+                    itemElement.className = `relative p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg opacity-0 translate-y-2 min-h-[100px]`;
                     
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
@@ -2103,11 +2144,11 @@
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
                     const itemElement = document.createElement('div');
-                    itemElement.className = `flex items-center p-3 rounded-lg hover:bg-black/5 transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2`;
+                    itemElement.className = `flex items-center p-3 sm:p-4 rounded-lg hover:bg-black/5 transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2 min-h-[60px]`;
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
                     const highlightedName = highlightMatch(file.name, rawQuery.trim());
-                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0" alt="${escapeHtml(file.name)}"><span class="truncate font-medium text-gray-800">${highlightedName}</span>`;
+                    mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0" alt="${escapeHtml(file.name)}"><span class="truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span>`;
                     
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
@@ -2115,11 +2156,11 @@
                         mainInfo.addEventListener('click', () => showPreview(file));
                     }
                     const actions = document.createElement('div');
-                    actions.className = 'flex items-center space-x-2 flex-shrink-0 ml-4';
+                    actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
                     if (!isFolder) {
-                        actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                        actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                         const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
-                        actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                        actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                     }
                     itemElement.appendChild(mainInfo);
                     itemElement.appendChild(actions);
@@ -3972,4 +4013,5 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
 </html>
+
 
