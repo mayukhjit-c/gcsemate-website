@@ -27,6 +27,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://apis.google.com" crossorigin>
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
@@ -47,6 +50,25 @@
             background-color: #f8fafc;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+        }
+        
+        /* Performance optimizations */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* Optimize animations for GPU acceleration */
+        .gpu-accelerated {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
         }
         /* Improve layout consistency and resizing */
         *, *::before, *::after { box-sizing: border-box; }
@@ -87,53 +109,153 @@
         .dots-spinner i:nth-child(3) { animation-delay: 0s; }
         
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% { transform: rotate(0deg) translateZ(0); }
+            100% { transform: rotate(360deg) translateZ(0); }
         }
         
         @keyframes dot-pulse {
             0%, 80%, 100% {
-                transform: scale(0.8);
+                transform: scale(0.8) translateZ(0);
                 opacity: 0.6;
             }
             40% {
-                transform: scale(1.2);
+                transform: scale(1.2) translateZ(0);
                 opacity: 1;
             }
         }
         
-        /* Smooth transitions for better UX */
-        .transition-all { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .transition-transform { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .transition-opacity { transition: opacity 0.3s ease-in-out; }
-        .transition-height { transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        /* Enhanced hover effects */
-        .hover-lift:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        /* Skeleton loading animation */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
         }
         
-        .hover-scale:hover {
-            transform: scale(1.02);
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
         
-        /* Professional button styles */
+        /* Smooth focus ring */
+        .focus-ring {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            transition: box-shadow 0.2s ease;
+        }
+        
+        /* Premium shadows */
+        .shadow-premium {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .shadow-premium-lg {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Optimized transitions for better UX */
+        .transition-all { 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: auto;
+        }
+        .transition-transform { 
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+        .transition-opacity { 
+            transition: opacity 0.3s ease-in-out;
+            will-change: opacity;
+        }
+        .transition-height { 
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: max-height;
+        }
+        
+        /* Ultra-smooth transitions for premium feel */
+        .transition-smooth {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: auto;
+        }
+        
+        .transition-bounce {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            will-change: auto;
+        }
+        
+        /* Enhanced hover effects with GPU acceleration */
+        .hover-lift {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                        box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform, box-shadow;
+        }
+        
+        .hover-lift:hover:not(:disabled) {
+            transform: translateY(-4px) translateZ(0);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .hover-scale {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+        }
+        
+        .hover-scale:hover:not(:disabled) {
+            transform: scale(1.05) translateZ(0);
+        }
+        
+        /* Premium hover effects */
+        .hover-glow:hover {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+        
+        .hover-float {
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            will-change: transform;
+        }
+        
+        .hover-float:hover {
+            transform: translateY(-8px) translateZ(0);
+        }
+        
+        /* Premium button styles */
         .btn-primary {
             background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
             border: none;
             color: white;
             font-weight: 600;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.875rem 1.75rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            will-change: transform, box-shadow;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
         
         .btn-primary:hover {
             background: linear-gradient(135deg, rgb(var(--accent-700)), rgb(var(--accent-600)));
-            transform: translateY(-1px);
-            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0) translateZ(0);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
         
         .btn-secondary {
@@ -154,16 +276,32 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
-        /* Card hover effects */
+        /* Premium card hover effects */
         .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            will-change: transform, box-shadow, border-color;
+            backface-visibility: hidden;
         }
         
         .card-hover:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-8px) scale(1.02) translateZ(0);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Glass morphism effect */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-effect:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
         
         /* Professional focus states */
@@ -267,6 +405,26 @@
         .nav-link.active {
             color: #2563eb;
             font-weight: 700;
+            position: relative;
+        }
+        
+        /* Remove any border styling for active nav links */
+        .nav-link.active::before,
+        .nav-link.active::after {
+            display: none;
+        }
+        
+        /* Ensure no borders on any nav links */
+        .nav-link {
+            border: none !important;
+        }
+        
+        .nav-link:hover {
+            border: none !important;
+        }
+        
+        .nav-link.active {
+            border: none !important;
         }
         /* Prose styles for text content pages */
         .prose { max-width: 65ch; }
@@ -291,14 +449,74 @@
         .border-blue-200 { border-color: rgb(var(--accent-100)) !important; }
         .border-blue-300 { border-color: rgb(var(--accent-300)) !important; }
 
-        /* UI Animations */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .fade-in { animation: fadeIn 0.45s ease-out forwards; will-change: opacity; }
-        .slide-in-up { animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; will-change: transform, opacity; }
-        .page-transition-enter { animation: slideInUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, opacity; }
+        /* Premium UI Animations */
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateZ(0); } 
+            to { opacity: 1; transform: translateZ(0); } 
+        }
+        @keyframes fadeOut { 
+            from { opacity: 1; transform: translateZ(0); } 
+            to { opacity: 0; transform: translateZ(0); } 
+        }
+        @keyframes slideInUp { 
+            from { transform: translateY(30px) translateZ(0); opacity: 0; } 
+            to { transform: translateY(0) translateZ(0); opacity: 1; } 
+        }
+        @keyframes slideInDown { 
+            from { transform: translateY(-30px) translateZ(0); opacity: 0; } 
+            to { transform: translateY(0) translateZ(0); opacity: 1; } 
+        }
+        @keyframes slideInLeft { 
+            from { transform: translateX(-30px) translateZ(0); opacity: 0; } 
+            to { transform: translateX(0) translateZ(0); opacity: 1; } 
+        }
+        @keyframes slideInRight { 
+            from { transform: translateX(30px) translateZ(0); opacity: 0; } 
+            to { transform: translateX(0) translateZ(0); opacity: 1; } 
+        }
+        @keyframes pop { 
+            0% { transform: scale(0.8) translateZ(0); } 
+            50% { transform: scale(1.05) translateZ(0); } 
+            100% { transform: scale(1) translateZ(0); } 
+        }
+        @keyframes bounce { 
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); } 
+            40%, 43% { transform: translate3d(0, -8px, 0); } 
+            70% { transform: translate3d(0, -4px, 0); } 
+            90% { transform: translate3d(0, -2px, 0); } 
+        }
+        @keyframes pulse { 
+            0% { transform: scale(1) translateZ(0); } 
+            50% { transform: scale(1.05) translateZ(0); } 
+            100% { transform: scale(1) translateZ(0); } 
+        }
+        
+        .fade-in { 
+            animation: fadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; 
+            will-change: opacity, transform; 
+        }
+        .slide-in-up { 
+            animation: slideInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; 
+            will-change: transform, opacity; 
+        }
+        .slide-in-down { 
+            animation: slideInDown 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; 
+            will-change: transform, opacity; 
+        }
+        .slide-in-left { 
+            animation: slideInLeft 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; 
+            will-change: transform, opacity; 
+        }
+        .slide-in-right { 
+            animation: slideInRight 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; 
+            will-change: transform, opacity; 
+        }
+        .page-transition-enter { 
+            animation: slideInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; 
+            will-change: transform, opacity; 
+        }
+        .bounce { animation: bounce 1s ease-in-out; }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         /* Star icon animation */
         .star-icon { transition: transform 0.2s ease, color 0.2s ease; position: relative; }
         .star-icon.starred { color: #facc15; transform: scale(1.15); }
@@ -493,11 +711,18 @@
             /* Improve mobile menu visibility and interaction */
             #mobile-menu {
                 display: none;
-                animation: slideInFromRight 0.3s ease-out;
+                transform: translateX(100%) translateZ(0);
+                opacity: 0;
+                transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                            opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                will-change: transform, opacity;
+                backface-visibility: hidden;
             }
             
             #mobile-menu:not(.hidden) {
                 display: block;
+                transform: translateX(0) translateZ(0);
+                opacity: 1;
             }
             
             #mobile-menu .nav-link {
@@ -564,17 +789,35 @@
             }
         }
         
-        /* Mobile menu animation */
+        /* Optimized mobile menu animation */
         @keyframes slideInFromRight {
             from {
-                transform: translateX(100%);
+                transform: translateX(100%) translateZ(0);
                 opacity: 0;
             }
             to {
-                transform: translateX(0);
+                transform: translateX(0) translateZ(0);
                 opacity: 1;
             }
         }
+        
+        @keyframes slideOutToRight {
+            from {
+                transform: translateX(0) translateZ(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%) translateZ(0);
+                opacity: 0;
+            }
+        }
+        
+        /* Staggered animation delays for list items */
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        .stagger-5 { animation-delay: 0.5s; }
         
         /* High contrast mode for better accessibility */
         @media (prefers-contrast: high) {
@@ -814,18 +1057,18 @@
                 </button>
             </div>
             <nav class="flex flex-col p-6 space-y-3" role="navigation" aria-label="Main navigation">
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">📚 Subjects</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">🎥 Videos</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="gcsemategpt-page" tabindex="0">🤖 GCSEMateGPT</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">📝 Blog</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="calendar-page" tabindex="0">📅 Calendar</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">🔗 Useful Links</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="about-page" tabindex="0">ℹ️ About Us</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="features-page" tabindex="0">⭐ Features & Pricing</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">❓ Help/FAQ</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">📚 Subjects</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">🎥 Videos</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="gcsemategpt-page" tabindex="0">🤖 GCSEMateGPT</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">📝 Blog</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="calendar-page" tabindex="0">📅 Calendar</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">🔗 Useful Links</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="about-page" tabindex="0">ℹ️ About Us</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="features-page" tabindex="0">⭐ Features & Pricing</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">❓ Help/FAQ</a>
             </nav>
             <div class="flex flex-col p-6 border-t border-gray-200 space-y-4 bg-gray-50">
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-200 min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="account-settings-page" tabindex="0">⚙️ Account</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="account-settings-page" tabindex="0">⚙️ Account</a>
                 <button id="mobile-logout-button" class="w-full px-4 py-4 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-lg min-h-[56px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2" tabindex="0">🚪 Logout</button>
             </div>
         </div>
@@ -1361,6 +1604,34 @@
         let unsubscribeAnnouncement;
         let unsubscribeBlogComments;
         let recaptchaVerifier;
+        
+        // Performance optimizations
+        let animationFrameId = null;
+        let debounceTimers = new Map();
+        let throttleTimers = new Map();
+        
+        // Utility functions for performance
+        const debounce = (func, wait) => {
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(debounceTimers.get(func));
+                    func(...args);
+                };
+                clearTimeout(debounceTimers.get(func));
+                debounceTimers.set(func, setTimeout(later, wait));
+            };
+        };
+        
+        const throttle = (func, limit) => {
+            return function executedFunction(...args) {
+                if (!throttleTimers.get(func)) {
+                    func.apply(this, args);
+                    throttleTimers.set(func, setTimeout(() => {
+                        throttleTimers.delete(func);
+                    }, limit));
+                }
+            };
+        };
         // --- CONFIGURATION ---
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
         const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
@@ -1440,9 +1711,30 @@
         // Fallback: ensure hide after window load
         // Early slide-in on DOM ready
         document.addEventListener('DOMContentLoaded', () => {
-            const overlay = document.getElementById('app-loading');
-            const logo = overlay?.querySelector?.('.animate-logo');
-            if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
+            // Use requestIdleCallback for better performance
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    const overlay = document.getElementById('app-loading');
+                    const logo = overlay?.querySelector?.('.animate-logo');
+                    if (logo) { 
+                        requestAnimationFrame(() => { 
+                            logo.style.opacity = '1'; 
+                            logo.style.transform = 'translateY(0)'; 
+                        }); 
+                    }
+                }, { timeout: 1000 });
+            } else {
+                setTimeout(() => {
+                    const overlay = document.getElementById('app-loading');
+                    const logo = overlay?.querySelector?.('.animate-logo');
+                    if (logo) { 
+                        requestAnimationFrame(() => { 
+                            logo.style.opacity = '1'; 
+                            logo.style.transform = 'translateY(0)'; 
+                        }); 
+                    }
+                }, 0);
+            }
         }, { once: true });
 
         window.addEventListener('load', () => {
@@ -2068,7 +2360,7 @@
                 'info': 'ℹ'
             }[type] || 'ℹ';
             
-            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out`;
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out gpu-accelerated`;
             toast.innerHTML = `
                 <span class="text-lg font-bold">${icon}</span>
                 <span class="flex-1">${message}</span>
@@ -4037,13 +4329,22 @@
                     // Close mobile menu if open
                     const mobileMenu = document.getElementById('mobile-menu');
                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
+                        // Use the same close animation
+                        mobileMenu.style.transform = 'translateX(100%)';
+                        mobileMenu.style.opacity = '0';
                         const hamburgerButton = document.getElementById('hamburger-button');
                         if (hamburgerButton) {
                             hamburgerButton.setAttribute('aria-expanded', 'false');
-                            hamburgerButton.focus();
                         }
-                        document.body.style.overflow = '';
+                        
+                        setTimeout(() => {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.style.display = 'none';
+                            document.body.style.overflow = '';
+                            if (hamburgerButton) {
+                                hamburgerButton.focus();
+                            }
+                        }, 300);
                     }
                 } else if (e.key.toLowerCase() === 'g') {
                     goPrefix = true;
@@ -4167,9 +4468,17 @@
             
             if (hamburgerButton && mobileMenu && closeMenuButton) {
                 hamburgerButton.addEventListener('click', () => {
+                    // Show menu first, then animate in
+                    mobileMenu.style.display = 'block';
                     mobileMenu.classList.remove('hidden');
                     hamburgerButton.setAttribute('aria-expanded', 'true');
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    
+                    // Trigger animation on next frame
+                    requestAnimationFrame(() => {
+                        mobileMenu.style.transform = 'translateX(0)';
+                        mobileMenu.style.opacity = '1';
+                    });
                     
                     // Focus management for accessibility
                     const firstFocusableElement = mobileMenu.querySelector('a, button');
@@ -4179,28 +4488,32 @@
                 });
                 
                 closeMenuButton.addEventListener('click', () => {
-                    mobileMenu.classList.add('hidden');
+                    // Animate out first, then hide
+                    mobileMenu.style.transform = 'translateX(100%)';
+                    mobileMenu.style.opacity = '0';
                     hamburgerButton.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = ''; // Restore scrolling
-                    hamburgerButton.focus(); // Return focus to hamburger button
+                    
+                    // Hide menu after animation completes
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
+                        document.body.style.overflow = ''; // Restore scrolling
+                        hamburgerButton.focus(); // Return focus to hamburger button
+                    }, 300);
                 });
                 
                 // Handle mobile menu links
                 const mobileMenuLinks = mobileMenu.querySelectorAll('.nav-link');
                 mobileMenuLinks.forEach(link => {
                     link.addEventListener('click', () => {
-                        mobileMenu.classList.add('hidden');
-                        hamburgerButton.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = ''; // Restore scrolling
+                        closeMobileMenu();
                     });
                 });
                 
                 // Handle mobile logout button
                 if (mobileLogoutButton) {
                     mobileLogoutButton.addEventListener('click', () => {
-                        mobileMenu.classList.add('hidden');
-                        hamburgerButton.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = ''; // Restore scrolling
+                        closeMobileMenu();
                         handleLogout();
                     });
                 }
@@ -4208,30 +4521,39 @@
                 // Close mobile menu when clicking outside
                 document.addEventListener('click', (e) => {
                     if (!mobileMenu.contains(e.target) && !hamburgerButton.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        hamburgerButton.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = ''; // Restore scrolling
+                        closeMobileMenu();
                     }
                 });
                 
                 // Close mobile menu when pressing Escape
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        hamburgerButton.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = ''; // Restore scrolling
-                        hamburgerButton.focus(); // Return focus to hamburger button
+                        closeMobileMenu();
                     }
                 });
                 
                 // Close mobile menu when resizing to desktop
-                window.addEventListener('resize', () => {
+                window.addEventListener('resize', throttle(() => {
                     if (window.innerWidth >= 1024 && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        hamburgerButton.setAttribute('aria-expanded', 'false');
-                        document.body.style.overflow = ''; // Restore scrolling
+                        closeMobileMenu();
                     }
-                });
+                }, 250));
+                
+                // Helper function to close mobile menu with animation
+                function closeMobileMenu() {
+                    // Animate out first, then hide
+                    mobileMenu.style.transform = 'translateX(100%)';
+                    mobileMenu.style.opacity = '0';
+                    hamburgerButton.setAttribute('aria-expanded', 'false');
+                    
+                    // Hide menu after animation completes
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
+                        document.body.style.overflow = ''; // Restore scrolling
+                        hamburgerButton.focus(); // Return focus to hamburger button
+                    }, 300);
+                }
             }
             
             // Initialize new features
@@ -4491,6 +4813,89 @@
             update();
             clockInterval = setInterval(update, 1000);
         }
+        
+        // --- PERFORMANCE OPTIMIZATIONS ---
+        // Intersection Observer for lazy loading
+        const lazyLoadObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    if (element.dataset.src) {
+                        element.src = element.dataset.src;
+                        element.removeAttribute('data-src');
+                        lazyLoadObserver.unobserve(element);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '50px 0px',
+            threshold: 0.1
+        });
+        
+        // Performance monitoring
+        let performanceMetrics = {
+            pageLoadTime: 0,
+            firstContentfulPaint: 0,
+            largestContentfulPaint: 0
+        };
+        
+        // Track performance metrics
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const navigation = performance.getEntriesByType('navigation')[0];
+                    if (navigation) {
+                        performanceMetrics.pageLoadTime = navigation.loadEventEnd - navigation.loadEventStart;
+                    }
+                    
+                    // Track Core Web Vitals
+                    if ('PerformanceObserver' in window) {
+                        const paintObserver = new PerformanceObserver((list) => {
+                            for (const entry of list.getEntries()) {
+                                if (entry.name === 'first-contentful-paint') {
+                                    performanceMetrics.firstContentfulPaint = entry.startTime;
+                                }
+                            }
+                        });
+                        paintObserver.observe({ entryTypes: ['paint'] });
+                        
+                        const lcpObserver = new PerformanceObserver((list) => {
+                            for (const entry of list.getEntries()) {
+                                performanceMetrics.largestContentfulPaint = entry.startTime;
+                            }
+                        });
+                        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+                    }
+                }, 1000);
+            });
+        }
+        
+        // Optimize scroll performance
+        const optimizedScrollHandler = throttle(() => {
+            // Handle scroll-based animations or effects
+            const scrollY = window.scrollY;
+            const elements = document.querySelectorAll('[data-scroll-animate]');
+            
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                
+                if (isVisible) {
+                    element.classList.add('animate-in');
+                }
+            });
+        }, 16); // ~60fps
+        
+        window.addEventListener('scroll', optimizedScrollHandler, { passive: true });
+        
+        // Memory management
+        window.addEventListener('beforeunload', () => {
+            // Clean up observers and timers
+            if (lazyLoadObserver) lazyLoadObserver.disconnect();
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            debounceTimers.forEach(timer => clearTimeout(timer));
+            throttleTimers.forEach(timer => clearTimeout(timer));
+        });
     </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
