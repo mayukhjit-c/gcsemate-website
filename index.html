@@ -44,6 +44,32 @@
             --accent-600: 37 99 235;
             --accent-700: 29 78 216;
         }
+        /* Button hover effects */
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Subtle animations for a modern feel */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         /* Base styles for a polished look */
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -680,114 +706,70 @@
             .animate-logo { opacity: 1 !important; }
         }
         
-        /* Mobile-specific improvements */
-        @media (max-width: 768px) {
-            /* Ensure minimum touch target size */
-            button, a, [role="button"] {
-                min-height: 44px;
-                min-width: 44px;
-            }
-            
-            /* Improve text readability on mobile */
-            .text-sm { font-size: 0.875rem; }
-            .text-base { font-size: 1rem; }
-            .text-lg { font-size: 1.125rem; }
-            
-            /* Better spacing for mobile */
-            .p-4 { padding: 1rem; }
-            .p-6 { padding: 1.5rem; }
-            .p-8 { padding: 2rem; }
-            
-            /* Ensure buttons are visible and properly sized */
-            .btn-primary, .btn-secondary {
-                min-height: 56px;
-                font-size: 1rem;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            
-            /* Improve mobile menu visibility and interaction */
-            #mobile-menu {
-                display: none;
-                transform: translateX(100%) translateZ(0);
-                opacity: 0;
-                transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                            opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                will-change: transform, opacity;
-                backface-visibility: hidden;
-            }
-            
-            #mobile-menu:not(.hidden) {
-                display: block;
-                transform: translateX(0) translateZ(0);
-                opacity: 1;
-            }
-            
-            #mobile-menu .nav-link {
-                min-height: 56px;
-                display: flex;
-                align-items: center;
-                font-size: 1.125rem;
-                touch-action: manipulation;
-                transition: all 0.2s ease;
-            }
-            
-            #mobile-menu .nav-link:active {
-                transform: scale(0.98);
-                background-color: rgba(59, 130, 246, 0.1);
-            }
-            
-            /* Better file browser on mobile */
-            #file-list .grid {
-                gap: 0.75rem;
-            }
-            
-            /* Improve form inputs on mobile */
-            input, select, textarea {
-                font-size: 16px !important; /* Prevents zoom on iOS */
-                min-height: 44px;
-            }
-            
-            /* Landing page specific mobile improvements */
-            .animate-hero-buttons {
-                width: 100%;
-                max-width: 100%;
-            }
-            
-            .animate-hero-buttons button {
-                width: 100%;
-                max-width: 320px;
-                margin: 0 auto;
-            }
-            
-            /* Better mobile navigation */
-            nav a {
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
-            }
-            
-            /* Improve mobile card interactions */
-            .card-hover {
-                touch-action: manipulation;
-            }
-            
-            .card-hover:active {
-                transform: scale(0.98);
-            }
-            
-            /* Better mobile scrolling */
-            .overflow-y-auto {
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            /* Improve mobile focus states */
-            .focus-ring:focus {
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-            }
-        }
+                /* Mobile-specific improvements */
+                @media (max-width: 768px) {
+                    /* Ensure minimum touch target size */
+                    button, a, [role="button"] {
+                        min-height: 48px;
+                        min-width: 48px;
+                    }
+        
+                    /* Improve text readability on mobile */
+                    .text-sm { font-size: 0.9rem; }
+                    .text-base { font-size: 1rem; }
+                    .text-lg { font-size: 1.125rem; }
+        
+                    /* Better spacing for mobile */
+                    .p-4 { padding: 1rem; }
+                    .p-6 { padding: 1.5rem; }
+                    .p-8 { padding: 2rem; }
+        
+                    /* Improve mobile navigation */
+                    #mobile-menu {
+                        display: none;
+                        transform: translateX(100%);
+                        opacity: 0;
+                        transition: transform 0.4s ease, opacity 0.4s ease;
+                    }
+        
+                    #mobile-menu:not(.hidden) {
+                        display: block;
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+        
+                    #mobile-menu .nav-link {
+                        min-height: 56px;
+                        display: flex;
+                        align-items: center;
+                        font-size: 1.125rem;
+                        padding: 0.75rem 1rem;
+                        touch-action: manipulation;
+                        transition: all 0.2s ease;
+                    }
+        
+                    #mobile-menu .nav-link:active {
+                        transform: scale(0.98);
+                        background-color: rgba(59, 130, 246, 0.1);
+                    }
+        
+                    /* Improve form inputs on mobile */
+                    input, select, textarea {
+                        font-size: 16px !important; /* Prevents zoom on iOS */
+                        min-height: 44px;
+                    }
+        
+                    /* Better mobile scrolling */
+                    .overflow-y-auto {
+                        -webkit-overflow-scrolling: touch;
+                    }
+        
+                    /* Improve mobile focus states */
+                    .focus-ring:focus {
+                        outline: none;
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+                    }
+                }
         
         /* Optimized mobile menu animation */
         @keyframes slideInFromRight {
@@ -1022,16 +1004,13 @@
             <div class="flex-shrink-0">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" loading="lazy" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
             </div>
-            <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
-                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="gcsemategpt-page" data-tooltip="Try our AI tutor">GCSEMateGPT</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
-                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
+            <!-- Add ARIA roles and labels -->
+            <nav aria-label="Main navigation">
+                <ul>
+                    <li><a href="#" class="nav-link" aria-label="Subjects">Subjects</a></li>
+                    <li><a href="#" class="nav-link" aria-label="Videos">Videos</a></li>
+                    <li><a href="#" class="nav-link" aria-label="Help and FAQ">Help/FAQ</a></li>
+                </ul>
             </nav>
             <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
@@ -4420,8 +4399,18 @@
                 try {
                     const saved = localStorage.getItem('gcsemate_accent');
                     if (saved) {
-                        const p = JSON.parse(saved);
-                        const [r,g,b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
+                        // Check if the saved accent color exists in localStorage
+                        const saved = localStorage.getItem('gcsemate_accent');
+                        if (saved) {
+                            // Parse the saved accent color palette
+                            const p = JSON.parse(saved);
+                            // Check if the fiveHundred property exists and is an array
+                            const [r, g, b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
+                            if (Array.isArray(p.fiveHundred)) {
+                                // Convert the RGB values to a hex color code and set it as the picker's value
+                                picker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2, '0')).join('');
+                            }
+                        }const [r,g,b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
                         if (Array.isArray(p.fiveHundred)) {
                             picker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2,'0')).join('');
                         }
@@ -4440,7 +4429,7 @@
                 const modal = document.getElementById(id);
                 if(modal) {
                     modal.addEventListener('click', (e) => {
-                        if (e.target.id === id) {
+                        if (e.target === modal) {
                             modal.style.display = 'none';
                             // Special case for viewers to stop media playback
                             if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
@@ -4630,7 +4619,7 @@
                 fourHundred: tint(rgb, 0.35),
                 fiveHundred: rgb,
                 sixHundred: shade(rgb, 0.2),
-                sevenHunded: shade(rgb, 0.4)
+                sevenHundred: shade(rgb, 0.4)
             };
         }
         function applyAccent(p) {
@@ -4642,7 +4631,7 @@
             r.style.setProperty('--accent-400', get(p.fourHundred).join(' '));
             r.style.setProperty('--accent-500', get(p.fiveHundred).join(' '));
             r.style.setProperty('--accent-600', get(p.sixHundred).join(' '));
-            r.style.setProperty('--accent-700', get(p.sevenHundred || p.sevenHunded || p.sixHundred).join(' '));
+            r.style.setProperty('--accent-700', get(p.sevenHundred || p.sixHundred).join(' '));
         }
         
         // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
