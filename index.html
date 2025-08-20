@@ -1980,25 +1980,46 @@
                 
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
-                
-                // Send verification email
-                await user.sendEmailVerification();
-                
-                // Update Firebase Auth profile
-                await user.updateProfile({ displayName: displayName });
-                
-                // Save user profile to Firestore
-                await db.collection('users').doc(user.uid).set({
-                    displayName: displayName,
-                    email: email,
-                    tier: 'free',
-                    role: 'user',
-                    starredFiles: [],
-                    allowedSubjects: null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // onAuthStateChanged will redirect to the verification page
+
+                // Update Firebase Auth profile (best-effort)
+                try {
+                    await user.updateProfile({ displayName: displayName });
+                } catch (e) {
+                    console.warn('updateProfile failed, continuing:', e);
+                }
+
+                // Save user profile to Firestore (best-effort, non-blocking for verification)
+                try {
+                    await db.collection('users').doc(user.uid).set({
+                        displayName: displayName,
+                        email: email,
+                        tier: 'free',
+                        role: 'user',
+                        starredFiles: [],
+                        allowedSubjects: null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (e) {
+                    console.warn('Firestore profile write failed, user can still verify email:', e);
+                }
+
+                // Send verification email: try default first, then fallback with action code settings
+                try {
+                    try {
+                        await user.sendEmailVerification();
+                    } catch (primaryError) {
+                        console.warn('Default email verification send failed, trying with actionCodeSettings:', primaryError);
+                        const actionCodeSettings = {
+                            url: window.location.origin + '/',
+                            handleCodeInApp: false
+                        };
+                        await user.sendEmailVerification(actionCodeSettings);
+                    }
+                } catch (e) {
+                    console.error('sendEmailVerification failed:', e);
+                }
+
+                // Redirect to the verification instructions page regardless
                 showVerificationMessagePage(email);
             } catch (error) {
                 console.error("Registration Error:", error);
@@ -2078,19 +2099,29 @@
                     if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
                         await grecaptcha.ready();
                         const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
-                        const verifyRes = await fetch('/api/recaptcha-verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ token, expectedAction: 'LOGIN' })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (!verifyRes.ok || !verifyData.allowed) {
-                            messageEl.textContent = 'Suspicious activity detected. Please try again.';
-                            return;
+                        try {
+                            const verifyRes = await fetch('/api/recaptcha-verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ token, expectedAction: 'LOGIN' })
+                            });
+                            if (verifyRes.ok) {
+                                const verifyData = await verifyRes.json().catch(() => ({}));
+                                if (!verifyData.allowed) {
+                                    messageEl.textContent = 'Suspicious activity detected. Please try again.';
+                                    return;
+                                }
+                            } else {
+                                // If backend not present, proceed without blocking login
+                                console.warn('reCAPTCHA verify endpoint not available, proceeding. Status:', verifyRes.status);
+                            }
+                        } catch (e) {
+                            // Network/endpoint issues should not block legitimate logins
+                            console.warn('reCAPTCHA verify request failed, proceeding:', e);
                         }
                     }
                 } catch (e) {
-                    console.warn('reCAPTCHA token acquisition failed:', e);
+                    console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
                 }
                 
                 const persistence = rememberMe 
@@ -2166,7 +2197,16 @@
                 try {
                     button.disabled = true;
                     button.textContent = 'Sending...';
-                    await auth.currentUser.sendEmailVerification();
+                    try {
+                        const actionCodeSettings = {
+                            url: window.location.origin + '/',
+                            handleCodeInApp: false
+                        };
+                        await auth.currentUser.sendEmailVerification(actionCodeSettings);
+                    } catch (e) {
+                        // Fallback to default if actionCodeSettings not supported in this context
+                        await auth.currentUser.sendEmailVerification();
+                    }
                     messageEl.textContent = 'A new verification link has been sent.';
                     setTimeout(() => {
                         messageEl.textContent = '';
@@ -4630,6 +4670,7 @@
                 fourHundred: tint(rgb, 0.35),
                 fiveHundred: rgb,
                 sixHundred: shade(rgb, 0.2),
+                sevenHundred: shade(rgb, 0.4),
                 sevenHunded: shade(rgb, 0.4)
             };
         }
