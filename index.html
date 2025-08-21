@@ -6103,6 +6103,29 @@
         }
         
         /**
+         * Force enable drawing mode
+         */
+        function forceEnableDrawing() {
+            const canvas = annotationState.canvas;
+            if (!canvas) {
+                console.error('Canvas not available');
+                return;
+            }
+            
+            // Force enable drawing mode
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.width = 5;
+            canvas.freeDrawingBrush.color = 'red';
+            
+            // Set current tool
+            annotationState.currentTool = 'pencil';
+            
+            console.log('✅ Drawing mode forced enabled');
+            showToast('Drawing mode forced enabled! Try drawing now.', 'success');
+        }
+        
+        /**
          * Initializes the annotation system for a document
          * @param {Object} file - The file object to annotate
          * @param {string} containerId - The container element ID
@@ -6250,6 +6273,15 @@
             testBtn.onclick = testDrawing;
             toolbar.appendChild(testBtn);
             
+            // Add force drawing button
+            const forceBtn = document.createElement('button');
+            forceBtn.className = 'annotation-tool';
+            forceBtn.setAttribute('data-tool', 'force');
+            forceBtn.setAttribute('data-tooltip', 'Force Drawing');
+            forceBtn.innerHTML = '🎨';
+            forceBtn.onclick = forceEnableDrawing;
+            toolbar.appendChild(forceBtn);
+            
             container.appendChild(toolbar);
         }
         
@@ -6303,7 +6335,7 @@
             // Initialize Fabric.js canvas
             try {
                 annotationState.canvas = new fabric.Canvas(canvas, {
-                    isDrawingMode: false,
+                    isDrawingMode: true, // Enable drawing mode by default
                     selection: true,
                     backgroundColor: 'transparent',
                     width: container.offsetWidth,
@@ -6311,10 +6343,12 @@
                 });
                 
                 // Setup drawing mode
+                annotationState.canvas.freeDrawingBrush = new fabric.PencilBrush(annotationState.canvas);
                 annotationState.canvas.freeDrawingBrush.width = 3;
                 annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
                 
                 console.log('Annotation canvas created successfully with dimensions:', container.offsetWidth, 'x', container.offsetHeight);
+                console.log('Drawing mode enabled by default');
             } catch (error) {
                 console.error('Error creating annotation canvas:', error);
                 // Fallback: create a simple canvas without Fabric.js
@@ -6348,6 +6382,12 @@
                 });
                 canvas.add(testCircle);
                 canvas.renderAll();
+                
+                // Enable drawing mode if pencil tool is selected
+                if (annotationState.currentTool === 'pencil') {
+                    canvas.isDrawingMode = true;
+                    console.log('Drawing mode enabled for pencil tool');
+                }
             });
             
             canvas.on('mouse:up', (options) => {
@@ -6360,6 +6400,12 @@
                 if (annotationState.isDrawing) {
                     console.log('Drawing at:', options.pointer.x, options.pointer.y);
                 }
+            });
+            
+            // Add path:created event to track when drawing happens
+            canvas.on('path:created', (options) => {
+                console.log('✅ Path created:', options.path);
+                showToast('Drawing detected!', 'success');
             });
             
             canvas.on('object:added', (options) => {
@@ -6417,8 +6463,9 @@
                     case 'pencil':
                         canvas.isDrawingMode = true;
                         canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                        canvas.freeDrawingBrush.width = 2;
+                        canvas.freeDrawingBrush.width = 3;
                         canvas.freeDrawingBrush.color = annotationState.currentColor;
+                        console.log('Pencil tool selected - Drawing mode enabled');
                         break;
                     case 'highlight':
                         canvas.isDrawingMode = true;
