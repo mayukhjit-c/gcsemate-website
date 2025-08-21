@@ -486,27 +486,27 @@
         }
         
         /* iOS‑like ultra-smooth page transitions */
-        .page-enter-modern { animation: elevateIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, opacity, filter; }
-        .page-leave-modern { animation: elevateOut 320ms ease both; will-change: transform, opacity, filter; }
+        .page-enter-modern { animation: elevateIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, opacity; }
+        .page-leave-modern { animation: elevateOut 320ms ease both; will-change: transform, opacity; }
         @keyframes elevateIn {
-            0% { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(10px); }
-            60% { opacity: 1; transform: translateY(0) scale(1.002); filter: blur(0); }
-            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+            0% { opacity: 0; transform: translateY(14px) scale(0.985); }
+            60% { opacity: 1; transform: translateY(0) scale(1.002); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes elevateOut {
-            0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-            100% { opacity: 0; transform: translateY(6px) scale(0.992); filter: blur(6px); }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(6px) scale(0.992); }
         }
 
         /* AOS (Animate On Scroll) micro‑library */
-        [data-animate] { opacity: 0; will-change: transform, opacity, filter; }
+        [data-animate] { opacity: 0; will-change: transform, opacity; }
         .aos-animate { opacity: 1; }
         .aos-fade-up { animation: fadeUp 680ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-        .aos-blur-in { animation: blurIn 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .aos-blur-in { animation: fadeUp 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
         .aos-zoom-in { animation: zoomIn 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
         .aos-slide-right { animation: slideRight 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes blurIn { from { opacity: 0; filter: blur(12px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+        @keyframes blurIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes zoomIn { 0% { opacity: 0; transform: scale(0.96); } 70% { opacity: 1; transform: scale(1.02); } 100% { transform: scale(1); } }
         @keyframes slideRight { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes fadeOut { 
@@ -2731,7 +2731,8 @@
                     const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
                     const board = examBoardBySubject[subject.toLowerCase()];
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
-                    card.innerHTML = `${iconSvg}<h3 class=\"text-xl font-bold text-gray-800\" data-animate>${subject}</h3>${badge}`;
+                    const name = subject && subject.trim() ? subject : 'Subject';
+                    card.innerHTML = `${iconSvg}<h3 class=\"text-xl font-bold text-gray-800\" data-animate>${name}</h3>${badge}`;
                     if (subjectId) {
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
