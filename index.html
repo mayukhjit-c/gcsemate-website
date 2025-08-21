@@ -681,6 +681,9 @@
         /* Highlighting for FAQ search */
         .faq-item[data-hidden="true"] { display: none; }
 
+        /* Hide visible reCAPTCHA badge while keeping protection active */
+        .grecaptcha-badge { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+
         /* Page transitions */
         .page-transition-enter { animation: fadeIn 0.22s ease-out both; }
         .page-transition-leave { animation: fadeOut 0.18s ease-in both; }
@@ -966,6 +969,7 @@
         </main>
         <footer class="mt-24 text-center text-gray-500 text-sm">
              <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
+             <p class="mt-1 text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
         </footer>
     </div>
     
@@ -1573,6 +1577,7 @@
             <div id="footer-content" class="space-y-2">
                 <p>Made with ❤️</p>
                 <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
+                <p class="text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
             </div>
         </footer>
     </div>
