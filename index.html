@@ -629,12 +629,30 @@
         }
 
         /* Seamless page loading overlay */
-        #page-loading-overlay { background: rgba(255,255,255,0.86); }
+        #page-loading-overlay { background: rgba(255,255,255,0.86); opacity: 0; transition: opacity 220ms ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        #page-loading-overlay.visible { opacity: 1; pointer-events: auto; }
         .loading-orb { width: 54px; height: 54px; border-radius: 9999px; border: 3px solid rgba(59,130,246,0.15); border-top-color: rgb(var(--accent-600)); animation: spin 820ms linear infinite; }
         .loading-pulse { width: 12px; height: 12px; border-radius: 9999px; background: rgb(var(--accent-600)); animation: pulseDot 900ms ease-in-out infinite; }
         .loading-pulse:nth-child(2) { animation-delay: 120ms; }
         .loading-pulse:nth-child(3) { animation-delay: 240ms; }
         @keyframes pulseDot { 0%, 100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-6px); opacity: 1; } }
+
+        /* Brand polish: subtle gradients and hover states */
+        .brand-gradient { background-image: linear-gradient(135deg, rgba(var(--accent-50),1) 0%, rgba(var(--accent-100),1) 100%); }
+        .hover-raise { transition: transform .32s cubic-bezier(.22,1,.36,1), box-shadow .32s ease; }
+        .hover-raise:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
+        .hover-tint:hover { background-color: rgba(var(--accent-50), .8); }
+        a.nav-link { transition: color .2s ease, background-color .2s ease; border-radius: .5rem; padding-left: .5rem; padding-right: .5rem; }
+        a.nav-link:hover { background-color: rgba(var(--accent-50), .7); }
+        
+        /* Mobile menu optimizations */
+        #mobile-menu { padding-top: env(safe-area-inset-top, 0); }
+        #mobile-menu .nav-link { min-height: 56px; letter-spacing: .2px; justify-content: center; text-align: center; }
+
+        /* Low-spec mode tuning for ultra-smoothness */
+        .low-spec .hover-raise:hover { transform: none; box-shadow: 0 8px 18px rgba(0,0,0,.06); }
+        .low-spec .page-enter-modern { animation-duration: 360ms; }
+        .low-spec .page-leave-modern { animation-duration: 240ms; }
         #dashboard-clock {
             font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
             font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
@@ -2777,7 +2795,7 @@
                     }
                     card.appendChild(wrapper);
                     if (subjectId) {
-                        card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg min-h-[120px]';
+                        card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/70 border border-white/30 brand-gradient hover-raise min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
                         card.addEventListener('click', () => {
                             if (currentUser.tier === 'free') {
@@ -2811,11 +2829,12 @@
             if (!overlay) {
                 overlay = document.createElement('div');
                 overlay.id = 'page-loading-overlay';
-                overlay.className = 'fixed inset-0 z-[1000] hidden items-center justify-center';
+                overlay.className = 'fixed inset-0 z-[1000] hidden flex items-center justify-center';
                 overlay.innerHTML = '<div class="flex flex-col items-center gap-4"><div class="loading-orb"></div><div class="flex items-center gap-2"><span class="loading-pulse"></span><span class="loading-pulse"></span><span class="loading-pulse"></span></div><div class="text-sm font-semibold text-gray-600">Loading files…</div></div>';
                 document.body.appendChild(overlay);
             }
             overlay.classList.remove('hidden');
+            requestAnimationFrame(() => overlay.classList.add('visible'));
             try {
                 // Try multiple function routes in case Pages is configured differently
                 let data = null;
@@ -2845,7 +2864,10 @@
             } finally {
                 renderBreadcrumbs();
                 fileListContainer.setAttribute('aria-busy','false');
-                if (overlay) overlay.classList.add('hidden');
+                if (overlay) {
+                    overlay.classList.remove('visible');
+                    setTimeout(() => overlay.classList.add('hidden'), 220);
+                }
             }
         }
         
