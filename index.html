@@ -6585,6 +6585,12 @@
                         if (iframe.src && iframe.offsetHeight > 0) {
                             // Iframe seems to be working, don't show fallback
                             console.log('PDF iframe appears to be working');
+                            
+                            // Hide loading screen for PDF viewer
+                            const loadingElement = document.getElementById('preview-loading');
+                            if (loadingElement) {
+                                loadingElement.style.display = 'none';
+                            }
                         } else {
                             showPDFFallback(file, container);
                         }
@@ -6666,6 +6672,44 @@
         }
         
         /**
+         * Hides the preview loading screen
+         */
+        function hidePreviewLoading() {
+            const loadingElement = document.getElementById('preview-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            // Initialize annotation system after loading
+            const iframe = document.getElementById('file-preview-frame');
+            if (iframe && iframe.contentWindow) {
+                try {
+                    // Initialize annotation system
+                    initializeAnnotationSystem(window.currentPreviewFile, 'preview-modal');
+                } catch (e) {
+                    console.log('Annotation system initialization delayed');
+                }
+            }
+        }
+        
+        /**
+         * Shows the preview fallback when iframe fails
+         */
+        function showPreviewFallback() {
+            const loadingElement = document.getElementById('preview-loading');
+            const fallbackElement = document.getElementById('preview-fallback');
+            
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            if (fallbackElement) {
+                fallbackElement.classList.remove('hidden');
+                fallbackElement.classList.add('flex');
+            }
+        }
+        
+        /**
          * Sets up annotation canvas for PDF pages
          * @param {HTMLElement} container - The container element
          */
@@ -6698,13 +6742,13 @@
                 const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
                 content = `
                     <div class="w-full h-full relative">
-                        <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30 z-10">
                             <div class="dots-spinner"><i></i><i></i><i></i></div>
                             <span class="ml-2 text-white font-semibold">Loading preview…</span>
                             <img src="gcsemate%20new.png" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90">
                         </div>
-                        <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-                        <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
+                        <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade" onload="hidePreviewLoading()" onerror="showPreviewFallback()"></iframe>
+                        <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6 z-20">
                             <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
                                 <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
                                     <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -6753,6 +6797,10 @@
             }
             
             const externalUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+            
+            // Store current file for annotation system
+            window.currentPreviewFile = file;
+            
             modal.innerHTML = `
                 <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
                     <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
@@ -6770,6 +6818,15 @@
                 </div>
             `;
             modal.style.display = 'flex';
+            
+            // Add timeout to hide loading screen if iframe doesn't load
+            setTimeout(() => {
+                const loadingElement = document.getElementById('preview-loading');
+                if (loadingElement && loadingElement.style.display !== 'none') {
+                    console.log('Loading timeout reached, showing fallback');
+                    showPreviewFallback();
+                }
+            }, 10000); // 10 second timeout
             
             // Initialize annotation system after modal is shown
             setTimeout(() => {
