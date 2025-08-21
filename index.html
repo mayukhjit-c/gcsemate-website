@@ -4352,7 +4352,22 @@
             if (logoutButton) logoutButton.addEventListener('click', handleLogout);
             
             const mobileLogoutButton = document.getElementById('mobile-logout-button');
-            if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', handleLogout);
+            if (mobileLogoutButton) {
+                mobileLogoutButton.addEventListener('click', () => {
+                    // Close mobile menu if open before logging out
+                    const mobileMenu = document.getElementById('mobile-menu');
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.style.transform = 'translateX(100%)';
+                        mobileMenu.style.opacity = '0';
+                        setTimeout(() => {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.style.display = 'none';
+                            document.body.style.overflow = '';
+                        }, 300);
+                    }
+                    handleLogout();
+                });
+            }
             
             const addLinkBtn = document.getElementById('add-link-btn');
             if (addLinkBtn) addLinkBtn.addEventListener('click', handleAddLink);
@@ -4627,7 +4642,6 @@
             const hamburgerButton = document.getElementById('hamburger-button');
             const closeMenuButton = document.getElementById('close-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
-            const mobileLogoutButton = document.getElementById('mobile-logout-button');
             
             if (hamburgerButton && mobileMenu && closeMenuButton) {
                 hamburgerButton.addEventListener('click', () => {
@@ -4672,14 +4686,6 @@
                         closeMobileMenu();
                     });
                 });
-                
-                // Handle mobile logout button
-                if (mobileLogoutButton) {
-                    mobileLogoutButton.addEventListener('click', () => {
-                        closeMobileMenu();
-                        handleLogout();
-                    });
-                }
                 
                 // Close mobile menu when clicking outside
                 document.addEventListener('click', (e) => {
