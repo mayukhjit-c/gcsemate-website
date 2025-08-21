@@ -16,6 +16,9 @@
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
     <meta name="robots" content="index, follow">
+    
+    <!-- Content Security Policy to allow Google Drive embeds -->
+    <meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://drive.google.com https://accounts.google.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.google.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.google.com/recaptcha https://www.gstatic.com/recaptcha; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
     <meta name="theme-color" content="#2563eb">
     <link rel="canonical" href="/">
     
@@ -47,7 +50,7 @@
     })();
     </script>
     <!-- External Libraries and Resources -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
     
     <!-- Font Preloading for Better Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2021,7 +2024,28 @@
       
       // Create service instances for authentication and database
       const auth = firebase.auth();    // Firebase Authentication service
-      const db = firebase.firestore(); // Cloud Firestore database service
+      
+      // Initialize Firestore with better error handling
+      let db;
+      try {
+        db = firebase.firestore();
+        
+        // Enable offline persistence with error handling
+        db.enablePersistence({
+          synchronizeTabs: true
+        }).catch((err) => {
+          if (err.code == 'failed-precondition') {
+            console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+          } else if (err.code == 'unimplemented') {
+            console.warn('The current browser does not support persistence.');
+          } else {
+            console.warn('Firebase persistence error:', err);
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing Firestore:', error);
+        db = firebase.firestore(); // Fallback initialization
+      }
     </script>
     <!-- Main Application Script - GCSEMate Core Functionality -->
     <script>
@@ -6482,62 +6506,30 @@
          */
         async function setupPDFViewer(file, container) {
             try {
-                // Set PDF.js worker
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                // Set PDF.js worker with proper configuration
+                if (typeof pdfjsLib !== 'undefined') {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
                 
-                // Use a proxy or direct download link to avoid CORS issues
-                const pdfUrl = file.webContentLink || 
-                              `https://drive.google.com/uc?export=download&id=${file.id}` ||
-                              `/api/drive-files?folderId=${file.id}&download=true`;
+                // Use Google Drive viewer URL instead of direct download to avoid CORS
+                const pdfUrl = file.webViewLink || 
+                              `https://drive.google.com/file/d/${file.id}/preview` ||
+                              `https://drive.google.com/uc?export=view&id=${file.id}`;
                 
-                // Load PDF document with error handling
-                const loadingTask = pdfjsLib.getDocument({
-                    url: pdfUrl,
-                    httpHeaders: {
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    withCredentials: false
-                });
-                
-                const pdf = await loadingTask.promise;
-                
-                // Create PDF viewer container
+                // For PDF preview, use iframe instead of PDF.js to avoid CORS issues
                 const pdfContainer = document.createElement('div');
-                pdfContainer.className = 'pdf-viewer';
-                pdfContainer.id = 'pdf-viewer';
+                pdfContainer.className = 'pdf-viewer w-full h-full';
                 
-                // Render all pages
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    
-                    const pageContainer = document.createElement('div');
-                    pageContainer.className = 'pdf-page';
-                    pageContainer.style.width = viewport.width + 'px';
-                    pageContainer.style.height = viewport.height + 'px';
-                    pageContainer.style.position = 'relative';
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
-                    
-                    await page.render(renderContext).promise;
-                    pageContainer.appendChild(canvas);
-                    pdfContainer.appendChild(pageContainer);
-                }
+                const iframe = document.createElement('iframe');
+                iframe.src = pdfUrl;
+                iframe.className = 'w-full h-full border-0';
+                iframe.title = `PDF Preview: ${file.name}`;
+                iframe.onload = () => {
+                    // Setup annotation canvas after iframe loads
+                    setupPDFAnnotationCanvas(container);
+                };
                 
-                // Replace iframe with PDF viewer
-                const iframe = container.querySelector('iframe');
-                if (iframe) {
-                    iframe.style.display = 'none';
-                }
-                
+                pdfContainer.appendChild(iframe);
                 container.appendChild(pdfContainer);
                 
                 // Setup annotation canvas for PDF
