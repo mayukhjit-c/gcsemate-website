@@ -422,6 +422,10 @@
             color: #2563eb;
             font-weight: 700;
             position: relative;
+            background-color: rgb(var(--accent-50));
+            border-radius: 0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
         }
         
         /* Remove any border styling for active nav links */
@@ -434,6 +438,11 @@
         .nav-link {
             border: none !important;
         }
+        /* Kill any decorative pseudo-elements that may add vertical bars */
+        .nav-link::before,
+        .nav-link::after { content: none !important; display: none !important; }
+        /* Remove focus outlines for cleaner look; color handles the state */
+        .nav-link:focus { outline: none !important; box-shadow: none !important; }
         
         .nav-link:hover {
             border: none !important;
