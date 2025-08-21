@@ -6142,6 +6142,21 @@
                 if (canvas && toolbar) {
                     console.log('✅ Annotation system test passed - Canvas and toolbar found');
                     showToast('Annotation system ready! Click "Annotate" to start drawing.', 'success');
+                    
+                    // Add a test circle to verify canvas is working
+                    if (annotationState.canvas) {
+                        const testCircle = new fabric.Circle({
+                            left: 50,
+                            top: 50,
+                            radius: 20,
+                            fill: 'red',
+                            stroke: 'black',
+                            strokeWidth: 2
+                        });
+                        annotationState.canvas.add(testCircle);
+                        annotationState.canvas.renderAll();
+                        console.log('✅ Test circle added to canvas');
+                    }
                 } else {
                     console.error('❌ Annotation system test failed - Missing elements');
                     showToast('Annotation system not ready. Please refresh and try again.', 'error');
@@ -6249,21 +6264,24 @@
             canvas.style.width = '100%';
             canvas.style.height = '100%';
             canvas.style.pointerEvents = 'none';
-            canvas.style.zIndex = '100';
+            canvas.style.zIndex = '1000';
+            canvas.style.border = '2px solid red'; // Debug border to see canvas
             
             // Initialize Fabric.js canvas
             try {
                 annotationState.canvas = new fabric.Canvas(canvas, {
                     isDrawingMode: false,
                     selection: true,
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
+                    width: container.offsetWidth,
+                    height: container.offsetHeight
                 });
                 
                 // Setup drawing mode
-                annotationState.canvas.freeDrawingBrush.width = 2;
+                annotationState.canvas.freeDrawingBrush.width = 3;
                 annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
                 
-                console.log('Annotation canvas created successfully');
+                console.log('Annotation canvas created successfully with dimensions:', container.offsetWidth, 'x', container.offsetHeight);
             } catch (error) {
                 console.error('Error creating annotation canvas:', error);
                 // Fallback: create a simple canvas without Fabric.js
@@ -6280,27 +6298,41 @@
          */
         function setupCanvasEventListeners() {
             const canvas = annotationState.canvas;
+            if (!canvas) return;
             
             canvas.on('mouse:down', (options) => {
                 annotationState.isDrawing = true;
+                console.log('Mouse down on canvas at:', options.pointer.x, options.pointer.y);
             });
             
             canvas.on('mouse:up', (options) => {
                 annotationState.isDrawing = false;
+                console.log('Mouse up on canvas');
                 saveAnnotations();
             });
             
+            canvas.on('mouse:move', (options) => {
+                if (annotationState.isDrawing) {
+                    console.log('Drawing at:', options.pointer.x, options.pointer.y);
+                }
+            });
+            
             canvas.on('object:added', (options) => {
+                console.log('Object added to canvas:', options.target);
                 saveAnnotations();
             });
             
             canvas.on('object:modified', (options) => {
+                console.log('Object modified on canvas:', options.target);
                 saveAnnotations();
             });
             
             canvas.on('object:removed', (options) => {
+                console.log('Object removed from canvas:', options.target);
                 saveAnnotations();
             });
+            
+            console.log('Canvas event listeners set up successfully');
         }
         
         /**
@@ -6519,9 +6551,16 @@
             
             const container = canvas.wrapperEl.parentElement;
             if (container) {
-                canvas.setWidth(container.offsetWidth);
-                canvas.setHeight(container.offsetHeight);
+                const width = container.offsetWidth;
+                const height = container.offsetHeight;
+                
+                canvas.setDimensions({
+                    width: width,
+                    height: height
+                });
                 canvas.renderAll();
+                
+                console.log('Canvas resized to:', width, 'x', height);
             }
         }
         
@@ -6963,15 +7002,24 @@
             if (isActive) {
                 canvas.classList.remove('active');
                 canvas.style.pointerEvents = 'none';
+                canvas.style.border = '2px solid red'; // Debug border
                 showToast('Annotation mode disabled', 'info');
             } else {
                 canvas.classList.add('active');
                 canvas.style.pointerEvents = 'all';
-                showToast('Annotation mode enabled', 'success');
+                canvas.style.border = '2px solid green'; // Debug border when active
+                showToast('Annotation mode enabled - Click and drag to draw!', 'success');
                 
                 // Select pencil tool by default when enabling
                 selectAnnotationTool('pencil');
+                
+                // Make sure canvas is visible
+                canvas.style.display = 'block';
+                canvas.style.visibility = 'visible';
+                canvas.style.opacity = '1';
             }
+            
+            console.log('Annotation mode toggled:', !isActive, 'Canvas pointer-events:', canvas.style.pointerEvents);
         }
         
         /**
