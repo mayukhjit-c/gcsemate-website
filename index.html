@@ -68,6 +68,11 @@
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+            /* Respect safe areas on iOS / notches */
+            padding-top: env(safe-area-inset-top, 0);
+            padding-right: env(safe-area-inset-right, 0);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            padding-left: env(safe-area-inset-left, 0);
         }
         
         /* Performance optimizations */
@@ -479,6 +484,31 @@
             from { opacity: 0; transform: translateZ(0); } 
             to { opacity: 1; transform: translateZ(0); } 
         }
+        
+        /* iOS‑like ultra-smooth page transitions */
+        .page-enter-modern { animation: elevateIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, opacity, filter; }
+        .page-leave-modern { animation: elevateOut 320ms ease both; will-change: transform, opacity, filter; }
+        @keyframes elevateIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(10px); }
+            60% { opacity: 1; transform: translateY(0) scale(1.002); filter: blur(0); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes elevateOut {
+            0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: translateY(6px) scale(0.992); filter: blur(6px); }
+        }
+
+        /* AOS (Animate On Scroll) micro‑library */
+        [data-animate] { opacity: 0; will-change: transform, opacity, filter; }
+        .aos-animate { opacity: 1; }
+        .aos-fade-up { animation: fadeUp 680ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .aos-blur-in { animation: blurIn 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .aos-zoom-in { animation: zoomIn 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .aos-slide-right { animation: slideRight 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes blurIn { from { opacity: 0; filter: blur(12px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+        @keyframes zoomIn { 0% { opacity: 0; transform: scale(0.96); } 70% { opacity: 1; transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes slideRight { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes fadeOut { 
             from { opacity: 1; transform: translateZ(0); } 
             to { opacity: 0; transform: translateZ(0); } 
@@ -815,6 +845,18 @@
                 outline: none;
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
             }
+        }
+        /* Tablet optimizations */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .p-8 { padding: 1.75rem; }
+            .grid.gap-8 { gap: 1.25rem; }
+            #page-content { scroll-snap-type: y proximity; }
+            .page { scroll-snap-align: start; }
+        }
+        /* Foldable hint (where supported) */
+        @media (spanning: single-fold-vertical) {
+            #page-content { column-gap: 24px; }
+            .page { padding-left: 12px; padding-right: 12px; }
         }
         
         /* Optimized mobile menu animation */
@@ -1866,6 +1908,8 @@
             
             if (currentUser) {
                 renderDashboard();
+                // Log client access context for auditing
+                logClientAccess().catch(() => {});
             }
 
             // Restore accent from localStorage
@@ -2279,6 +2323,10 @@
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
                         </div>
+                        ${user.lastAccess ? `<div class=\"mt-3 text-xs text-gray-600 space-y-1\">` +
+                            `<div><span class=\"font-semibold\">Last Access:</span> ${new Date(user.lastAccess).toLocaleString()}</div>` +
+                            `${user.ipInfo ? `<div class=\\\"flex items-center gap-2\\\"><img src=\\\"https://flagcdn.com/24x18/${(user.ipInfo.country_code||'').toLowerCase()}.png\\\" alt=\\\"flag\\\" class=\\\"w-4 h-3 rounded-sm\\\"> <span>${user.ipInfo.ip || ''} • ${user.ipInfo.country || ''} ${user.ipInfo.city ? '• ' + user.ipInfo.city : ''}</span></div>` : ''}` +
+                        `</div>` : ''}
                     </div>
                     <button onclick="openEditUserModal('${user.id}')" class="mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors text-sm">Edit User</button>
                 `;
@@ -2558,18 +2606,20 @@
             if (!newPage) return;
 
             if (current && current !== newPage) {
-                current.classList.add('page-transition-leave');
+                // Modern iOS-like leave
+                current.classList.add('page-leave-modern');
                 setTimeout(() => {
                     current.classList.add('hidden');
-                    current.classList.remove('page-transition-leave');
-                }, 160);
+                    current.classList.remove('page-leave-modern');
+                }, 340);
             }
 
-            // Force layout reflow so the animation restarts reliably
-            void newPage.offsetWidth;
-            newPage.classList.remove('hidden');
-            newPage.classList.add('page-transition-enter');
-            setTimeout(() => newPage.classList.remove('page-transition-enter'), 260);
+            // Enter animation with slight delay to avoid overlap
+            requestAnimationFrame(() => {
+                newPage.classList.remove('hidden');
+                newPage.classList.add('page-enter-modern');
+                setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
+            });
 
             // Update nav active state
             document.querySelectorAll('.nav-link').forEach(l => {
@@ -2681,7 +2731,7 @@
                     const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
                     const board = examBoardBySubject[subject.toLowerCase()];
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
-                    card.innerHTML = `${iconSvg}<h3 class="text-xl font-bold text-gray-800">${subject}</h3>${badge}`;
+                    card.innerHTML = `${iconSvg}<h3 class=\"text-xl font-bold text-gray-800\" data-animate>${subject}</h3>${badge}`;
                     if (subjectId) {
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
@@ -2859,7 +2909,8 @@
                     setTimeout(() => {
                         itemElement.classList.remove('opacity-0','translate-y-2');
                         itemElement.classList.add('opacity-100','translate-y-0');
-                    }, Math.min(index, 20) * 15);
+                        itemElement.style.transition = 'transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 380ms ease';
+                    }, Math.min(index, 20) * 22);
                 });
             } else { // List view
                 container.className = 'p-4 overflow-y-auto flex-grow';
@@ -3367,7 +3418,7 @@
                 }
                 card.innerHTML = `
                     <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
-                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover" loading="lazy" decoding="async">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg></div>'}
+                        ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover" loading="lazy" decoding="async">` : '<img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1600&auto=format&fit=crop" alt="Study desk" class="w-full h-48 object-cover" loading="lazy" decoding="async">'}
                         <div class="p-6 flex-grow flex flex-col">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <h3 class="text-xl font-bold text-gray-900">${post.title}</h3>
@@ -3636,6 +3687,42 @@
         // =================================================================================
         // MODAL, UTILITY & NEW FEATURE FUNCTIONS
         // =================================================================================
+        async function logClientAccess() {
+            try {
+                // Use Cloudflare trace (no API key) if available
+                const getTraceText = async () => {
+                    try { return await fetch('/cdn-cgi/trace', { cache: 'no-store' }).then(r => r.text()); } catch (_) {}
+                    try { return await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' }).then(r => r.text()); } catch (_) {}
+                    return '';
+                };
+                const txt = await getTraceText();
+                const map = {};
+                txt.split('\n').forEach(line => { const i = line.indexOf('='); if (i>0) map[line.slice(0,i)] = line.slice(i+1); });
+                const ua = navigator.userAgent || '';
+                const payload = {
+                    uid: currentUser?.uid || null,
+                    email: currentUser?.email || null,
+                    ip: map.ip || null,
+                    ipInfo: {
+                        ip: map.ip || null,
+                        country: map.loc || null,
+                        country_code: map.loc || null,
+                        city: null,
+                        region: null,
+                        latitude: null,
+                        longitude: null,
+                        org: null,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+                        colo: map.colo || null
+                    },
+                    userAgent: ua,
+                    screen: { w: window.screen.width, h: window.screen.height, dpr: window.devicePixelRatio || 1 },
+                    accessedAt: new Date().toISOString()
+                };
+                try { await db.collection('accessLogs').add(payload); } catch(_) {}
+                try { if (currentUser?.uid) await db.collection('users').doc(currentUser.uid).set({ lastAccess: payload.accessedAt, ipInfo: payload.ipInfo }, { merge: true }); } catch(_) {}
+            } catch (e) { console.warn('Access log failed', e); }
+        }
         // Toast notifications (success, error, warning) rendered top-center
         function showToast(message, type = 'success', options = {}) {
             const { duration = 3500, title } = options;
@@ -4654,6 +4741,22 @@
             // Initialize new features
             initializeTooltips();
             initializeFaqAccordion();
+
+            // Lightweight AOS on scroll
+            const watch = Array.from(document.querySelectorAll('[data-animate]'));
+            const ioAos = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const el = entry.target;
+                        const type = el.dataset.animate || 'fade-up';
+                        el.classList.add('aos-animate');
+                        const map = { 'fade-up':'aos-fade-up', 'blur-in':'aos-blur-in', 'zoom-in':'aos-zoom-in', 'slide-right':'aos-slide-right' };
+                        el.classList.add(map[type] || 'aos-fade-up');
+                        ioAos.unobserve(el);
+                    }
+                });
+            }, { threshold: 0.18, rootMargin: '40px' });
+            watch.forEach(el => ioAos.observe(el));
 
             // Load Google Drive API script
             const gapiScript = document.createElement('script');
