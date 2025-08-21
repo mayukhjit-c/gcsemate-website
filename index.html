@@ -6022,6 +6022,7 @@
             currentTool: 'select',
             currentColor: '#ff0000',
             currentFile: null,
+            currentFileId: null,
             canvas: null,
             isDrawing: false,
             annotations: {},
@@ -6056,9 +6057,28 @@
          * @param {string} containerId - The container element ID
          */
         function initializeAnnotationSystem(file, containerId) {
+            if (!file || !containerId) {
+                console.log('Annotation system: Missing file or containerId', { file, containerId });
+                return;
+            }
+            
+            console.log('Initializing annotation system for:', file.name, 'in container:', containerId);
+            
+            // Store current file for annotation system
             annotationState.currentFile = file;
+            annotationState.currentFileId = file.id;
+            
             const container = document.getElementById(containerId);
-            if (!container) return;
+            if (!container) {
+                console.error('Container not found:', containerId);
+                return;
+            }
+            
+            // Clear existing annotation elements
+            const existingToolbar = container.querySelector('.annotation-toolbar');
+            const existingCanvas = container.querySelector('.annotation-canvas');
+            if (existingToolbar) existingToolbar.remove();
+            if (existingCanvas) existingCanvas.remove();
             
             // Create annotation toolbar
             createAnnotationToolbar(container);
@@ -6069,13 +6089,37 @@
             // Create annotation canvas
             createAnnotationCanvas(container);
             
+            // Setup canvas event listeners
+            setupCanvasEventListeners();
+            
             // Load existing annotations
             loadAnnotations(file.id);
             
-            // Setup PDF.js if it's a PDF
-            if (file.mimeType === 'application/pdf') {
-                setupPDFViewer(file, container);
+            // Setup keyboard shortcuts
+            setupAnnotationKeyboardShortcuts();
+            
+            // Show annotation help on first use
+            if (!localStorage.getItem('annotation-help-shown')) {
+                setTimeout(() => {
+                    showAnnotationHelp();
+                    localStorage.setItem('annotation-help-shown', 'true');
+                }, 2000);
             }
+            
+            console.log('Annotation system initialized successfully');
+            
+            // Test annotation system
+            setTimeout(() => {
+                const canvas = document.getElementById('annotation-canvas');
+                const toolbar = document.getElementById('annotation-toolbar');
+                if (canvas && toolbar) {
+                    console.log('✅ Annotation system test passed - Canvas and toolbar found');
+                    showToast('Annotation system ready! Click "Annotate" to start drawing.', 'success');
+                } else {
+                    console.error('❌ Annotation system test failed - Missing elements');
+                    showToast('Annotation system not ready. Please refresh and try again.', 'error');
+                }
+            }, 500);
         }
         
         /**
@@ -6172,17 +6216,24 @@
             canvas.style.zIndex = '100';
             
             // Initialize Fabric.js canvas
-            annotationState.canvas = new fabric.Canvas(canvas, {
-                isDrawingMode: false,
-                selection: true
-            });
-            
-            // Setup drawing mode
-            annotationState.canvas.freeDrawingBrush.width = 2;
-            annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
-            
-            // Setup event listeners
-            setupCanvasEventListeners();
+            try {
+                annotationState.canvas = new fabric.Canvas(canvas, {
+                    isDrawingMode: false,
+                    selection: true,
+                    backgroundColor: 'transparent'
+                });
+                
+                // Setup drawing mode
+                annotationState.canvas.freeDrawingBrush.width = 2;
+                annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
+                
+                console.log('Annotation canvas created successfully');
+            } catch (error) {
+                console.error('Error creating annotation canvas:', error);
+                // Fallback: create a simple canvas without Fabric.js
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.zIndex = '1000';
+            }
             
             container.appendChild(canvas);
             resizeAnnotationCanvas();
@@ -6221,6 +6272,8 @@
          * @param {string} toolName - The name of the tool to select
          */
         function selectAnnotationTool(toolName) {
+            console.log('Selecting annotation tool:', toolName);
+            
             // Remove active class from all tools
             document.querySelectorAll('.annotation-tool').forEach(tool => {
                 tool.classList.remove('active');
@@ -6235,10 +6288,16 @@
             annotationState.currentTool = toolName;
             const canvas = annotationState.canvas;
             
+            if (!canvas) {
+                console.error('Canvas not available for tool selection');
+                return;
+            }
+            
             switch (toolName) {
                 case 'select':
                     canvas.isDrawingMode = false;
                     canvas.selection = true;
+                    canvas.defaultCursor = 'default';
                     break;
                 case 'pencil':
                     canvas.isDrawingMode = true;
@@ -6839,7 +6898,11 @@
          */
         function toggleAnnotationMode() {
             const canvas = document.getElementById('annotation-canvas');
-            if (!canvas) return;
+            if (!canvas) {
+                console.error('Annotation canvas not found');
+                showToast('Annotation canvas not available', 'error');
+                return;
+            }
             
             const isActive = canvas.classList.contains('active');
             if (isActive) {
@@ -6850,6 +6913,9 @@
                 canvas.classList.add('active');
                 canvas.style.pointerEvents = 'all';
                 showToast('Annotation mode enabled', 'success');
+                
+                // Select pencil tool by default when enabling
+                selectAnnotationTool('pencil');
             }
         }
         
