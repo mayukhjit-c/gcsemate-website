@@ -499,7 +499,7 @@
         }
 
         /* AOS (Animate On Scroll) micro‑library */
-        [data-animate] { opacity: 0; will-change: transform, opacity; }
+        [data-animate] { opacity: 1; will-change: transform, opacity; }
         .aos-animate { opacity: 1; }
         .aos-fade-up { animation: fadeUp 680ms cubic-bezier(0.22, 1, 0.36, 1) both; }
         .aos-blur-in { animation: fadeUp 720ms cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -621,6 +621,11 @@
             0% { transform: translateY(8px) scale(1); filter: drop-shadow(0 6px 12px rgba(37,99,235,0.15)); opacity: .95; }
             50% { transform: translateY(-2px) scale(1.02); filter: drop-shadow(0 10px 18px rgba(37,99,235,0.22)); opacity: 1; }
             100% { transform: translateY(8px) scale(1); filter: drop-shadow(0 6px 12px rgba(37,99,235,0.15)); opacity: .95; }
+        }
+        /* Disable any Tailwind backdrop blur utilities globally (no blur UX) */
+        .backdrop-blur, .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, [class*="backdrop-blur-"] {
+            -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
         }
         #dashboard-clock {
             font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
@@ -2615,9 +2620,22 @@
             }
 
             // Enter animation with slight delay to avoid overlap
+            // Prevent layout jank by measuring and pre-setting height
+            const container = document.getElementById('page-container') || newPage.parentElement;
+            const prevHeight = current ? current.offsetHeight : 0;
+            const nextHeight = newPage.offsetHeight;
+            if (container && prevHeight) container.style.minHeight = prevHeight + 'px';
+
             requestAnimationFrame(() => {
                 newPage.classList.remove('hidden');
                 newPage.classList.add('page-enter-modern');
+                // Smooth container height morph
+                if (container) {
+                    const h = newPage.offsetHeight || nextHeight || prevHeight;
+                    container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
+                    container.style.minHeight = h + 'px';
+                    setTimeout(() => { container.style.minHeight = ''; container.style.transition = ''; }, 380);
+                }
                 setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
             });
 
@@ -2732,7 +2750,20 @@
                     const board = examBoardBySubject[subject.toLowerCase()];
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
                     const name = subject && subject.trim() ? subject : 'Subject';
-                    card.innerHTML = `${iconSvg}<h3 class=\"text-xl font-bold text-gray-800\" data-animate>${name}</h3>${badge}`;
+                    // Build DOM nodes instead of innerHTML to avoid any async repaint issue
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = `${iconSvg}`;
+                    const title = document.createElement('h3');
+                    title.className = 'text-xl font-bold text-gray-800';
+                    title.textContent = name;
+                    title.setAttribute('data-animate','fade-up');
+                    wrapper.appendChild(title);
+                    if (badge) {
+                        const badgeWrap = document.createElement('div');
+                        badgeWrap.innerHTML = badge;
+                        wrapper.appendChild(badgeWrap.firstChild);
+                    }
+                    card.appendChild(wrapper);
                     if (subjectId) {
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/50 border border-white/30 backdrop-blur-lg min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
