@@ -66,6 +66,13 @@
     <!-- reCAPTCHA v3 for Bot Protection -->
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
+    <!-- PDF.js for PDF annotation support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    
+    <!-- Fabric.js for canvas-based annotations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    
     <!-- Custom CSS Styles for GCSEMate Application -->
     <style>
         /* CSS Custom Properties (Variables) for Dynamic Theming */
@@ -794,10 +801,20 @@
         
         /* Mobile-specific improvements */
         @media (max-width: 768px) {
+            /* Disable all animations on mobile for better performance */
+            *, *::before, *::after {
+                animation-duration: 0s !important;
+                animation-delay: 0s !important;
+                transition-duration: 0s !important;
+                transition-delay: 0s !important;
+            }
+            
             /* Ensure minimum touch target size */
             button, a, [role="button"] {
                 min-height: 44px;
                 min-width: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
             }
             
             /* Improve text readability on mobile */
@@ -820,21 +837,29 @@
                 justify-content: center;
             }
             
-            /* Improve mobile menu visibility and interaction */
+            /* Fixed mobile menu - no animations, immediate display */
             #mobile-menu {
                 display: none;
-                transform: translateX(100%) translateZ(0);
-                opacity: 0;
-                transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                            opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                will-change: transform, opacity;
-                backface-visibility: hidden;
+                transform: none !important;
+                opacity: 1 !important;
+                transition: none !important;
+                will-change: auto !important;
+                backface-visibility: visible !important;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 9999;
+                background: white;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             #mobile-menu:not(.hidden) {
-                display: block;
-                transform: translateX(0) translateZ(0);
-                opacity: 1;
+                display: block !important;
+                transform: none !important;
+                opacity: 1 !important;
             }
             
             #mobile-menu .nav-link {
@@ -843,11 +868,14 @@
                 align-items: center;
                 font-size: 1.125rem;
                 touch-action: manipulation;
-                transition: all 0.2s ease;
+                transition: none !important;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+                user-select: none;
+                -webkit-user-select: none;
             }
             
             #mobile-menu .nav-link:active {
-                transform: scale(0.98);
+                transform: none !important;
                 background-color: rgba(59, 130, 246, 0.1);
             }
             
@@ -860,6 +888,7 @@
             input, select, textarea {
                 font-size: 16px !important; /* Prevents zoom on iOS */
                 min-height: 44px;
+                touch-action: manipulation;
             }
             
             /* Landing page specific mobile improvements */
@@ -886,7 +915,7 @@
             }
             
             .card-hover:active {
-                transform: scale(0.98);
+                transform: none !important;
             }
             
             /* Better mobile scrolling */
@@ -898,6 +927,105 @@
             .focus-ring:focus {
                 outline: none;
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            }
+            
+            /* Disable hover effects on mobile */
+            .hover\:scale:hover,
+            .hover\:lift:hover,
+            .hover\:float:hover,
+            .hover\:glow:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Improve button touch targets */
+            button, a, [role="button"] {
+                min-height: 44px;
+                min-width: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+            }
+            
+            /* Better modal handling on mobile */
+            .modal {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Disable page transitions on mobile */
+            .page-leave-modern,
+            .page-enter-modern {
+                animation: none !important;
+                transition: none !important;
+            }
+            
+            /* Improve mobile menu buttons */
+            #hamburger-button,
+            #close-menu-button {
+                min-width: 48px;
+                min-height: 48px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+            }
+            
+            /* Ensure all interactive elements are properly sized for touch */
+            .nav-link,
+            .btn-primary,
+            .btn-secondary,
+            button,
+            a[role="button"] {
+                min-height: 44px;
+                min-width: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+            }
+            
+            /* Improve mobile scrolling performance */
+            body {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+            }
+            
+            /* Better mobile form handling */
+            form {
+                touch-action: manipulation;
+            }
+            
+            /* Disable text selection on interactive elements */
+            button, a, [role="button"] {
+                user-select: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+            }
+            
+            /* Improve mobile menu link spacing */
+            #mobile-menu .nav-link {
+                margin-bottom: 8px;
+                padding: 16px;
+                border-radius: 12px;
+            }
+            
+            /* Better mobile menu header */
+            #mobile-menu > div:first-child {
+                padding: 16px;
+                border-bottom: 1px solid #e5e7eb;
+                background: white;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            
+            /* Improve mobile menu navigation section */
+            #mobile-menu nav {
+                padding: 16px;
+                flex: 1;
+            }
+            
+            /* Better mobile menu footer */
+            #mobile-menu > div:last-child {
+                padding: 16px;
+                border-top: 1px solid #e5e7eb;
+                background: #f9fafb;
             }
         }
         /* Tablet optimizations */
@@ -997,6 +1125,178 @@
         .video-brand-watermark { position: absolute; top: 8px; left: 8px; opacity: .7; pointer-events: none; }
         .video-brand-controls { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
         :fullscreen .video-brand-watermark { opacity: .85; }
+        
+        /* Document Annotation Styles */
+        .annotation-toolbar {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .annotation-toolbar:hover {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .annotation-tool {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .annotation-tool:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .annotation-tool.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .annotation-tool.active:hover {
+            background: #2563eb;
+        }
+        
+        .annotation-tool[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1001;
+        }
+        
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .color-picker:hover {
+            border-color: #3b82f6;
+            transform: scale(1.1);
+        }
+        
+        .annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .annotation-canvas.active {
+            pointer-events: all;
+        }
+        
+        .fullscreen-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            z-index: 1000;
+        }
+        
+        .fullscreen-controls button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .fullscreen-controls button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .annotation-save-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .annotation-save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* PDF.js viewer customization */
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: #525659;
+        }
+        
+        .pdf-page {
+            margin: 10px auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            background: white;
+        }
+        
+        /* Annotation layer positioning */
+        .annotation-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .annotation-layer.active {
+            pointer-events: all;
+        }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -2957,13 +3257,21 @@
             const newPage = document.getElementById(pageId);
             if (!newPage) return;
 
+            // Check if we're on mobile to disable animations
+            const isMobile = window.innerWidth <= 768;
+            
             if (current && current !== newPage) {
-                // Add modern iOS-like leave animation
-                current.classList.add('page-leave-modern');
-                setTimeout(() => {
+                if (isMobile) {
+                    // On mobile, hide immediately without animation
                     current.classList.add('hidden');
-                    current.classList.remove('page-leave-modern');
-                }, 340);
+                } else {
+                    // On desktop, use modern iOS-like leave animation
+                    current.classList.add('page-leave-modern');
+                    setTimeout(() => {
+                        current.classList.add('hidden');
+                        current.classList.remove('page-leave-modern');
+                    }, 340);
+                }
             }
 
             // Prepare for enter animation with smooth height transition
@@ -2975,18 +3283,28 @@
             if (container && prevHeight) container.style.minHeight = prevHeight + 'px';
 
             requestAnimationFrame(() => {
-                // Show new page and add enter animation
+                // Show new page
                 newPage.classList.remove('hidden');
-                newPage.classList.add('page-enter-modern');
                 
-                // Smooth container height morph to new page height
-                if (container) {
-                    const h = newPage.offsetHeight || nextHeight || prevHeight;
-                    container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
-                    container.style.minHeight = h + 'px';
-                    setTimeout(() => { container.style.minHeight = ''; container.style.transition = ''; }, 380);
+                if (isMobile) {
+                    // On mobile, show immediately without animation
+                    if (container) {
+                        container.style.minHeight = '';
+                        container.style.transition = '';
+                    }
+                } else {
+                    // On desktop, add enter animation
+                    newPage.classList.add('page-enter-modern');
+                    
+                    // Smooth container height morph to new page height
+                    if (container) {
+                        const h = newPage.offsetHeight || nextHeight || prevHeight;
+                        container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
+                        container.style.minHeight = h + 'px';
+                        setTimeout(() => { container.style.minHeight = ''; container.style.transition = ''; }, 380);
+                    }
+                    setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
                 }
-                setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
             });
 
             // Update navigation active state
@@ -3412,7 +3730,7 @@
                     if (isFolder) {
                         itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
-                        itemElement.addEventListener('click', () => showPreview(file));
+                        itemElement.addEventListener('click', () => showPreviewWithAnnotations(file));
                     }
                     
                     // Add action buttons for files (star and download)
@@ -3459,7 +3777,7 @@
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
-                        mainInfo.addEventListener('click', () => showPreview(file));
+                        mainInfo.addEventListener('click', () => showPreviewWithAnnotations(file));
                     }
                     // Create action buttons container
                     const actions = document.createElement('div');
@@ -5072,22 +5390,15 @@
                     // Close mobile menu if open
                     const mobileMenu = document.getElementById('mobile-menu');
                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                        // Use the same close animation
-                        mobileMenu.style.transform = 'translateX(100%)';
-                        mobileMenu.style.opacity = '0';
+                        // Close immediately without animation
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
                         const hamburgerButton = document.getElementById('hamburger-button');
                         if (hamburgerButton) {
                             hamburgerButton.setAttribute('aria-expanded', 'false');
+                            hamburgerButton.focus();
                         }
-                        
-                        setTimeout(() => {
-                            mobileMenu.classList.add('hidden');
-                            mobileMenu.style.display = 'none';
-                            document.body.style.overflow = '';
-                            if (hamburgerButton) {
-                                hamburgerButton.focus();
-                            }
-                        }, 300);
+                        document.body.style.overflow = '';
                     }
                 } else if (e.key.toLowerCase() === 'g') {
                     goPrefix = true;
@@ -5211,38 +5522,26 @@
             
             if (hamburgerButton && mobileMenu && closeMenuButton) {
                 hamburgerButton.addEventListener('click', () => {
-                    // Show menu first, then animate in
+                    // Show menu immediately without animation
                     mobileMenu.style.display = 'block';
                     mobileMenu.classList.remove('hidden');
                     hamburgerButton.setAttribute('aria-expanded', 'true');
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
                     
-                    // Trigger animation on next frame
-                    requestAnimationFrame(() => {
-                        mobileMenu.style.transform = 'translateX(0)';
-                        mobileMenu.style.opacity = '1';
-                    });
-                    
                     // Focus management for accessibility
                     const firstFocusableElement = mobileMenu.querySelector('a, button');
                     if (firstFocusableElement) {
-                        setTimeout(() => firstFocusableElement.focus(), 100);
+                        setTimeout(() => firstFocusableElement.focus(), 50);
                     }
                 });
                 
                 closeMenuButton.addEventListener('click', () => {
-                    // Animate out first, then hide
-                    mobileMenu.style.transform = 'translateX(100%)';
-                    mobileMenu.style.opacity = '0';
+                    // Hide menu immediately without animation
+                    mobileMenu.classList.add('hidden');
+                    mobileMenu.style.display = 'none';
                     hamburgerButton.setAttribute('aria-expanded', 'false');
-                    
-                    // Hide menu after animation completes
-                    setTimeout(() => {
-                        mobileMenu.classList.add('hidden');
-                        mobileMenu.style.display = 'none';
-                        document.body.style.overflow = ''; // Restore scrolling
-                        hamburgerButton.focus(); // Return focus to hamburger button
-                    }, 300);
+                    document.body.style.overflow = ''; // Restore scrolling
+                    hamburgerButton.focus(); // Return focus to hamburger button
                 });
                 
                 // Handle mobile menu links
@@ -5282,20 +5581,14 @@
                     }
                 }, 250));
                 
-                // Helper function to close mobile menu with animation
+                // Helper function to close mobile menu immediately
                 function closeMobileMenu() {
-                    // Animate out first, then hide
-                    mobileMenu.style.transform = 'translateX(100%)';
-                    mobileMenu.style.opacity = '0';
+                    // Hide menu immediately without animation
+                    mobileMenu.classList.add('hidden');
+                    mobileMenu.style.display = 'none';
                     hamburgerButton.setAttribute('aria-expanded', 'false');
-                    
-                    // Hide menu after animation completes
-                    setTimeout(() => {
-                        mobileMenu.classList.add('hidden');
-                        mobileMenu.style.display = 'none';
-                        document.body.style.overflow = ''; // Restore scrolling
-                        hamburgerButton.focus(); // Return focus to hamburger button
-                    }, 300);
+                    document.body.style.overflow = ''; // Restore scrolling
+                    hamburgerButton.focus(); // Return focus to hamburger button
                 }
             }
             
@@ -5656,6 +5949,890 @@
             debounceTimers.forEach(timer => clearTimeout(timer));
             throttleTimers.forEach(timer => clearTimeout(timer));
         });
+        
+        // =================================================================================
+        // DOCUMENT ANNOTATION SYSTEM
+        // =================================================================================
+        
+        /**
+         * Global annotation state management
+         */
+        let annotationState = {
+            currentTool: 'select',
+            currentColor: '#ff0000',
+            currentFile: null,
+            canvas: null,
+            isDrawing: false,
+            annotations: {},
+            isFullscreen: false
+        };
+        
+        /**
+         * Annotation tools configuration
+         */
+        const annotationTools = {
+            select: { icon: '👆', tooltip: 'Select' },
+            pencil: { icon: '✏️', tooltip: 'Pencil' },
+            highlight: { icon: '🟡', tooltip: 'Highlight' },
+            rectangle: { icon: '⬜', tooltip: 'Rectangle' },
+            circle: { icon: '⭕', tooltip: 'Circle' },
+            text: { icon: 'T', tooltip: 'Text' },
+            eraser: { icon: '🧽', tooltip: 'Eraser' }
+        };
+        
+        /**
+         * Color palette for annotations
+         */
+        const annotationColors = [
+            '#ff0000', '#ff6b35', '#f7931e', '#ffd23f', '#7cb342',
+            '#00c853', '#00bcd4', '#2196f3', '#3f51b5', '#9c27b0',
+            '#e91e63', '#795548', '#607d8b', '#000000', '#ffffff'
+        ];
+        
+        /**
+         * Initializes the annotation system for a document
+         * @param {Object} file - The file object to annotate
+         * @param {string} containerId - The container element ID
+         */
+        function initializeAnnotationSystem(file, containerId) {
+            annotationState.currentFile = file;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Create annotation toolbar
+            createAnnotationToolbar(container);
+            
+            // Create fullscreen controls
+            createFullscreenControls(container);
+            
+            // Create annotation canvas
+            createAnnotationCanvas(container);
+            
+            // Load existing annotations
+            loadAnnotations(file.id);
+            
+            // Setup PDF.js if it's a PDF
+            if (file.mimeType === 'application/pdf') {
+                setupPDFViewer(file, container);
+            }
+        }
+        
+        /**
+         * Creates the annotation toolbar with drawing tools
+         * @param {HTMLElement} container - The container element
+         */
+        function createAnnotationToolbar(container) {
+            const toolbar = document.createElement('div');
+            toolbar.className = 'annotation-toolbar';
+            toolbar.id = 'annotation-toolbar';
+            
+            // Add tool buttons
+            Object.entries(annotationTools).forEach(([toolName, tool]) => {
+                const button = document.createElement('button');
+                button.className = 'annotation-tool';
+                button.setAttribute('data-tool', toolName);
+                button.setAttribute('data-tooltip', tool.tooltip);
+                button.innerHTML = tool.icon;
+                button.onclick = () => selectAnnotationTool(toolName);
+                toolbar.appendChild(button);
+            });
+            
+            // Add color picker
+            const colorPicker = document.createElement('input');
+            colorPicker.type = 'color';
+            colorPicker.className = 'color-picker';
+            colorPicker.value = annotationState.currentColor;
+            colorPicker.onchange = (e) => {
+                annotationState.currentColor = e.target.value;
+                updateAnnotationCanvas();
+            };
+            toolbar.appendChild(colorPicker);
+            
+            // Add color palette
+            annotationColors.forEach(color => {
+                const colorBtn = document.createElement('button');
+                colorBtn.className = 'color-picker';
+                colorBtn.style.backgroundColor = color;
+                colorBtn.onclick = () => {
+                    annotationState.currentColor = color;
+                    colorPicker.value = color;
+                    updateAnnotationCanvas();
+                };
+                toolbar.appendChild(colorBtn);
+            });
+            
+            container.appendChild(toolbar);
+        }
+        
+        /**
+         * Creates fullscreen controls
+         * @param {HTMLElement} container - The container element
+         */
+        function createFullscreenControls(container) {
+            const controls = document.createElement('div');
+            controls.className = 'fullscreen-controls';
+            controls.id = 'fullscreen-controls';
+            
+            const fullscreenBtn = document.createElement('button');
+            fullscreenBtn.innerHTML = '⛶';
+            fullscreenBtn.setAttribute('data-tooltip', 'Toggle Fullscreen');
+            fullscreenBtn.onclick = toggleFullscreen;
+            controls.appendChild(fullscreenBtn);
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.innerHTML = '💾';
+            saveBtn.setAttribute('data-tooltip', 'Save Annotations');
+            saveBtn.onclick = saveAnnotations;
+            controls.appendChild(saveBtn);
+            
+            const clearBtn = document.createElement('button');
+            clearBtn.innerHTML = '🗑️';
+            clearBtn.setAttribute('data-tooltip', 'Clear All Annotations');
+            clearBtn.onclick = clearAllAnnotations;
+            controls.appendChild(clearBtn);
+            
+            container.appendChild(controls);
+        }
+        
+        /**
+         * Creates the annotation canvas overlay
+         * @param {HTMLElement} container - The container element
+         */
+        function createAnnotationCanvas(container) {
+            const canvas = document.createElement('canvas');
+            canvas.className = 'annotation-canvas';
+            canvas.id = 'annotation-canvas';
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '100';
+            
+            // Initialize Fabric.js canvas
+            annotationState.canvas = new fabric.Canvas(canvas, {
+                isDrawingMode: false,
+                selection: true
+            });
+            
+            // Setup drawing mode
+            annotationState.canvas.freeDrawingBrush.width = 2;
+            annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
+            
+            // Setup event listeners
+            setupCanvasEventListeners();
+            
+            container.appendChild(canvas);
+            resizeAnnotationCanvas();
+        }
+        
+        /**
+         * Sets up event listeners for the annotation canvas
+         */
+        function setupCanvasEventListeners() {
+            const canvas = annotationState.canvas;
+            
+            canvas.on('mouse:down', (options) => {
+                annotationState.isDrawing = true;
+            });
+            
+            canvas.on('mouse:up', (options) => {
+                annotationState.isDrawing = false;
+                saveAnnotations();
+            });
+            
+            canvas.on('object:added', (options) => {
+                saveAnnotations();
+            });
+            
+            canvas.on('object:modified', (options) => {
+                saveAnnotations();
+            });
+            
+            canvas.on('object:removed', (options) => {
+                saveAnnotations();
+            });
+        }
+        
+        /**
+         * Selects an annotation tool
+         * @param {string} toolName - The name of the tool to select
+         */
+        function selectAnnotationTool(toolName) {
+            // Remove active class from all tools
+            document.querySelectorAll('.annotation-tool').forEach(tool => {
+                tool.classList.remove('active');
+            });
+            
+            // Add active class to selected tool
+            const selectedTool = document.querySelector(`[data-tool="${toolName}"]`);
+            if (selectedTool) {
+                selectedTool.classList.add('active');
+            }
+            
+            annotationState.currentTool = toolName;
+            const canvas = annotationState.canvas;
+            
+            switch (toolName) {
+                case 'select':
+                    canvas.isDrawingMode = false;
+                    canvas.selection = true;
+                    break;
+                case 'pencil':
+                    canvas.isDrawingMode = true;
+                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                    canvas.freeDrawingBrush.width = 2;
+                    canvas.freeDrawingBrush.color = annotationState.currentColor;
+                    break;
+                case 'highlight':
+                    canvas.isDrawingMode = true;
+                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                    canvas.freeDrawingBrush.width = 20;
+                    canvas.freeDrawingBrush.color = annotationState.currentColor + '40'; // Add transparency
+                    break;
+                case 'rectangle':
+                    canvas.isDrawingMode = false;
+                    canvas.selection = false;
+                    canvas.defaultCursor = 'crosshair';
+                    canvas.on('mouse:down', startDrawingRectangle);
+                    break;
+                case 'circle':
+                    canvas.isDrawingMode = false;
+                    canvas.selection = false;
+                    canvas.defaultCursor = 'crosshair';
+                    canvas.on('mouse:down', startDrawingCircle);
+                    break;
+                case 'text':
+                    canvas.isDrawingMode = false;
+                    canvas.selection = false;
+                    canvas.defaultCursor = 'text';
+                    canvas.on('mouse:down', addTextAnnotation);
+                    break;
+                case 'eraser':
+                    canvas.isDrawingMode = true;
+                    canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
+                    canvas.freeDrawingBrush.width = 20;
+                    break;
+            }
+        }
+        
+        /**
+         * Starts drawing a rectangle
+         * @param {Object} options - Mouse event options
+         */
+        function startDrawingRectangle(options) {
+            const canvas = annotationState.canvas;
+            const pointer = canvas.getPointer(options.e);
+            
+            const rect = new fabric.Rect({
+                left: pointer.x,
+                top: pointer.y,
+                width: 0,
+                height: 0,
+                fill: 'transparent',
+                stroke: annotationState.currentColor,
+                strokeWidth: 2,
+                selectable: true,
+                evented: true
+            });
+            
+            canvas.add(rect);
+            canvas.setActiveObject(rect);
+            
+            canvas.on('mouse:move', (options) => {
+                const pointer = canvas.getPointer(options.e);
+                rect.set({
+                    width: pointer.x - rect.left,
+                    height: pointer.y - rect.top
+                });
+                canvas.renderAll();
+            });
+            
+            canvas.on('mouse:up', () => {
+                canvas.off('mouse:move');
+                canvas.off('mouse:up');
+                canvas.defaultCursor = 'default';
+                canvas.selection = true;
+            });
+        }
+        
+        /**
+         * Starts drawing a circle
+         * @param {Object} options - Mouse event options
+         */
+        function startDrawingCircle(options) {
+            const canvas = annotationState.canvas;
+            const pointer = canvas.getPointer(options.e);
+            
+            const circle = new fabric.Circle({
+                left: pointer.x,
+                top: pointer.y,
+                radius: 0,
+                fill: 'transparent',
+                stroke: annotationState.currentColor,
+                strokeWidth: 2,
+                selectable: true,
+                evented: true
+            });
+            
+            canvas.add(circle);
+            canvas.setActiveObject(circle);
+            
+            canvas.on('mouse:move', (options) => {
+                const pointer = canvas.getPointer(options.e);
+                const radius = Math.sqrt(
+                    Math.pow(pointer.x - circle.left, 2) + 
+                    Math.pow(pointer.y - circle.top, 2)
+                );
+                circle.set({ radius });
+                canvas.renderAll();
+            });
+            
+            canvas.on('mouse:up', () => {
+                canvas.off('mouse:move');
+                canvas.off('mouse:up');
+                canvas.defaultCursor = 'default';
+                canvas.selection = true;
+            });
+        }
+        
+        /**
+         * Adds text annotation
+         * @param {Object} options - Mouse event options
+         */
+        function addTextAnnotation(options) {
+            const canvas = annotationState.canvas;
+            const pointer = canvas.getPointer(options.e);
+            
+            const text = new fabric.IText('Click to edit', {
+                left: pointer.x,
+                top: pointer.y,
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: annotationState.currentColor,
+                selectable: true,
+                evented: true
+            });
+            
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            text.enterEditing();
+            
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+        }
+        
+        /**
+         * Updates the annotation canvas with current settings
+         */
+        function updateAnnotationCanvas() {
+            const canvas = annotationState.canvas;
+            if (!canvas) return;
+            
+            if (canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.color = annotationState.currentColor;
+            }
+        }
+        
+        /**
+         * Resizes the annotation canvas to match container
+         */
+        function resizeAnnotationCanvas() {
+            const canvas = annotationState.canvas;
+            if (!canvas) return;
+            
+            const container = canvas.wrapperEl.parentElement;
+            if (container) {
+                canvas.setWidth(container.offsetWidth);
+                canvas.setHeight(container.offsetHeight);
+                canvas.renderAll();
+            }
+        }
+        
+        /**
+         * Toggles fullscreen mode
+         */
+        function toggleFullscreen() {
+            const container = document.getElementById('preview-modal');
+            if (!container) return;
+            
+            if (!annotationState.isFullscreen) {
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100vw';
+                container.style.height = '100vh';
+                container.style.zIndex = '9999';
+                container.style.backgroundColor = 'black';
+                annotationState.isFullscreen = true;
+                
+                // Hide other elements
+                document.querySelectorAll('body > *:not(#preview-modal)').forEach(el => {
+                    el.style.display = 'none';
+                });
+            } else {
+                container.style.position = '';
+                container.style.top = '';
+                container.style.left = '';
+                container.style.width = '';
+                container.style.height = '';
+                container.style.zIndex = '';
+                container.style.backgroundColor = '';
+                annotationState.isFullscreen = false;
+                
+                // Show other elements
+                document.querySelectorAll('body > *').forEach(el => {
+                    el.style.display = '';
+                });
+            }
+            
+            setTimeout(resizeAnnotationCanvas, 100);
+        }
+        
+        /**
+         * Saves annotations to Firestore
+         */
+        async function saveAnnotations() {
+            if (!annotationState.currentFile || !annotationState.canvas) return;
+            
+            try {
+                const canvasData = annotationState.canvas.toJSON();
+                const annotations = {
+                    fileId: annotationState.currentFile.id,
+                    userId: currentUser.uid,
+                    canvasData: canvasData,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('annotations').doc(`${currentUser.uid}_${annotationState.currentFile.id}`).set(annotations);
+                
+                // Show save indicator
+                showSaveIndicator();
+            } catch (error) {
+                console.error('Error saving annotations:', error);
+                showToast('Failed to save annotations', 'error');
+            }
+        }
+        
+        /**
+         * Loads annotations from Firestore
+         * @param {string} fileId - The file ID to load annotations for
+         */
+        async function loadAnnotations(fileId) {
+            if (!currentUser || !fileId) return;
+            
+            try {
+                const doc = await db.collection('annotations').doc(`${currentUser.uid}_${fileId}`).get();
+                if (doc.exists && annotationState.canvas) {
+                    const data = doc.data();
+                    annotationState.canvas.loadFromJSON(data.canvasData, () => {
+                        annotationState.canvas.renderAll();
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading annotations:', error);
+            }
+        }
+        
+        /**
+         * Clears all annotations from the canvas
+         */
+        function clearAllAnnotations() {
+            if (!annotationState.canvas) return;
+            
+            showConfirmationModal('Are you sure you want to clear all annotations? This cannot be undone.', () => {
+                annotationState.canvas.clear();
+                saveAnnotations();
+                showToast('All annotations cleared', 'success');
+            });
+        }
+        
+        /**
+         * Shows a save indicator
+         */
+        function showSaveIndicator() {
+            let indicator = document.getElementById('annotation-save-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'annotation-save-indicator';
+                indicator.className = 'annotation-save-indicator';
+                indicator.textContent = 'Annotations saved';
+                document.body.appendChild(indicator);
+            }
+            
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+        
+        /**
+         * Sets up PDF.js viewer for PDF files
+         * @param {Object} file - The PDF file object
+         * @param {HTMLElement} container - The container element
+         */
+        async function setupPDFViewer(file, container) {
+            try {
+                // Set PDF.js worker
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                // Load PDF document
+                const loadingTask = pdfjsLib.getDocument(file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`);
+                const pdf = await loadingTask.promise;
+                
+                // Create PDF viewer container
+                const pdfContainer = document.createElement('div');
+                pdfContainer.className = 'pdf-viewer';
+                pdfContainer.id = 'pdf-viewer';
+                
+                // Render all pages
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'pdf-page';
+                    pageContainer.style.width = viewport.width + 'px';
+                    pageContainer.style.height = viewport.height + 'px';
+                    pageContainer.style.position = 'relative';
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    
+                    await page.render(renderContext).promise;
+                    pageContainer.appendChild(canvas);
+                    pdfContainer.appendChild(pageContainer);
+                }
+                
+                // Replace iframe with PDF viewer
+                const iframe = container.querySelector('iframe');
+                if (iframe) {
+                    iframe.style.display = 'none';
+                }
+                
+                container.appendChild(pdfContainer);
+                
+                // Setup annotation canvas for PDF
+                setupPDFAnnotationCanvas(container);
+                
+            } catch (error) {
+                console.error('Error setting up PDF viewer:', error);
+            }
+        }
+        
+        /**
+         * Sets up annotation canvas for PDF pages
+         * @param {HTMLElement} container - The container element
+         */
+        function setupPDFAnnotationCanvas(container) {
+            const pages = container.querySelectorAll('.pdf-page');
+            pages.forEach((page, index) => {
+                const annotationLayer = document.createElement('div');
+                annotationLayer.className = 'annotation-layer';
+                annotationLayer.style.position = 'absolute';
+                annotationLayer.style.top = '0';
+                annotationLayer.style.left = '0';
+                annotationLayer.style.width = '100%';
+                annotationLayer.style.height = '100%';
+                annotationLayer.style.pointerEvents = 'none';
+                
+                page.appendChild(annotationLayer);
+            });
+        }
+        
+        /**
+         * Enhanced showPreview function with annotation support
+         * @param {Object} file - The file to preview
+         */
+        function showPreviewWithAnnotations(file) {
+            const modal = document.getElementById('preview-modal');
+            const embedUrl = getPreviewEmbedUrl(file);
+            let content = '';
+            
+            if (embedUrl) {
+                const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+                content = `
+                    <div class="w-full h-full relative">
+                        <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div class="dots-spinner"><i></i><i></i><i></i></div>
+                            <span class="ml-2 text-white font-semibold">Loading preview…</span>
+                            <img src="gcsemate%20new.png" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90">
+                        </div>
+                        <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
+                            <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
+                                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
+                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Preview Unavailable</h4>
+                                <p class="text-sm text-gray-600 mb-4">This file cannot be previewed directly. This might be due to browser security settings, file format limitations, or temporary connectivity issues.</p>
+                                <div class="flex flex-col gap-3">
+                                    <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Try Again
+                                    </button>
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                            View Online
+                                        </a>
+                                        <button onclick="downloadFile('${file.id}', '${file.name}', '${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}')" class="px-4 py-2 rounded-md bg-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Download
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                content = `
+                    <div class="text-center bg-gray-100 p-8 rounded-lg">
+                        <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4" alt="${file.name}">
+                        <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
+                        <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
+                        <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+                            <img src="gcsemate%20new.png" alt="GCSEMate" class="h-5 w-5">
+                            Open in Google Drive
+                        </a>
+                    </div>
+                `;
+            }
+            
+            const externalUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
+                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
+                        <div class="flex items-center min-w-0 gap-2">
+                            <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
+                            <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleAnnotationMode()" class="px-3 py-1.5 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700" data-tooltip="Toggle Annotation Mode">✏️ Annotate</button>
+                            <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" data-tooltip="Open in Google Drive">Open</a>
+                            <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
+                        </div>
+                    </div>
+                    <div class="flex-grow bg-gray-800 relative" id="preview-container">${content}</div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+            
+            // Initialize annotation system after modal is shown
+            setTimeout(() => {
+                initializeAnnotationSystem(file, 'preview-container');
+            }, 100);
+        }
+        
+        /**
+         * Toggles annotation mode on/off
+         */
+        function toggleAnnotationMode() {
+            const canvas = document.getElementById('annotation-canvas');
+            if (!canvas) return;
+            
+            const isActive = canvas.classList.contains('active');
+            if (isActive) {
+                canvas.classList.remove('active');
+                canvas.style.pointerEvents = 'none';
+                showToast('Annotation mode disabled', 'info');
+            } else {
+                canvas.classList.add('active');
+                canvas.style.pointerEvents = 'all';
+                showToast('Annotation mode enabled', 'success');
+            }
+        }
+        
+        /**
+         * Sets up keyboard shortcuts for annotation tools
+         */
+        function setupAnnotationKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Only handle shortcuts when annotation canvas is active
+                const canvas = document.getElementById('annotation-canvas');
+                if (!canvas || !canvas.classList.contains('active')) return;
+                
+                // Prevent default behavior for annotation shortcuts
+                if (['KeyP', 'KeyH', 'KeyR', 'KeyC', 'KeyT', 'KeyE', 'KeyS', 'Escape', 'Delete', 'Backspace'].includes(e.code)) {
+                    e.preventDefault();
+                }
+                
+                switch (e.code) {
+                    case 'KeyP': // Pencil tool
+                        selectAnnotationTool('pencil');
+                        break;
+                    case 'KeyH': // Highlight tool
+                        selectAnnotationTool('highlight');
+                        break;
+                    case 'KeyR': // Rectangle tool
+                        selectAnnotationTool('rectangle');
+                        break;
+                    case 'KeyC': // Circle tool
+                        selectAnnotationTool('circle');
+                        break;
+                    case 'KeyT': // Text tool
+                        selectAnnotationTool('text');
+                        break;
+                    case 'KeyE': // Eraser tool
+                        selectAnnotationTool('eraser');
+                        break;
+                    case 'KeyS': // Select tool
+                        selectAnnotationTool('select');
+                        break;
+                    case 'Escape': // Exit annotation mode
+                        toggleAnnotationMode();
+                        break;
+                    case 'Delete':
+                    case 'Backspace': // Delete selected objects
+                        if (annotationState.canvas) {
+                            const activeObjects = annotationState.canvas.getActiveObjects();
+                            if (activeObjects.length > 0) {
+                                activeObjects.forEach(obj => annotationState.canvas.remove(obj));
+                                annotationState.canvas.discardActiveObject();
+                                annotationState.canvas.renderAll();
+                                saveAnnotations();
+                            }
+                        }
+                        break;
+                }
+            });
+        }
+        
+        /**
+         * Shows annotation help modal
+         */
+        function showAnnotationHelp() {
+            const helpContent = `
+                <div class="bg-white/95 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Annotation Tools Help</h3>
+                        <button onclick="this.closest('.modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800">×</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <h4 class="font-semibold text-gray-700">Mouse Tools:</h4>
+                                <div class="text-sm space-y-1">
+                                    <div>👆 <strong>Select</strong> - Select and move annotations</div>
+                                    <div>✏️ <strong>Pencil</strong> - Draw freehand lines</div>
+                                    <div>🟡 <strong>Highlight</strong> - Highlight text with transparency</div>
+                                    <div>⬜ <strong>Rectangle</strong> - Draw rectangles</div>
+                                    <div>⭕ <strong>Circle</strong> - Draw circles</div>
+                                    <div>T <strong>Text</strong> - Add text annotations</div>
+                                    <div>🧽 <strong>Eraser</strong> - Erase annotations</div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <h4 class="font-semibold text-gray-700">Keyboard Shortcuts:</h4>
+                                <div class="text-sm space-y-1">
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">P</kbd> <strong>Pencil</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">H</kbd> <strong>Highlight</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">R</kbd> <strong>Rectangle</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">C</kbd> <strong>Circle</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">T</kbd> <strong>Text</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">E</kbd> <strong>Eraser</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">S</kbd> <strong>Select</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">Esc</kbd> <strong>Exit Mode</strong></div>
+                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">Del</kbd> <strong>Delete Selected</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold text-gray-700 mb-2">Tips:</h4>
+                            <ul class="text-sm space-y-1 text-gray-600">
+                                <li>• Click the "✏️ Annotate" button to enable annotation mode</li>
+                                <li>• Use the color picker to change annotation colors</li>
+                                <li>• Annotations are automatically saved to your account</li>
+                                <li>• Use fullscreen mode (⛶) for better annotation experience</li>
+                                <li>• Click the help button (?) for this information</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] modal';
+            modal.innerHTML = helpContent;
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            };
+            document.body.appendChild(modal);
+        }
+        
+        // Initialize keyboard shortcuts when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setupAnnotationKeyboardShortcuts();
+            setupMobileOptimizations();
+        });
+        
+        /**
+         * Sets up mobile-specific optimizations
+         */
+        function setupMobileOptimizations() {
+            // Check if device is mobile
+            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // Add mobile class to body for additional CSS targeting
+                document.body.classList.add('mobile-device');
+                
+                // Improve touch handling
+                document.addEventListener('touchstart', function() {}, {passive: true});
+                document.addEventListener('touchmove', function() {}, {passive: true});
+                
+                // Prevent zoom on double tap
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', function (event) {
+                    const now = (new Date()).getTime();
+                    if (now - lastTouchEnd <= 300) {
+                        event.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
+                
+                // Improve mobile menu touch handling
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                    // Add touch event listeners for better mobile interaction
+                    mobileMenu.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                    }, {passive: true});
+                    
+                    mobileMenu.addEventListener('touchmove', function(e) {
+                        e.stopPropagation();
+                    }, {passive: true});
+                }
+                
+                // Improve button touch handling
+                const buttons = document.querySelectorAll('button, a, [role="button"]');
+                buttons.forEach(button => {
+                    button.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.98)';
+                    }, {passive: true});
+                    
+                    button.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    }, {passive: true});
+                });
+            }
+        }
     </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
