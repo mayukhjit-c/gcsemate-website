@@ -627,6 +627,14 @@
             -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
         }
+
+        /* Seamless page loading overlay */
+        #page-loading-overlay { background: rgba(255,255,255,0.86); }
+        .loading-orb { width: 54px; height: 54px; border-radius: 9999px; border: 3px solid rgba(59,130,246,0.15); border-top-color: rgb(var(--accent-600)); animation: spin 820ms linear infinite; }
+        .loading-pulse { width: 12px; height: 12px; border-radius: 9999px; background: rgb(var(--accent-600)); animation: pulseDot 900ms ease-in-out infinite; }
+        .loading-pulse:nth-child(2) { animation-delay: 120ms; }
+        .loading-pulse:nth-child(3) { animation-delay: 240ms; }
+        @keyframes pulseDot { 0%, 100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-6px); opacity: 1; } }
         #dashboard-clock {
             font-feature-settings: 'tnum'; /* Tabular nums for non-jumping clock */
             font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
@@ -2752,7 +2760,11 @@
                     const name = subject && subject.trim() ? subject : 'Subject';
                     // Build DOM nodes instead of innerHTML to avoid any async repaint issue
                     const wrapper = document.createElement('div');
-                    wrapper.innerHTML = `${iconSvg}`;
+                    wrapper.className = 'flex flex-col items-center justify-center gap-2';
+                    const iconHost = document.createElement('div');
+                    iconHost.className = 'flex items-center justify-center h-12 w-12';
+                    iconHost.innerHTML = `${iconSvg}`;
+                    wrapper.appendChild(iconHost);
                     const title = document.createElement('h3');
                     title.className = 'text-xl font-bold text-gray-800';
                     title.textContent = name;
@@ -2794,7 +2806,16 @@
         async function fetchAndRenderFiles(folderId) {
             const fileListContainer = document.getElementById('file-list');
             fileListContainer.setAttribute('aria-busy','true');
-            fileListContainer.innerHTML = '<div class="flex flex-col items-center justify-center p-10 gap-3"><div class="loader"></div><p class="text-sm text-gray-500">Loading files...</p></div>';
+            // Full-screen smooth overlay
+            let overlay = document.getElementById('page-loading-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'page-loading-overlay';
+                overlay.className = 'fixed inset-0 z-[1000] hidden items-center justify-center';
+                overlay.innerHTML = '<div class="flex flex-col items-center gap-4"><div class="loading-orb"></div><div class="flex items-center gap-2"><span class="loading-pulse"></span><span class="loading-pulse"></span><span class="loading-pulse"></span></div><div class="text-sm font-semibold text-gray-600">Loading files…</div></div>';
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.remove('hidden');
             try {
                 // Try multiple function routes in case Pages is configured differently
                 let data = null;
@@ -2824,6 +2845,7 @@
             } finally {
                 renderBreadcrumbs();
                 fileListContainer.setAttribute('aria-busy','false');
+                if (overlay) overlay.classList.add('hidden');
             }
         }
         
