@@ -6052,6 +6052,33 @@
         ];
         
         /**
+         * Simple eraser function that removes objects under cursor
+         */
+        function simpleEraser(e) {
+            const canvas = annotationState.canvas;
+            if (!canvas) return;
+            
+            const pointer = canvas.getPointer(e.e);
+            const objects = canvas.getObjects();
+            
+            // Find objects under the cursor
+            const objectsUnderCursor = objects.filter(obj => {
+                const objBounds = obj.getBoundingRect();
+                return pointer.x >= objBounds.left && 
+                       pointer.x <= objBounds.left + objBounds.width &&
+                       pointer.y >= objBounds.top && 
+                       pointer.y <= objBounds.top + objBounds.height;
+            });
+            
+            // Remove objects under cursor
+            objectsUnderCursor.forEach(obj => {
+                canvas.remove(obj);
+            });
+            
+            canvas.renderAll();
+        }
+        
+        /**
          * Initializes the annotation system for a document
          * @param {Object} file - The file object to annotate
          * @param {string} containerId - The container element ID
@@ -6165,6 +6192,15 @@
                 };
                 toolbar.appendChild(colorBtn);
             });
+            
+            // Add clear all button
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'annotation-tool';
+            clearBtn.setAttribute('data-tool', 'clear');
+            clearBtn.setAttribute('data-tooltip', 'Clear All');
+            clearBtn.innerHTML = '🗑️';
+            clearBtn.onclick = clearAllAnnotations;
+            toolbar.appendChild(clearBtn);
             
             container.appendChild(toolbar);
         }
@@ -6290,50 +6326,69 @@
             
             if (!canvas) {
                 console.error('Canvas not available for tool selection');
+                showToast('Canvas not available. Please refresh and try again.', 'error');
                 return;
             }
             
-            switch (toolName) {
-                case 'select':
-                    canvas.isDrawingMode = false;
-                    canvas.selection = true;
-                    canvas.defaultCursor = 'default';
-                    break;
-                case 'pencil':
-                    canvas.isDrawingMode = true;
-                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                    canvas.freeDrawingBrush.width = 2;
-                    canvas.freeDrawingBrush.color = annotationState.currentColor;
-                    break;
-                case 'highlight':
-                    canvas.isDrawingMode = true;
-                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                    canvas.freeDrawingBrush.width = 20;
-                    canvas.freeDrawingBrush.color = annotationState.currentColor + '40'; // Add transparency
-                    break;
-                case 'rectangle':
-                    canvas.isDrawingMode = false;
-                    canvas.selection = false;
-                    canvas.defaultCursor = 'crosshair';
-                    canvas.on('mouse:down', startDrawingRectangle);
-                    break;
-                case 'circle':
-                    canvas.isDrawingMode = false;
-                    canvas.selection = false;
-                    canvas.defaultCursor = 'crosshair';
-                    canvas.on('mouse:down', startDrawingCircle);
-                    break;
-                case 'text':
-                    canvas.isDrawingMode = false;
-                    canvas.selection = false;
-                    canvas.defaultCursor = 'text';
-                    canvas.on('mouse:down', addTextAnnotation);
-                    break;
-                case 'eraser':
-                    canvas.isDrawingMode = true;
-                    canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
-                    canvas.freeDrawingBrush.width = 20;
-                    break;
+            try {
+                switch (toolName) {
+                    case 'select':
+                        canvas.isDrawingMode = false;
+                        canvas.selection = true;
+                        canvas.defaultCursor = 'default';
+                        break;
+                    case 'pencil':
+                        canvas.isDrawingMode = true;
+                        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                        canvas.freeDrawingBrush.width = 2;
+                        canvas.freeDrawingBrush.color = annotationState.currentColor;
+                        break;
+                    case 'highlight':
+                        canvas.isDrawingMode = true;
+                        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                        canvas.freeDrawingBrush.width = 20;
+                        canvas.freeDrawingBrush.color = annotationState.currentColor + '40'; // Add transparency
+                        break;
+                    case 'rectangle':
+                        canvas.isDrawingMode = false;
+                        canvas.selection = false;
+                        canvas.defaultCursor = 'crosshair';
+                        canvas.on('mouse:down', startDrawingRectangle);
+                        break;
+                    case 'circle':
+                        canvas.isDrawingMode = false;
+                        canvas.selection = false;
+                        canvas.defaultCursor = 'crosshair';
+                        canvas.on('mouse:down', startDrawingCircle);
+                        break;
+                    case 'text':
+                        canvas.isDrawingMode = false;
+                        canvas.selection = false;
+                        canvas.defaultCursor = 'text';
+                        canvas.on('mouse:down', addTextAnnotation);
+                        break;
+                    case 'eraser':
+                        canvas.isDrawingMode = false;
+                        canvas.selection = false;
+                        canvas.defaultCursor = 'crosshair';
+                        // Use simple eraser that removes objects on click
+                        canvas.on('mouse:down', simpleEraser);
+                        console.log('Using simple eraser (click to remove objects)');
+                        break;
+                    default:
+                        console.warn('Unknown tool:', toolName);
+                        break;
+                }
+                
+                console.log('Tool selected successfully:', toolName);
+            } catch (error) {
+                console.error('Error selecting tool:', toolName, error);
+                showToast(`Error selecting ${toolName} tool. Please try again.`, 'error');
+                
+                // Fallback to select tool
+                canvas.isDrawingMode = false;
+                canvas.selection = true;
+                canvas.defaultCursor = 'default';
             }
         }
         
