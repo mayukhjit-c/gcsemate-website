@@ -1837,14 +1837,22 @@
         });
 
         function initializeAppState() {
-            document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('login-page').classList.add('hidden');
-            document.getElementById('email-verify-page').classList.add('hidden');
+            const landingPage = document.getElementById('landing-page');
+            if (landingPage) landingPage.classList.add('hidden');
+            
+            const loginPage = document.getElementById('login-page');
+            if (loginPage) loginPage.classList.add('hidden');
+            
+            const verifyPage = document.getElementById('email-verify-page');
+            if (verifyPage) verifyPage.classList.add('hidden');
             
             const mainApp = document.getElementById('main-app');
-            mainApp.classList.remove('hidden');
-            mainApp.style.display = 'flex';
-            mainApp.classList.add('fade-in');
+            if (mainApp) {
+                mainApp.classList.remove('hidden');
+                mainApp.style.display = 'flex';
+                mainApp.classList.add('fade-in');
+            }
+            
             updateWelcomeMessage();
             setupRealtimeListeners();
             startClock();
@@ -1869,10 +1877,17 @@
                 }, err => console.error("Error fetching announcement:", err));
             // Admin listeners
             if (currentUser.role === 'admin') {
-                document.getElementById('admin-panel').classList.remove('hidden');
-                document.getElementById('user-settings-panel').classList.add('hidden');
-                document.getElementById('add-link-form-container').classList.remove('hidden');
-                document.getElementById('add-blog-post-form-container').classList.remove('hidden');
+                const adminPanel = document.getElementById('admin-panel');
+                if (adminPanel) adminPanel.classList.remove('hidden');
+                
+                const userSettingsPanel = document.getElementById('user-settings-panel');
+                if (userSettingsPanel) userSettingsPanel.classList.add('hidden');
+                
+                const addLinkFormContainer = document.getElementById('add-link-form-container');
+                if (addLinkFormContainer) addLinkFormContainer.classList.remove('hidden');
+                
+                const addBlogPostFormContainer = document.getElementById('add-blog-post-form-container');
+                if (addBlogPostFormContainer) addBlogPostFormContainer.classList.remove('hidden');
                 
                 // Listen for all users for the management panel
                 unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
@@ -1883,10 +1898,17 @@
                     renderUserManagementPanel(allUsers);
                 }, err => console.error("Error fetching users:", err));
             } else {
-                document.getElementById('admin-panel').classList.add('hidden');
-                document.getElementById('user-settings-panel').classList.remove('hidden');
-                document.getElementById('add-link-form-container').classList.add('hidden');
-                document.getElementById('add-blog-post-form-container').classList.add('hidden');
+                const adminPanel = document.getElementById('admin-panel');
+                if (adminPanel) adminPanel.classList.add('hidden');
+                
+                const userSettingsPanel = document.getElementById('user-settings-panel');
+                if (userSettingsPanel) userSettingsPanel.classList.remove('hidden');
+                
+                const addLinkFormContainer = document.getElementById('add-link-form-container');
+                if (addLinkFormContainer) addLinkFormContainer.classList.add('hidden');
+                
+                const addBlogPostFormContainer = document.getElementById('add-blog-post-form-container');
+                if (addBlogPostFormContainer) addBlogPostFormContainer.classList.add('hidden');
             }
             // Listen for useful links
             unsubscribeUsefulLinks = db.collection('usefulLinks').orderBy('createdAt', 'desc')
@@ -1944,56 +1966,65 @@
                 }, err => console.error("Error fetching global events:", err));
         }
         async function handleRegister() {
-            const displayName = document.getElementById('register-displayname').value.trim();
-            const email = document.getElementById('register-email').value.trim();
-            const password = document.getElementById('register-password').value;
+            const displayNameEl = document.getElementById('register-displayname');
+            const emailEl = document.getElementById('register-email');
+            const passwordEl = document.getElementById('register-password');
             const messageEl = document.getElementById('register-error');
             const nameErrorEl = document.getElementById('register-name-error');
             const emailErrorEl = document.getElementById('register-email-error');
             const passwordErrorEl = document.getElementById('register-password-error');
             
+            if (!displayNameEl || !emailEl || !passwordEl) {
+                console.error('Registration form elements not found');
+                return;
+            }
+            
+            const displayName = displayNameEl.value.trim();
+            const email = emailEl.value.trim();
+            const password = passwordEl.value;
+            
             // Clear previous errors
-            messageEl.textContent = '';
-            nameErrorEl.textContent = '';
-            emailErrorEl.textContent = '';
-            passwordErrorEl.textContent = '';
+            if (messageEl) messageEl.textContent = '';
+            if (nameErrorEl) nameErrorEl.textContent = '';
+            if (emailErrorEl) emailErrorEl.textContent = '';
+            if (passwordErrorEl) passwordErrorEl.textContent = '';
             
             // Basic validation
             if (!displayName) {
-                nameErrorEl.textContent = 'Name is required';
-                document.getElementById('register-displayname').focus();
+                if (nameErrorEl) nameErrorEl.textContent = 'Name is required';
+                displayNameEl.focus();
                 return;
             }
             
             if (displayName.length < 2) {
-                nameErrorEl.textContent = 'Name must be at least 2 characters';
-                document.getElementById('register-displayname').focus();
+                if (nameErrorEl) nameErrorEl.textContent = 'Name must be at least 2 characters';
+                displayNameEl.focus();
                 return;
             }
             
             if (!email) {
-                emailErrorEl.textContent = 'Email is required';
-                document.getElementById('register-email').focus();
+                if (emailErrorEl) emailErrorEl.textContent = 'Email is required';
+                emailEl.focus();
                 return;
             }
             
             // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                emailErrorEl.textContent = 'Please enter a valid email address';
-                document.getElementById('register-email').focus();
+                if (emailErrorEl) emailErrorEl.textContent = 'Please enter a valid email address';
+                emailEl.focus();
                 return;
             }
             
             if (!password) {
-                passwordErrorEl.textContent = 'Password is required';
-                document.getElementById('register-password').focus();
+                if (passwordErrorEl) passwordErrorEl.textContent = 'Password is required';
+                passwordEl.focus();
                 return;
             }
             
             if (password.length < 6) {
-                passwordErrorEl.textContent = 'Password must be at least 6 characters';
-                document.getElementById('register-password').focus();
+                if (passwordErrorEl) passwordErrorEl.textContent = 'Password must be at least 6 characters';
+                passwordEl.focus();
                 return;
             }
             
@@ -2055,61 +2086,72 @@
                 
                 if (error.code === 'auth/email-already-in-use') {
                     errorMessage = 'An account with this email already exists.';
-                    emailErrorEl.textContent = 'Email already in use';
-                    document.getElementById('register-email').focus();
+                    if (emailErrorEl) emailErrorEl.textContent = 'Email already in use';
+                    if (emailEl) emailEl.focus();
                 } else if (error.code === 'auth/invalid-email') {
                     errorMessage = 'Invalid email address format.';
-                    emailErrorEl.textContent = 'Invalid email format';
-                    document.getElementById('register-email').focus();
+                    if (emailErrorEl) emailErrorEl.textContent = 'Invalid email format';
+                    if (emailEl) emailEl.focus();
                 } else if (error.code === 'auth/weak-password') {
                     errorMessage = 'Password is too weak. Please choose a stronger password.';
-                    passwordErrorEl.textContent = 'Password is too weak';
-                    document.getElementById('register-password').focus();
+                    if (passwordErrorEl) passwordErrorEl.textContent = 'Password is too weak';
+                    if (passwordEl) passwordEl.focus();
                 } else if (error.code === 'auth/network-request-failed') {
                     errorMessage = 'Network error. Please check your connection and try again.';
                 } else if (error.code === 'auth/too-many-requests') {
                     errorMessage = 'Too many failed attempts. Please try again later.';
                 }
                 
-                messageEl.textContent = errorMessage;
+                if (messageEl) messageEl.textContent = errorMessage;
             } finally {
                 // Reset button state
                 const registerButton = document.getElementById('register-button');
-                registerButton.textContent = 'Create Free Account';
-                registerButton.disabled = false;
+                if (registerButton) {
+                    registerButton.textContent = 'Create Free Account';
+                    registerButton.disabled = false;
+                }
             }
         }
         async function handleLogin() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('remember-me').checked;
+            const emailEl = document.getElementById('email');
+            const passwordEl = document.getElementById('password');
+            const rememberMeEl = document.getElementById('remember-me');
             const messageEl = document.getElementById('auth-error');
             const emailErrorEl = document.getElementById('email-error');
             const passwordErrorEl = document.getElementById('password-error');
             
+            if (!emailEl || !passwordEl) {
+                console.error('Login form elements not found');
+                return;
+            }
+            
+            const email = emailEl.value.trim();
+            const password = passwordEl.value;
+            const rememberMe = rememberMeEl ? rememberMeEl.checked : false;
+            
             // Clear previous errors
-            messageEl.textContent = '';
-            emailErrorEl.textContent = '';
-            passwordErrorEl.textContent = '';
+            if (messageEl) messageEl.textContent = '';
+            if (emailErrorEl) emailErrorEl.textContent = '';
+            if (passwordErrorEl) passwordErrorEl.textContent = '';
             
             // Basic validation
             if (!email) {
-                emailErrorEl.textContent = 'Email is required';
-                document.getElementById('email').focus();
+                if (emailErrorEl) emailErrorEl.textContent = 'Email is required';
+                emailEl.focus();
                 return;
             }
             
             if (!password) {
-                passwordErrorEl.textContent = 'Password is required';
-                document.getElementById('password').focus();
+                if (passwordErrorEl) passwordErrorEl.textContent = 'Password is required';
+                passwordEl.focus();
                 return;
             }
             
             // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                emailErrorEl.textContent = 'Please enter a valid email address';
-                document.getElementById('email').focus();
+                if (emailErrorEl) emailErrorEl.textContent = 'Please enter a valid email address';
+                emailEl.focus();
                 return;
             }
             
@@ -2159,7 +2201,7 @@
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
                 if (!userCredential.user.emailVerified) {
-                    messageEl.textContent = 'Please verify your email before logging in.';
+                    if (messageEl) messageEl.textContent = 'Please verify your email before logging in.';
                     // The onAuthStateChanged listener will handle redirecting them to the verification page.
                     return;
                 }
@@ -2172,16 +2214,16 @@
                 
                 if (error.code === 'auth/user-not-found') {
                     errorMessage = 'No account found with this email address.';
-                    emailErrorEl.textContent = 'No account found with this email';
-                    document.getElementById('email').focus();
+                    if (emailErrorEl) emailErrorEl.textContent = 'No account found with this email';
+                    if (emailEl) emailEl.focus();
                 } else if (error.code === 'auth/wrong-password') {
                     errorMessage = 'Incorrect password. Please try again.';
-                    passwordErrorEl.textContent = 'Incorrect password';
-                    document.getElementById('password').focus();
+                    if (passwordErrorEl) passwordErrorEl.textContent = 'Incorrect password';
+                    if (passwordEl) passwordEl.focus();
                 } else if (error.code === 'auth/invalid-email') {
                     errorMessage = 'Invalid email address format.';
-                    emailErrorEl.textContent = 'Invalid email format';
-                    document.getElementById('email').focus();
+                    if (emailErrorEl) emailErrorEl.textContent = 'Invalid email format';
+                    if (emailEl) emailEl.focus();
                 } else if (error.code === 'auth/too-many-requests') {
                     errorMessage = 'Too many failed attempts. Please try again later.';
                 } else if (error.code === 'auth/network-request-failed') {
@@ -2190,12 +2232,14 @@
                     errorMessage = 'This account has been disabled. Please contact support.';
                 }
                 
-                messageEl.textContent = errorMessage;
+                if (messageEl) messageEl.textContent = errorMessage;
             } finally {
                 // Reset button state
                 const loginButton = document.getElementById('login-button');
-                loginButton.textContent = 'Login';
-                loginButton.disabled = false;
+                if (loginButton) {
+                    loginButton.textContent = 'Login';
+                    loginButton.disabled = false;
+                }
             }
         }
         
@@ -4266,64 +4310,100 @@
                 console.error('reCAPTCHA init failed:', e);
             }
             // Setup login/register form toggling
-            document.getElementById('show-register-form').addEventListener('click', (e) => {
-                e.preventDefault();
-                showAuthPage(false);
-            });
-            document.getElementById('show-login-form').addEventListener('click', (e) => {
-                e.preventDefault();
-                showAuthPage(true);
-            });
+            const showRegisterForm = document.getElementById('show-register-form');
+            if (showRegisterForm) {
+                showRegisterForm.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showAuthPage(false);
+                });
+            }
+            
+            const showLoginForm = document.getElementById('show-login-form');
+            if (showLoginForm) {
+                showLoginForm.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showAuthPage(true);
+                });
+            }
+            
             // Setup password visibility toggle
-            document.getElementById('show-password-btn').addEventListener('click', () => {
-                const passwordInput = document.getElementById('password');
-                const eyeOpen = document.getElementById('eye-open');
-                const eyeClosed = document.getElementById('eye-closed');
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    eyeOpen.classList.add('hidden');
-                    eyeClosed.classList.remove('hidden');
-                } else {
-                    passwordInput.type = 'password';
-                    eyeOpen.classList.remove('hidden');
-                    eyeClosed.classList.add('hidden');
-                }
-            });
+            const showPasswordBtn = document.getElementById('show-password-btn');
+            if (showPasswordBtn) {
+                showPasswordBtn.addEventListener('click', () => {
+                    const passwordInput = document.getElementById('password');
+                    const eyeOpen = document.getElementById('eye-open');
+                    const eyeClosed = document.getElementById('eye-closed');
+                    if (passwordInput && eyeOpen && eyeClosed) {
+                        if (passwordInput.type === 'password') {
+                            passwordInput.type = 'text';
+                            eyeOpen.classList.add('hidden');
+                            eyeClosed.classList.remove('hidden');
+                        } else {
+                            passwordInput.type = 'password';
+                            eyeOpen.classList.remove('hidden');
+                            eyeClosed.classList.add('hidden');
+                        }
+                    }
+                });
+            }
             
             // Setup other buttons
-            document.getElementById('logout-button').addEventListener('click', handleLogout);
-            document.getElementById('mobile-logout-button').addEventListener('click', handleLogout);
-            document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
-            document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
-            document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
-            document.getElementById('prev-month-btn').addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() - 1);
-                renderCalendar(calendarUserEvents, calendarGlobalEvents);
-                updateCountdownBanner(); // Update countdown when month changes
-            });
-            document.getElementById('next-month-btn').addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() + 1);
-                renderCalendar(calendarUserEvents, calendarGlobalEvents);
-                updateCountdownBanner(); // Update countdown when month changes
-            });
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) logoutButton.addEventListener('click', handleLogout);
+            
+            const mobileLogoutButton = document.getElementById('mobile-logout-button');
+            if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', handleLogout);
+            
+            const addLinkBtn = document.getElementById('add-link-btn');
+            if (addLinkBtn) addLinkBtn.addEventListener('click', handleAddLink);
+            
+            const postAnnouncementBtn = document.getElementById('post-announcement-btn');
+            if (postAnnouncementBtn) postAnnouncementBtn.addEventListener('click', postAnnouncement);
+            
+            const clearAnnouncementBtn = document.getElementById('clear-announcement-btn');
+            if (clearAnnouncementBtn) clearAnnouncementBtn.addEventListener('click', clearAnnouncement);
+            
+            const prevMonthBtn = document.getElementById('prev-month-btn');
+            if (prevMonthBtn) {
+                prevMonthBtn.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() - 1);
+                    renderCalendar(calendarUserEvents, calendarGlobalEvents);
+                    updateCountdownBanner(); // Update countdown when month changes
+                });
+            }
+            
+            const nextMonthBtn = document.getElementById('next-month-btn');
+            if (nextMonthBtn) {
+                nextMonthBtn.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    renderCalendar(calendarUserEvents, calendarGlobalEvents);
+                    updateCountdownBanner(); // Update countdown when month changes
+                });
+            }
             // Setup file browser controls
             // Debounced auto-search with smooth feedback
             let searchDebounce;
             const searchInputEl = document.getElementById('file-search-input');
-            searchInputEl.addEventListener('input', () => {
-                if (searchDebounce) clearTimeout(searchDebounce);
-                const host = document.querySelector('#file-browser-controls .relative');
-                if (host && !host.querySelector('.dots-spinner')) {
-                    const dot = document.createElement('div');
-                    dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
-                    dot.innerHTML = '<i></i><i></i><i></i>';
-                    host.appendChild(dot);
-                }
-                searchDebounce = setTimeout(() => {
-                    renderItems();
-                }, 160);
-            });
-            document.getElementById('file-sort-select').addEventListener('change', () => renderItems());
+            if (searchInputEl) {
+                searchInputEl.addEventListener('input', () => {
+                    if (searchDebounce) clearTimeout(searchDebounce);
+                    const host = document.querySelector('#file-browser-controls .relative');
+                    if (host && !host.querySelector('.dots-spinner')) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
+                        dot.innerHTML = '<i></i><i></i><i></i>';
+                        host.appendChild(dot);
+                    }
+                    searchDebounce = setTimeout(() => {
+                        renderItems();
+                    }, 160);
+                });
+            }
+            
+            const fileSortSelect = document.getElementById('file-sort-select');
+            if (fileSortSelect) {
+                fileSortSelect.addEventListener('change', () => renderItems());
+            }
             document.querySelectorAll('.view-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelector('.view-btn.bg-blue-100')?.classList.remove('bg-blue-100', 'text-blue-700');
@@ -4332,7 +4412,10 @@
                     renderItems();
                 });
             });
-            document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+            const listViewBtn = document.querySelector('.view-btn[data-view="list"]');
+            if (listViewBtn) {
+                listViewBtn.classList.add('bg-blue-100', 'text-blue-700');
+            }
 
             // Scroll-to-top button
             const scrollTopBtn = document.getElementById('scroll-top');
@@ -4502,7 +4585,6 @@
                     const saved = localStorage.getItem('gcsemate_accent');
                     if (saved) {
                         const p = JSON.parse(saved);
-                        const [r,g,b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
                         if (Array.isArray(p.fiveHundred)) {
                             picker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2,'0')).join('');
                         }
@@ -4711,8 +4793,7 @@
                 fourHundred: tint(rgb, 0.35),
                 fiveHundred: rgb,
                 sixHundred: shade(rgb, 0.2),
-                sevenHundred: shade(rgb, 0.4),
-                sevenHunded: shade(rgb, 0.4)
+                sevenHundred: shade(rgb, 0.4)
             };
         }
         function applyAccent(p) {
@@ -4724,7 +4805,7 @@
             r.style.setProperty('--accent-400', get(p.fourHundred).join(' '));
             r.style.setProperty('--accent-500', get(p.fiveHundred).join(' '));
             r.style.setProperty('--accent-600', get(p.sixHundred).join(' '));
-            r.style.setProperty('--accent-700', get(p.sevenHundred || p.sevenHunded || p.sixHundred).join(' '));
+            r.style.setProperty('--accent-700', get(p.sevenHundred || p.sixHundred).join(' '));
         }
         
         // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
