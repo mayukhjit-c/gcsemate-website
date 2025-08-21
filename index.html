@@ -21,7 +21,23 @@
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
 
-    <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G">
+    <link rel="icon" type="image/png" href="gcsemate favicon.png">
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
+    <script>
+    (function(){
+        try{
+            var primary = 'gcsemate favicon.png';
+            var img = new Image();
+            img.onerror = function(){
+                var alt = document.querySelector('link[data-fallback-favicon]');
+                if(!alt) return;
+                document.querySelectorAll('link[rel="icon"]').forEach(function(n){ n.parentNode.removeChild(n); });
+                document.head.appendChild(alt.cloneNode(true));
+            };
+            img.src = primary;
+        }catch(_){}
+    })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -867,6 +883,12 @@
                 transform: none;
             }
         }
+        
+        /* Branded video overlay */
+        .video-brand-wrapper { position: relative; background-color: #000; }
+        .video-brand-watermark { position: absolute; top: 8px; left: 8px; opacity: .7; pointer-events: none; }
+        .video-brand-controls { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+        :fullscreen .video-brand-watermark { opacity: .85; }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -883,6 +905,10 @@
     </div>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
+    <!-- Subtle site-wide watermark -->
+    <div id="site-watermark" aria-hidden="true" class="fixed bottom-4 right-4 z-[60] select-none pointer-events-none">
+        <img src="gcsemate%20new.png" alt="" class="h-8 w-auto opacity-10 grayscale">
+    </div>
     <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
         <header class="flex justify-between items-center py-4">
              <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
@@ -2983,9 +3009,17 @@
         function getVideoEmbed(url) {
             try {
                 const data = parseYoutubeUrl(url);
-                if (data && data.type) return `<div class="aspect-w-16 aspect-h-9 bg-black"><iframe src="${data.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
+                if (data && data.type) {
+                    const sep = data.embedUrl.includes('?') ? '&' : '?';
+                    const finalUrl = `${data.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
+                    return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden">
+                        <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
+                        <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
+                        <div class="video-brand-controls"><button onclick=\"handleVideoWrapperFullscreen(this)\" class=\"px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors\" aria-label=\"Fullscreen\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3\"/></svg></button></div>
+                    </div>`;
+                }
                 // Fallback generic embed
-                return `<div class="aspect-w-16 aspect-h-9 bg-black"><iframe src="${url}" frameborder="0" allowfullscreen class="w-full h-full"></iframe></div>`;
+                return `<div class=\"aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden\"><iframe src=\"${url}\" frameborder=\"0\" class=\"w-full h-full\"></iframe><div class=\"video-brand-watermark\"><img src=\"gcsemate%20new.png\" alt=\"GCSEMate\" class=\"h-6 w-auto opacity-80\"></div><div class=\"video-brand-controls\"><button onclick=\\\"handleVideoWrapperFullscreen(this)\\\" class=\\\"px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors\\\" aria-label=\\\"Fullscreen\\\"><svg xmlns=\\\"http://www.w3.org/2000/svg\\\" class=\\\"h-5 w-5\\\" fill=\\\"none\\\" viewBox=\\\"0 0 24 24\\\" stroke=\\\"currentColor\\\"><path stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\" stroke-width=\\\"2\\\" d=\\\"M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3\\\"/></svg></button></div></div>`;
             } catch { return ''; }
         }
 
@@ -3203,7 +3237,14 @@
                 let contentHTML = '';
                 const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
                 if (link.type === 'youtube_video' || link.type === 'youtube_playlist') {
-                    contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div><div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md"><iframe src="${link.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe></div>`;
+                    const sep = (link.embedUrl || '').includes('?') ? '&' : '?';
+                    const finalUrl = `${link.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
+                    contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div>
+                        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md video-brand-wrapper">
+                            <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
+                            <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
+                            <div class="video-brand-controls"><button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3"/></svg></button></div>
+                        </div>`;
                 } else {
                     contentHTML = `<div class="flex items-center justify-between"><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="flex items-center min-w-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="font-semibold text-gray-800 truncate" data-tooltip="${link.url}">${link.title}</span></a>${removeBtn}</div>`;
                 }
