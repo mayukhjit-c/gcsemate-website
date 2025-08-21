@@ -2,27 +2,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="google-adsense-account" content="ca-pub-3142302168894001">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
-     crossorigin="anonymous"></script>
+    <!-- Google AdSense Configuration -->
+    <meta name="google-adsense-account" content="ca-pub-3142302168894001">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
+         crossorigin="anonymous"></script>
+    
+    <!-- Basic Meta Tags for SEO and Browser Compatibility -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
+    <!-- SEO Meta Tags for Better Search Engine Visibility -->
     <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
-    <link rel="preconnect" href="https://drive.google.com">
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#2563eb">
     <link rel="canonical" href="/">
-    <!-- Open Graph -->
+    
+    <!-- Performance Optimizations - Preconnect to External Domains -->
+    <link rel="preconnect" href="https://drive.google.com">
+    <!-- Open Graph Meta Tags for Social Media Sharing -->
     <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
     <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
 
+    <!-- Favicon Configuration with Fallback Support -->
     <link rel="icon" type="image/png" href="gcsemate favicon.png">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
+    <!-- Favicon Fallback Script - Handles Missing Primary Favicon -->
     <script>
     (function(){
         try{
@@ -38,37 +46,52 @@
         }catch(_){}
     })();
     </script>
+    <!-- External Libraries and Resources -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Preloading for Better Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase and Google Services Preconnect -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://apis.google.com" crossorigin>
+    
+    <!-- Analytics and Ad Services DNS Prefetch -->
     <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- reCAPTCHA v3 for Bot Protection -->
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
+    <!-- Custom CSS Styles for GCSEMate Application -->
     <style>
+        /* CSS Custom Properties (Variables) for Dynamic Theming */
         :root {
-            /* Default accent: Tailwind blue-500 rgb */
-            --accent-50: 239 246 255;
-            --accent-100: 219 234 254;
-            --accent-300: 147 197 253;
-            --accent-400: 96 165 250;
-            --accent-500: 59 130 246;
-            --accent-600: 37 99 235;
-            --accent-700: 29 78 216;
+            /* Default accent color palette: Tailwind blue-500 RGB values */
+            --accent-50: 239 246 255;   /* Lightest blue shade */
+            --accent-100: 219 234 254;  /* Very light blue */
+            --accent-300: 147 197 253;  /* Light blue */
+            --accent-400: 96 165 250;   /* Medium light blue */
+            --accent-500: 59 130 246;   /* Primary blue */
+            --accent-600: 37 99 235;    /* Medium dark blue */
+            --accent-700: 29 78 216;    /* Darkest blue shade */
         }
-        /* Base styles for a polished look */
+        /* Base Typography and Layout Styles */
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
+            /* Modern font stack with fallbacks */
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+            
+            /* Font rendering optimizations for crisp text */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
-            /* Respect safe areas on iOS / notches */
+            
+            /* iOS Safe Area Support - Respects device notches and home indicators */
             padding-top: env(safe-area-inset-top, 0);
             padding-right: env(safe-area-inset-right, 0);
             padding-bottom: env(safe-area-inset-bottom, 0);
@@ -1679,51 +1702,72 @@
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Configuration and Initialization -->
     <script>
-      // Your web app's Firebase configuration
+      // Firebase project configuration for GCSEMate application
+      // This connects the app to our Firebase backend services
       const firebaseConfig = {
-        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",
-        authDomain: "gcsemate.firebaseapp.com",
-        projectId: "gcsemate",
-        storageBucket: "gcsemate.appspot.com",
-        messagingSenderId: "704190559234",
-        appId: "1:704190559234:web:dd6ecc107df886c70b231b",
-        measurementId: "G-NSRF8YLS2N"
+        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",           // Authentication API key
+        authDomain: "gcsemate.firebaseapp.com",                      // Authentication domain
+        projectId: "gcsemate",                                       // Firebase project identifier
+        storageBucket: "gcsemate.appspot.com",                       // Cloud storage bucket
+        messagingSenderId: "704190559234",                           // Cloud messaging sender ID
+        appId: "1:704190559234:web:dd6ecc107df886c70b231b",         // Firebase app identifier
+        measurementId: "G-NSRF8YLS2N"                               // Google Analytics measurement ID
       };
-      // Initialize Firebase
+      
+      // Initialize Firebase services for the application
       firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
+      
+      // Create service instances for authentication and database
+      const auth = firebase.auth();    // Firebase Authentication service
+      const db = firebase.firestore(); // Cloud Firestore database service
     </script>
+    <!-- Main Application Script - GCSEMate Core Functionality -->
     <script>
-        // --- APP STATE---
-        let currentUser = null;
-        let isGapiReady = false;
-        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
-        let currentFolderFiles = [];
-        let fileBrowserView = 'list'; // 'list' or 'grid'
-        let allSubjectFolders = {};
-        let allBlogPosts = [];
-        let currentDate = new Date();
-        let activeCountdowns = [];
-        let currentCountdownIndex = 0;
-        let clockInterval = null;
-        let unsubscribeUserManagement;
-        let unsubscribeUsefulLinks;
-        let unsubscribeVideoPlaylists;
-        let unsubscribeBlogPosts;
-        let unsubscribeUserEvents;
-        let unsubscribeGlobalEvents;
-        let unsubscribeAnnouncement;
-        let unsubscribeBlogComments;
-        let recaptchaVerifier;
+        // =================================================================================
+        // APPLICATION STATE MANAGEMENT
+        // =================================================================================
         
-        // Performance optimizations
-        let animationFrameId = null;
-        let debounceTimers = new Map();
-        let throttleTimers = new Map();
+        // Global application state variables
+        let currentUser = null;                    // Currently logged in user object
+        let isGapiReady = false;                   // Google API readiness flag
+        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }]; // Current navigation path
+        let currentFolderFiles = [];               // Files in current folder
+        let fileBrowserView = 'list';              // File browser view mode: 'list' or 'grid'
+        let allSubjectFolders = {};                // Cached subject folder mappings
+        let allBlogPosts = [];                     // Cached blog posts
+        let currentDate = new Date();              // Current date for calendar
+        let activeCountdowns = [];                 // Active countdown events
+        let currentCountdownIndex = 0;             // Current countdown display index
+        let clockInterval = null;                  // Clock update interval reference
         
-        // Utility functions for performance
+        // Firebase real-time listener unsubscribe functions
+        let unsubscribeUserManagement;             // User management listener cleanup
+        let unsubscribeUsefulLinks;                // Useful links listener cleanup
+        let unsubscribeVideoPlaylists;             // Video playlists listener cleanup
+        let unsubscribeBlogPosts;                  // Blog posts listener cleanup
+        let unsubscribeUserEvents;                 // User events listener cleanup
+        let unsubscribeGlobalEvents;               // Global events listener cleanup
+        let unsubscribeAnnouncement;               // Announcement listener cleanup
+        let unsubscribeBlogComments;               // Blog comments listener cleanup
+        let recaptchaVerifier;                     // reCAPTCHA verifier instance
+        
+        // =================================================================================
+        // PERFORMANCE OPTIMIZATION UTILITIES
+        // =================================================================================
+        
+        // Performance tracking variables
+        let animationFrameId = null;                // RequestAnimationFrame ID for cleanup
+        let debounceTimers = new Map();             // Debounce timer storage
+        let throttleTimers = new Map();             // Throttle timer storage
+        
+        /**
+         * Debounce utility function - delays function execution until after a pause
+         * @param {Function} func - Function to debounce
+         * @param {number} wait - Wait time in milliseconds
+         * @returns {Function} Debounced function
+         */
         const debounce = (func, wait) => {
             return function executedFunction(...args) {
                 const later = () => {
@@ -1735,6 +1779,12 @@
             };
         };
         
+        /**
+         * Throttle utility function - limits function execution frequency
+         * @param {Function} func - Function to throttle
+         * @param {number} limit - Time limit in milliseconds
+         * @returns {Function} Throttled function
+         */
         const throttle = (func, limit) => {
             return function executedFunction(...args) {
                 if (!throttleTimers.get(func)) {
@@ -1745,77 +1795,130 @@
                 }
             };
         };
-        // --- CONFIGURATION ---
+        // =================================================================================
+        // APPLICATION CONFIGURATION CONSTANTS
+        // =================================================================================
+        
+        // Google Drive root folder ID for subject organization
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
-        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
-        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+        
+        // reCAPTCHA v3 site key for bot protection
+        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk';
+        
+        // Available GCSE subjects for the application
+        const SUBJECTS = [
+            'Biology', 'Chemistry', 'Computing', 'English', 'Geography', 
+            'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'
+        ];
+        
+        // Default subject icon for subjects without specific icons
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+        // Subject-specific icon mappings for visual identification
         const subjectIconMap = {
-            // Biology: tree icon
+            // Biology: Tree icon representing life and nature
             biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
-            // Physics: thunderbolt
+            
+            // Physics: Lightning bolt representing energy and forces
             physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
-            // Chemistry: conical flask
+            
+            // Chemistry: Conical flask representing laboratory experiments
             chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
-            // Geography: globe
+            
+            // Geography: Globe representing world geography
             geography: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
-            // English: book lines
+            
+            // English: Book lines representing literature and language
             english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
-            // Maths: pi symbol outline
+            
+            // Maths: Pi symbol representing mathematics
             maths: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16"/><path d="M8 8v8"/><path d="M16 8c0 5-2 8-5 8"/></svg>`,
-            // History: outlined clock face with hands
+            
+            // History: Clock face representing time and historical events
             history: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
-            // German: flag
+            
+            // German: German flag representing German language
             german: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3" viewBox="0 0 24 24"><rect width="24" height="8" y="0" fill="#000"/><rect width="24" height="8" y="8" fill="#DD0000"/><rect width="24" height="8" y="16" fill="#FFCE00"/></svg>`,
-            // Music: outlined note with circles
+            
+            // Music: Musical note representing music theory
             music: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6l10-2v10"/><circle cx="7" cy="18" r="3" stroke="currentColor"/><circle cx="19" cy="14" r="3" stroke="currentColor"/></svg>`,
-            // Computing: monitor
+            
+            // Computing: Monitor representing computer science
             computing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
-            // Philosophy and Ethics: balanced scales outline
+            
+            // Philosophy and Ethics: Balanced scales representing justice and ethics
             "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
         };
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
+        
+        /**
+         * Ensures at least one view is visible when the application loads
+         * This prevents the user from seeing a blank screen during initialization
+         */
         function ensureInitialView() {
             try {
+                // Get references to all main page containers
                 const landing = document.getElementById('landing-page');
                 const app = document.getElementById('main-app');
                 const login = document.getElementById('login-page');
                 const verify = document.getElementById('email-verify-page');
+                
+                // Helper function to check if an element is visible
                 const isVisible = (el) => el && !el.classList.contains('hidden');
+                
+                // Check if any main page is currently visible
                 const anyVisible = [app, login, verify, landing].some(isVisible);
-                if (!anyVisible && landing) landing.classList.remove('hidden');
-            } catch (_) {}
+                
+                // If no page is visible, show the landing page as fallback
+                if (!anyVisible && landing) {
+                    landing.classList.remove('hidden');
+                }
+            } catch (error) {
+                // Silently handle any errors during view initialization
+                console.warn('Error ensuring initial view:', error);
+            }
         }
 
+        /**
+         * Hides the application loading overlay with smooth animation
+         * Called when the app is ready to display content
+         */
         function hideAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
             
+            // Animate the logo to its final position
             const logo = overlay.querySelector('.animate-logo');
             if (logo) { 
                 logo.style.opacity = '1'; 
                 logo.style.transform = 'translateY(0)'; 
             }
             
+            // Ensure a view is visible before hiding loader
             ensureInitialView();
             
-            // Smooth fade out with better timing
+            // Smooth fade out animation
             overlay.style.opacity = '0';
             overlay.style.transition = 'opacity 300ms ease-out';
             
+            // Remove overlay after animation completes
             setTimeout(() => { 
                 overlay.style.display = 'none';
-                // Ensure body scroll is restored
+                // Restore body scrolling
                 document.body.style.overflow = '';
             }, 320);
         }
         
+        /**
+         * Shows the application loading overlay
+         * Used during authentication and data loading
+         */
         function showAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
             
+            // Display overlay and prevent background scrolling
             overlay.style.display = 'flex';
             overlay.style.opacity = '1';
             document.body.style.overflow = 'hidden';
@@ -1859,8 +1962,13 @@
             setTimeout(() => { ensureInitialView(); hideAppLoading(); }, 1200);
         }, { once: true });
 
+        /**
+         * Firebase Authentication State Change Handler
+         * This function runs whenever the user's authentication state changes
+         * (login, logout, email verification, etc.)
+         */
         auth.onAuthStateChanged(async (user) => {
-            // Detach old listeners to prevent memory leaks on re-login
+            // Clean up all existing listeners to prevent memory leaks on re-login
             if (unsubscribeUserManagement) unsubscribeUserManagement();
             if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
             if (unsubscribeVideoPlaylists) unsubscribeVideoPlaylists();
@@ -1869,11 +1977,14 @@
             if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
             if (unsubscribeAnnouncement) unsubscribeAnnouncement();
             if (clockInterval) clearInterval(clockInterval);
+            
             if (user && user.emailVerified) {
-                // User is signed in AND verified.
+                // User is signed in AND email is verified - show main application
                 try {
+                    // Fetch user profile data from Firestore
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
+                        // Combine Firebase Auth user data with Firestore profile data
                         currentUser = {
                             uid: user.uid,
                             email: user.email,
@@ -1883,37 +1994,62 @@
                         initializeAppState();
                         hideAppLoading();
                     } else {
+                        // User exists in Auth but not in Firestore - this shouldn't happen
                         console.error("User authenticated but no profile found in Firestore.");
                         await handleLogout();
                         hideAppLoading();
                     }
                 } catch (error) {
+                    // Handle database connection errors
                     console.error("Error fetching user profile:", error);
                     showErrorPage("Login Error", "Could not fetch your user profile. Please try again later.");
                     await handleLogout();
                     hideAppLoading();
                 }
             } else if (user && !user.emailVerified) {
-                // User is signed in but NOT verified.
+                // User is signed in but email is NOT verified - show verification page
                 console.log("User is not verified.");
                 showVerificationMessagePage(user.email);
                 hideAppLoading();
             } else {
-                // User is signed out.
+                // User is signed out - show landing page
                 currentUser = null;
+                
+                // Hide main application
                 const mainApp = document.getElementById('main-app');
                 if (mainApp) {
                     mainApp.classList.add('hidden');
-                    mainApp.style.display = 'none'; // ensure inline display doesn't override hidden
+                    mainApp.style.display = 'none'; // Ensure inline display doesn't override hidden
                 }
+                
+                // Hide authentication pages
                 const loginPage = document.getElementById('login-page');
                 const verifyPage = document.getElementById('email-verify-page');
                 if (loginPage) loginPage.classList.add('hidden');
                 if (verifyPage) verifyPage.classList.add('hidden');
+                
                 // Close any open modals and mobile menu
-                ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
-                    .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
-                if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
+                const modalIds = [
+                    'mobile-menu', 'preview-modal', 'playlist-viewer-modal', 
+                    'blog-viewer-modal', 'dmca-modal', 'legal-modal', 
+                    'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'
+                ];
+                modalIds.forEach(id => { 
+                    const el = document.getElementById(id); 
+                    if (el) { 
+                        el.style.display = 'none'; 
+                        if (!el.classList.contains('hidden')) el.classList.add('hidden'); 
+                        el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; 
+                    } 
+                });
+                
+                // Clean up blog comments listener
+                if (typeof unsubscribeBlogComments === 'function') { 
+                    try { unsubscribeBlogComments(); } catch (_) {} 
+                    unsubscribeBlogComments = null; 
+                }
+                
+                // Show landing page
                 const landingPage = document.getElementById('landing-page');
                 if (landingPage) {
                     landingPage.classList.remove('hidden');
@@ -1923,47 +2059,63 @@
             }
         });
 
+        /**
+         * Initializes the application state after successful authentication
+         * Sets up the main app interface and starts all necessary services
+         */
         function initializeAppState() {
+            // Hide authentication and landing pages
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('email-verify-page').classList.add('hidden');
             
+            // Show main application with fade-in animation
             const mainApp = document.getElementById('main-app');
             mainApp.classList.remove('hidden');
             mainApp.style.display = 'flex';
             mainApp.classList.add('fade-in');
-            updateWelcomeMessage();
-            setupRealtimeListeners();
-            startClock();
-            hideAppLoading();
+            
+            // Initialize application components
+            updateWelcomeMessage();        // Update user welcome message
+            setupRealtimeListeners();      // Start Firebase real-time listeners
+            startClock();                  // Start the dashboard clock
+            hideAppLoading();              // Hide loading overlay
             
             if (currentUser) {
-                renderDashboard();
-                // Log client access context for auditing
+                renderDashboard();         // Render the main dashboard
+                // Log client access for security auditing
                 logClientAccess().catch(() => {});
             }
 
-            // Restore accent from localStorage
+            // Restore user's saved accent color preference
             try {
                 const saved = localStorage.getItem('gcsemate_accent');
                 if (saved) applyAccent(JSON.parse(saved));
-            } catch (e) {}
+            } catch (error) {
+                console.warn('Error restoring accent color:', error);
+            }
         }
+        /**
+         * Sets up Firebase real-time listeners for live data updates
+         * These listeners automatically update the UI when data changes in the database
+         */
         function setupRealtimeListeners() {
-            // Listen for announcements
+            // Listen for site-wide announcements from administrators
             unsubscribeAnnouncement = db.collection('settings').doc('announcement')
                 .onSnapshot(doc => {
                     const data = doc.data();
                     showAnnouncement(data ? data.message : '');
                 }, err => console.error("Error fetching announcement:", err));
-            // Admin listeners
+            
+            // Admin-specific listeners and UI setup
             if (currentUser.role === 'admin') {
+                // Show admin interface elements
                 document.getElementById('admin-panel').classList.remove('hidden');
                 document.getElementById('user-settings-panel').classList.add('hidden');
                 document.getElementById('add-link-form-container').classList.remove('hidden');
                 document.getElementById('add-blog-post-form-container').classList.remove('hidden');
                 
-                // Listen for all users for the management panel
+                // Listen for all users for the admin management panel
                 unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
                     const allUsers = {};
                     snapshot.forEach(doc => {
@@ -1972,6 +2124,7 @@
                     renderUserManagementPanel(allUsers);
                 }, err => console.error("Error fetching users:", err));
             } else {
+                // Hide admin interface elements for regular users
                 document.getElementById('admin-panel').classList.add('hidden');
                 document.getElementById('user-settings-panel').classList.remove('hidden');
                 document.getElementById('add-link-form-container').classList.add('hidden');
@@ -2032,22 +2185,33 @@
                     updateCountdownBanner(); // Update countdown when events change
                 }, err => console.error("Error fetching global events:", err));
         }
+        /**
+         * Handles user registration process
+         * Creates a new user account with email verification
+         */
         async function handleRegister() {
+            // Get form input values
             const displayName = document.getElementById('register-displayname').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
+            
+            // Get error message elements for validation feedback
             const messageEl = document.getElementById('register-error');
             const nameErrorEl = document.getElementById('register-name-error');
             const emailErrorEl = document.getElementById('register-email-error');
             const passwordErrorEl = document.getElementById('register-password-error');
             
-            // Clear previous errors
+            // Clear any previous error messages
             messageEl.textContent = '';
             nameErrorEl.textContent = '';
             emailErrorEl.textContent = '';
             passwordErrorEl.textContent = '';
             
-            // Basic validation
+            // =================================================================================
+            // FORM VALIDATION
+            // =================================================================================
+            
+            // Validate display name
             if (!displayName) {
                 nameErrorEl.textContent = 'Name is required';
                 document.getElementById('register-displayname').focus();
@@ -2060,13 +2224,14 @@
                 return;
             }
             
+            // Validate email address
             if (!email) {
                 emailErrorEl.textContent = 'Email is required';
                 document.getElementById('register-email').focus();
                 return;
             }
             
-            // Email format validation
+            // Email format validation using regex
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 emailErrorEl.textContent = 'Please enter a valid email address';
@@ -2074,6 +2239,7 @@
                 return;
             }
             
+            // Validate password
             if (!password) {
                 passwordErrorEl.textContent = 'Password is required';
                 document.getElementById('register-password').focus();
@@ -2086,60 +2252,72 @@
                 return;
             }
             
+            // =================================================================================
+            // ACCOUNT CREATION PROCESS
+            // =================================================================================
+            
             try {
-                // Show loading state
+                // Show loading state on the register button
                 const registerButton = document.getElementById('register-button');
                 const originalText = registerButton.textContent;
                 registerButton.textContent = 'Creating Account...';
                 registerButton.disabled = true;
                 
+                // Create the user account in Firebase Authentication
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                // Update Firebase Auth profile (best-effort)
+                // Update the user's display name in Firebase Auth (best-effort)
                 try {
                     await user.updateProfile({ displayName: displayName });
-                } catch (e) {
-                    console.warn('updateProfile failed, continuing:', e);
+                } catch (error) {
+                    console.warn('updateProfile failed, continuing:', error);
                 }
 
-                // Save user profile to Firestore (best-effort, non-blocking for verification)
+                // Save user profile to Firestore database
+                // This is non-blocking so users can still verify their email even if this fails
                 try {
                     await db.collection('users').doc(user.uid).set({
                         displayName: displayName,
                         email: email,
-                        tier: 'free',
-                        role: 'user',
-                        starredFiles: [],
-                        allowedSubjects: null,
+                        tier: 'free',                    // Default to free tier
+                        role: 'user',                    // Default to regular user
+                        starredFiles: [],                // Empty starred files array
+                        allowedSubjects: null,           // No subject restrictions
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                } catch (e) {
-                    console.warn('Firestore profile write failed, user can still verify email:', e);
+                } catch (error) {
+                    console.warn('Firestore profile write failed, user can still verify email:', error);
                 }
 
-                // Send verification email: try default first, then fallback with action code settings
+                // Send email verification with fallback options
                 try {
                     try {
+                        // Try default email verification first
                         await user.sendEmailVerification();
                     } catch (primaryError) {
                         console.warn('Default email verification send failed, trying with actionCodeSettings:', primaryError);
+                        // Fallback with custom action code settings
                         const actionCodeSettings = {
                             url: window.location.origin + '/',
                             handleCodeInApp: false
                         };
                         await user.sendEmailVerification(actionCodeSettings);
                     }
-                } catch (e) {
-                    console.error('sendEmailVerification failed:', e);
+                } catch (error) {
+                    console.error('sendEmailVerification failed:', error);
                 }
 
-                // Redirect to the verification instructions page regardless
+                // Always redirect to verification page, even if email sending failed
                 showVerificationMessagePage(email);
+            // =================================================================================
+            // ERROR HANDLING
+            // =================================================================================
+            
             } catch (error) {
                 console.error("Registration Error:", error);
                 
-                // Provide more specific error messages
+                // Provide user-friendly error messages based on Firebase error codes
                 let errorMessage = 'An error occurred during registration. Please try again.';
                 
                 if (error.code === 'auth/email-already-in-use') {
@@ -2160,41 +2338,54 @@
                     errorMessage = 'Too many failed attempts. Please try again later.';
                 }
                 
+                // Display the error message to the user
                 messageEl.textContent = errorMessage;
             } finally {
-                // Reset button state
+                // Always reset the button state, regardless of success or failure
                 const registerButton = document.getElementById('register-button');
                 registerButton.textContent = 'Create Free Account';
                 registerButton.disabled = false;
             }
         }
+        /**
+         * Handles user login process
+         * Authenticates user credentials and manages login state
+         */
         async function handleLogin() {
+            // Get form input values
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember-me').checked;
+            
+            // Get error message elements for validation feedback
             const messageEl = document.getElementById('auth-error');
             const emailErrorEl = document.getElementById('email-error');
             const passwordErrorEl = document.getElementById('password-error');
             
-            // Clear previous errors
+            // Clear any previous error messages
             messageEl.textContent = '';
             emailErrorEl.textContent = '';
             passwordErrorEl.textContent = '';
             
-            // Basic validation
+            // =================================================================================
+            // LOGIN FORM VALIDATION
+            // =================================================================================
+            
+            // Validate email address
             if (!email) {
                 emailErrorEl.textContent = 'Email is required';
                 document.getElementById('email').focus();
                 return;
             }
             
+            // Validate password
             if (!password) {
                 passwordErrorEl.textContent = 'Password is required';
                 document.getElementById('password').focus();
                 return;
             }
             
-            // Email format validation
+            // Email format validation using regex
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 emailErrorEl.textContent = 'Please enter a valid email address';
@@ -2202,19 +2393,24 @@
                 return;
             }
             
+            // =================================================================================
+            // LOGIN AUTHENTICATION PROCESS
+            // =================================================================================
+            
             try {
-                // Show loading state
+                // Show loading state on the login button
                 const loginButton = document.getElementById('login-button');
                 const originalText = loginButton.textContent;
                 loginButton.textContent = 'Signing in...';
                 loginButton.disabled = true;
                 
-                // Enterprise reCAPTCHA token acquisition
+                // reCAPTCHA v3 bot protection (if available)
                 try {
                     if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
                         await grecaptcha.ready();
                         const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                         try {
+                            // Verify reCAPTCHA token with backend (if endpoint exists)
                             const verifyRes = await fetch('/api/recaptcha-verify', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -2230,23 +2426,26 @@
                                 // If backend not present, proceed without blocking login
                                 console.warn('reCAPTCHA verify endpoint not available, proceeding. Status:', verifyRes.status);
                             }
-                        } catch (e) {
+                        } catch (error) {
                             // Network/endpoint issues should not block legitimate logins
-                            console.warn('reCAPTCHA verify request failed, proceeding:', e);
+                            console.warn('reCAPTCHA verify request failed, proceeding:', error);
                         }
                     }
-                } catch (e) {
-                    console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
+                } catch (error) {
+                    console.warn('reCAPTCHA token acquisition failed, proceeding:', error);
                 }
                 
+                // Set authentication persistence based on "Remember Me" checkbox
                 const persistence = rememberMe 
-                    ? firebase.auth.Auth.Persistence.LOCAL 
-                    : firebase.auth.Auth.Persistence.SESSION;
+                    ? firebase.auth.Auth.Persistence.LOCAL    // Persistent across browser sessions
+                    : firebase.auth.Auth.Persistence.SESSION; // Only for current browser session
                 
                 await auth.setPersistence(persistence);
                 
+                // Attempt to sign in with provided credentials
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
+                // Check if user's email is verified
                 if (!userCredential.user.emailVerified) {
                     messageEl.textContent = 'Please verify your email before logging in.';
                     // The onAuthStateChanged listener will handle redirecting them to the verification page.
@@ -2288,47 +2487,70 @@
             }
         }
         
+        /**
+         * Handles user logout process
+         * Signs out the user and cleans up application state
+         */
         async function handleLogout() {
             try {
-                // Destroy reCAPTCHA verifier
+                // Clean up reCAPTCHA verifier if it exists
                 if (recaptchaVerifier) {
                     recaptchaVerifier.clear();
                     recaptchaVerifier = null;
                 }
                 
+                // Sign out from Firebase Authentication
                 await auth.signOut();
-                // onAuthStateChanged will handle UI changes
-                path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
-                currentFolderFiles = [];
+                
+                // Reset application state
+                path = [{ name: 'Root', id: ROOT_FOLDER_ID }];  // Reset navigation path
+                currentFolderFiles = [];                        // Clear current folder files
+                
+                // Note: onAuthStateChanged will handle UI changes automatically
             } catch (error) {
                 console.error("Logout failed:", error);
+                // Even if logout fails, we should still try to reset the UI state
             }
         }
         
+        /**
+         * Resends email verification to the current user
+         * Allows users to request a new verification email if the original was lost
+         */
         async function resendVerificationEmail() {
             const button = document.getElementById('resend-verification-btn');
             const messageEl = document.getElementById('resend-message');
+            
+            // Only allow resending if user exists and email is not verified
             if (auth.currentUser && !auth.currentUser.emailVerified) {
                 try {
+                    // Show loading state
                     button.disabled = true;
                     button.textContent = 'Sending...';
+                    
                     try {
+                        // Try with custom action code settings first
                         const actionCodeSettings = {
                             url: window.location.origin + '/',
                             handleCodeInApp: false
                         };
                         await auth.currentUser.sendEmailVerification(actionCodeSettings);
-                    } catch (e) {
+                    } catch (error) {
                         // Fallback to default if actionCodeSettings not supported in this context
                         await auth.currentUser.sendEmailVerification();
                     }
+                    
+                    // Show success message
                     messageEl.textContent = 'A new verification link has been sent.';
+                    
+                    // Reset button after 5 seconds
                     setTimeout(() => {
                         messageEl.textContent = '';
                         button.disabled = false;
                         button.textContent = 'Resend Verification Email';
                     }, 5000);
                 } catch (error) {
+                    // Handle errors
                     messageEl.textContent = 'Error sending email. Please try again later.';
                     console.error("Error resending verification email:", error);
                     button.disabled = false;
@@ -2337,15 +2559,27 @@
             }
         }
         // =================================================================================
-        // ADMIN & USER SETTINGS
+        // ADMIN & USER SETTINGS MANAGEMENT
         // =================================================================================
+        
+        /**
+         * Renders the admin user management panel
+         * Displays all users in a grid with their details and management options
+         * @param {Object} allUsers - Object containing all user data
+         */
         function renderUserManagementPanel(allUsers) {
             const container = document.getElementById('user-management-grid');
             container.innerHTML = '';
+            
+            // Iterate through all users and create management cards
             Object.values(allUsers).forEach(user => {
-                if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+                // Don't show the admin their own card in the management panel
+                if (user.id === currentUser.uid) return;
+                
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-lg shadow-md flex flex-col';
+                
+                // Create user card HTML with tier and role badges
                 card.innerHTML = `
                     <div class="flex-grow">
                         <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
@@ -2365,16 +2599,26 @@
             });
         }
         
+        /**
+         * Opens the edit user modal for admin user management
+         * Fetches user data and displays an editable form
+         * @param {string} userId - The ID of the user to edit
+         */
         async function openEditUserModal(userId) {
             try {
+                // Fetch user data from Firestore
                 const userDoc = await db.collection('users').doc(userId).get();
                 if (!userDoc.exists) {
                     showToast("User not found!", 'error');
                     return;
                 }
+                
+                // Combine document ID with user data
                 const user = { id: userDoc.id, ...userDoc.data() };
                 const modal = document.getElementById('edit-user-modal');
                 modal.style.display = 'flex';
+                
+                // Create modal HTML with user editing form
                 modal.innerHTML = `
                     <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
                          <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
@@ -2413,6 +2657,8 @@
                          </div>
                     </div>
                 `;
+                
+                // Populate subject checkboxes based on user's allowed subjects
                 const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
                 const userSubjects = user.allowedSubjects || [];
                 SUBJECTS.forEach(subject => {
@@ -2429,12 +2675,20 @@
                 showToast("Could not load user data for editing.", 'error');
             }
         }
+        /**
+         * Handles updating user data from the admin edit modal
+         * Saves changes to Firestore and provides user feedback
+         * @param {string} userId - The ID of the user being updated
+         */
         async function handleUpdateUser(userId) {
             try {
+                // Get form values from the edit modal
                 const newDisplayName = document.getElementById('edit-displayname').value;
                 const newTier = document.getElementById('edit-tier').value;
                 const newRole = document.getElementById('edit-role').value;
                 const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
+                
+                // Update user document in Firestore
                 await db.collection('users').doc(userId).update({
                     displayName: newDisplayName,
                     tier: newTier,
@@ -2442,6 +2696,7 @@
                     allowedSubjects: newSubjects.length > 0 ? newSubjects : null
                 });
                 
+                // Close modal and show success message
                 document.getElementById('edit-user-modal').style.display = 'none';
                 showToast('User updated successfully!', 'success');
             } catch (error) {
@@ -2449,24 +2704,33 @@
                 showToast("Failed to save changes.", 'error');
             }
         }
+        /**
+         * Handles updating user's own account settings
+         * Updates display name and password if provided
+         */
         async function handleUpdateUserSettings() {
             const displayName = document.getElementById('user-displayname').value.trim();
             const newPassword = document.getElementById('user-password').value;
             const messageEl = document.getElementById('user-settings-message');
             messageEl.textContent = '';
+            
             try {
-                // Update Firestore display name
+                // Update display name in Firestore database
                 await db.collection('users').doc(currentUser.uid).update({ displayName });
+                
+                // Update display name in Firebase Auth profile
                 await auth.currentUser.updateProfile({ displayName: displayName });
                 
-                // Update password if provided
+                // Update password if a new one was provided
                 if (newPassword) {
                     await auth.currentUser.updatePassword(newPassword);
                 }
                 
-                // Update local state
+                // Update local application state
                 currentUser.displayName = displayName;
                 updateWelcomeMessage();
+                
+                // Show success message
                 messageEl.textContent = 'Settings saved successfully!';
                 messageEl.className = 'text-green-600 text-sm text-center h-4';
                 setTimeout(() => messageEl.textContent = '', 3000);
@@ -2571,65 +2835,122 @@
         // =================================================================================
         // PAGE/VIEW MANAGEMENT & RENDERING
         // =================================================================================
+        /**
+         * Capitalizes the first letter of a string
+         * @param {string} string - The input string
+         * @returns {string} String with first letter capitalized
+         */
         function capitalizeFirstLetter(string) {
             if (!string) return '';
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
+        
+        /**
+         * Generates a profile picture URL using the user's email initial
+         * @param {string} email - User's email address
+         * @returns {string} URL for placeholder profile picture
+         */
         function generatePfpUrl(email) {
             const initial = (email ? email.charAt(0) : '?').toUpperCase();
             return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
         }
+        
+        /**
+         * Updates the welcome message and user profile information
+         * Displays user's name and updates profile picture
+         */
         function updateWelcomeMessage() {
             if (!currentUser) return;
+            
+            // Get welcome message element and format user's name
             const welcomeEl = document.getElementById('welcome-message');
             const name = capitalizeFirstLetter(currentUser.displayName);
             welcomeEl.textContent = `Welcome, ${name}!`;
-            // Ensure truncation has a title tooltip for full name
+            
+            // Add tooltip for full name display
             welcomeEl.title = `Welcome, ${name}!`;
+            
+            // Update profile picture and form fields
             document.getElementById('profile-picture').src = generatePfpUrl(currentUser.email);
             document.getElementById('user-displayname').value = currentUser.displayName;
             document.getElementById('user-email').value = currentUser.email;
         }
+        /**
+         * Renders an error message in a container with appropriate styling
+         * @param {HTMLElement} container - The container to display the error in
+         * @param {string} message - The error message to display
+         */
         function renderError(container, message) {
             if (container) {
+                // Determine CSS class based on container type
                 const colSpanClass = container.id === 'subject-grid' || container.id === 'playlist-grid' ? 'col-span-full' : '';
+                
+                // Create error display with red styling
                 container.innerHTML = `<div class="${colSpanClass} text-center text-red-600 p-8 bg-red-50/70 rounded-2xl border border-red-200/50"><h3 class="font-bold text-xl text-red-800">Oops! Something went wrong.</h3><p class="mt-2 text-sm text-red-700">${message}</p></div>`;
             }
         }
         
+        /**
+         * Shows the authentication page (login or register)
+         * @param {boolean} showLogin - Whether to show login form (true) or register form (false)
+         */
         function showAuthPage(showLogin = true) {
+            // Hide landing page and show login page
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.remove('hidden');
+            
+            // Get form elements
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
             const formTitle = document.getElementById('form-title');
+            
             if (showLogin) {
+                // Show login form and hide register form
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
                 formTitle.textContent = 'Your Ultimate Revision Hub';
             } else {
+                // Show register form and hide login form
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
                 formTitle.textContent = 'Create a Free Account';
             }
+            
+            // Clear any previous error messages
             document.getElementById('auth-error').textContent = '';
             document.getElementById('register-error').textContent = '';
         }
         
+        /**
+         * Shows the email verification page after user registration
+         * @param {string} email - The email address verification was sent to
+         */
         function showVerificationMessagePage(email) {
+            // Hide all other pages
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('main-app').classList.add('hidden');
+            
+            // Show verification page
             document.getElementById('email-verify-page').classList.remove('hidden');
+            
+            // Display the email address in the message
             const emailDisplay = document.getElementById('verification-email-display');
             if (email) {
                 emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
             }
         }
 
+        /**
+         * Generic function to show any page by hiding all others
+         * @param {string} pageId - The ID of the page to show
+         */
         function showPage(pageId) {
+            // Get all page elements
             const pages = document.querySelectorAll('.page');
             let current = null;
+            
+            // Find the currently visible page
             pages.forEach(page => {
                 if (!page.classList.contains('hidden')) current = page;
             });
@@ -2637,7 +2958,7 @@
             if (!newPage) return;
 
             if (current && current !== newPage) {
-                // Modern iOS-like leave
+                // Add modern iOS-like leave animation
                 current.classList.add('page-leave-modern');
                 setTimeout(() => {
                     current.classList.add('hidden');
@@ -2645,17 +2966,20 @@
                 }, 340);
             }
 
-            // Enter animation with slight delay to avoid overlap
-            // Prevent layout jank by measuring and pre-setting height
+            // Prepare for enter animation with smooth height transition
             const container = document.getElementById('page-container') || newPage.parentElement;
             const prevHeight = current ? current.offsetHeight : 0;
             const nextHeight = newPage.offsetHeight;
+            
+            // Prevent layout jank by pre-setting container height
             if (container && prevHeight) container.style.minHeight = prevHeight + 'px';
 
             requestAnimationFrame(() => {
+                // Show new page and add enter animation
                 newPage.classList.remove('hidden');
                 newPage.classList.add('page-enter-modern');
-                // Smooth container height morph
+                
+                // Smooth container height morph to new page height
                 if (container) {
                     const h = newPage.offsetHeight || nextHeight || prevHeight;
                     container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
@@ -2665,44 +2989,66 @@
                 setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
             });
 
-            // Update nav active state
+            // Update navigation active state
             document.querySelectorAll('.nav-link').forEach(l => {
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
-            // Update document title
+            
+            // Update document title if available
             try { if (pageTitles[pageId]) document.title = pageTitles[pageId]; } catch (_) {}
-            // Lessons removed
-             // Close mobile menu on navigation
+            
+            // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
             if (!mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.add('hidden');
             }
         }
+        /**
+         * Displays an announcement banner at the top of the page
+         * @param {string} message - The announcement message to display
+         */
         function showAnnouncement(message) {
             const announcementBanner = document.getElementById('site-announcement-banner');
             if (message && message.trim() !== '') {
+                // Create announcement banner with dismiss button
                 announcementBanner.innerHTML = `<div class="bg-blue-600 text-white p-3 text-center text-sm font-semibold flex justify-center items-center relative"><span>${message}</span><button onclick="this.parentElement.parentElement.style.display='none'" class="font-bold text-xl px-2 absolute right-2" data-tooltip="Dismiss">×</button></div>`;
                 announcementBanner.classList.remove('hidden');
             } else {
+                // Hide banner if no message
                 announcementBanner.classList.add('hidden');
             }
         }
+        
+        /**
+         * Posts a new announcement (admin only)
+         * Saves announcement to Firestore database
+         */
         async function postAnnouncement() {
             if (currentUser.role !== 'admin') return;
+            
+            // Get announcement text from input field
             const text = document.getElementById('announcement-text').value.trim();
+            
             try {
+                // Save announcement to Firestore
                 await db.collection('settings').doc('announcement').set({ message: text });
-                 showToast('Announcement posted!', 'success');
+                showToast('Announcement posted!', 'success');
             } catch (error) {
                 console.error("Error posting announcement:", error);
                 showToast("Could not post announcement.", 'error');
             }
         }
         
+        /**
+         * Clears the current announcement (admin only)
+         * Removes announcement from Firestore database
+         */
         async function clearAnnouncement() {
             if (currentUser.role !== 'admin') return;
+            
             try {
+                // Clear announcement in Firestore
                 await db.collection('settings').doc('announcement').set({ message: '' });
                 document.getElementById('announcement-text').value = '';
                 showToast('Announcement cleared!', 'success');
@@ -2711,10 +3057,15 @@
                 showToast("Could not clear announcement.", 'error');
             }
         }
+        /**
+         * Renders the main dashboard with subject folders
+         * Shows skeleton loader while fetching data from Google Drive API
+         */
         async function renderDashboard() {
             const subjectGrid = document.getElementById('subject-grid');
             if (!subjectGrid) return;
-            // Render skeleton loader
+            
+            // Show skeleton loader while loading
             let skeletonHTML = '';
             for (let i = 0; i < 10; i++) {
                 skeletonHTML += '<div class="h-36 skeleton"></div>';
@@ -2722,7 +3073,7 @@
             subjectGrid.innerHTML = skeletonHTML;
             
             try {
-                // Try multiple function routes in case Pages is configured differently
+                // Try multiple API endpoints in case Pages is configured differently
                 let data = null;
                 const subjectUrls = [
                     `/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
@@ -2743,6 +3094,8 @@
                     } catch (e) { lastErr = e; }
                 }
                 if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
+                
+                // Store all subject folders in global variable
                 allSubjectFolders = {};
                 if (data.files) {
                     data.files.forEach(folder => {
@@ -2750,25 +3103,31 @@
                     });
                 }
                 
+                // Clear grid and determine which subjects to show
                 subjectGrid.innerHTML = '';
                 const userAllowedSubjects = currentUser.allowedSubjects;
                 let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
+                
+                // Show message if user has no subject access
                 if (subjectsToShow.length === 0) {
                     subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
                     return;
                 }
+                // Map subjects to their exam boards for display badges
                 const examBoardBySubject = {
-                    // AQA
+                    // AQA exam board subjects
                     biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
-                    // Edexcel
+                    // Edexcel exam board subjects
                     music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
-                    // OCR
+                    // OCR exam board subjects
                     computing: 'OCR', geography: 'OCR',
-                    // Both
+                    // Subjects available for multiple boards
                     english: 'AQA & Edexcel',
-                    // Eduqas
+                    // Eduqas exam board subjects
                     'philosophy and ethics': 'Eduqas'
                 };
+                
+                // Create subject cards for each available subject
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
                     const card = document.createElement('div');
@@ -2776,18 +3135,24 @@
                     const board = examBoardBySubject[subject.toLowerCase()];
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
                     const name = subject && subject.trim() ? subject : 'Subject';
-                    // Build DOM nodes instead of innerHTML to avoid any async repaint issue
+                    // Build DOM nodes manually to avoid async repaint issues
                     const wrapper = document.createElement('div');
                     wrapper.className = 'flex flex-col items-center justify-center gap-2';
+                    
+                    // Create icon container
                     const iconHost = document.createElement('div');
                     iconHost.className = 'flex items-center justify-center h-12 w-12';
                     iconHost.innerHTML = `${iconSvg}`;
                     wrapper.appendChild(iconHost);
+                    
+                    // Create subject title
                     const title = document.createElement('h3');
                     title.className = 'text-xl font-bold text-gray-800';
                     title.textContent = name;
                     title.setAttribute('data-animate','fade-up');
                     wrapper.appendChild(title);
+                    
+                    // Add exam board badge if available
                     if (badge) {
                         const badgeWrap = document.createElement('div');
                         badgeWrap.innerHTML = badge;
@@ -2795,36 +3160,57 @@
                     }
                     card.appendChild(wrapper);
                     if (subjectId) {
+                        // Style card as clickable with hover effects
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/70 border border-white/30 brand-gradient hover-raise min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
+                        
+                        // Add click handler for subject navigation
                         card.addEventListener('click', () => {
+                            // Check if user needs to upgrade
                             if (currentUser.tier === 'free') {
                                 document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
                                 document.getElementById('upgrade-modal').style.display = 'flex';
                                 return;
                             }
+                            
+                            // Navigate to subject folder
                             path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
                             handleNavigation(subjectId);
                             showPage('file-browser-page');
                         });
                     } else {
+                        // Style card as disabled (folder not available)
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[120px]';
                         card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
                     }
+                    
+                    // Add card to the grid
                     subjectGrid.appendChild(card);
                 });
             } catch (err) {
+                // Display error message in grid and show toast notification
                 renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
                 showToast(`Subjects failed to load: ${err.message}`, 'error');
             }
         }
+        
+        /**
+         * Handles navigation to a specific folder
+         * @param {string} folderId - The Google Drive folder ID to navigate to
+         */
         async function handleNavigation(folderId) {
             await fetchAndRenderFiles(folderId);
         }
+        /**
+         * Fetches and renders files from a Google Drive folder
+         * Shows loading overlay and handles API requests
+         * @param {string} folderId - The Google Drive folder ID to fetch files from
+         */
         async function fetchAndRenderFiles(folderId) {
             const fileListContainer = document.getElementById('file-list');
             fileListContainer.setAttribute('aria-busy','true');
-            // Full-screen smooth overlay
+            
+            // Create or get full-screen loading overlay
             let overlay = document.getElementById('page-loading-overlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -2837,10 +3223,12 @@
                 </div>';
                 document.body.appendChild(overlay);
             }
+            
+            // Show loading overlay with smooth animation
             overlay.classList.remove('hidden');
             requestAnimationFrame(() => overlay.classList.add('visible'));
             try {
-                // Try multiple function routes in case Pages is configured differently
+                // Try multiple API endpoints in case Pages is configured differently
                 let data = null;
                 const fileUrls = [
                     `/api/drive-files?folderId=${encodeURIComponent(folderId)}`,
@@ -2848,6 +3236,8 @@
                     `/functions/drive-files?folderId=${encodeURIComponent(folderId)}`
                 ];
                 let lastErr = null;
+                
+                // Try each endpoint until one works
                 for (const u of fileUrls) {
                     try {
                         const res = await fetch(u);
@@ -2860,14 +3250,21 @@
                         break;
                     } catch (e) { lastErr = e; }
                 }
+                
                 if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
+                
+                // Store files and render them
                 currentFolderFiles = data.files;
                 renderItems();
             } catch (err) {
+                // Display error message in file list container
                 renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
             } finally {
+                // Always update breadcrumbs and clean up
                 renderBreadcrumbs();
                 fileListContainer.setAttribute('aria-busy','false');
+                
+                // Hide loading overlay with smooth animation
                 if (overlay) {
                     overlay.classList.remove('visible');
                     setTimeout(() => overlay.classList.add('hidden'), 220);
@@ -2875,6 +3272,11 @@
             }
         }
         
+        /**
+         * Escapes HTML special characters to prevent XSS attacks
+         * @param {string} str - The string to escape
+         * @returns {string} HTML-escaped string
+         */
         function escapeHtml(str) {
             return String(str)
                 .replace(/&/g, '&amp;')
@@ -2884,11 +3286,17 @@
                 .replace(/'/g, '&#39;');
         }
 
+        /**
+         * Converts a date to a human-readable relative time string
+         * @param {Date} date - The date to convert
+         * @returns {string} Relative time string (e.g., "2 hours ago")
+         */
         function timeAgo(date) {
             try {
                 const now = new Date();
                 const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
                 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+                // Return appropriate relative time based on seconds difference
                 if (seconds < 60) return rtf.format(-Math.max(1, seconds), 'second');
                 if (seconds < 3600) return rtf.format(-Math.floor(seconds/60), 'minute');
                 if (seconds < 86400) return rtf.format(-Math.floor(seconds/3600), 'hour');
@@ -2897,23 +3305,42 @@
                 if (seconds < 31536000) return rtf.format(-Math.floor(seconds/2592000), 'month');
                 return rtf.format(-Math.floor(seconds/31536000), 'year');
             } catch (_) {
+                // Fallback to locale string if relative time formatting fails
                 return date.toLocaleString();
             }
         }
 
+        /**
+         * Highlights search query matches in text with yellow background
+         * @param {string} text - The text to search in
+         * @param {string} query - The search query to highlight
+         * @returns {string} HTML with highlighted matches
+         */
         function highlightMatch(text, query) {
             if (!query) return escapeHtml(text);
+            
+            // Escape the text to prevent XSS
             const safeText = escapeHtml(text);
+            
+            // Escape regex special characters in the query
             const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const re = new RegExp(escaped, 'gi');
+            
+            // Replace matches with highlighted spans
             return safeText.replace(re, (m) => `<span class="bg-yellow-200 text-gray-900 rounded px-0.5">${m}</span>`);
         }
 
+        /**
+         * Renders the file list with search, filtering, and sorting
+         * Shows loading spinner during search and handles empty states
+         */
         function renderItems() {
             const container = document.getElementById('file-list');
             const rawQuery = document.getElementById('file-search-input').value || '';
             const searchInput = rawQuery.toLowerCase();
             const searchIconHost = document.querySelector('#file-browser-controls .relative');
+            
+            // Show/hide search loading spinner
             if (searchIconHost && searchInput.length > 0) {
                 if (!searchIconHost.querySelector('.dots-spinner')) {
                     const dot = document.createElement('div');
@@ -2925,21 +3352,24 @@
                 const ds = searchIconHost.querySelector('.dots-spinner');
                 if (ds) ds.remove();
             }
+            
             const sortOrder = document.getElementById('file-sort-select').value;
         
-            container.innerHTML = ''; // Clear previous items
+            // Clear previous items
+            container.innerHTML = '';
         
-            // 1. Filter
+            // Filter files based on search query
             let filteredFiles = currentFolderFiles.filter(file => 
                 file.name.toLowerCase().includes(searchInput)
             );
         
+            // Show message if no files match search
             if (!filteredFiles || filteredFiles.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No files found.</h3></div>`;
                 return;
             }
         
-            // 2. Sort
+            // Sort files: starred first, then folders, then alphabetically
             const starredFiles = currentUser.starredFiles || [];
             filteredFiles.sort((a, b) => {
                 const a_isStarred = starredFiles.includes(a.id);
@@ -2947,34 +3377,45 @@
                 const a_isFolder = a.mimeType === 'application/vnd.google-apps.folder';
                 const b_isFolder = b.mimeType === 'application/vnd.google-apps.folder';
         
+                // Starred files come first
                 if (a_isStarred !== b_isStarred) return a_isStarred ? -1 : 1;
+                // Folders come before files
                 if (a_isFolder !== b_isFolder) return a_isFolder ? -1 : 1;
         
+                // Sort alphabetically (A-Z or Z-A)
                 return sortOrder === 'az'
                     ? a.name.localeCompare(b.name)
                     : b.name.localeCompare(a.name);
             });
         
-            // 3. Render (based on view)
+            // Render files in grid or list view
             if (fileBrowserView === 'grid') {
+                // Set grid layout with responsive columns
                 container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
+                
+                // Create grid items for each file
                 filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
+                    
+                    // Create grid item element with hover effects
                     const itemElement = document.createElement('div');
                     itemElement.className = `relative p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg opacity-0 translate-y-2 min-h-[100px]`;
                     
+                    // Create main content area with file icon and name
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
                     const highlightedName = highlightMatch(file.name, rawQuery.trim());
                     mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-12 h-12 mb-2" alt="${escapeHtml(file.name)}"><p class="text-sm font-medium text-gray-800 break-words w-full">${highlightedName}</p>`;
         
+                    // Add click handlers for navigation or preview
                     if (isFolder) {
                         itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
                         itemElement.addEventListener('click', () => showPreview(file));
                     }
                     
+                    // Add action buttons for files (star and download)
                     if (!isFolder) {
                         const actions = document.createElement('div');
                         actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
@@ -2983,9 +3424,12 @@
                             <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                         itemElement.appendChild(actions);
                     }
+                    
+                    // Add main content and append to container
                     itemElement.appendChild(mainInfo);
                     container.appendChild(itemElement);
-                    // animate in, staggered
+                    
+                    // Animate items in with staggered delay
                     setTimeout(() => {
                         itemElement.classList.remove('opacity-0','translate-y-2');
                         itemElement.classList.add('opacity-100','translate-y-0');
@@ -2993,61 +3437,94 @@
                     }, Math.min(index, 20) * 22);
                 });
             } else { // List view
+                // Set list layout
                 container.className = 'p-4 overflow-y-auto flex-grow';
+                
+                // Create list items for each file
                 filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
+                    
+                    // Create list item element
                     const itemElement = document.createElement('div');
                     itemElement.className = `flex items-center p-3 sm:p-4 rounded-lg hover:bg-black/5 transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2 min-h-[60px]`;
+                    
+                    // Create main content area with file icon and name
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
                     const highlightedName = highlightMatch(file.name, rawQuery.trim());
                     mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0" alt="${escapeHtml(file.name)}"><span class="truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span>`;
                     
+                    // Add click handlers for navigation or preview
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
                         mainInfo.addEventListener('click', () => showPreview(file));
                     }
+                    // Create action buttons container
                     const actions = document.createElement('div');
                     actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
+                    
+                    // Add star and download buttons for files only
                     if (!isFolder) {
                         actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                         const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                         actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                     }
+                    
+                    // Add elements to list item and container
                     itemElement.appendChild(mainInfo);
                     itemElement.appendChild(actions);
                     container.appendChild(itemElement);
+                    
+                    // Animate items in with staggered delay
                     setTimeout(() => {
                         itemElement.classList.remove('opacity-0','translate-y-2');
                         itemElement.classList.add('opacity-100','translate-y-0');
                     }, Math.min(index, 20) * 15);
                 });
             }
-            initializeTooltips(); // Re-initialize tooltips for new elements
+            
+            // Re-initialize tooltips for new elements
+            initializeTooltips();
         }
+        /**
+         * Toggles the starred status of a file
+         * Updates Firestore database and shows visual feedback
+         * @param {string} fileId - The ID of the file to toggle star status
+         * @param {Event} event - The click event
+         */
         async function handleToggleStar(fileId, event) {
             event.stopPropagation();
             const starButton = event.currentTarget;
             const userRef = db.collection('users').doc(currentUser.uid);
             const starredFiles = currentUser.starredFiles || [];
             const isCurrentlyStarred = starredFiles.includes(fileId);
+            
+            // Determine whether to add or remove the file from starred list
             const updateAction = isCurrentlyStarred 
                 ? firebase.firestore.FieldValue.arrayRemove(fileId)
                 : firebase.firestore.FieldValue.arrayUnion(fileId);
+            
             try {
+                // Update starred files in Firestore
                 await userRef.update({ starredFiles: updateAction });
-                // Optimistically update UI
+                
+                // Optimistically update local state
                 if (isCurrentlyStarred) {
+                    // Remove file from starred list
                     currentUser.starredFiles = starredFiles.filter(id => id !== fileId);
                 } else {
+                    // Add file to starred list
                     currentUser.starredFiles.push(fileId);
-                    // Pop + sparkle burst
+                    
+                    // Add pop animation and sparkle burst effect
                     starButton.classList.add('pop-animation');
                     const burst = document.createElement('div');
                     burst.className = 'sparkle-burst';
                     const rays = 6;
+                    
+                    // Create sparkle rays
                     for (let i = 0; i < rays; i++) {
                         const s = document.createElement('span');
                         const angle = (Math.PI * 2 * i) / rays;
@@ -3061,11 +3538,15 @@
                         burst.appendChild(s);
                     }
                     starButton.appendChild(burst);
+                    
+                    // Remove animation after completion
                     setTimeout(() => {
                         starButton.classList.remove('pop-animation');
                         burst.remove();
                     }, 380);
                 }
+                
+                // Re-render items to reflect changes
                 renderItems();
             } catch (error) {
                 console.error("Error updating starred files:", error);
