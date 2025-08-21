@@ -6079,6 +6079,30 @@
         }
         
         /**
+         * Test drawing function to verify canvas is working
+         */
+        function testDrawing() {
+            const canvas = annotationState.canvas;
+            if (!canvas) {
+                console.error('Canvas not available for test drawing');
+                return;
+            }
+            
+            // Add a test line
+            const testLine = new fabric.Line([50, 100, 200, 100], {
+                stroke: 'blue',
+                strokeWidth: 3,
+                selectable: true
+            });
+            
+            canvas.add(testLine);
+            canvas.renderAll();
+            
+            console.log('✅ Test line added to canvas');
+            showToast('Test line added! Try drawing now.', 'success');
+        }
+        
+        /**
          * Initializes the annotation system for a document
          * @param {Object} file - The file object to annotate
          * @param {string} containerId - The container element ID
@@ -6217,6 +6241,15 @@
             clearBtn.onclick = clearAllAnnotations;
             toolbar.appendChild(clearBtn);
             
+            // Add test drawing button
+            const testBtn = document.createElement('button');
+            testBtn.className = 'annotation-tool';
+            testBtn.setAttribute('data-tool', 'test');
+            testBtn.setAttribute('data-tooltip', 'Test Drawing');
+            testBtn.innerHTML = '🧪';
+            testBtn.onclick = testDrawing;
+            toolbar.appendChild(testBtn);
+            
             container.appendChild(toolbar);
         }
         
@@ -6264,7 +6297,7 @@
             canvas.style.width = '100%';
             canvas.style.height = '100%';
             canvas.style.pointerEvents = 'none';
-            canvas.style.zIndex = '1000';
+            canvas.style.zIndex = '9999'; // Higher z-index to be above iframe
             canvas.style.border = '2px solid red'; // Debug border to see canvas
             
             // Initialize Fabric.js canvas
@@ -6286,7 +6319,7 @@
                 console.error('Error creating annotation canvas:', error);
                 // Fallback: create a simple canvas without Fabric.js
                 canvas.style.pointerEvents = 'auto';
-                canvas.style.zIndex = '1000';
+                canvas.style.zIndex = '9999';
             }
             
             container.appendChild(canvas);
@@ -6303,6 +6336,18 @@
             canvas.on('mouse:down', (options) => {
                 annotationState.isDrawing = true;
                 console.log('Mouse down on canvas at:', options.pointer.x, options.pointer.y);
+                
+                // Test: Add a small circle at click point
+                const testCircle = new fabric.Circle({
+                    left: options.pointer.x - 5,
+                    top: options.pointer.y - 5,
+                    radius: 5,
+                    fill: 'yellow',
+                    stroke: 'black',
+                    strokeWidth: 1
+                });
+                canvas.add(testCircle);
+                canvas.renderAll();
             });
             
             canvas.on('mouse:up', (options) => {
@@ -7004,6 +7049,12 @@
                 canvas.style.pointerEvents = 'none';
                 canvas.style.border = '2px solid red'; // Debug border
                 showToast('Annotation mode disabled', 'info');
+                
+                // Re-enable iframe pointer events when annotation mode is disabled
+                const iframe = document.getElementById('file-preview-frame');
+                if (iframe) {
+                    iframe.style.pointerEvents = 'auto';
+                }
             } else {
                 canvas.classList.add('active');
                 canvas.style.pointerEvents = 'all';
@@ -7013,10 +7064,17 @@
                 // Select pencil tool by default when enabling
                 selectAnnotationTool('pencil');
                 
-                // Make sure canvas is visible
+                // Make sure canvas is visible and on top
                 canvas.style.display = 'block';
                 canvas.style.visibility = 'visible';
                 canvas.style.opacity = '1';
+                canvas.style.zIndex = '9999';
+                
+                // Disable iframe pointer events when annotation mode is active
+                const iframe = document.getElementById('file-preview-frame');
+                if (iframe) {
+                    iframe.style.pointerEvents = 'none';
+                }
             }
             
             console.log('Annotation mode toggled:', !isActive, 'Canvas pointer-events:', canvas.style.pointerEvents);
