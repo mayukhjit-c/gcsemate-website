@@ -39,6 +39,38 @@
     })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Fallback CSS if Tailwind fails to load
+        if (!window.tailwind) {
+            const fallbackCSS = document.createElement('style');
+            fallbackCSS.textContent = `
+                .hidden { display: none !important; }
+                .flex { display: flex; }
+                .grid { display: grid; }
+                .fixed { position: fixed; }
+                .relative { position: relative; }
+                .absolute { position: absolute; }
+                .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+                .z-50 { z-index: 50; }
+                .bg-white { background-color: #ffffff; }
+                .bg-blue-600 { background-color: #2563eb; }
+                .bg-gray-100 { background-color: #f3f4f6; }
+                .text-white { color: #ffffff; }
+                .text-gray-800 { color: #1f2937; }
+                .p-4 { padding: 1rem; }
+                .p-8 { padding: 2rem; }
+                .rounded-lg { border-radius: 0.5rem; }
+                .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+                .w-full { width: 100%; }
+                .h-full { height: 100%; }
+                .max-w-md { max-width: 28rem; }
+                .mx-auto { margin-left: auto; margin-right: auto; }
+                .font-bold { font-weight: 700; }
+                .text-center { text-align: center; }
+            `;
+            document.head.appendChild(fallbackCSS);
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
@@ -1047,6 +1079,137 @@
                         <p class="mt-2 text-gray-600">Keep track of homework, deadlines, and exam dates with a personal and global calendar system.</p>
                     </div>
                 </div>
+                
+                <!-- UK Exam Boards Section -->
+                <div class="mt-20 sm:mt-32">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Tailored for UK Exam Boards</h2>
+                        <p class="mt-3 text-gray-500">Supporting all major GCSE examination boards across the UK</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+                        <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-2xl font-bold text-blue-600">AQA</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">AQA</h3>
+                            <p class="text-sm text-gray-600">Most popular across England. Known for clear specifications and comprehensive support.</p>
+                            <div class="mt-3 text-xs text-blue-600 font-medium">Biology, Chemistry, Physics, English</div>
+                        </div>
+                        
+                        <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                                <span class="text-2xl font-bold text-green-600">OCR</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">OCR</h3>
+                            <p class="text-sm text-gray-600">Strong in technology subjects with innovative assessment approaches.</p>
+                            <div class="mt-3 text-xs text-green-600 font-medium">Computing, Geography, Art & Design</div>
+                        </div>
+                        
+                        <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span class="text-lg font-bold text-purple-600">Edexcel</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Edexcel</h3>
+                            <p class="text-sm text-gray-600">Practical approach with excellent resources and international recognition.</p>
+                            <div class="mt-3 text-xs text-purple-600 font-medium">Maths, History, Languages, Drama</div>
+                        </div>
+                        
+                        <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                                <span class="text-sm font-bold text-red-600">WJEC</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">WJEC/Eduqas</h3>
+                            <p class="text-sm text-gray-600">Popular in Wales with strong emphasis on skills-based assessment.</p>
+                            <div class="mt-3 text-xs text-red-600 font-medium">Religious Studies, Welsh, Philosophy</div>
+                        </div>
+                        
+                        <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
+                                <span class="text-2xl font-bold text-amber-600">CIE</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Cambridge CIE</h3>
+                            <p class="text-sm text-gray-600">International curriculum with rigorous academic standards.</p>
+                            <div class="mt-3 text-xs text-amber-600 font-medium">Business Studies, Economics</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Exam Board Comparison Table -->
+                    <div class="bg-white/70 border border-white/30 rounded-2xl shadow-xl overflow-hidden">
+                        <div class="p-6 border-b border-gray-200/60 text-center">
+                            <h3 class="text-2xl font-bold text-gray-800">Exam Board Comparison</h3>
+                            <p class="text-gray-600">Choose the right path for your academic journey</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50/70">
+                                    <tr>
+                                        <th class="px-4 py-3 font-semibold">Board</th>
+                                        <th class="px-4 py-3 font-semibold">Strengths</th>
+                                        <th class="px-4 py-3 font-semibold">Popular Subjects</th>
+                                        <th class="px-4 py-3 font-semibold">Assessment Style</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200/50">
+                                    <tr class="hover:bg-blue-50/50 transition-colors">
+                                        <td class="px-4 py-3 font-medium text-blue-600">AQA</td>
+                                        <td class="px-4 py-3">Clear specs, extensive support, teacher-friendly</td>
+                                        <td class="px-4 py-3">Sciences, English, Humanities</td>
+                                        <td class="px-4 py-3">Balanced theory and practical</td>
+                                    </tr>
+                                    <tr class="hover:bg-green-50/50 transition-colors">
+                                        <td class="px-4 py-3 font-medium text-green-600">OCR</td>
+                                        <td class="px-4 py-3">Innovation, technology focus, flexible delivery</td>
+                                        <td class="px-4 py-3">Computing, Geography, Art</td>
+                                        <td class="px-4 py-3">Skills-based with coursework</td>
+                                    </tr>
+                                    <tr class="hover:bg-purple-50/50 transition-colors">
+                                        <td class="px-4 py-3 font-medium text-purple-600">Edexcel</td>
+                                        <td class="px-4 py-3">Practical approach, international recognition</td>
+                                        <td class="px-4 py-3">Maths, Languages, Business</td>
+                                        <td class="px-4 py-3">Applied learning emphasis</td>
+                                    </tr>
+                                    <tr class="hover:bg-red-50/50 transition-colors">
+                                        <td class="px-4 py-3 font-medium text-red-600">WJEC/Eduqas</td>
+                                        <td class="px-4 py-3">Skills development, Welsh context available</td>
+                                        <td class="px-4 py-3">Religious Studies, Philosophy</td>
+                                        <td class="px-4 py-3">Skills and content balanced</td>
+                                    </tr>
+                                    <tr class="hover:bg-amber-50/50 transition-colors">
+                                        <td class="px-4 py-3 font-medium text-amber-600">Cambridge CIE</td>
+                                        <td class="px-4 py-3">International standards, rigorous academics</td>
+                                        <td class="px-4 py-3">Business, Economics, Sciences</td>
+                                        <td class="px-4 py-3">High academic rigor</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Free Premium Trial Promotion -->
+                    <div class="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white text-center">
+                        <h3 class="text-2xl font-bold mb-4">🎉 Free Premium Features for 24 Hours!</h3>
+                        <p class="text-lg mb-6 opacity-90">Get instant access to all Pro features when you sign up today. Experience the full power of GCSEMate risk-free!</p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 flex-1 max-w-sm">
+                                <div class="text-2xl font-bold">✅ Full Subject Access</div>
+                                <div class="text-sm opacity-80">All subjects, all exam boards</div>
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 flex-1 max-w-sm">
+                                <div class="text-2xl font-bold">🤖 AI Tutor Access</div>
+                                <div class="text-sm opacity-80">GCSEMateGPT guidance</div>
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 flex-1 max-w-sm">
+                                <div class="text-2xl font-bold">📚 Premium Resources</div>
+                                <div class="text-sm opacity-80">Advanced study tools</div>
+                            </div>
+                        </div>
+                        <button onclick="showAuthPage(false)" class="mt-6 px-8 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                            Claim Your Free Trial Now
+                        </button>
+                        <p class="text-xs mt-4 opacity-70">No credit card required • Upgrade to £1/month after trial</p>
+                    </div>
+                </div>
             </div>
         </main>
         <footer class="mt-24 text-center text-gray-500 text-sm">
@@ -1136,6 +1299,7 @@
             </div>
             <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="study-tools-page" data-tooltip="Access study tools">Study Tools</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
                  <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="gcsemategpt-page" data-tooltip="Try our AI tutor">GCSEMateGPT</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
@@ -1170,6 +1334,7 @@
             </div>
             <nav class="flex flex-col p-6 space-y-3" role="navigation" aria-label="Main navigation">
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">📚 Subjects</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="study-tools-page" tabindex="0">🛠️ Study Tools</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">🎥 Videos</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="gcsemategpt-page" tabindex="0">🤖 GCSEMateGPT</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">📝 Blog</a>
@@ -1199,6 +1364,144 @@
                     </div>
                     <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
                 </div>
+                
+                <!-- Study Tools Page -->
+                <div id="study-tools-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Study Tools</h2>
+                    <p class="text-gray-600 mb-8">Powerful tools to boost your productivity and enhance your learning experience.</p>
+                    
+                    <!-- Study Tools Grid -->
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Focus Mode</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Minimize distractions and enter a focused study environment.</p>
+                            <button onclick="toggleFocusMode()" id="focus-mode-btn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                Activate Focus Mode
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Pomodoro Timer</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Use the Pomodoro technique for effective study sessions.</p>
+                            <div class="mb-4">
+                                <div id="timer-display" class="text-2xl font-bold text-center text-gray-800 mb-2">25:00</div>
+                                <div class="flex gap-2">
+                                    <button onclick="startTimer()" id="timer-start" class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">Start</button>
+                                    <button onclick="pauseTimer()" id="timer-pause" class="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm">Pause</button>
+                                    <button onclick="resetTimer()" id="timer-reset" class="flex-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Quick Notes</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Jot down quick thoughts and ideas while studying.</p>
+                            <button onclick="openNotesModal()" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                Open Notes
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Progress Tracker</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Track your study progress and achievements.</p>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                    <span>Today's Goal</span>
+                                    <span id="progress-text">0/4 hours</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="progress-bar" class="bg-orange-600 h-3 rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <button onclick="updateProgress()" class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                                Log Study Time
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Study Mode</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Optimized interface for intensive study sessions.</p>
+                            <button onclick="toggleStudyMode()" id="study-mode-btn" class="w-full px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors">
+                                Enter Study Mode
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white/60 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30 hover:shadow-xl transition-all hover:scale-105">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-800">Study Assistant</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Get personalized study suggestions and tips.</p>
+                            <button onclick="showStudyTips()" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                Get Study Tips
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Study Statistics -->
+                    <div class="bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/30">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Study Statistics</h3>
+                        <div class="grid md:grid-cols-4 gap-4">
+                            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                <div class="text-2xl font-bold text-blue-600" id="total-study-time">0h</div>
+                                <div class="text-sm text-gray-600">Total Study Time</div>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600" id="sessions-completed">0</div>
+                                <div class="text-sm text-gray-600">Sessions Completed</div>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                <div class="text-2xl font-bold text-purple-600" id="current-streak">0</div>
+                                <div class="text-sm text-gray-600">Day Streak</div>
+                            </div>
+                            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                                <div class="text-2xl font-bold text-orange-600" id="notes-count">0</div>
+                                <div class="text-sm text-gray-600">Notes Created</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="gcsemategpt-page" class="page hidden p-8 max-w-5xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-4">GCSEMateGPT</h2>
                     <p class="text-gray-600 mb-6">A premium, GPT‑5 compatible ChatGPT bot tailored for GCSE success — live exam dates, exam board specs, past papers, model answers, flashcards, and focussed study plans across AQA, Edexcel, OCR and WJEC/Eduqas.</p>
@@ -1676,6 +1979,27 @@
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
+    
+    <!-- Notes Modal -->
+    <div id="notes-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
+        <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl w-full max-w-2xl fade-in">
+            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">Quick Notes</h3>
+                <button onclick="closeNotesModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+            </div>
+            <div class="p-6">
+                <textarea id="notes-textarea" class="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Write your notes here..."></textarea>
+                <div class="mt-4 flex justify-between items-center">
+                    <span class="text-sm text-gray-500" id="notes-count-display">0 characters</span>
+                    <div class="flex gap-2">
+                        <button onclick="clearNotes()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">Clear</button>
+                        <button onclick="saveNotes()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -1690,10 +2014,21 @@
         appId: "1:704190559234:web:dd6ecc107df886c70b231b",
         measurementId: "G-NSRF8YLS2N"
       };
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
+      
+      // Initialize Firebase with error handling
+      let auth, db;
+      try {
+        if (typeof firebase !== 'undefined') {
+          firebase.initializeApp(firebaseConfig);
+          auth = firebase.auth();
+          db = firebase.firestore();
+          console.log('Firebase initialized successfully');
+        } else {
+          console.warn('Firebase SDK not loaded, using fallback mode');
+        }
+      } catch (error) {
+        console.error('Firebase initialization failed:', error);
+      }
     </script>
     <script>
         // --- APP STATE---
@@ -1859,7 +2194,10 @@
             setTimeout(() => { ensureInitialView(); hideAppLoading(); }, 1200);
         }, { once: true });
 
-        auth.onAuthStateChanged(async (user) => {
+        // Setup auth state listener with error handling
+        if (auth && typeof auth.onAuthStateChanged === 'function') {
+            auth.onAuthStateChanged(async (user) => {
+                try {
             // Detach old listeners to prevent memory leaks on re-login
             if (unsubscribeUserManagement) unsubscribeUserManagement();
             if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
@@ -1911,7 +2249,7 @@
                 if (loginPage) loginPage.classList.add('hidden');
                 if (verifyPage) verifyPage.classList.add('hidden');
                 // Close any open modals and mobile menu
-                ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+                ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal','notes-modal']
                     .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
                 if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
                 const landingPage = document.getElementById('landing-page');
@@ -1921,7 +2259,26 @@
                 }
                 hideAppLoading();
             }
-        });
+                } catch (error) {
+                    console.error('Auth state change error:', error);
+                    // Show landing page on auth error
+                    hideAppLoading();
+                    const landingPage = document.getElementById('landing-page');
+                    if (landingPage) {
+                        landingPage.classList.remove('hidden');
+                        landingPage.classList.add('fade-in');
+                    }
+                }
+            });
+        } else {
+            console.warn('Firebase Auth not available, showing landing page');
+            hideAppLoading();
+            const landingPage = document.getElementById('landing-page');
+            if (landingPage) {
+                landingPage.classList.remove('hidden');
+                landingPage.classList.add('fade-in');
+            }
+        }
 
         function initializeAppState() {
             document.getElementById('landing-page').classList.add('hidden');
@@ -2758,16 +3115,25 @@
                     return;
                 }
                 const examBoardBySubject = {
-                    // AQA
+                    // AQA - Most popular in England
                     biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
-                    // Edexcel
+                    // Edexcel - Known for practical approach
                     music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
-                    // OCR
+                    // OCR - Strong in technology subjects
                     computing: 'OCR', geography: 'OCR',
-                    // Both
+                    // Both major boards for core subjects
                     english: 'AQA & Edexcel',
-                    // Eduqas
-                    'philosophy and ethics': 'Eduqas'
+                    // WJEC/Eduqas - Popular in Wales
+                    'philosophy and ethics': 'WJEC/Eduqas',
+                    'religious studies': 'WJEC/Eduqas',
+                    'welsh': 'WJEC',
+                    // CIE - International curriculum
+                    'business studies': 'CIE',
+                    'economics': 'CIE',
+                    'art and design': 'AQA & OCR',
+                    'drama': 'AQA & Edexcel',
+                    'french': 'AQA & Edexcel',
+                    'spanish': 'AQA & Edexcel'
                 };
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
@@ -4698,7 +5064,7 @@
                 });
             }
             // Setup modals
-            ['preview-modal', 'playlist-viewer-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
+            ['preview-modal', 'playlist-viewer-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'notes-modal'].forEach(id => {
                 const modal = document.getElementById(id);
                 if(modal) {
                     modal.addEventListener('click', (e) => {
@@ -5174,6 +5540,349 @@
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             debounceTimers.forEach(timer => clearTimeout(timer));
             throttleTimers.forEach(timer => clearTimeout(timer));
+        });
+        
+        // === STUDY TOOLS FUNCTIONALITY ===
+        
+        // Study Tools State
+        let studyToolsState = {
+            focusMode: false,
+            studyMode: false,
+            timerRunning: false,
+            timerPaused: false,
+            timerMinutes: 25,
+            timerSeconds: 0,
+            timerInterval: null,
+            progressToday: 0,
+            progressGoal: 4, // hours
+            studyStats: {
+                totalTime: 0,
+                sessionsCompleted: 0,
+                currentStreak: 0,
+                notesCount: 0
+            }
+        };
+        
+        // Load study tools state from localStorage
+        function loadStudyToolsState() {
+            try {
+                const saved = localStorage.getItem('gcsemate-study-tools');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    studyToolsState = { ...studyToolsState, ...parsed };
+                    updateStudyStatsDisplay();
+                    updateProgressDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading study tools state:', error);
+            }
+        }
+        
+        // Save study tools state to localStorage
+        function saveStudyToolsState() {
+            try {
+                localStorage.setItem('gcsemate-study-tools', JSON.stringify(studyToolsState));
+            } catch (error) {
+                console.error('Error saving study tools state:', error);
+            }
+        }
+        
+        // Focus Mode
+        function toggleFocusMode() {
+            studyToolsState.focusMode = !studyToolsState.focusMode;
+            const btn = document.getElementById('focus-mode-btn');
+            
+            if (studyToolsState.focusMode) {
+                // Enter focus mode
+                document.body.style.filter = 'grayscale(0.3)';
+                document.body.style.transition = 'filter 0.3s ease';
+                btn.textContent = 'Exit Focus Mode';
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                showToast('Focus Mode activated! Distractions minimized.', 'success');
+            } else {
+                // Exit focus mode
+                document.body.style.filter = '';
+                btn.textContent = 'Activate Focus Mode';
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                showToast('Focus Mode deactivated.', 'info');
+            }
+            
+            saveStudyToolsState();
+        }
+        
+        // Study Mode
+        function toggleStudyMode() {
+            studyToolsState.studyMode = !studyToolsState.studyMode;
+            const btn = document.getElementById('study-mode-btn');
+            
+            if (studyToolsState.studyMode) {
+                // Enter study mode - simplify UI
+                document.body.classList.add('study-mode');
+                btn.textContent = 'Exit Study Mode';
+                btn.classList.remove('bg-pink-600', 'hover:bg-pink-700');
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                
+                // Add study mode styles
+                const studyModeCSS = `
+                    .study-mode .nav-link:not([data-page="study-tools-page"]),
+                    .study-mode #useful-links-nav,
+                    .study-mode #welcome-message,
+                    .study-mode #profile-picture {
+                        opacity: 0.3 !important;
+                        pointer-events: none !important;
+                    }
+                    .study-mode main {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                    }
+                `;
+                
+                let studyModeStyle = document.getElementById('study-mode-style');
+                if (!studyModeStyle) {
+                    studyModeStyle = document.createElement('style');
+                    studyModeStyle.id = 'study-mode-style';
+                    document.head.appendChild(studyModeStyle);
+                }
+                studyModeStyle.textContent = studyModeCSS;
+                
+                showToast('Study Mode activated! Interface optimized for learning.', 'success');
+            } else {
+                // Exit study mode
+                document.body.classList.remove('study-mode');
+                btn.textContent = 'Enter Study Mode';
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                btn.classList.add('bg-pink-600', 'hover:bg-pink-700');
+                
+                const studyModeStyle = document.getElementById('study-mode-style');
+                if (studyModeStyle) {
+                    studyModeStyle.remove();
+                }
+                
+                showToast('Study Mode deactivated.', 'info');
+            }
+            
+            saveStudyToolsState();
+        }
+        
+        // Pomodoro Timer
+        function startTimer() {
+            if (!studyToolsState.timerRunning) {
+                studyToolsState.timerRunning = true;
+                studyToolsState.timerPaused = false;
+                
+                studyToolsState.timerInterval = setInterval(() => {
+                    if (studyToolsState.timerSeconds === 0) {
+                        if (studyToolsState.timerMinutes === 0) {
+                            // Timer finished
+                            resetTimer();
+                            studyToolsState.studyStats.sessionsCompleted++;
+                            studyToolsState.progressToday += 0.42; // 25 minutes = ~0.42 hours
+                            updateStudyStatsDisplay();
+                            updateProgressDisplay();
+                            saveStudyToolsState();
+                            showToast('Pomodoro session complete! Take a break.', 'success');
+                            
+                            // Play notification sound (if available)
+                            try {
+                                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjWR2PG5eyMGK4Pg7YeQSAoUWr3u7KhXFApGnN/r5mciBy6o0fDbeSUGNYTL5+WLCRF7q83n5p8VBAk/k9Xyi');
+                                audio.play().catch(() => {});
+                            } catch (e) {}
+                            
+                            return;
+                        }
+                        studyToolsState.timerMinutes--;
+                        studyToolsState.timerSeconds = 59;
+                    } else {
+                        studyToolsState.timerSeconds--;
+                    }
+                    
+                    updateTimerDisplay();
+                }, 1000);
+                
+                document.getElementById('timer-start').textContent = 'Running...';
+                document.getElementById('timer-start').disabled = true;
+            }
+        }
+        
+        function pauseTimer() {
+            if (studyToolsState.timerRunning && !studyToolsState.timerPaused) {
+                clearInterval(studyToolsState.timerInterval);
+                studyToolsState.timerPaused = true;
+                document.getElementById('timer-start').textContent = 'Resume';
+                document.getElementById('timer-start').disabled = false;
+                studyToolsState.timerRunning = false;
+            }
+        }
+        
+        function resetTimer() {
+            clearInterval(studyToolsState.timerInterval);
+            studyToolsState.timerRunning = false;
+            studyToolsState.timerPaused = false;
+            studyToolsState.timerMinutes = 25;
+            studyToolsState.timerSeconds = 0;
+            updateTimerDisplay();
+            document.getElementById('timer-start').textContent = 'Start';
+            document.getElementById('timer-start').disabled = false;
+        }
+        
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            if (display) {
+                const mins = studyToolsState.timerMinutes.toString().padStart(2, '0');
+                const secs = studyToolsState.timerSeconds.toString().padStart(2, '0');
+                display.textContent = `${mins}:${secs}`;
+            }
+        }
+        
+        // Notes functionality
+        function openNotesModal() {
+            const modal = document.getElementById('notes-modal');
+            const textarea = document.getElementById('notes-textarea');
+            
+            // Load existing notes
+            const savedNotes = localStorage.getItem('gcsemate-notes');
+            if (savedNotes) {
+                textarea.value = savedNotes;
+            }
+            
+            modal.style.display = 'flex';
+            setTimeout(() => textarea.focus(), 100);
+            
+            // Update character count
+            updateNotesCount();
+            
+            // Add event listener for character count
+            textarea.addEventListener('input', updateNotesCount);
+        }
+        
+        function closeNotesModal() {
+            document.getElementById('notes-modal').style.display = 'none';
+        }
+        
+        function saveNotes() {
+            const textarea = document.getElementById('notes-textarea');
+            const notes = textarea.value;
+            
+            try {
+                localStorage.setItem('gcsemate-notes', notes);
+                studyToolsState.studyStats.notesCount = notes.split('\n').filter(line => line.trim()).length;
+                updateStudyStatsDisplay();
+                saveStudyToolsState();
+                showToast('Notes saved successfully!', 'success');
+            } catch (error) {
+                showToast('Failed to save notes', 'error');
+                console.error('Error saving notes:', error);
+            }
+        }
+        
+        function clearNotes() {
+            if (confirm('Are you sure you want to clear all notes? This action cannot be undone.')) {
+                document.getElementById('notes-textarea').value = '';
+                updateNotesCount();
+                showToast('Notes cleared', 'info');
+            }
+        }
+        
+        function updateNotesCount() {
+            const textarea = document.getElementById('notes-textarea');
+            const countDisplay = document.getElementById('notes-count-display');
+            if (textarea && countDisplay) {
+                countDisplay.textContent = `${textarea.value.length} characters`;
+            }
+        }
+        
+        // Progress tracking
+        function updateProgress() {
+            const hours = prompt('How many hours did you study? (e.g., 1.5)');
+            if (hours && !isNaN(hours) && hours > 0) {
+                studyToolsState.progressToday += parseFloat(hours);
+                studyToolsState.studyStats.totalTime += parseFloat(hours);
+                updateProgressDisplay();
+                updateStudyStatsDisplay();
+                saveStudyToolsState();
+                showToast(`Added ${hours} hours to your study log!`, 'success');
+            }
+        }
+        
+        function updateProgressDisplay() {
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar');
+            
+            if (progressText && progressBar) {
+                const progress = Math.min(studyToolsState.progressToday, studyToolsState.progressGoal);
+                const percentage = (progress / studyToolsState.progressGoal) * 100;
+                
+                progressText.textContent = `${progress.toFixed(1)}/${studyToolsState.progressGoal} hours`;
+                progressBar.style.width = `${percentage}%`;
+            }
+        }
+        
+        // Study statistics
+        function updateStudyStatsDisplay() {
+            const elements = {
+                'total-study-time': `${studyToolsState.studyStats.totalTime.toFixed(1)}h`,
+                'sessions-completed': studyToolsState.studyStats.sessionsCompleted.toString(),
+                'current-streak': studyToolsState.studyStats.currentStreak.toString(),
+                'notes-count': studyToolsState.studyStats.notesCount.toString()
+            };
+            
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            });
+        }
+        
+        // Study tips
+        function showStudyTips() {
+            const tips = [
+                "📚 Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break.",
+                "🎯 Focus Mode helps reduce visual distractions - try it for deep work sessions.",
+                "📝 Take notes regularly to improve retention and understanding.",
+                "⏰ Set specific study goals for each session to stay motivated.",
+                "🧠 Review material within 24 hours to strengthen memory.",
+                "💡 Teach concepts to others or explain them out loud to test understanding.",
+                "🔄 Use spaced repetition for long-term retention of key concepts.",
+                "🏆 Track your progress daily to maintain consistency.",
+                "🎵 Study in a quiet environment or use white noise if needed.",
+                "💪 Take regular breaks to prevent mental fatigue."
+            ];
+            
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            showToast(randomTip, 'info', 5000);
+        }
+        
+        // Initialize study tools when page loads
+        function initStudyTools() {
+            loadStudyToolsState();
+            updateTimerDisplay();
+            updateProgressDisplay();
+            updateStudyStatsDisplay();
+            
+            // Reset daily progress if it's a new day
+            const today = new Date().toDateString();
+            const lastStudyDate = localStorage.getItem('gcsemate-last-study-date');
+            if (lastStudyDate !== today) {
+                studyToolsState.progressToday = 0;
+                localStorage.setItem('gcsemate-last-study-date', today);
+                updateProgressDisplay();
+                saveStudyToolsState();
+            }
+        }
+        
+        // Add study tools to page titles
+        const studyToolsPageTitles = {
+            'study-tools-page': 'Study Tools - GCSEMate'
+        };
+        
+        // Merge with existing page titles
+        Object.assign(pageTitles, studyToolsPageTitles);
+        
+        // Initialize study tools after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initStudyTools();
         });
     </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
