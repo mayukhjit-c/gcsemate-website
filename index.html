@@ -2,40 +2,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google AdSense Configuration -->
-    <meta name="google-adsense-account" content="ca-pub-3142302168894001">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
-         crossorigin="anonymous"></script>
-    
-    <!-- Basic Meta Tags for SEO and Browser Compatibility -->
+<meta name="google-adsense-account" content="ca-pub-3142302168894001">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
+     crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
-    <!-- SEO Meta Tags for Better Search Engine Visibility -->
     <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
+    <link rel="preconnect" href="https://drive.google.com">
     <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
     <meta name="author" content="GCSEMate">
     <meta name="robots" content="index, follow">
-    
-    <!-- Content Security Policy to allow all necessary services -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' https: http:; frame-src 'self' https: http:; img-src 'self' data: https: http:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <!-- Cross-browser fallbacks for status bar / tile coloring -->
-    <meta name="msapplication-TileColor" content="#2563eb">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#2563eb">
     <link rel="canonical" href="/">
-    
-    <!-- Performance Optimizations - Preconnect to External Domains -->
-    <link rel="preconnect" href="https://drive.google.com">
-    <!-- Open Graph Meta Tags for Social Media Sharing -->
+    <!-- Open Graph -->
     <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
     <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
 
-    <!-- Favicon Configuration with Fallback Support -->
     <link rel="icon" type="image/png" href="gcsemate favicon.png">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
-    <!-- Favicon Fallback Script - Handles Missing Primary Favicon -->
     <script>
     (function(){
         try{
@@ -51,84 +38,37 @@
         }catch(_){}
     })();
     </script>
-    
-    <!-- External Libraries and Resources -->
-    <!-- Tailwind CSS: prefer a local production build at /dist/tailwind.css when available. -->
-    <!-- To build locally for production:
-                 1) npm install -D tailwindcss postcss autoprefixer
-                 2) npx tailwindcss -i ./src/input.css -o ./dist/tailwind.css --minify
-                 3) Serve the generated /dist/tailwind.css in production and remove the CDN loader below.
-    -->
-    <script>
-        (function(){
-            // Try to load local built CSS first, fall back to CDN copy if missing
-            var localPath = '/dist/tailwind.css';
-            fetch(localPath, { method: 'HEAD' }).then(function(res){
-                if(res.ok){
-                    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = localPath; document.head.appendChild(l);
-                } else {
-                    var s = document.createElement('script');
-                    s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
-                    document.head.appendChild(s);
-                }
-            }).catch(function(){
-                var s = document.createElement('script');
-                s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
-                document.head.appendChild(s);
-            });
-        })();
-    </script>
-    
-    <!-- Font Preloading for Better Performance -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Firebase and Google Services Preconnect -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://apis.google.com" crossorigin>
-    
-    <!-- Analytics and Ad Services DNS Prefetch -->
     <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
-    
-    <!-- reCAPTCHA v3 for Bot Protection -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
-    <!-- PDF.js for PDF annotation support -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-    
-    <!-- Fabric.js for canvas-based annotations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    
-    <!-- Custom CSS Styles for GCSEMate Application -->
     <style>
-        /* CSS Custom Properties (Variables) for Dynamic Theming */
         :root {
-            /* Default accent color palette: Tailwind blue-500 RGB values */
-            --accent-50: 239 246 255;   /* Lightest blue shade */
-            --accent-100: 219 234 254;  /* Very light blue */
-            --accent-300: 147 197 253;  /* Light blue */
-            --accent-400: 96 165 250;   /* Medium light blue */
-            --accent-500: 59 130 246;   /* Primary blue */
-            --accent-600: 37 99 235;    /* Medium dark blue */
-            --accent-700: 29 78 216;    /* Darkest blue shade */
+            /* Default accent: Tailwind blue-500 rgb */
+            --accent-50: 239 246 255;
+            --accent-100: 219 234 254;
+            --accent-300: 147 197 253;
+            --accent-400: 96 165 250;
+            --accent-500: 59 130 246;
+            --accent-600: 37 99 235;
+            --accent-700: 29 78 216;
         }
-        /* Base Typography and Layout Styles */
+        /* Base styles for a polished look */
         body {
-            /* Modern font stack with fallbacks */
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8fafc; /* Light gray background */
-            
-            /* Font rendering optimizations for crisp text */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
-            
-            /* iOS Safe Area Support - Respects device notches and home indicators */
+            /* Respect safe areas on iOS / notches */
             padding-top: env(safe-area-inset-top, 0);
             padding-right: env(safe-area-inset-right, 0);
             padding-bottom: env(safe-area-inset-bottom, 0);
@@ -159,12 +99,9 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-          /* Utility to hide scrollbars for overflow regions
-              - `-ms-overflow-style` provides IE/Edge (legacy) behavior
-              - `scrollbar-width` is supported in some browsers (Firefox); kept intentionally
-          */
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; }
+        /* Utility to hide scrollbars for overflow regions */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* Enhanced Loader animations */
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
@@ -350,7 +287,6 @@
             border-radius: 0.5rem;
             padding: 0.75rem 1.5rem;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
         
@@ -378,7 +314,6 @@
         /* Glass morphism effect */
         .glass-effect {
             background: rgba(255, 255, 255, 0.1);
-            -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -664,9 +599,6 @@
         .animate-hero-subtitle { animation: slideInUp 0.8s ease-out 0.4s forwards; opacity: 0; }
         .animate-hero-buttons { animation: slideInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
         .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
-    .delay-100 { animation-delay: 0.1s !important; }
-    .delay-200 { animation-delay: 0.2s !important; }
-    .delay-300 { animation-delay: 0.3s !important; }
         /* Clock styles */
         /* Gmail-style indeterminate progress bar */
         .progress-bar { position: relative; height: 6px; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
@@ -762,7 +694,6 @@
              box-shadow: 0 6px 18px rgba(0,0,0,0.12);
              background-color: #fff;
              border: 1px solid rgba(255,255,255,0.7);
-             -webkit-backdrop-filter: blur(8px);
              backdrop-filter: blur(8px);
              animation: toastIn 0.18s ease-out;
              will-change: opacity, transform;
@@ -810,7 +741,6 @@
             padding: 0 1.25rem 0 1.25rem; /* match px-5 to keep layout stable */
             margin: 0;
         }
-    .faq-answer.collapsed { max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
         .faq-item.open .faq-answer { transition: max-height 0.32s ease, padding 0.2s ease; }
         .faq-item .faq-arrow {
             transition: transform 0.3s ease-in-out;
@@ -841,20 +771,10 @@
         
         /* Mobile-specific improvements */
         @media (max-width: 768px) {
-            /* Disable all animations on mobile for better performance */
-            *, *::before, *::after {
-                animation-duration: 0s !important;
-                animation-delay: 0s !important;
-                transition-duration: 0s !important;
-                transition-delay: 0s !important;
-            }
-            
             /* Ensure minimum touch target size */
             button, a, [role="button"] {
                 min-height: 44px;
                 min-width: 44px;
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
             }
             
             /* Improve text readability on mobile */
@@ -877,29 +797,21 @@
                 justify-content: center;
             }
             
-            /* Fixed mobile menu - no animations, immediate display */
+            /* Improve mobile menu visibility and interaction */
             #mobile-menu {
                 display: none;
-                transform: none !important;
-                opacity: 1 !important;
-                transition: none !important;
-                will-change: auto !important;
-                backface-visibility: visible !important;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 9999;
-                background: white;
-                overflow-y: auto;
-                /* Removed unsupported -webkit-overflow-scrolling for cross-browser compatibility */
+                transform: translateX(100%) translateZ(0);
+                opacity: 0;
+                transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                            opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                will-change: transform, opacity;
+                backface-visibility: hidden;
             }
             
             #mobile-menu:not(.hidden) {
-                display: block !important;
-                transform: none !important;
-                opacity: 1 !important;
+                display: block;
+                transform: translateX(0) translateZ(0);
+                opacity: 1;
             }
             
             #mobile-menu .nav-link {
@@ -908,16 +820,11 @@
                 align-items: center;
                 font-size: 1.125rem;
                 touch-action: manipulation;
-                transition: none !important;
-                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
+                transition: all 0.2s ease;
             }
             
             #mobile-menu .nav-link:active {
-                transform: none !important;
+                transform: scale(0.98);
                 background-color: rgba(59, 130, 246, 0.1);
             }
             
@@ -926,11 +833,10 @@
                 gap: 0.75rem;
             }
             
-            /* Improve form inputs on mobile - prevent zoom on iOS */
+            /* Improve form inputs on mobile */
             input, select, textarea {
-                font-size: 16px !important;
+                font-size: 16px !important; /* Prevents zoom on iOS */
                 min-height: 44px;
-                touch-action: manipulation;
             }
             
             /* Landing page specific mobile improvements */
@@ -957,113 +863,18 @@
             }
             
             .card-hover:active {
-                transform: none !important;
+                transform: scale(0.98);
+            }
+            
+            /* Better mobile scrolling */
+            .overflow-y-auto {
+                -webkit-overflow-scrolling: touch;
             }
             
             /* Improve mobile focus states */
             .focus-ring:focus {
                 outline: none;
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-            }
-            
-            /* Disable hover effects on mobile */
-            .hover\:scale:hover,
-            .hover\:lift:hover,
-            .hover\:float:hover,
-            .hover\:glow:hover {
-                transform: none !important;
-                box-shadow: none !important;
-            }
-            
-            /* Improve button touch targets */
-            button, a, [role="button"] {
-                min-height: 44px;
-                min-width: 44px;
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
-            }
-            
-            /* Better modal handling on mobile */
-            .modal {
-                /* Minimal mobile modal defaults to avoid empty ruleset lint error */
-                pointer-events: auto;
-                display: block;
-            }
-
-            /* Disable page transitions on mobile */
-            .page-leave-modern,
-            .page-enter-modern {
-                animation: none !important;
-                transition: none !important;
-            }
-            
-            /* Improve mobile menu buttons */
-            #hamburger-button,
-            #close-menu-button {
-                min-width: 48px;
-                min-height: 48px;
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
-            }
-            
-            /* Ensure all interactive elements are properly sized for touch */
-            .nav-link,
-            .btn-primary,
-            .btn-secondary,
-            button,
-            a[role="button"] {
-                min-height: 44px;
-                min-width: 44px;
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
-            }
-            
-            /* Improve mobile scrolling performance */
-            body {
-                overscroll-behavior: contain;
-            }
-            
-            /* Better mobile form handling */
-            form {
-                touch-action: manipulation;
-            }
-            
-            /* Disable text selection on interactive elements */
-            button, a, [role="button"] {
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-            }
-            
-            /* Improve mobile menu link spacing */
-            #mobile-menu .nav-link {
-                margin-bottom: 8px;
-                padding: 16px;
-                border-radius: 12px;
-            }
-            
-            /* Better mobile menu header */
-            #mobile-menu > div:first-child {
-                padding: 16px;
-                border-bottom: 1px solid #e5e7eb;
-                background: white;
-                position: sticky;
-                top: 0;
-                z-index: 10;
-            }
-            
-            /* Improve mobile menu navigation section */
-            #mobile-menu nav {
-                padding: 16px;
-                flex: 1;
-            }
-            
-            /* Better mobile menu footer */
-            #mobile-menu > div:last-child {
-                padding: 16px;
-                border-top: 1px solid #e5e7eb;
-                background: #f9fafb;
             }
         }
         /* Tablet optimizations */
@@ -1163,186 +974,6 @@
         .video-brand-watermark { position: absolute; top: 8px; left: 8px; opacity: .7; pointer-events: none; }
         .video-brand-controls { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
         :fullscreen .video-brand-watermark { opacity: .85; }
-        
-        /* Document Annotation Styles */
-        .annotation-toolbar {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 8px;
-            display: flex;
-            gap: 4px;
-            z-index: 10001;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-        }
-        
-        .annotation-toolbar:hover {
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-        }
-        
-        .annotation-tool {
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 8px;
-            background: transparent;
-            color: #374151;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        
-        .annotation-tool:hover {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-        
-        .annotation-tool.active {
-            background: #3b82f6;
-            color: white;
-        }
-        
-        .annotation-tool.active:hover {
-            background: #2563eb;
-        }
-        
-        .annotation-tool[data-tooltip]:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 1001;
-        }
-        
-        .color-picker {
-            width: 30px;
-            height: 30px;
-            border: 2px solid #e5e7eb;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .color-picker:hover {
-            border-color: #3b82f6;
-            transform: scale(1.1);
-        }
-        
-        .annotation-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 100;
-        }
-        
-        .annotation-canvas.active {
-            pointer-events: all;
-        }
-        
-        .fullscreen-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            gap: 4px;
-            z-index: 1000;
-        }
-        
-        .fullscreen-controls button {
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 6px;
-            background: transparent;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        
-        .fullscreen-controls button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .annotation-save-indicator {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(34, 197, 94, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-        
-        .annotation-save-indicator.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* PDF.js viewer customization */
-        .pdf-viewer {
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background: #525659;
-        }
-        
-        .pdf-page {
-            margin: 10px auto;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            background: white;
-        }
-        
-        /* Annotation layer positioning */
-        .annotation-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        
-        .annotation-layer.active {
-            pointer-events: all;
-        }
-
-        /* Loading logo initial animation state (moved from inline style) */
-        .loading-logo-hidden {
-            opacity: 0;
-            transform: translateY(8px);
-            transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);
-        }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -1350,32 +981,13 @@
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
-        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo drop-shadow-[0_6px_12px_rgba(37,99,235,0.25)] loading-logo-hidden" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate'; }">
+        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo drop-shadow-[0_6px_12px_rgba(37,99,235,0.25)]" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate'; }" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
         <div class="w-[300px] max-w-[80vw] progress-bar">
             <div class="bar bar1"></div>
             <div class="bar bar2"></div>
         </div>
         <p class="mt-4 text-sm text-gray-500">Loading GCSEMate…</p>
     </div>
-    <script>
-        // Disable legacy annotation auto-initialization and provide a safe stub for selectAnnotationTool
-        // New whiteboard implementation will be used instead.
-        window.__useLegacyAnnotations = false;
-        // Provide a safe stub early so any legacy calls won't throw. If a modern whiteboard exists, delegate to it.
-        window.selectAnnotationTool = function(toolName){
-            try{
-                if(window.__useLegacyAnnotations) return; // intentionally no-op when disabled
-                // If a newer whiteboard API (enterWhiteboard) exists, attempt to open it and select a tool.
-                if(typeof window.enterWhiteboard === 'function'){
-                    window.enterWhiteboard();
-                    const map = { pencil: 'pen', highlight: 'highlighter', text: 'text', eraser: 'eraser' };
-                    const t = map[toolName] || toolName;
-                    const btn = document.getElementById('tool-' + t) || document.getElementById('tool-' + toolName);
-                    if(btn) btn.click();
-                }
-            }catch(e){ console.warn('Legacy selectAnnotationTool disabled', e); }
-        };
-    </script>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
     <!-- Subtle site-wide watermark -->
@@ -1413,21 +1025,21 @@
                 <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything you will need to ace your exams!</h2>
                 <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-100">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.1s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300">
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
                         <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-200">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.2s;">
                          <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300">
                              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                          </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
                         <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-300">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.3s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300">
                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
@@ -1537,8 +1149,6 @@
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
                 <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
-                <!-- Whiteboard toggle: shows whiteboard tools and enables drawing overlay -->
-                <button id="whiteboard-toggle" class="ml-3 p-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex-shrink-0" aria-pressed="false" title="Whiteboard / Draw on screen">Whiteboard</button>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
@@ -1647,10 +1257,10 @@
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-3xl font-bold text-gray-800">Calendar</h2>
                         <div class="flex items-center space-x-2">
-                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month" title="Previous month" aria-label="Previous month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
                             <h3 id="month-year-header" class="text-xl font-semibold text-gray-700 w-40 text-center"></h3>
-                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month" title="Next month" aria-label="Next month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
-                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm" title="Select year" aria-label="Select year"></select>
+                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm"></select>
                         </div>
                     </div>
                     <div class="bg-white/50 p-4 rounded-xl shadow-md border border-white/30">
@@ -1681,15 +1291,15 @@
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
-                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base" title="Sort files" aria-label="Sort files">
+                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base">
                                 <option value="az">Sort A-Z</option>
                                 <option value="za">Sort Z-A</option>
                             </select>
                             <div id="view-toggle" class="flex items-center rounded-lg border border-gray-300/50 bg-white/50 p-1">
-                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View" title="List view" aria-label="List view">
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                                 </button>
-                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View" title="Grid view" aria-label="Grid view">
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View">
                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                                 </button>
                             </div>
@@ -1887,7 +1497,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
                             </div>
                         </div>
@@ -1896,7 +1506,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I change the accent colour?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Use the colour picker in the top-right of the header (desktop) to pick your accent colour. Your choice is saved on this device. Click Reset to return to the default blue.</p>
                             </div>
                         </div>
@@ -1905,7 +1515,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Are there keyboard shortcuts?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos).</p>
                             </div>
                         </div>
@@ -1914,7 +1524,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I preview files without downloading?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Yes. PDFs and images can be previewed directly in the app. Other file types may open in Google Drive viewer.</p>
                             </div>
                         </div>
@@ -1923,7 +1533,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I report an issue or suggest a feature?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Please email us via the link on the Upgrade page or use the contact option in the footer. We welcome feedback to improve GCSEMate.</p>
                             </div>
                         </div>
@@ -1932,7 +1542,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">What is the 'Star' icon for?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Clicking the star icon next to a file pins it to the top of its current folder. This is a great way to mark important documents like exam papers or key notes for quick access. Starred items are always displayed first in both list and grid views.</p>
                             </div>
                         </div>
@@ -1941,7 +1551,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How does the Calendar work?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>The calendar helps you track important dates. Click on any day to add a personal event, like homework deadlines or revision topics. You can also enable a 'Countdown Banner' for specific events. Admins may add 'Global Events', like exam dates, which appear for all users and are marked with a green dot.</p>
                             </div>
                         </div>
@@ -1950,7 +1560,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I upload my own files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Currently, file uploading is not a feature for users. The file structure is managed by administrators to ensure all resources are relevant, high-quality, and well-organized for all students. This helps maintain a consistent and reliable revision library.</p>
                             </div>
                         </div>
@@ -1959,7 +1569,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I delete my account?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
                             </div>
                         </div>
@@ -1968,7 +1578,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">What file types can I preview?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>GCSEMate supports previewing PDFs, Word documents, Google Docs, Google Slides, Google Sheets, PowerPoint presentations, images (JPEG, PNG, GIF), and text files. If a file can't be previewed directly, you can always open it in Google Drive or download it.</p>
                             </div>
                         </div>
@@ -1977,7 +1587,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I access GCSEMate offline?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>GCSEMate requires an internet connection to access files and sync data. However, you can download files locally for offline study. We're working on offline capabilities for basic features in future updates.</p>
                             </div>
                         </div>
@@ -1986,7 +1596,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How accurate is GCSEMateGPT?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>GCSEMateGPT is trained specifically on GCSE curricula and past papers, making it highly accurate for GCSE-level questions. However, always cross-reference important information with official sources and your teachers. It's a powerful study aid, not a replacement for your textbooks.</p>
                             </div>
                         </div>
@@ -1995,7 +1605,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I share files with classmates?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Currently, file sharing happens through Google Drive's sharing features. Click "Open in Google Drive" on any file to access sharing options. We're developing native sharing features for future releases.</p>
                             </div>
                         </div>
@@ -2004,7 +1614,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Is my data safe and private?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Absolutely. We use industry-standard encryption, minimal data collection, and transparent privacy policies. Your study materials remain in your Google Drive, and we only access metadata necessary for organization. Read our full Privacy Policy for details.</p>
                             </div>
                         </div>
@@ -2013,7 +1623,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Why choose GCSEMate over other study apps?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (£1/month), and features designed around the actual GCSE curriculum and exam formats.</p>
                             </div>
                         </div>
@@ -2022,7 +1632,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I get the most out of GCSEMate?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
                                 <p>Start by exploring each subject's file browser, star your most important documents, use the calendar for deadline tracking, engage with GCSEMateGPT for quick explanations, and take advantage of keyboard shortcuts for faster navigation. Regular use builds familiarity and efficiency.</p>
                             </div>
                         </div>
@@ -2062,386 +1672,6 @@
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
-    <!-- Whiteboard UI -->
-    <div id="whiteboard-toolbar" class="annotation-toolbar hidden" role="toolbar" aria-hidden="true">
-        <button class="annotation-tool" id="tool-pen" data-tooltip="Pen">✏️</button>
-        <button class="annotation-tool" id="tool-highlighter" data-tooltip="Highlighter">🟡</button>
-        <button class="annotation-tool" id="tool-eraser" data-tooltip="Eraser">🧽</button>
-        <button class="annotation-tool" id="tool-text" data-tooltip="Text">T</button>
-        <input id="whiteboard-color" class="color-picker" type="color" value="#ff0000" aria-label="Choose ink color">
-        <select id="whiteboard-pen-size" class="annotation-tool" title="Pen size" aria-label="Pen size">
-            <option value="2">2</option>
-            <option value="4" selected>4</option>
-            <option value="6">6</option>
-            <option value="8">8</option>
-            <option value="12">12</option>
-        </select>
-        <select id="whiteboard-font" class="annotation-tool" title="Font" aria-label="Font">
-            <option value="Plus Jakarta Sans" selected>Plus Jakarta Sans</option>
-            <option value="Arial">Arial</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Courier New">Courier New</option>
-        </select>
-        <button class="annotation-tool" id="undo-btn" data-tooltip="Undo">↶</button>
-        <button class="annotation-tool" id="clear-btn" data-tooltip="Clear All">🗑️</button>
-        <button class="annotation-tool" id="paste-btn" data-tooltip="Paste Image/Text">📋</button>
-        <button class="annotation-tool" id="save-btn" data-tooltip="Save PNG">💾</button>
-    </div>
-    <canvas id="annotation-canvas" class="annotation-canvas" aria-hidden="true"></canvas>
-
-    <div id="whiteboard-save-indicator" class="annotation-save-indicator">Saved</div>
-
-    <script>
-    (function(){
-        // Safe guards
-        if(typeof fabric === 'undefined') return; // fabric.js not loaded
-
-    const whiteboardToggle = document.getElementById('whiteboard-toggle');
-    const toolbar = document.getElementById('whiteboard-toolbar');
-    const canvasEl = document.getElementById('annotation-canvas'); // keep legacy id for compatibility
-    const saveIndicator = document.getElementById('whiteboard-save-indicator');
-
-        let canvas = null;
-        let stateStack = [];
-        let isAnnotating = false;
-
-        function initCanvas(){
-            // size to viewport
-            function resize(){
-                const dpr = window.devicePixelRatio || 1;
-                const w = document.documentElement.clientWidth;
-                const h = document.documentElement.clientHeight;
-                canvasEl.width = Math.floor(w * dpr);
-                canvasEl.height = Math.floor(h * dpr);
-                canvasEl.style.width = w + 'px';
-                canvasEl.style.height = h + 'px';
-                if(canvas){
-                    canvas.setWidth(canvasEl.width);
-                    canvas.setHeight(canvasEl.height);
-                    canvas.calcOffset();
-                    // scale objects if necessary (we keep pixel-perfect simple)
-                }
-            }
-
-            canvas = new fabric.Canvas(canvasEl, {
-                isDrawingMode: true,
-                selection: false,
-                skipTargetFind: true,
-                backgroundColor: 'transparent',
-                renderOnAddition: true,
-            });
-
-            // default brush
-            const brush = new fabric.PencilBrush(canvas);
-            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
-            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10) || 4;
-            canvas.freeDrawingBrush = brush;
-
-            // record history
-            function pushState(){
-                try{
-                    stateStack.push(JSON.stringify(canvas.toJSON(['selectable'])));
-                    if(stateStack.length>50) stateStack.shift();
-                }catch(e){ console.warn('pushState',e); }
-            }
-
-            canvas.on('path:created', function(){ pushState(); });
-
-            // initial state
-            pushState();
-
-            // responsive
-            window.addEventListener('resize', resize);
-            resize();
-        }
-
-        function enterAnnotate(){
-            if(!canvas) initCanvas();
-            if (toolbar) {
-                toolbar.classList.remove('hidden');
-                toolbar.setAttribute('aria-hidden','false');
-            }
-            if (canvasEl) {
-                canvasEl.classList.add('active');
-            }
-            if (canvas) {
-                canvas.isDrawingMode = true;
-                canvas.selection = false;
-            }
-            isAnnotating = true;
-            if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','true');
-            styleCanvas();
-        }
-
-        function exitAnnotate(){
-            if (toolbar) {
-                toolbar.classList.add('hidden');
-                toolbar.setAttribute('aria-hidden','true');
-            }
-            if(canvas) canvas.isDrawingMode = false;
-            if (canvasEl) canvasEl.classList.remove('active');
-            isAnnotating = false;
-            if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','false');
-            styleCanvas();
-        }
-
-        // toggle
-        whiteboardToggle && whiteboardToggle.addEventListener('click', function(e){
-            e.preventDefault();
-            if(!isAnnotating) enterAnnotate(); else exitAnnotate();
-        });
-
-        // tools
-        // Pen tool
-        document.getElementById('tool-pen').addEventListener('click', function(){
-            if(!canvas) return;
-            canvas.isDrawingMode = true;
-            const brush = new fabric.PencilBrush(canvas);
-            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
-            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10)||4;
-            canvas.freeDrawingBrush = brush;
-            window.__whiteboardCurrentTool = 'pen';
-        });
-
-        // Eraser tool - removes objects on click and provides a wide white brush fallback
-        document.getElementById('tool-eraser').addEventListener('click', function(){
-            if(!canvas) return;
-            window.__whiteboardCurrentTool = 'eraser';
-            // Use pointer-based erasing: clicking objects removes them
-            canvas.isDrawingMode = false;
-            canvas.defaultCursor = 'crosshair';
-            // temporary mouse:down handler
-            const eraserHandler = function(options){
-                if(!options.target) return;
-                try{ canvas.remove(options.target); canvas.renderAll(); pushState(); }catch(_){ }
-            };
-            // remove previous eraser handlers then attach
-            canvas.off('mouse:down', eraserHandler);
-            canvas.on('mouse:down', eraserHandler);
-        });
-
-        // Highlighter tool
-        document.getElementById('tool-highlighter').addEventListener('click', function(){
-            if(!canvas) return;
-            canvas.isDrawingMode = true;
-            const brush = new fabric.PencilBrush(canvas);
-            brush.color = 'rgba(255, 255, 0, 0.5)'; // Semi-transparent yellow
-            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 12,10)||12;
-            canvas.freeDrawingBrush = brush;
-            window.__whiteboardCurrentTool = 'highlighter';
-        });
-
-        // Text tool
-        document.getElementById('tool-text').addEventListener('click', function(){
-            if(!canvas) return;
-            canvas.isDrawingMode = false;
-            window.__whiteboardCurrentTool = 'text';
-            // Set cursor to indicate text mode
-            canvas.defaultCursor = 'text';
-            
-            // Remove any existing text handlers
-            canvas.off('mouse:down', textHandler);
-            
-            // Add text on click
-            const textHandler = function(options){
-                const pointer = canvas.getPointer(options.e);
-                const textbox = new fabric.Textbox('Type here...', {
-                    left: pointer.x,
-                    top: pointer.y,
-                    width: 200,
-                    fontSize: 16,
-                    fontFamily: (document.getElementById('whiteboard-font') && document.getElementById('whiteboard-font').value) || 'Plus Jakarta Sans',
-                    fill: (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#000000',
-                });
-                canvas.add(textbox);
-                canvas.setActiveObject(textbox);
-                textbox.enterEditing();
-                canvas.renderAll();
-                pushState();
-                // Remove text handler after adding text
-                canvas.off('mouse:down', textHandler);
-            };
-            
-            canvas.on('mouse:down', textHandler);
-        });
-
-        // Color change
-        document.getElementById('whiteboard-color').addEventListener('input', function(e){
-            if(!canvas) return;
-            const brush = new fabric.PencilBrush(canvas);
-            brush.color = e.target.value;
-            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10)||4;
-            canvas.freeDrawingBrush = brush;
-            canvas.isDrawingMode = true;
-        });
-
-        document.getElementById('whiteboard-pen-size').addEventListener('change', function(e){
-            if(!canvas) return;
-            const brush = new fabric.PencilBrush(canvas);
-            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
-            brush.width = parseInt(e.target.value,10)||4;
-            canvas.freeDrawingBrush = brush;
-            canvas.isDrawingMode = true;
-        });
-
-    // Undo
-    document.getElementById('undo-btn').addEventListener('click', function(){
-            if(!canvas) return;
-            if(stateStack.length>1){
-                // pop current
-                stateStack.pop();
-                const prev = stateStack[stateStack.length-1];
-                if(prev){
-                    canvas.loadFromJSON(prev, function(){ canvas.renderAll(); });
-                }
-            } else {
-                canvas.clear();
-            }
-        });
-
-    // Clear all
-    document.getElementById('clear-btn').addEventListener('click', function(){
-            if(!canvas) return;
-            canvas.clear();
-            stateStack = [];
-            try{ stateStack.push(JSON.stringify(canvas.toJSON())); }catch(e){}
-        });
-
-        // Save whiteboard PNG
-        document.getElementById('save-btn').addEventListener('click', function(){
-            if(!canvas) return;
-            // convert to data URL at device pixel ratio to preserve quality
-            const dpr = window.devicePixelRatio || 1;
-            const dataURL = canvas.toDataURL({ format: 'png', multiplier: dpr });
-            // download
-            const a = document.createElement('a');
-            a.href = dataURL;
-            a.download = 'annotation.png';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            // show saved indicator
-            saveIndicator.classList.add('show');
-            setTimeout(()=> saveIndicator.classList.remove('show'), 1400);
-        });
-
-        // Paste support (images and text) — triggered by paste button or clipboard paste
-        document.getElementById('paste-btn').addEventListener('click', function(){
-            // Focus to capture next paste
-            showToast('Press Ctrl+V / Cmd+V to paste image or text onto the whiteboard', 'info');
-            // We set up a one-time paste listener
-            const onPaste = function(e){
-                handlePasteEvent(e);
-                window.removeEventListener('paste', onPaste);
-            };
-            window.addEventListener('paste', onPaste);
-        });
-
-        // Global paste handler when whiteboard active
-        window.addEventListener('paste', function(e){
-            if(!isAnnotating) return; // only when whiteboard active
-            handlePasteEvent(e);
-        });
-
-        function handlePasteEvent(e){
-            if(!e.clipboardData) return;
-            const items = Array.from(e.clipboardData.items || []);
-            const imageItem = items.find(i => i.type && i.type.indexOf('image') === 0);
-            if(imageItem){
-                const blob = imageItem.getAsFile();
-                const url = URL.createObjectURL(blob);
-                fabric.Image.fromURL(url, function(img){
-                    img.set({ left: 50, top: 50, scaleX: 0.5, scaleY: 0.5, selectable: true });
-                    canvas.add(img);
-                    canvas.renderAll();
-                    pushState();
-                    URL.revokeObjectURL(url);
-                });
-                return;
-            }
-
-            // If text
-            const textData = e.clipboardData.getData('text/plain');
-            if(textData){
-                const tb = new fabric.Textbox(textData, {
-                    left: 60,
-                    top: 60,
-                    width: 300,
-                    fontFamily: (document.getElementById('whiteboard-font') && document.getElementById('whiteboard-font').value) || 'Plus Jakarta Sans',
-                    fontSize: 16,
-                    fill: (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#111',
-                });
-                // store original markdown/text
-                tb.set('dataMarkdown', textData);
-                canvas.add(tb);
-                canvas.setActiveObject(tb);
-                canvas.renderAll();
-                pushState();
-            }
-        }
-
-    // keep whiteboard layer above all
-        const styleCanvas = function(){
-            canvasEl.style.position = 'fixed';
-            canvasEl.style.top = '0';
-            canvasEl.style.left = '0';
-            canvasEl.style.zIndex = 9999;
-            canvasEl.style.pointerEvents = isAnnotating ? 'auto' : 'none';
-        };
-
-        // observe annotate mode to toggle pointer events
-        const observer = new MutationObserver(function(){ styleCanvas(); });
-        observer.observe(canvasEl, { attributes: true });
-
-        // ensure keyboard ESC exits whiteboard
-        window.addEventListener('keydown', function(e){ if(e.key === 'Escape' && isAnnotating) exitAnnotate(); });
-
-        // Helper to push state for undo
-        function pushState(){
-            try{ stateStack.push(JSON.stringify(canvas.toJSON(['selectable','dataMarkdown']))); if(stateStack.length>80) stateStack.shift(); }catch(e){}
-        }
-
-        // Setup keyboard shortcuts for whiteboard
-        window.setupWhiteboardKeyboardShortcuts = function(){
-            document.addEventListener('keydown', (e) => {
-                // Only handle shortcuts when whiteboard canvas is active
-                const canvasElLocal = document.getElementById('annotation-canvas');
-                if (!canvasElLocal || !canvasElLocal.classList.contains('active')) return;
-                if (['KeyP', 'KeyH', 'KeyT', 'KeyE', 'KeyS', 'Escape', 'Delete', 'Backspace', 'KeyZ'].includes(e.code)) {
-                    e.preventDefault();
-                }
-                switch (e.code) {
-                    case 'KeyP': // Pencil
-                        document.getElementById('tool-pen').click(); break;
-                    case 'KeyH': // Highlight
-                        document.getElementById('tool-highlighter').click(); break;
-                    case 'KeyT': // Text
-                        document.getElementById('tool-text').click(); break;
-                    case 'KeyE': // Eraser
-                        document.getElementById('tool-eraser').click(); break;
-                    case 'KeyS': // Save
-                        document.getElementById('save-btn').click(); break;
-                    case 'KeyZ': // Undo (Ctrl/Cmd + Z)
-                        if((e.ctrlKey||e.metaKey)) document.getElementById('undo-btn').click(); break;
-                    case 'Escape':
-                        exitAnnotate(); break;
-                    case 'Delete':
-                    case 'Backspace':
-                        if(canvas){ const active = canvas.getActiveObjects(); if(active.length){ active.forEach(o=>canvas.remove(o)); canvas.discardActiveObject(); canvas.renderAll(); pushState(); }}
-                        break;
-                }
-            });
-        };
-
-    // initialize but do not enable until toggled
-    // initCanvas will be lazily called on first open
-    // expose entrypoints for compatibility
-    window.enterWhiteboard = enterAnnotate;
-    window.exitWhiteboard = exitAnnotate;
-
-    styleCanvas();
-    })();
-    </script>
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
@@ -2449,102 +1679,51 @@
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <!-- Firebase Configuration and Initialization -->
     <script>
-      // Firebase project configuration for GCSEMate application
-      // This connects the app to our Firebase backend services
+      // Your web app's Firebase configuration
       const firebaseConfig = {
-        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",           // Authentication API key
-        authDomain: "gcsemate.firebaseapp.com",                      // Authentication domain
-        projectId: "gcsemate",                                       // Firebase project identifier
-        storageBucket: "gcsemate.appspot.com",                       // Cloud storage bucket
-        messagingSenderId: "704190559234",                           // Cloud messaging sender ID
-        appId: "1:704190559234:web:dd6ecc107df886c70b231b",         // Firebase app identifier
-        measurementId: "G-NSRF8YLS2N"                               // Google Analytics measurement ID
+        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",
+        authDomain: "gcsemate.firebaseapp.com",
+        projectId: "gcsemate",
+        storageBucket: "gcsemate.appspot.com",
+        messagingSenderId: "704190559234",
+        appId: "1:704190559234:web:dd6ecc107df886c70b231b",
+        measurementId: "G-NSRF8YLS2N"
       };
-      
-            // Initialize Firebase services for the application (compat SDK)
-            // NOTE: This project currently uses the compat SDK. For new projects prefer
-            // the modular v9 API (import { initializeApp } from 'firebase/app'; etc.).
-            firebase.initializeApp(firebaseConfig);
-
-            // Create service instances for authentication and database (compat)
-            const auth = firebase.auth();    // Firebase Authentication service
-
-            // Initialize Firestore with robust persistence settings
-            let db;
-            try {
-                db = firebase.firestore();
-
-                // Apply recommended cache size and enable persistence when possible
-                try {
-                    db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
-                } catch (sErr) {
-                    // Some older compat builds may not expose CACHE_SIZE_UNLIMITED - ignore
-                    console.warn('Could not set Firestore cache size:', sErr);
-                }
-
-                // Enable offline persistence (synchronizeTabs helps multi-tab scenarios)
-                db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-                    if (err && err.code === 'failed-precondition') {
-                        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-                    } else if (err && err.code === 'unimplemented') {
-                        console.warn('The current browser does not support persistence.');
-                    } else {
-                        console.warn('Firebase persistence error:', err);
-                    }
-                });
-            } catch (error) {
-                console.error('Error initializing Firestore (compat):', error);
-                // Attempt to continue with a regular instance - may operate without persistence
-                try { db = firebase.firestore(); } catch(e) { db = null; }
-            }
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
     </script>
-    <!-- Main Application Script - GCSEMate Core Functionality -->
     <script>
-        // =================================================================================
-        // APPLICATION STATE MANAGEMENT
-        // =================================================================================
+        // --- APP STATE---
+        let currentUser = null;
+        let isGapiReady = false;
+        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
+        let currentFolderFiles = [];
+        let fileBrowserView = 'list'; // 'list' or 'grid'
+        let allSubjectFolders = {};
+        let allBlogPosts = [];
+        let currentDate = new Date();
+        let activeCountdowns = [];
+        let currentCountdownIndex = 0;
+        let clockInterval = null;
+        let unsubscribeUserManagement;
+        let unsubscribeUsefulLinks;
+        let unsubscribeVideoPlaylists;
+        let unsubscribeBlogPosts;
+        let unsubscribeUserEvents;
+        let unsubscribeGlobalEvents;
+        let unsubscribeAnnouncement;
+        let unsubscribeBlogComments;
+        let recaptchaVerifier;
         
-        // Global application state variables
-        let currentUser = null;                    // Currently logged in user object
-        let isGapiReady = false;                   // Google API readiness flag
-        let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }]; // Current navigation path
-        let currentFolderFiles = [];               // Files in current folder
-        let fileBrowserView = 'list';              // File browser view mode: 'list' or 'grid'
-        let allSubjectFolders = {};                // Cached subject folder mappings
-        let allBlogPosts = [];                     // Cached blog posts
-        let currentDate = new Date();              // Current date for calendar
-        let activeCountdowns = [];                 // Active countdown events
-        let currentCountdownIndex = 0;             // Current countdown display index
-        let clockInterval = null;                  // Clock update interval reference
+        // Performance optimizations
+        let animationFrameId = null;
+        let debounceTimers = new Map();
+        let throttleTimers = new Map();
         
-        // Firebase real-time listener unsubscribe functions
-        let unsubscribeUserManagement;             // User management listener cleanup
-        let unsubscribeUsefulLinks;                // Useful links listener cleanup
-        let unsubscribeVideoPlaylists;             // Video playlists listener cleanup
-        let unsubscribeBlogPosts;                  // Blog posts listener cleanup
-        let unsubscribeUserEvents;                 // User events listener cleanup
-        let unsubscribeGlobalEvents;               // Global events listener cleanup
-        let unsubscribeAnnouncement;               // Announcement listener cleanup
-        let unsubscribeBlogComments;               // Blog comments listener cleanup
-        let recaptchaVerifier;                     // reCAPTCHA verifier instance
-        
-        // =================================================================================
-        // PERFORMANCE OPTIMIZATION UTILITIES
-        // =================================================================================
-        
-        // Performance tracking variables
-        let animationFrameId = null;                // RequestAnimationFrame ID for cleanup
-        let debounceTimers = new Map();             // Debounce timer storage
-        let throttleTimers = new Map();             // Throttle timer storage
-        
-        /**
-         * Debounce utility function - delays function execution until after a pause
-         * @param {Function} func - Function to debounce
-         * @param {number} wait - Wait time in milliseconds
-         * @returns {Function} Debounced function
-         */
+        // Utility functions for performance
         const debounce = (func, wait) => {
             return function executedFunction(...args) {
                 const later = () => {
@@ -2556,12 +1735,6 @@
             };
         };
         
-        /**
-         * Throttle utility function - limits function execution frequency
-         * @param {Function} func - Function to throttle
-         * @param {number} limit - Time limit in milliseconds
-         * @returns {Function} Throttled function
-         */
         const throttle = (func, limit) => {
             return function executedFunction(...args) {
                 if (!throttleTimers.get(func)) {
@@ -2572,130 +1745,77 @@
                 }
             };
         };
-        // =================================================================================
-        // APPLICATION CONFIGURATION CONSTANTS
-        // =================================================================================
-        
-        // Google Drive root folder ID for subject organization
+        // --- CONFIGURATION ---
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
-        
-        // reCAPTCHA v3 site key for bot protection
-        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk';
-        
-        // Available GCSE subjects for the application
-        const SUBJECTS = [
-            'Biology', 'Chemistry', 'Computing', 'English', 'Geography', 
-            'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'
-        ];
-        
-        // Default subject icon for subjects without specific icons
+        const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
+        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
         const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
-        // Subject-specific icon mappings for visual identification
         const subjectIconMap = {
-            // Biology: Tree icon representing life and nature
+            // Biology: tree icon
             biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
-            
-            // Physics: Lightning bolt representing energy and forces
+            // Physics: thunderbolt
             physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
-            
-            // Chemistry: Conical flask representing laboratory experiments
+            // Chemistry: conical flask
             chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
-            
-            // Geography: Globe representing world geography
+            // Geography: globe
             geography: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
-            
-            // English: Book lines representing literature and language
+            // English: book lines
             english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
-            
-            // Maths: Pi symbol representing mathematics
+            // Maths: pi symbol outline
             maths: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16"/><path d="M8 8v8"/><path d="M16 8c0 5-2 8-5 8"/></svg>`,
-            
-            // History: Clock face representing time and historical events
+            // History: outlined clock face with hands
             history: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
-            
-            // German: German flag representing German language
+            // German: flag
             german: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3" viewBox="0 0 24 24"><rect width="24" height="8" y="0" fill="#000"/><rect width="24" height="8" y="8" fill="#DD0000"/><rect width="24" height="8" y="16" fill="#FFCE00"/></svg>`,
-            
-            // Music: Musical note representing music theory
+            // Music: outlined note with circles
             music: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6l10-2v10"/><circle cx="7" cy="18" r="3" stroke="currentColor"/><circle cx="19" cy="14" r="3" stroke="currentColor"/></svg>`,
-            
-            // Computing: Monitor representing computer science
+            // Computing: monitor
             computing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
-            
-            // Philosophy and Ethics: Balanced scales representing justice and ethics
+            // Philosophy and Ethics: balanced scales outline
             "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
         };
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
-        
-        /**
-         * Ensures at least one view is visible when the application loads
-         * This prevents the user from seeing a blank screen during initialization
-         */
         function ensureInitialView() {
             try {
-                // Get references to all main page containers
                 const landing = document.getElementById('landing-page');
                 const app = document.getElementById('main-app');
                 const login = document.getElementById('login-page');
                 const verify = document.getElementById('email-verify-page');
-                
-                // Helper function to check if an element is visible
                 const isVisible = (el) => el && !el.classList.contains('hidden');
-                
-                // Check if any main page is currently visible
                 const anyVisible = [app, login, verify, landing].some(isVisible);
-                
-                // If no page is visible, show the landing page as fallback
-                if (!anyVisible && landing) {
-                    landing.classList.remove('hidden');
-                }
-            } catch (error) {
-                // Silently handle any errors during view initialization
-                console.warn('Error ensuring initial view:', error);
-            }
+                if (!anyVisible && landing) landing.classList.remove('hidden');
+            } catch (_) {}
         }
 
-        /**
-         * Hides the application loading overlay with smooth animation
-         * Called when the app is ready to display content
-         */
         function hideAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
             
-            // Animate the logo to its final position
             const logo = overlay.querySelector('.animate-logo');
             if (logo) { 
                 logo.style.opacity = '1'; 
                 logo.style.transform = 'translateY(0)'; 
             }
             
-            // Ensure a view is visible before hiding loader
             ensureInitialView();
             
-            // Smooth fade out animation
+            // Smooth fade out with better timing
             overlay.style.opacity = '0';
             overlay.style.transition = 'opacity 300ms ease-out';
             
-            // Remove overlay after animation completes
             setTimeout(() => { 
                 overlay.style.display = 'none';
-                // Restore body scrolling
+                // Ensure body scroll is restored
                 document.body.style.overflow = '';
             }, 320);
         }
         
-        /**
-         * Shows the application loading overlay
-         * Used during authentication and data loading
-         */
         function showAppLoading() {
             const overlay = document.getElementById('app-loading');
             if (!overlay) return;
             
-            // Display overlay and prevent background scrolling
             overlay.style.display = 'flex';
             overlay.style.opacity = '1';
             document.body.style.overflow = 'hidden';
@@ -2703,270 +1823,7 @@
 
         // Fallback: ensure hide after window load
         // Early slide-in on DOM ready
-        // Toast notification system for better UX
-        function showToast(message, type = 'info', duration = 3000) {
-            const toastContainer = document.getElementById('toast-container') || createToastContainer();
-            
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 transform translate-x-full transition-transform duration-300 ${
-                type === 'error' ? 'border-red-500' : 
-                type === 'success' ? 'border-green-500' : 
-                type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
-            }`;
-            
-            toast.innerHTML = `
-                <div class="p-4 flex items-center">
-                    <div class="flex-shrink-0">
-                        ${type === 'error' ? 
-                            '<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>' :
-                            type === 'success' ? 
-                            '<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' :
-                            type === 'warning' ?
-                            '<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>' :
-                            '<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>'
-                        }
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="text-sm font-medium text-gray-900">${message}</p>
-                    </div>
-                    <button class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Slide in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-x-full');
-            });
-            
-            // Auto remove
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
-        }
-        
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'fixed top-4 right-4 z-50 space-y-2';
-            document.body.appendChild(container);
-            return container;
-        }
-        
-        // Update accent color throughout the application
-        function updateAccentColor(color) {
-            const root = document.documentElement;
-            if (root) {
-                root.style.setProperty('--accent-color', color);
-                root.style.setProperty('--accent-color-hover', color + 'dd');
-                root.style.setProperty('--accent-color-light', color + '20');
-            }
-        }
-        
-        // Initialize essential functionality
-        function initializeApplication() {
-            // Initialize copyright year
-            const yearElement = document.getElementById('landing-copyright-year');
-            if (yearElement) {
-                yearElement.textContent = new Date().getFullYear().toString();
-            }
-            
-            // Setup mobile menu handlers
-            const hamburgerButton = document.getElementById('hamburger-button');
-            const closeMenuButton = document.getElementById('close-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const mobileLogoutButton = document.getElementById('mobile-logout-button');
-            
-            if (hamburgerButton && mobileMenu) {
-                hamburgerButton.addEventListener('click', () => {
-                    mobileMenu.classList.remove('hidden');
-                    mobileMenu.style.display = 'block';
-                    hamburgerButton.setAttribute('aria-expanded', 'true');
-                    document.body.style.overflow = 'hidden';
-                });
-            }
-            
-            if (closeMenuButton && mobileMenu) {
-                closeMenuButton.addEventListener('click', () => {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenu.style.display = 'none';
-                    hamburgerButton?.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = '';
-                });
-            }
-            
-            if (mobileLogoutButton) {
-                mobileLogoutButton.addEventListener('click', handleLogout);
-            }
-            
-            // Setup auth form toggles
-            const showRegisterForm = document.getElementById('show-register-form');
-            const showLoginForm = document.getElementById('show-login-form');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            
-            if (showRegisterForm && loginForm && registerForm) {
-                showRegisterForm.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    loginForm.classList.add('hidden');
-                    registerForm.classList.remove('hidden');
-                });
-            }
-            
-            if (showLoginForm && loginForm && registerForm) {
-                showLoginForm.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    registerForm.classList.add('hidden');
-                    loginForm.classList.remove('hidden');
-                });
-            }
-            
-            // Setup password visibility toggle
-            const showPasswordBtn = document.getElementById('show-password-btn');
-            const passwordInput = document.getElementById('password');
-            const eyeOpen = document.getElementById('eye-open');
-            const eyeClosed = document.getElementById('eye-closed');
-            
-            if (showPasswordBtn && passwordInput && eyeOpen && eyeClosed) {
-                showPasswordBtn.addEventListener('click', () => {
-                    if (passwordInput.type === 'password') {
-                        passwordInput.type = 'text';
-                        eyeOpen.classList.add('hidden');
-                        eyeClosed.classList.remove('hidden');
-                    } else {
-                        passwordInput.type = 'password';
-                        eyeOpen.classList.remove('hidden');
-                        eyeClosed.classList.add('hidden');
-                    }
-                });
-            }
-            
-            // Setup navigation
-            document.querySelectorAll('.nav-link[data-page]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const pageId = link.getAttribute('data-page');
-                    if (pageId) {
-                        showPage(pageId);
-                        // Close mobile menu if open
-                        if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                            mobileMenu.classList.add('hidden');
-                            mobileMenu.style.display = 'none';
-                            document.body.style.overflow = '';
-                        }
-                    }
-                });
-            });
-            
-            // Setup scroll to top button
-            const scrollTopButton = document.getElementById('scroll-top');
-            if (scrollTopButton) {
-                window.addEventListener('scroll', () => {
-                    if (window.scrollY > 300) {
-                        scrollTopButton.classList.remove('hidden');
-                    } else {
-                        scrollTopButton.classList.add('hidden');
-                    }
-                });
-                
-                scrollTopButton.addEventListener('click', () => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            initializeApplication();
-            
-            // Setup accent color picker
-            const accentColorPicker = document.getElementById('accent-color-picker');
-            if (accentColorPicker) {
-                const savedColor = localStorage.getItem('accentColor');
-                if (savedColor) {
-                    accentColorPicker.value = savedColor;
-                    updateAccentColor(savedColor);
-                }
-                
-                accentColorPicker.addEventListener('change', (e) => {
-                    const color = e.target.value;
-                    updateAccentColor(color);
-                    localStorage.setItem('accentColor', color);
-                });
-            }
-            
-            // Setup FAQ accordion
-            document.querySelectorAll('[data-faq-toggle]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-faq-toggle');
-                    const content = document.getElementById(targetId);
-                    const icon = button.querySelector('svg');
-                    
-                    if (content && icon) {
-                        const isExpanded = !content.classList.contains('hidden');
-                        
-                        if (isExpanded) {
-                            content.classList.add('hidden');
-                            icon.style.transform = 'rotate(0deg)';
-                        } else {
-                            content.classList.remove('hidden');
-                            icon.style.transform = 'rotate(180deg)';
-                        }
-                    }
-                });
-            });
-            
-            // Setup keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                // ESC to close modals
-                if (e.key === 'Escape') {
-                    const mobileMenu = document.getElementById('mobile-menu');
-                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        mobileMenu.style.display = 'none';
-                        document.body.style.overflow = '';
-                    }
-                }
-                
-                // Ctrl/Cmd + K for search (future implementation)
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    // Focus search input when implemented
-                }
-            });
-            
-            // Register service worker for offline support (if available)
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    // Only register in production
-                    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                        navigator.serviceWorker.register('/sw.js')
-                            .then(registration => {
-                                console.log('ServiceWorker registration successful');
-                            })
-                            .catch(error => {
-                                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                                    console.log('ServiceWorker registration failed: ', error);
-                                }
-                            });
-                    }
-                });
-            }
-            
-            // Performance monitoring
-            window.addEventListener('load', () => {
-                if (window.performance && window.performance.now) {
-                    const loadTime = window.performance.now();
-                    if (loadTime > 3000) { // If page takes more than 3 seconds
-                        showToast('Page loaded successfully, but performance could be improved', 'warning', 5000);
-                    }
-                }
-            });
             // Use requestIdleCallback for better performance
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
@@ -3002,13 +1859,8 @@
             setTimeout(() => { ensureInitialView(); hideAppLoading(); }, 1200);
         }, { once: true });
 
-        /**
-         * Firebase Authentication State Change Handler
-         * This function runs whenever the user's authentication state changes
-         * (login, logout, email verification, etc.)
-         */
         auth.onAuthStateChanged(async (user) => {
-            // Clean up all existing listeners to prevent memory leaks on re-login
+            // Detach old listeners to prevent memory leaks on re-login
             if (unsubscribeUserManagement) unsubscribeUserManagement();
             if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
             if (unsubscribeVideoPlaylists) unsubscribeVideoPlaylists();
@@ -3017,14 +1869,11 @@
             if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
             if (unsubscribeAnnouncement) unsubscribeAnnouncement();
             if (clockInterval) clearInterval(clockInterval);
-            
             if (user && user.emailVerified) {
-                // User is signed in AND email is verified - show main application
+                // User is signed in AND verified.
                 try {
-                    // Fetch user profile data from Firestore
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
-                        // Combine Firebase Auth user data with Firestore profile data
                         currentUser = {
                             uid: user.uid,
                             email: user.email,
@@ -3034,65 +1883,37 @@
                         initializeAppState();
                         hideAppLoading();
                     } else {
-                        // User exists in Auth but not in Firestore - this shouldn't happen
                         console.error("User authenticated but no profile found in Firestore.");
                         await handleLogout();
                         hideAppLoading();
                     }
                 } catch (error) {
-                    // Handle database connection errors
                     console.error("Error fetching user profile:", error);
                     showErrorPage("Login Error", "Could not fetch your user profile. Please try again later.");
                     await handleLogout();
                     hideAppLoading();
                 }
             } else if (user && !user.emailVerified) {
-                // User is signed in but email is NOT verified - show verification page
-                // User verification status logged for debugging in development
-                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                    console.log("User is not verified.");
-                }
+                // User is signed in but NOT verified.
+                console.log("User is not verified.");
                 showVerificationMessagePage(user.email);
                 hideAppLoading();
             } else {
-                // User is signed out - show landing page
+                // User is signed out.
                 currentUser = null;
-                
-                // Hide main application
                 const mainApp = document.getElementById('main-app');
                 if (mainApp) {
                     mainApp.classList.add('hidden');
-                    mainApp.style.display = 'none'; // Ensure inline display doesn't override hidden
+                    mainApp.style.display = 'none'; // ensure inline display doesn't override hidden
                 }
-                
-                // Hide authentication pages
                 const loginPage = document.getElementById('login-page');
                 const verifyPage = document.getElementById('email-verify-page');
                 if (loginPage) loginPage.classList.add('hidden');
                 if (verifyPage) verifyPage.classList.add('hidden');
-                
                 // Close any open modals and mobile menu
-                const modalIds = [
-                    'mobile-menu', 'preview-modal', 'playlist-viewer-modal', 
-                    'blog-viewer-modal', 'dmca-modal', 'legal-modal', 
-                    'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'
-                ];
-                modalIds.forEach(id => { 
-                    const el = document.getElementById(id); 
-                    if (el) { 
-                        el.style.display = 'none'; 
-                        if (!el.classList.contains('hidden')) el.classList.add('hidden'); 
-                        el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; 
-                    } 
-                });
-                
-                // Clean up blog comments listener
-                if (typeof unsubscribeBlogComments === 'function') { 
-                    try { unsubscribeBlogComments(); } catch (_) {} 
-                    unsubscribeBlogComments = null; 
-                }
-                
-                // Show landing page
+                ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+                    .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
+                if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
                 const landingPage = document.getElementById('landing-page');
                 if (landingPage) {
                     landingPage.classList.remove('hidden');
@@ -3102,63 +1923,47 @@
             }
         });
 
-        /**
-         * Initializes the application state after successful authentication
-         * Sets up the main app interface and starts all necessary services
-         */
         function initializeAppState() {
-            // Hide authentication and landing pages
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('email-verify-page').classList.add('hidden');
             
-            // Show main application with fade-in animation
             const mainApp = document.getElementById('main-app');
             mainApp.classList.remove('hidden');
             mainApp.style.display = 'flex';
             mainApp.classList.add('fade-in');
-            
-            // Initialize application components
-            updateWelcomeMessage();        // Update user welcome message
-            setupRealtimeListeners();      // Start Firebase real-time listeners
-            startClock();                  // Start the dashboard clock
-            hideAppLoading();              // Hide loading overlay
+            updateWelcomeMessage();
+            setupRealtimeListeners();
+            startClock();
+            hideAppLoading();
             
             if (currentUser) {
-                renderDashboard();         // Render the main dashboard
-                // Log client access for security auditing
+                renderDashboard();
+                // Log client access context for auditing
                 logClientAccess().catch(() => {});
             }
 
-            // Restore user's saved accent color preference
+            // Restore accent from localStorage
             try {
                 const saved = localStorage.getItem('gcsemate_accent');
                 if (saved) applyAccent(JSON.parse(saved));
-            } catch (error) {
-                console.warn('Error restoring accent color:', error);
-            }
+            } catch (e) {}
         }
-        /**
-         * Sets up Firebase real-time listeners for live data updates
-         * These listeners automatically update the UI when data changes in the database
-         */
         function setupRealtimeListeners() {
-            // Listen for site-wide announcements from administrators
+            // Listen for announcements
             unsubscribeAnnouncement = db.collection('settings').doc('announcement')
                 .onSnapshot(doc => {
                     const data = doc.data();
                     showAnnouncement(data ? data.message : '');
                 }, err => console.error("Error fetching announcement:", err));
-            
-            // Admin-specific listeners and UI setup
+            // Admin listeners
             if (currentUser.role === 'admin') {
-                // Show admin interface elements
                 document.getElementById('admin-panel').classList.remove('hidden');
                 document.getElementById('user-settings-panel').classList.add('hidden');
                 document.getElementById('add-link-form-container').classList.remove('hidden');
                 document.getElementById('add-blog-post-form-container').classList.remove('hidden');
                 
-                // Listen for all users for the admin management panel
+                // Listen for all users for the management panel
                 unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
                     const allUsers = {};
                     snapshot.forEach(doc => {
@@ -3167,7 +1972,6 @@
                     renderUserManagementPanel(allUsers);
                 }, err => console.error("Error fetching users:", err));
             } else {
-                // Hide admin interface elements for regular users
                 document.getElementById('admin-panel').classList.add('hidden');
                 document.getElementById('user-settings-panel').classList.remove('hidden');
                 document.getElementById('add-link-form-container').classList.add('hidden');
@@ -3228,33 +2032,22 @@
                     updateCountdownBanner(); // Update countdown when events change
                 }, err => console.error("Error fetching global events:", err));
         }
-        /**
-         * Handles user registration process
-         * Creates a new user account with email verification
-         */
         async function handleRegister() {
-            // Get form input values
             const displayName = document.getElementById('register-displayname').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
-            
-            // Get error message elements for validation feedback
             const messageEl = document.getElementById('register-error');
             const nameErrorEl = document.getElementById('register-name-error');
             const emailErrorEl = document.getElementById('register-email-error');
             const passwordErrorEl = document.getElementById('register-password-error');
             
-            // Clear any previous error messages
+            // Clear previous errors
             messageEl.textContent = '';
             nameErrorEl.textContent = '';
             emailErrorEl.textContent = '';
             passwordErrorEl.textContent = '';
             
-            // =================================================================================
-            // FORM VALIDATION
-            // =================================================================================
-            
-            // Validate display name
+            // Basic validation
             if (!displayName) {
                 nameErrorEl.textContent = 'Name is required';
                 document.getElementById('register-displayname').focus();
@@ -3267,14 +2060,13 @@
                 return;
             }
             
-            // Validate email address
             if (!email) {
                 emailErrorEl.textContent = 'Email is required';
                 document.getElementById('register-email').focus();
                 return;
             }
             
-            // Email format validation using regex
+            // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 emailErrorEl.textContent = 'Please enter a valid email address';
@@ -3282,7 +2074,6 @@
                 return;
             }
             
-            // Validate password
             if (!password) {
                 passwordErrorEl.textContent = 'Password is required';
                 document.getElementById('register-password').focus();
@@ -3295,72 +2086,60 @@
                 return;
             }
             
-            // =================================================================================
-            // ACCOUNT CREATION PROCESS
-            // =================================================================================
-            
             try {
-                // Show loading state on the register button
+                // Show loading state
                 const registerButton = document.getElementById('register-button');
                 const originalText = registerButton.textContent;
                 registerButton.textContent = 'Creating Account...';
                 registerButton.disabled = true;
                 
-                // Create the user account in Firebase Authentication
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                // Update the user's display name in Firebase Auth (best-effort)
+                // Update Firebase Auth profile (best-effort)
                 try {
                     await user.updateProfile({ displayName: displayName });
-                } catch (error) {
-                    console.warn('updateProfile failed, continuing:', error);
+                } catch (e) {
+                    console.warn('updateProfile failed, continuing:', e);
                 }
 
-                // Save user profile to Firestore database
-                // This is non-blocking so users can still verify their email even if this fails
+                // Save user profile to Firestore (best-effort, non-blocking for verification)
                 try {
                     await db.collection('users').doc(user.uid).set({
                         displayName: displayName,
                         email: email,
-                        tier: 'free',                    // Default to free tier
-                        role: 'user',                    // Default to regular user
-                        starredFiles: [],                // Empty starred files array
-                        allowedSubjects: null,           // No subject restrictions
+                        tier: 'free',
+                        role: 'user',
+                        starredFiles: [],
+                        allowedSubjects: null,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                } catch (error) {
-                    console.warn('Firestore profile write failed, user can still verify email:', error);
+                } catch (e) {
+                    console.warn('Firestore profile write failed, user can still verify email:', e);
                 }
 
-                // Send email verification with fallback options
+                // Send verification email: try default first, then fallback with action code settings
                 try {
                     try {
-                        // Try default email verification first
                         await user.sendEmailVerification();
                     } catch (primaryError) {
                         console.warn('Default email verification send failed, trying with actionCodeSettings:', primaryError);
-                        // Fallback with custom action code settings
                         const actionCodeSettings = {
                             url: window.location.origin + '/',
                             handleCodeInApp: false
                         };
                         await user.sendEmailVerification(actionCodeSettings);
                     }
-                } catch (error) {
-                    console.error('sendEmailVerification failed:', error);
+                } catch (e) {
+                    console.error('sendEmailVerification failed:', e);
                 }
 
-                // Always redirect to verification page, even if email sending failed
+                // Redirect to the verification instructions page regardless
                 showVerificationMessagePage(email);
-            // =================================================================================
-            // ERROR HANDLING
-            // =================================================================================
-            
             } catch (error) {
                 console.error("Registration Error:", error);
                 
-                // Provide user-friendly error messages based on Firebase error codes
+                // Provide more specific error messages
                 let errorMessage = 'An error occurred during registration. Please try again.';
                 
                 if (error.code === 'auth/email-already-in-use') {
@@ -3381,54 +2160,41 @@
                     errorMessage = 'Too many failed attempts. Please try again later.';
                 }
                 
-                // Display the error message to the user
                 messageEl.textContent = errorMessage;
             } finally {
-                // Always reset the button state, regardless of success or failure
+                // Reset button state
                 const registerButton = document.getElementById('register-button');
                 registerButton.textContent = 'Create Free Account';
                 registerButton.disabled = false;
             }
         }
-        /**
-         * Handles user login process
-         * Authenticates user credentials and manages login state
-         */
         async function handleLogin() {
-            // Get form input values
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember-me').checked;
-            
-            // Get error message elements for validation feedback
             const messageEl = document.getElementById('auth-error');
             const emailErrorEl = document.getElementById('email-error');
             const passwordErrorEl = document.getElementById('password-error');
             
-            // Clear any previous error messages
+            // Clear previous errors
             messageEl.textContent = '';
             emailErrorEl.textContent = '';
             passwordErrorEl.textContent = '';
             
-            // =================================================================================
-            // LOGIN FORM VALIDATION
-            // =================================================================================
-            
-            // Validate email address
+            // Basic validation
             if (!email) {
                 emailErrorEl.textContent = 'Email is required';
                 document.getElementById('email').focus();
                 return;
             }
             
-            // Validate password
             if (!password) {
                 passwordErrorEl.textContent = 'Password is required';
                 document.getElementById('password').focus();
                 return;
             }
             
-            // Email format validation using regex
+            // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 emailErrorEl.textContent = 'Please enter a valid email address';
@@ -3436,24 +2202,19 @@
                 return;
             }
             
-            // =================================================================================
-            // LOGIN AUTHENTICATION PROCESS
-            // =================================================================================
-            
             try {
-                // Show loading state on the login button
+                // Show loading state
                 const loginButton = document.getElementById('login-button');
                 const originalText = loginButton.textContent;
                 loginButton.textContent = 'Signing in...';
                 loginButton.disabled = true;
                 
-                // reCAPTCHA v3 bot protection (if available)
+                // Enterprise reCAPTCHA token acquisition
                 try {
                     if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
                         await grecaptcha.ready();
                         const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                         try {
-                            // Verify reCAPTCHA token with backend (if endpoint exists)
                             const verifyRes = await fetch('/api/recaptcha-verify', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -3469,26 +2230,23 @@
                                 // If backend not present, proceed without blocking login
                                 console.warn('reCAPTCHA verify endpoint not available, proceeding. Status:', verifyRes.status);
                             }
-                        } catch (error) {
+                        } catch (e) {
                             // Network/endpoint issues should not block legitimate logins
-                            console.warn('reCAPTCHA verify request failed, proceeding:', error);
+                            console.warn('reCAPTCHA verify request failed, proceeding:', e);
                         }
                     }
-                } catch (error) {
-                    console.warn('reCAPTCHA token acquisition failed, proceeding:', error);
+                } catch (e) {
+                    console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
                 }
                 
-                // Set authentication persistence based on "Remember Me" checkbox
                 const persistence = rememberMe 
-                    ? firebase.auth.Auth.Persistence.LOCAL    // Persistent across browser sessions
-                    : firebase.auth.Auth.Persistence.SESSION; // Only for current browser session
+                    ? firebase.auth.Auth.Persistence.LOCAL 
+                    : firebase.auth.Auth.Persistence.SESSION;
                 
                 await auth.setPersistence(persistence);
                 
-                // Attempt to sign in with provided credentials
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
-                // Check if user's email is verified
                 if (!userCredential.user.emailVerified) {
                     messageEl.textContent = 'Please verify your email before logging in.';
                     // The onAuthStateChanged listener will handle redirecting them to the verification page.
@@ -3530,70 +2288,47 @@
             }
         }
         
-        /**
-         * Handles user logout process
-         * Signs out the user and cleans up application state
-         */
         async function handleLogout() {
             try {
-                // Clean up reCAPTCHA verifier if it exists
+                // Destroy reCAPTCHA verifier
                 if (recaptchaVerifier) {
                     recaptchaVerifier.clear();
                     recaptchaVerifier = null;
                 }
                 
-                // Sign out from Firebase Authentication
                 await auth.signOut();
-                
-                // Reset application state
-                path = [{ name: 'Root', id: ROOT_FOLDER_ID }];  // Reset navigation path
-                currentFolderFiles = [];                        // Clear current folder files
-                
-                // Note: onAuthStateChanged will handle UI changes automatically
+                // onAuthStateChanged will handle UI changes
+                path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
+                currentFolderFiles = [];
             } catch (error) {
                 console.error("Logout failed:", error);
-                // Even if logout fails, we should still try to reset the UI state
             }
         }
         
-        /**
-         * Resends email verification to the current user
-         * Allows users to request a new verification email if the original was lost
-         */
         async function resendVerificationEmail() {
             const button = document.getElementById('resend-verification-btn');
             const messageEl = document.getElementById('resend-message');
-            
-            // Only allow resending if user exists and email is not verified
             if (auth.currentUser && !auth.currentUser.emailVerified) {
                 try {
-                    // Show loading state
                     button.disabled = true;
                     button.textContent = 'Sending...';
-                    
                     try {
-                        // Try with custom action code settings first
                         const actionCodeSettings = {
                             url: window.location.origin + '/',
                             handleCodeInApp: false
                         };
                         await auth.currentUser.sendEmailVerification(actionCodeSettings);
-                    } catch (error) {
+                    } catch (e) {
                         // Fallback to default if actionCodeSettings not supported in this context
                         await auth.currentUser.sendEmailVerification();
                     }
-                    
-                    // Show success message
                     messageEl.textContent = 'A new verification link has been sent.';
-                    
-                    // Reset button after 5 seconds
                     setTimeout(() => {
                         messageEl.textContent = '';
                         button.disabled = false;
                         button.textContent = 'Resend Verification Email';
                     }, 5000);
                 } catch (error) {
-                    // Handle errors
                     messageEl.textContent = 'Error sending email. Please try again later.';
                     console.error("Error resending verification email:", error);
                     button.disabled = false;
@@ -3602,27 +2337,15 @@
             }
         }
         // =================================================================================
-        // ADMIN & USER SETTINGS MANAGEMENT
+        // ADMIN & USER SETTINGS
         // =================================================================================
-        
-        /**
-         * Renders the admin user management panel
-         * Displays all users in a grid with their details and management options
-         * @param {Object} allUsers - Object containing all user data
-         */
         function renderUserManagementPanel(allUsers) {
             const container = document.getElementById('user-management-grid');
             container.innerHTML = '';
-            
-            // Iterate through all users and create management cards
             Object.values(allUsers).forEach(user => {
-                // Don't show the admin their own card in the management panel
-                if (user.id === currentUser.uid) return;
-                
+                if (user.id === currentUser.uid) return; // Don't show the admin their own card here
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-lg shadow-md flex flex-col';
-                
-                // Create user card HTML with tier and role badges
                 card.innerHTML = `
                     <div class="flex-grow">
                         <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
@@ -3642,26 +2365,16 @@
             });
         }
         
-        /**
-         * Opens the edit user modal for admin user management
-         * Fetches user data and displays an editable form
-         * @param {string} userId - The ID of the user to edit
-         */
         async function openEditUserModal(userId) {
             try {
-                // Fetch user data from Firestore
                 const userDoc = await db.collection('users').doc(userId).get();
                 if (!userDoc.exists) {
                     showToast("User not found!", 'error');
                     return;
                 }
-                
-                // Combine document ID with user data
                 const user = { id: userDoc.id, ...userDoc.data() };
                 const modal = document.getElementById('edit-user-modal');
                 modal.style.display = 'flex';
-                
-                // Create modal HTML with user editing form
                 modal.innerHTML = `
                     <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
                          <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
@@ -3700,8 +2413,6 @@
                          </div>
                     </div>
                 `;
-                
-                // Populate subject checkboxes based on user's allowed subjects
                 const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
                 const userSubjects = user.allowedSubjects || [];
                 SUBJECTS.forEach(subject => {
@@ -3718,20 +2429,12 @@
                 showToast("Could not load user data for editing.", 'error');
             }
         }
-        /**
-         * Handles updating user data from the admin edit modal
-         * Saves changes to Firestore and provides user feedback
-         * @param {string} userId - The ID of the user being updated
-         */
         async function handleUpdateUser(userId) {
             try {
-                // Get form values from the edit modal
                 const newDisplayName = document.getElementById('edit-displayname').value;
                 const newTier = document.getElementById('edit-tier').value;
                 const newRole = document.getElementById('edit-role').value;
                 const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
-                
-                // Update user document in Firestore
                 await db.collection('users').doc(userId).update({
                     displayName: newDisplayName,
                     tier: newTier,
@@ -3739,7 +2442,6 @@
                     allowedSubjects: newSubjects.length > 0 ? newSubjects : null
                 });
                 
-                // Close modal and show success message
                 document.getElementById('edit-user-modal').style.display = 'none';
                 showToast('User updated successfully!', 'success');
             } catch (error) {
@@ -3747,33 +2449,24 @@
                 showToast("Failed to save changes.", 'error');
             }
         }
-        /**
-         * Handles updating user's own account settings
-         * Updates display name and password if provided
-         */
         async function handleUpdateUserSettings() {
             const displayName = document.getElementById('user-displayname').value.trim();
             const newPassword = document.getElementById('user-password').value;
             const messageEl = document.getElementById('user-settings-message');
             messageEl.textContent = '';
-            
             try {
-                // Update display name in Firestore database
+                // Update Firestore display name
                 await db.collection('users').doc(currentUser.uid).update({ displayName });
-                
-                // Update display name in Firebase Auth profile
                 await auth.currentUser.updateProfile({ displayName: displayName });
                 
-                // Update password if a new one was provided
+                // Update password if provided
                 if (newPassword) {
                     await auth.currentUser.updatePassword(newPassword);
                 }
                 
-                // Update local application state
+                // Update local state
                 currentUser.displayName = displayName;
                 updateWelcomeMessage();
-                
-                // Show success message
                 messageEl.textContent = 'Settings saved successfully!';
                 messageEl.className = 'text-green-600 text-sm text-center h-4';
                 setTimeout(() => messageEl.textContent = '', 3000);
@@ -3878,238 +2571,138 @@
         // =================================================================================
         // PAGE/VIEW MANAGEMENT & RENDERING
         // =================================================================================
-        /**
-         * Capitalizes the first letter of a string
-         * @param {string} string - The input string
-         * @returns {string} String with first letter capitalized
-         */
         function capitalizeFirstLetter(string) {
             if (!string) return '';
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
-        
-        /**
-         * Generates a profile picture URL using the user's email initial
-         * @param {string} email - User's email address
-         * @returns {string} URL for placeholder profile picture
-         */
         function generatePfpUrl(email) {
             const initial = (email ? email.charAt(0) : '?').toUpperCase();
             return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
         }
-        
-        /**
-         * Updates the welcome message and user profile information
-         * Displays user's name and updates profile picture
-         */
         function updateWelcomeMessage() {
             if (!currentUser) return;
-            
-            // Get welcome message element and format user's name
             const welcomeEl = document.getElementById('welcome-message');
             const name = capitalizeFirstLetter(currentUser.displayName);
             welcomeEl.textContent = `Welcome, ${name}!`;
-            
-            // Add tooltip for full name display
+            // Ensure truncation has a title tooltip for full name
             welcomeEl.title = `Welcome, ${name}!`;
-            
-            // Update profile picture and form fields
             document.getElementById('profile-picture').src = generatePfpUrl(currentUser.email);
             document.getElementById('user-displayname').value = currentUser.displayName;
             document.getElementById('user-email').value = currentUser.email;
         }
-        /**
-         * Renders an error message in a container with appropriate styling
-         * @param {HTMLElement} container - The container to display the error in
-         * @param {string} message - The error message to display
-         */
         function renderError(container, message) {
             if (container) {
-                // Determine CSS class based on container type
                 const colSpanClass = container.id === 'subject-grid' || container.id === 'playlist-grid' ? 'col-span-full' : '';
-                
-                // Create error display with red styling
                 container.innerHTML = `<div class="${colSpanClass} text-center text-red-600 p-8 bg-red-50/70 rounded-2xl border border-red-200/50"><h3 class="font-bold text-xl text-red-800">Oops! Something went wrong.</h3><p class="mt-2 text-sm text-red-700">${message}</p></div>`;
             }
         }
         
-        /**
-         * Shows the authentication page (login or register)
-         * @param {boolean} showLogin - Whether to show login form (true) or register form (false)
-         */
         function showAuthPage(showLogin = true) {
-            // Hide landing page and show login page
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.remove('hidden');
-            
-            // Get form elements
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
             const formTitle = document.getElementById('form-title');
-            
             if (showLogin) {
-                // Show login form and hide register form
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
                 formTitle.textContent = 'Your Ultimate Revision Hub';
             } else {
-                // Show register form and hide login form
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
                 formTitle.textContent = 'Create a Free Account';
             }
-            
-            // Clear any previous error messages
             document.getElementById('auth-error').textContent = '';
             document.getElementById('register-error').textContent = '';
         }
         
-        /**
-         * Shows the email verification page after user registration
-         * @param {string} email - The email address verification was sent to
-         */
         function showVerificationMessagePage(email) {
-            // Hide all other pages
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('main-app').classList.add('hidden');
-            
-            // Show verification page
             document.getElementById('email-verify-page').classList.remove('hidden');
-            
-            // Display the email address in the message
             const emailDisplay = document.getElementById('verification-email-display');
             if (email) {
                 emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
             }
         }
 
-        /**
-         * Generic function to show any page by hiding all others
-         * @param {string} pageId - The ID of the page to show
-         */
         function showPage(pageId) {
-            // Get all page elements
             const pages = document.querySelectorAll('.page');
             let current = null;
-            
-            // Find the currently visible page
             pages.forEach(page => {
                 if (!page.classList.contains('hidden')) current = page;
             });
             const newPage = document.getElementById(pageId);
             if (!newPage) return;
 
-            // Check if we're on mobile to disable animations
-            const isMobile = window.innerWidth <= 768;
-            
             if (current && current !== newPage) {
-                if (isMobile) {
-                    // On mobile, hide immediately without animation
+                // Modern iOS-like leave
+                current.classList.add('page-leave-modern');
+                setTimeout(() => {
                     current.classList.add('hidden');
-                } else {
-                    // On desktop, use modern iOS-like leave animation
-                    current.classList.add('page-leave-modern');
-                    setTimeout(() => {
-                        current.classList.add('hidden');
-                        current.classList.remove('page-leave-modern');
-                    }, 340);
-                }
+                    current.classList.remove('page-leave-modern');
+                }, 340);
             }
 
-            // Prepare for enter animation with smooth height transition
+            // Enter animation with slight delay to avoid overlap
+            // Prevent layout jank by measuring and pre-setting height
             const container = document.getElementById('page-container') || newPage.parentElement;
             const prevHeight = current ? current.offsetHeight : 0;
             const nextHeight = newPage.offsetHeight;
-            
-            // Prevent layout jank by pre-setting container height
             if (container && prevHeight) container.style.minHeight = prevHeight + 'px';
 
             requestAnimationFrame(() => {
-                // Show new page
                 newPage.classList.remove('hidden');
-                
-                if (isMobile) {
-                    // On mobile, show immediately without animation
-                    if (container) {
-                        container.style.minHeight = '';
-                        container.style.transition = '';
-                    }
-                } else {
-                    // On desktop, add enter animation
-                    newPage.classList.add('page-enter-modern');
-                    
-                    // Smooth container height morph to new page height
-                    if (container) {
-                        const h = newPage.offsetHeight || nextHeight || prevHeight;
-                        container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
-                        container.style.minHeight = h + 'px';
-                        setTimeout(() => { container.style.minHeight = ''; container.style.transition = ''; }, 380);
-                    }
-                    setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
+                newPage.classList.add('page-enter-modern');
+                // Smooth container height morph
+                if (container) {
+                    const h = newPage.offsetHeight || nextHeight || prevHeight;
+                    container.style.transition = 'min-height 360ms cubic-bezier(0.22,1,0.36,1)';
+                    container.style.minHeight = h + 'px';
+                    setTimeout(() => { container.style.minHeight = ''; container.style.transition = ''; }, 380);
                 }
+                setTimeout(() => newPage.classList.remove('page-enter-modern'), 540);
             });
 
-            // Update navigation active state
+            // Update nav active state
             document.querySelectorAll('.nav-link').forEach(l => {
                 l.classList.remove('active');
                 if (l.dataset.page === pageId) l.classList.add('active');
             });
-            
-            // Update document title if available
+            // Update document title
             try { if (pageTitles[pageId]) document.title = pageTitles[pageId]; } catch (_) {}
-            
-            // Close mobile menu on navigation
+            // Lessons removed
+             // Close mobile menu on navigation
             const mobileMenu = document.getElementById('mobile-menu');
             if (!mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.add('hidden');
             }
         }
-        /**
-         * Displays an announcement banner at the top of the page
-         * @param {string} message - The announcement message to display
-         */
         function showAnnouncement(message) {
             const announcementBanner = document.getElementById('site-announcement-banner');
             if (message && message.trim() !== '') {
-                // Create announcement banner with dismiss button
                 announcementBanner.innerHTML = `<div class="bg-blue-600 text-white p-3 text-center text-sm font-semibold flex justify-center items-center relative"><span>${message}</span><button onclick="this.parentElement.parentElement.style.display='none'" class="font-bold text-xl px-2 absolute right-2" data-tooltip="Dismiss">×</button></div>`;
                 announcementBanner.classList.remove('hidden');
             } else {
-                // Hide banner if no message
                 announcementBanner.classList.add('hidden');
             }
         }
-        
-        /**
-         * Posts a new announcement (admin only)
-         * Saves announcement to Firestore database
-         */
         async function postAnnouncement() {
             if (currentUser.role !== 'admin') return;
-            
-            // Get announcement text from input field
             const text = document.getElementById('announcement-text').value.trim();
-            
             try {
-                // Save announcement to Firestore
                 await db.collection('settings').doc('announcement').set({ message: text });
-                showToast('Announcement posted!', 'success');
+                 showToast('Announcement posted!', 'success');
             } catch (error) {
                 console.error("Error posting announcement:", error);
                 showToast("Could not post announcement.", 'error');
             }
         }
         
-        /**
-         * Clears the current announcement (admin only)
-         * Removes announcement from Firestore database
-         */
         async function clearAnnouncement() {
             if (currentUser.role !== 'admin') return;
-            
             try {
-                // Clear announcement in Firestore
                 await db.collection('settings').doc('announcement').set({ message: '' });
                 document.getElementById('announcement-text').value = '';
                 showToast('Announcement cleared!', 'success');
@@ -4118,15 +2711,10 @@
                 showToast("Could not clear announcement.", 'error');
             }
         }
-        /**
-         * Renders the main dashboard with subject folders
-         * Shows skeleton loader while fetching data from Google Drive API
-         */
         async function renderDashboard() {
             const subjectGrid = document.getElementById('subject-grid');
             if (!subjectGrid) return;
-            
-            // Show skeleton loader while loading
+            // Render skeleton loader
             let skeletonHTML = '';
             for (let i = 0; i < 10; i++) {
                 skeletonHTML += '<div class="h-36 skeleton"></div>';
@@ -4134,7 +2722,7 @@
             subjectGrid.innerHTML = skeletonHTML;
             
             try {
-                // Try multiple API endpoints in case Pages is configured differently
+                // Try multiple function routes in case Pages is configured differently
                 let data = null;
                 const subjectUrls = [
                     `/api/drive-subjects?root=${encodeURIComponent(ROOT_FOLDER_ID)}`,
@@ -4155,8 +2743,6 @@
                     } catch (e) { lastErr = e; }
                 }
                 if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
-                
-                // Store all subject folders in global variable
                 allSubjectFolders = {};
                 if (data.files) {
                     data.files.forEach(folder => {
@@ -4164,31 +2750,25 @@
                     });
                 }
                 
-                // Clear grid and determine which subjects to show
                 subjectGrid.innerHTML = '';
                 const userAllowedSubjects = currentUser.allowedSubjects;
                 let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
-                
-                // Show message if user has no subject access
                 if (subjectsToShow.length === 0) {
                     subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
                     return;
                 }
-                // Map subjects to their exam boards for display badges
                 const examBoardBySubject = {
-                    // AQA exam board subjects
+                    // AQA
                     biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
-                    // Edexcel exam board subjects
+                    // Edexcel
                     music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
-                    // OCR exam board subjects
+                    // OCR
                     computing: 'OCR', geography: 'OCR',
-                    // Subjects available for multiple boards
+                    // Both
                     english: 'AQA & Edexcel',
-                    // Eduqas exam board subjects
+                    // Eduqas
                     'philosophy and ethics': 'Eduqas'
                 };
-                
-                // Create subject cards for each available subject
                 subjectsToShow.forEach(subject => {
                     const subjectId = allSubjectFolders[subject.toLowerCase()];
                     const card = document.createElement('div');
@@ -4196,24 +2776,18 @@
                     const board = examBoardBySubject[subject.toLowerCase()];
                     const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
                     const name = subject && subject.trim() ? subject : 'Subject';
-                    // Build DOM nodes manually to avoid async repaint issues
+                    // Build DOM nodes instead of innerHTML to avoid any async repaint issue
                     const wrapper = document.createElement('div');
                     wrapper.className = 'flex flex-col items-center justify-center gap-2';
-                    
-                    // Create icon container
                     const iconHost = document.createElement('div');
                     iconHost.className = 'flex items-center justify-center h-12 w-12';
                     iconHost.innerHTML = `${iconSvg}`;
                     wrapper.appendChild(iconHost);
-                    
-                    // Create subject title
                     const title = document.createElement('h3');
                     title.className = 'text-xl font-bold text-gray-800';
                     title.textContent = name;
                     title.setAttribute('data-animate','fade-up');
                     wrapper.appendChild(title);
-                    
-                    // Add exam board badge if available
                     if (badge) {
                         const badgeWrap = document.createElement('div');
                         badgeWrap.innerHTML = badge;
@@ -4221,57 +2795,36 @@
                     }
                     card.appendChild(wrapper);
                     if (subjectId) {
-                        // Style card as clickable with hover effects
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/70 border border-white/30 brand-gradient hover-raise min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
-                        
-                        // Add click handler for subject navigation
                         card.addEventListener('click', () => {
-                            // Check if user needs to upgrade
                             if (currentUser.tier === 'free') {
                                 document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
                                 document.getElementById('upgrade-modal').style.display = 'flex';
                                 return;
                             }
-                            
-                            // Navigate to subject folder
                             path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
                             handleNavigation(subjectId);
                             showPage('file-browser-page');
                         });
                     } else {
-                        // Style card as disabled (folder not available)
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[120px]';
                         card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
                     }
-                    
-                    // Add card to the grid
                     subjectGrid.appendChild(card);
                 });
             } catch (err) {
-                // Display error message in grid and show toast notification
                 renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
                 showToast(`Subjects failed to load: ${err.message}`, 'error');
             }
         }
-        
-        /**
-         * Handles navigation to a specific folder
-         * @param {string} folderId - The Google Drive folder ID to navigate to
-         */
         async function handleNavigation(folderId) {
             await fetchAndRenderFiles(folderId);
         }
-        /**
-         * Fetches and renders files from a Google Drive folder
-         * Shows loading overlay and handles API requests
-         * @param {string} folderId - The Google Drive folder ID to fetch files from
-         */
         async function fetchAndRenderFiles(folderId) {
             const fileListContainer = document.getElementById('file-list');
             fileListContainer.setAttribute('aria-busy','true');
-            
-            // Create or get full-screen loading overlay
+            // Full-screen smooth overlay
             let overlay = document.getElementById('page-loading-overlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -4284,12 +2837,10 @@
                 </div>';
                 document.body.appendChild(overlay);
             }
-            
-            // Show loading overlay with smooth animation
             overlay.classList.remove('hidden');
             requestAnimationFrame(() => overlay.classList.add('visible'));
             try {
-                // Try multiple API endpoints in case Pages is configured differently
+                // Try multiple function routes in case Pages is configured differently
                 let data = null;
                 const fileUrls = [
                     `/api/drive-files?folderId=${encodeURIComponent(folderId)}`,
@@ -4297,8 +2848,6 @@
                     `/functions/drive-files?folderId=${encodeURIComponent(folderId)}`
                 ];
                 let lastErr = null;
-                
-                // Try each endpoint until one works
                 for (const u of fileUrls) {
                     try {
                         const res = await fetch(u);
@@ -4311,21 +2860,14 @@
                         break;
                     } catch (e) { lastErr = e; }
                 }
-                
                 if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
-                
-                // Store files and render them
                 currentFolderFiles = data.files;
                 renderItems();
             } catch (err) {
-                // Display error message in file list container
                 renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
             } finally {
-                // Always update breadcrumbs and clean up
                 renderBreadcrumbs();
                 fileListContainer.setAttribute('aria-busy','false');
-                
-                // Hide loading overlay with smooth animation
                 if (overlay) {
                     overlay.classList.remove('visible');
                     setTimeout(() => overlay.classList.add('hidden'), 220);
@@ -4333,11 +2875,6 @@
             }
         }
         
-        /**
-         * Escapes HTML special characters to prevent XSS attacks
-         * @param {string} str - The string to escape
-         * @returns {string} HTML-escaped string
-         */
         function escapeHtml(str) {
             return String(str)
                 .replace(/&/g, '&amp;')
@@ -4347,17 +2884,11 @@
                 .replace(/'/g, '&#39;');
         }
 
-        /**
-         * Converts a date to a human-readable relative time string
-         * @param {Date} date - The date to convert
-         * @returns {string} Relative time string (e.g., "2 hours ago")
-         */
         function timeAgo(date) {
             try {
                 const now = new Date();
                 const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
                 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-                // Return appropriate relative time based on seconds difference
                 if (seconds < 60) return rtf.format(-Math.max(1, seconds), 'second');
                 if (seconds < 3600) return rtf.format(-Math.floor(seconds/60), 'minute');
                 if (seconds < 86400) return rtf.format(-Math.floor(seconds/3600), 'hour');
@@ -4366,42 +2897,23 @@
                 if (seconds < 31536000) return rtf.format(-Math.floor(seconds/2592000), 'month');
                 return rtf.format(-Math.floor(seconds/31536000), 'year');
             } catch (_) {
-                // Fallback to locale string if relative time formatting fails
                 return date.toLocaleString();
             }
         }
 
-        /**
-         * Highlights search query matches in text with yellow background
-         * @param {string} text - The text to search in
-         * @param {string} query - The search query to highlight
-         * @returns {string} HTML with highlighted matches
-         */
         function highlightMatch(text, query) {
             if (!query) return escapeHtml(text);
-            
-            // Escape the text to prevent XSS
             const safeText = escapeHtml(text);
-            
-            // Escape regex special characters in the query
             const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const re = new RegExp(escaped, 'gi');
-            
-            // Replace matches with highlighted spans
             return safeText.replace(re, (m) => `<span class="bg-yellow-200 text-gray-900 rounded px-0.5">${m}</span>`);
         }
 
-        /**
-         * Renders the file list with search, filtering, and sorting
-         * Shows loading spinner during search and handles empty states
-         */
         function renderItems() {
             const container = document.getElementById('file-list');
             const rawQuery = document.getElementById('file-search-input').value || '';
             const searchInput = rawQuery.toLowerCase();
             const searchIconHost = document.querySelector('#file-browser-controls .relative');
-            
-            // Show/hide search loading spinner
             if (searchIconHost && searchInput.length > 0) {
                 if (!searchIconHost.querySelector('.dots-spinner')) {
                     const dot = document.createElement('div');
@@ -4413,24 +2925,21 @@
                 const ds = searchIconHost.querySelector('.dots-spinner');
                 if (ds) ds.remove();
             }
-            
             const sortOrder = document.getElementById('file-sort-select').value;
         
-            // Clear previous items
-            container.innerHTML = '';
+            container.innerHTML = ''; // Clear previous items
         
-            // Filter files based on search query
+            // 1. Filter
             let filteredFiles = currentFolderFiles.filter(file => 
                 file.name.toLowerCase().includes(searchInput)
             );
         
-            // Show message if no files match search
             if (!filteredFiles || filteredFiles.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No files found.</h3></div>`;
                 return;
             }
         
-            // Sort files: starred first, then folders, then alphabetically
+            // 2. Sort
             const starredFiles = currentUser.starredFiles || [];
             filteredFiles.sort((a, b) => {
                 const a_isStarred = starredFiles.includes(a.id);
@@ -4438,45 +2947,34 @@
                 const a_isFolder = a.mimeType === 'application/vnd.google-apps.folder';
                 const b_isFolder = b.mimeType === 'application/vnd.google-apps.folder';
         
-                // Starred files come first
                 if (a_isStarred !== b_isStarred) return a_isStarred ? -1 : 1;
-                // Folders come before files
                 if (a_isFolder !== b_isFolder) return a_isFolder ? -1 : 1;
         
-                // Sort alphabetically (A-Z or Z-A)
                 return sortOrder === 'az'
                     ? a.name.localeCompare(b.name)
                     : b.name.localeCompare(a.name);
             });
         
-            // Render files in grid or list view
+            // 3. Render (based on view)
             if (fileBrowserView === 'grid') {
-                // Set grid layout with responsive columns
                 container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
-                
-                // Create grid items for each file
                 filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
-                    
-                    // Create grid item element with hover effects
                     const itemElement = document.createElement('div');
                     itemElement.className = `relative p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl bg-white/50 border ${isStarred ? 'border-yellow-400' : 'border-white/30'} backdrop-blur-lg opacity-0 translate-y-2 min-h-[100px]`;
                     
-                    // Create main content area with file icon and name
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
                     const highlightedName = highlightMatch(file.name, rawQuery.trim());
                     mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-12 h-12 mb-2" alt="${escapeHtml(file.name)}"><p class="text-sm font-medium text-gray-800 break-words w-full">${highlightedName}</p>`;
         
-                    // Add click handlers for navigation or preview
                     if (isFolder) {
                         itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
                         itemElement.addEventListener('click', () => showPreview(file));
                     }
                     
-                    // Add action buttons for files (star and download)
                     if (!isFolder) {
                         const actions = document.createElement('div');
                         actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
@@ -4485,12 +2983,9 @@
                             <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                         itemElement.appendChild(actions);
                     }
-                    
-                    // Add main content and append to container
                     itemElement.appendChild(mainInfo);
                     container.appendChild(itemElement);
-                    
-                    // Animate items in with staggered delay
+                    // animate in, staggered
                     setTimeout(() => {
                         itemElement.classList.remove('opacity-0','translate-y-2');
                         itemElement.classList.add('opacity-100','translate-y-0');
@@ -4498,94 +2993,61 @@
                     }, Math.min(index, 20) * 22);
                 });
             } else { // List view
-                // Set list layout
                 container.className = 'p-4 overflow-y-auto flex-grow';
-                
-                // Create list items for each file
                 filteredFiles.forEach((file, index) => {
                     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
                     const isStarred = starredFiles.includes(file.id);
-                    
-                    // Create list item element
                     const itemElement = document.createElement('div');
                     itemElement.className = `flex items-center p-3 sm:p-4 rounded-lg hover:bg-black/5 transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2 min-h-[60px]`;
-                    
-                    // Create main content area with file icon and name
                     const mainInfo = document.createElement('div');
                     mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
                     const highlightedName = highlightMatch(file.name, rawQuery.trim());
                     mainInfo.innerHTML = `<img src="${file.iconLink}" class="w-6 h-6 mr-3 flex-shrink-0" alt="${escapeHtml(file.name)}"><span class="truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span>`;
                     
-                    // Add click handlers for navigation or preview
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
                         mainInfo.addEventListener('click', () => showPreview(file));
                     }
-                    // Create action buttons container
                     const actions = document.createElement('div');
                     actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
-                    
-                    // Add star and download buttons for files only
                     if (!isFolder) {
                         actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                         const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                         actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                     }
-                    
-                    // Add elements to list item and container
                     itemElement.appendChild(mainInfo);
                     itemElement.appendChild(actions);
                     container.appendChild(itemElement);
-                    
-                    // Animate items in with staggered delay
                     setTimeout(() => {
                         itemElement.classList.remove('opacity-0','translate-y-2');
                         itemElement.classList.add('opacity-100','translate-y-0');
                     }, Math.min(index, 20) * 15);
                 });
             }
-            
-            // Re-initialize tooltips for new elements
-            initializeTooltips();
+            initializeTooltips(); // Re-initialize tooltips for new elements
         }
-        /**
-         * Toggles the starred status of a file
-         * Updates Firestore database and shows visual feedback
-         * @param {string} fileId - The ID of the file to toggle star status
-         * @param {Event} event - The click event
-         */
         async function handleToggleStar(fileId, event) {
             event.stopPropagation();
             const starButton = event.currentTarget;
             const userRef = db.collection('users').doc(currentUser.uid);
             const starredFiles = currentUser.starredFiles || [];
             const isCurrentlyStarred = starredFiles.includes(fileId);
-            
-            // Determine whether to add or remove the file from starred list
             const updateAction = isCurrentlyStarred 
                 ? firebase.firestore.FieldValue.arrayRemove(fileId)
                 : firebase.firestore.FieldValue.arrayUnion(fileId);
-            
             try {
-                // Update starred files in Firestore
                 await userRef.update({ starredFiles: updateAction });
-                
-                // Optimistically update local state
+                // Optimistically update UI
                 if (isCurrentlyStarred) {
-                    // Remove file from starred list
                     currentUser.starredFiles = starredFiles.filter(id => id !== fileId);
                 } else {
-                    // Add file to starred list
                     currentUser.starredFiles.push(fileId);
-                    
-                    // Add pop animation and sparkle burst effect
+                    // Pop + sparkle burst
                     starButton.classList.add('pop-animation');
                     const burst = document.createElement('div');
                     burst.className = 'sparkle-burst';
                     const rays = 6;
-                    
-                    // Create sparkle rays
                     for (let i = 0; i < rays; i++) {
                         const s = document.createElement('span');
                         const angle = (Math.PI * 2 * i) / rays;
@@ -4599,15 +3061,11 @@
                         burst.appendChild(s);
                     }
                     starButton.appendChild(burst);
-                    
-                    // Remove animation after completion
                     setTimeout(() => {
                         starButton.classList.remove('pop-animation');
                         burst.remove();
                     }, 380);
                 }
-                
-                // Re-render items to reflect changes
                 renderItems();
             } catch (error) {
                 console.error("Error updating starred files:", error);
@@ -5348,12 +3806,8 @@
         // Toast notifications (success, error, warning) rendered top-center
         function showToast(message, type = 'success', options = {}) {
             const { duration = 3500, title } = options;
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                // Fallback: show alert if toast container is missing
-                alert(message);
-                return;
-            }
+            const container = document.getElementById('toast-container');
+            if (!container) return alert(message);
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.setAttribute('role', 'status');
@@ -5886,19 +4340,13 @@
                         loaded = true;
                         clearTimeout(timeoutId);
                         hideLoading();
-                        // Preview loaded successfully - log in development only
-                        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                            console.log('Preview loaded successfully');
-                        }
+                        console.log('Preview loaded successfully');
                         
                         // Double-check after a short delay to ensure content is visible
                         setTimeout(() => {
                             if (frame.style.display !== 'none' && frame.offsetHeight > 0) {
                                 // Frame is visible and has content
-                                // Preview confirmed visible - log in development only
-                                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                                    console.log('Preview confirmed visible');
-                                }
+                                console.log('Preview confirmed visible');
                             }
                         }, 500);
                     }, { once: true });
@@ -5924,10 +4372,7 @@
                             const originalSrc = frame.src.split('?')[0].split('&')[0];
                             frame.src = originalSrc + '?reload=' + Date.now();
                             
-                            // Manual preview reload triggered - log in development only
-                            if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                                console.log('Manual preview reload triggered');
-                            }
+                            console.log('Manual preview reload triggered');
                         });
                     }
                 }
@@ -6146,15 +4591,22 @@
                     // Close mobile menu if open
                     const mobileMenu = document.getElementById('mobile-menu');
                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                        // Close immediately without animation
-                        mobileMenu.classList.add('hidden');
-                        mobileMenu.style.display = 'none';
+                        // Use the same close animation
+                        mobileMenu.style.transform = 'translateX(100%)';
+                        mobileMenu.style.opacity = '0';
                         const hamburgerButton = document.getElementById('hamburger-button');
                         if (hamburgerButton) {
                             hamburgerButton.setAttribute('aria-expanded', 'false');
-                            hamburgerButton.focus();
                         }
-                        document.body.style.overflow = '';
+                        
+                        setTimeout(() => {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.style.display = 'none';
+                            document.body.style.overflow = '';
+                            if (hamburgerButton) {
+                                hamburgerButton.focus();
+                            }
+                        }, 300);
                     }
                 } else if (e.key.toLowerCase() === 'g') {
                     goPrefix = true;
@@ -6278,26 +4730,38 @@
             
             if (hamburgerButton && mobileMenu && closeMenuButton) {
                 hamburgerButton.addEventListener('click', () => {
-                    // Show menu immediately without animation
+                    // Show menu first, then animate in
                     mobileMenu.style.display = 'block';
                     mobileMenu.classList.remove('hidden');
                     hamburgerButton.setAttribute('aria-expanded', 'true');
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
                     
+                    // Trigger animation on next frame
+                    requestAnimationFrame(() => {
+                        mobileMenu.style.transform = 'translateX(0)';
+                        mobileMenu.style.opacity = '1';
+                    });
+                    
                     // Focus management for accessibility
                     const firstFocusableElement = mobileMenu.querySelector('a, button');
                     if (firstFocusableElement) {
-                        setTimeout(() => firstFocusableElement.focus(), 50);
+                        setTimeout(() => firstFocusableElement.focus(), 100);
                     }
                 });
                 
                 closeMenuButton.addEventListener('click', () => {
-                    // Hide menu immediately without animation
-                    mobileMenu.classList.add('hidden');
-                    mobileMenu.style.display = 'none';
+                    // Animate out first, then hide
+                    mobileMenu.style.transform = 'translateX(100%)';
+                    mobileMenu.style.opacity = '0';
                     hamburgerButton.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = ''; // Restore scrolling
-                    hamburgerButton.focus(); // Return focus to hamburger button
+                    
+                    // Hide menu after animation completes
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
+                        document.body.style.overflow = ''; // Restore scrolling
+                        hamburgerButton.focus(); // Return focus to hamburger button
+                    }, 300);
                 });
                 
                 // Handle mobile menu links
@@ -6337,14 +4801,20 @@
                     }
                 }, 250));
                 
-                // Helper function to close mobile menu immediately
+                // Helper function to close mobile menu with animation
                 function closeMobileMenu() {
-                    // Hide menu immediately without animation
-                    mobileMenu.classList.add('hidden');
-                    mobileMenu.style.display = 'none';
+                    // Animate out first, then hide
+                    mobileMenu.style.transform = 'translateX(100%)';
+                    mobileMenu.style.opacity = '0';
                     hamburgerButton.setAttribute('aria-expanded', 'false');
-                    document.body.style.overflow = ''; // Restore scrolling
-                    hamburgerButton.focus(); // Return focus to hamburger button
+                    
+                    // Hide menu after animation completes
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
+                        document.body.style.overflow = ''; // Restore scrolling
+                        hamburgerButton.focus(); // Return focus to hamburger button
+                    }, 300);
                 }
             }
             
@@ -6372,24 +4842,13 @@
             const gapiScript = document.createElement('script');
             gapiScript.src = "https://apis.google.com/js/api.js";
             gapiScript.onload = () => window.gapiLoaded();
-            gapiScript.onerror = () => {
-                console.error('Failed to load Google API script');
-                // Show user-friendly error message
-                showToast('Google Drive integration temporarily unavailable', 'warning');
-            };
+            gapiScript.onerror = () => console.error('Failed to load Google API script');
             document.head.appendChild(gapiScript);
         });
 
         // Global error handling to prevent silent failures
         window.addEventListener('error', (e) => {
             console.error('Unhandled error:', e.error || e.message);
-            
-            // Don't show errors for Firebase 400 errors (connection issues)
-            if (e.message && e.message.includes('400')) {
-                console.warn('Firebase connection issue detected, retrying...');
-                return;
-            }
-            
             try { 
                 showToast('An unexpected error occurred. Please refresh the page.', 'error'); 
             } catch (_) {
@@ -6400,13 +4859,6 @@
         
         window.addEventListener('unhandledrejection', (e) => {
             console.error('Unhandled promise rejection:', e.reason);
-            
-            // Don't show errors for Google AdSense script loading issues
-            if (e.reason && typeof e.reason === 'string' && e.reason.includes('adtrafficquality.google')) {
-                console.warn('Google AdSense script loading issue, ignoring...');
-                return;
-            }
-            
             try { 
                 showToast('Something went wrong. Please try again.', 'error'); 
             } catch (_) {
@@ -6435,29 +4887,6 @@
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 showToast('Network error. Please check your connection and try again.', 'error');
                 return 'Network error occurred';
-            }
-            
-            // Handle Firebase 400 errors specifically
-            if (error.code === 400 || (error.message && error.message.includes('400'))) {
-                console.warn('Firebase connection issue, will retry automatically');
-                // Retry after a short delay
-                setTimeout(() => {
-                    try {
-                        if (db) {
-                            // Test connection with a simple query
-                            db.collection('settings').doc('announcement').get()
-                                .then(() => {
-                                    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-                                        console.log('Firebase connection restored');
-                                    }
-                                })
-                                .catch(() => console.warn('Firebase still having issues'));
-                        }
-                    } catch (e) {
-                        console.warn('Firebase retry failed:', e);
-                    }
-                }, 2000);
-                return 'Firebase connection issue';
             }
             
             showToast('Something went wrong. Please try again.', 'error');
@@ -6746,125 +5175,7 @@
             debounceTimers.forEach(timer => clearTimeout(timer));
             throttleTimers.forEach(timer => clearTimeout(timer));
         });
-        
-        // =================================================================================
-        // LEGACY ANNOTATION SYSTEM REMOVED
-        // =================================================================================
-        // The original legacy annotation module has been removed and replaced by the
-        // modern whiteboard overlay implementation. To avoid breaking older callers,
-        // expose small compatibility shims that delegate to the new whiteboard where
-        // possible, or act as no-ops.
-
-        // Explicitly mark legacy annotations disabled
-        window.__useLegacyAnnotations = false;
-
-        function initializeAnnotationSystem(file, containerId) {
-            console.log('initializeAnnotationSystem: legacy annotation system removed. Use enterWhiteboard() to open the whiteboard overlay.');
-        }
-
-        function setupPDFAnnotationCanvas(container) {
-            // No-op: PDF preview remains unchanged; use the whiteboard overlay instead.
-            return;
-        }
-
-        function toggleAnnotationMode() {
-            // Prefer the modern whiteboard entrypoint if available
-            if (typeof window.enterWhiteboard === 'function') return window.enterWhiteboard();
-            console.log('toggleAnnotationMode: legacy annotation system removed.');
-        }
-
-        function selectAnnotationTool(toolName) {
-            if (typeof window.selectAnnotationTool === 'function') return window.selectAnnotationTool(toolName);
-            console.log('selectAnnotationTool: legacy function removed. Use whiteboard toolbar instead. Requested tool:', toolName);
-        }
-
-        async function saveAnnotations(){ console.log('saveAnnotations: legacy removed'); }
-        async function loadAnnotations(fileId){ console.log('loadAnnotations: legacy removed'); }
-        function clearAllAnnotations(){ console.log('clearAllAnnotations: legacy removed'); }
-        function setupAnnotationKeyboardShortcuts(){ /* legacy no-op */ }
-
-        // Start modern whiteboard keyboard shortcuts and mobile optimizations when DOM ready
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof setupWhiteboardKeyboardShortcuts === 'function') setupWhiteboardKeyboardShortcuts();
-            if (typeof setupMobileOptimizations === 'function') setupMobileOptimizations();
-        });
-        
-        /**
-         * Sets up mobile-specific optimizations
-         */
-        function setupMobileOptimizations() {
-            // Check if device is mobile
-            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                // Add mobile class to body for additional CSS targeting
-                document.body.classList.add('mobile-device');
-                
-                // Improve touch handling
-                document.addEventListener('touchstart', function() {}, {passive: true});
-                document.addEventListener('touchmove', function() {}, {passive: true});
-                
-                // Prevent zoom on double tap
-                let lastTouchEnd = 0;
-                document.addEventListener('touchend', function (event) {
-                    const now = (new Date()).getTime();
-                    if (now - lastTouchEnd <= 300) {
-                        event.preventDefault();
-                    }
-                    lastTouchEnd = now;
-                }, false);
-                
-                // Improve mobile menu touch handling
-                const mobileMenu = document.getElementById('mobile-menu');
-                if (mobileMenu) {
-                    // Add touch event listeners for better mobile interaction
-                    mobileMenu.addEventListener('touchstart', function(e) {
-                        e.stopPropagation();
-                    }, {passive: true});
-                    
-                    mobileMenu.addEventListener('touchmove', function(e) {
-                        e.stopPropagation();
-                    }, {passive: true});
-                }
-                
-                // Improve button touch handling
-                const buttons = document.querySelectorAll('button, a, [role="button"]');
-                buttons.forEach(button => {
-                    button.addEventListener('touchstart', function() {
-                        this.style.transform = 'scale(0.98)';
-                    }, {passive: true});
-                    
-                    button.addEventListener('touchend', function() {
-                        this.style.transform = '';
-                    }, {passive: true});
-                });
-            }
-        }
-        
-        // Initialize mobile optimizations
-        setupMobileOptimizations();
-        
-        // End of main application script
     </script>
-
-    <!-- Cloudflare Insights removed for local/testing to avoid parser-blocking and blocked-by-client errors.
-         To re-enable in production, either include the script async via a server-side config
-         or dynamically load it after user-consent:
-    
-    <script>
-        // Example dynamic loader (uncomment in production):
-        // (function(){
-        //   var s = document.createElement('script');
-        //   s.src = 'https://static.cloudflareinsights.com/beacon.min.js/<YOUR_BUILD_HASH>';
-        //   s.defer = true; s.crossOrigin = 'anonymous';
-        //   document.head.appendChild(s);
-        // })();
-    </script>
-    -->
-
-    <!-- Local no-op for analytics (keeps window._cfAnalytics references safe) -->
-    <script>
-        window._cfAnalytics = window._cfAnalytics || { beacon: function(){ /* no-op for local testing */ } };
-    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
 </html>
