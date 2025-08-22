@@ -1,21 +1,4 @@
 
-<!--
-CHANGELOG - GCSEMate Production-Ready Overhaul
-==============================================
-✅ HTML5 semantic structure with proper accessibility
-✅ Comprehensive responsive design (mobile-first)
-✅ Modern animations with reduced-motion support
-✅ Sales-optimized GCSE content structure
-✅ GDPR-compliant cookie consent system
-✅ Performance optimizations (lazy loading, critical CSS)
-✅ SEO enhancements with structured data
-✅ Error handling and debug utilities
-✅ Dark mode support via prefers-color-scheme
-✅ Enhanced keyboard navigation and focus management
-
-Changes made: Complete production overhaul for GCSE revision platform
-Risk: Comprehensive update - test all functionality post-deployment
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,48 +15,11 @@ Risk: Comprehensive update - test all functionality post-deployment
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#2563eb">
     <link rel="canonical" href="/">
-    <!-- Enhanced Open Graph and Social Media -->
+    <!-- Open Graph -->
     <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
     <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
-    <meta property="og:url" content="https://gcsemate.com">
-    <meta property="og:site_name" content="GCSEMate">
-    <meta property="og:locale" content="en_GB">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
-    <meta name="twitter:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
-    <meta name="twitter:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
-    
-    <!-- Additional SEO -->
-    <meta name="application-name" content="GCSEMate">
-    <meta name="msapplication-TileColor" content="#2563eb">
-    <meta name="msapplication-config" content="browserconfig.xml">
-    
-    <!-- Structured Data for Education Platform -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
-      "name": "GCSEMate",
-      "description": "The ultimate GCSE revision platform with organized study materials, past papers, and interactive resources.",
-      "url": "https://gcsemate.com",
-      "logo": "https://gcsemate.com/gcsemate-new.png",
-      "sameAs": [],
-      "offers": {
-        "@type": "Offer",
-        "category": "Educational Services",
-        "description": "GCSE revision materials and study resources"
-      },
-      "educationalCredentialAwarded": "GCSE Preparation",
-      "audience": {
-        "@type": "EducationalAudience",
-        "educationalRole": "student"
-      }
-    }
-    </script>
 
     <link rel="icon" type="image/png" href="gcsemate favicon.png">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
@@ -104,96 +50,8 @@ Risk: Comprehensive update - test all functionality post-deployment
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
     <style>
-        /* CSS Custom Properties for Consistent Theming and Dark Mode Support */
         :root {
-            /* Color System - Light Theme (Default) */
-            --color-primary: #2563eb;
-            --color-primary-hover: #1d4ed8;
-            --color-primary-light: #dbeafe;
-            --color-secondary: #10b981;
-            --color-secondary-hover: #059669;
-            --color-accent: #f59e0b;
-            --color-danger: #dc2626;
-            --color-danger-hover: #b91c1c;
-            
-            /* Neutral Colors */
-            --color-white: #ffffff;
-            --color-gray-50: #f9fafb;
-            --color-gray-100: #f3f4f6;
-            --color-gray-200: #e5e7eb;
-            --color-gray-300: #d1d5db;
-            --color-gray-400: #9ca3af;
-            --color-gray-500: #6b7280;
-            --color-gray-600: #4b5563;
-            --color-gray-700: #374151;
-            --color-gray-800: #1f2937;
-            --color-gray-900: #111827;
-            
-            /* Background System */
-            --bg-primary: var(--color-white);
-            --bg-secondary: var(--color-gray-50);
-            --bg-tertiary: var(--color-gray-100);
-            --bg-overlay: rgba(255, 255, 255, 0.7);
-            --bg-backdrop: rgba(0, 0, 0, 0.5);
-            
-            /* Text System */
-            --text-primary: var(--color-gray-900);
-            --text-secondary: var(--color-gray-700);
-            --text-tertiary: var(--color-gray-500);
-            --text-inverse: var(--color-white);
-            
-            /* Border System */
-            --border-light: var(--color-gray-200);
-            --border-medium: var(--color-gray-300);
-            --border-focus: var(--color-primary);
-            
-            /* Shadow System */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            
-            /* Typography Scale */
-            --font-family-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --font-size-xs: 0.75rem;
-            --font-size-sm: 0.875rem;
-            --font-size-base: 1rem;
-            --font-size-lg: 1.125rem;
-            --font-size-xl: 1.25rem;
-            --font-size-2xl: 1.5rem;
-            --font-size-3xl: 1.875rem;
-            --font-size-4xl: 2.25rem;
-            --font-size-5xl: 3rem;
-            --font-size-6xl: 3.75rem;
-            
-            /* Spacing Scale */
-            --space-1: 0.25rem;
-            --space-2: 0.5rem;
-            --space-3: 0.75rem;
-            --space-4: 1rem;
-            --space-6: 1.5rem;
-            --space-8: 2rem;
-            --space-12: 3rem;
-            --space-16: 4rem;
-            --space-20: 5rem;
-            --space-24: 6rem;
-            
-            /* Border Radius */
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-            --radius-xl: 1rem;
-            --radius-full: 9999px;
-            
-            /* Animation Timing */
-            --duration-fast: 150ms;
-            --duration-normal: 250ms;
-            --duration-slow: 350ms;
-            --timing-ease: cubic-bezier(0.4, 0, 0.2, 1);
-            --timing-ease-out: cubic-bezier(0, 0, 0.2, 1);
-            --timing-ease-in: cubic-bezier(0.4, 0, 1, 1);
-            
-            /* Tailwind accent variables for compatibility */
+            /* Default accent: Tailwind blue-500 rgb */
             --accent-50: 239 246 255;
             --accent-100: 219 234 254;
             --accent-300: 147 197 253;
@@ -202,63 +60,36 @@ Risk: Comprehensive update - test all functionality post-deployment
             --accent-600: 37 99 235;
             --accent-700: 29 78 216;
         }
-        
-        /* Dark Mode Support via prefers-color-scheme */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                /* Dark Theme Color Overrides */
-                --bg-primary: var(--color-gray-900);
-                --bg-secondary: var(--color-gray-800);
-                --bg-tertiary: var(--color-gray-700);
-                --bg-overlay: rgba(17, 24, 39, 0.8);
-                
-                --text-primary: var(--color-gray-100);
-                --text-secondary: var(--color-gray-300);
-                --text-tertiary: var(--color-gray-400);
-                
-                --border-light: var(--color-gray-700);
-                --border-medium: var(--color-gray-600);
-            }
-        }
-        
-        /* Reduced Motion Support - Respect user preferences */
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-                scroll-behavior: auto !important;
-            }
-        }
-        
-        /* Base Styles with Enhanced Performance and Accessibility */
-        * {
-            box-sizing: border-box;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-            font-size: 16px; /* Explicit base font size for better scaling */
-        }
-        
+        /* Base styles for a polished look */
         body {
-            font-family: var(--font-family-primary);
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            line-height: 1.6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
-            /* Respect safe areas on mobile devices with notches */
+            /* Respect safe areas on iOS / notches */
             padding-top: env(safe-area-inset-top, 0);
             padding-right: env(safe-area-inset-right, 0);
             padding-bottom: env(safe-area-inset-bottom, 0);
             padding-left: env(safe-area-inset-left, 0);
-            /* Prevent horizontal scroll on mobile */
-            overflow-x: hidden;
+        }
+        
+        /* Performance optimizations */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* Optimize animations for GPU acceleration */
+        .gpu-accelerated {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
         }
         /* Improve layout consistency and resizing */
         *, *::before, *::after { box-sizing: border-box; }
@@ -1147,97 +978,6 @@ Risk: Comprehensive update - test all functionality post-deployment
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
-    
-    <!-- GDPR-Compliant Cookie Consent System -->
-    <div id="cookie-consent-banner" class="fixed bottom-0 left-0 right-0 z-[20002] bg-white border-t border-gray-200 shadow-xl p-4 sm:p-6 transform translate-y-full transition-transform duration-500 ease-out" role="dialog" aria-labelledby="cookie-consent-title" aria-describedby="cookie-consent-description">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex-1">
-                    <h3 id="cookie-consent-title" class="text-lg font-semibold text-gray-800 mb-2">🍪 Your Privacy Matters</h3>
-                    <p id="cookie-consent-description" class="text-sm text-gray-600 leading-relaxed">
-                        We use essential cookies to make GCSEMate work properly. We'd also like your permission to use optional analytics cookies to help us improve your experience (always anonymous, no tracking).
-                        <a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="text-blue-600 hover:underline ml-1">Learn more</a>
-                    </p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                    <button id="cookie-settings-btn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]">
-                        Settings
-                    </button>
-                    <button id="cookie-accept-essential" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]">
-                        Essential Only
-                    </button>
-                    <button id="cookie-accept-all" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]">
-                        Accept All
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Cookie Settings Modal -->
-    <div id="cookie-settings-modal" class="fixed inset-0 z-[20003] hidden items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" role="dialog" aria-labelledby="cookie-modal-title" aria-modal="true">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h2 id="cookie-modal-title" class="text-xl font-bold text-gray-800">Cookie Preferences</h2>
-                    <button id="cookie-modal-close" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Close cookie settings">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="p-6 space-y-6">
-                <p class="text-gray-600 leading-relaxed">
-                    Choose which cookies you'd like to allow. Essential cookies are required for basic functionality and cannot be disabled.
-                </p>
-                
-                <!-- Essential Cookies -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-semibold text-gray-800">Essential Cookies</h3>
-                        <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Always On</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-3">
-                        Required for basic site functionality, security, and your login session. These cannot be disabled.
-                    </p>
-                    <ul class="text-xs text-gray-500 space-y-1">
-                        <li>• Login session management</li>
-                        <li>• Security and CSRF protection</li>
-                        <li>• User preferences and settings</li>
-                    </ul>
-                </div>
-                
-                <!-- Optional Analytics -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-semibold text-gray-800">Analytics & Performance</h3>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" id="analytics-toggle" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">Enable</span>
-                        </label>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-3">
-                        Help us improve GCSEMate by collecting anonymous usage data. We never track personal information.
-                    </p>
-                    <ul class="text-xs text-gray-500 space-y-1">
-                        <li>• Page views and popular content</li>
-                        <li>• Performance and error monitoring</li>
-                        <li>• Feature usage statistics (anonymous)</li>
-                    </ul>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                    <button id="cookie-save-preferences" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Save Preferences
-                    </button>
-                    <button onclick="showPrivacyPolicyModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Privacy Policy
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
@@ -1254,490 +994,64 @@ Risk: Comprehensive update - test all functionality post-deployment
     <div id="site-watermark" aria-hidden="true" class="fixed bottom-4 right-4 z-[60] select-none pointer-events-none">
         <img src="gcsemate%20new.png" alt="" class="h-8 w-auto opacity-10 grayscale">
     </div>
-    <!-- Enhanced Landing Page with Semantic HTML5 and Sales Optimization -->
-    <div id="landing-page" class="hidden w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 fade-in">
-        <!-- Semantic Header with Navigation -->
-        <header class="flex justify-between items-center py-6 border-b border-gray-200/50" role="banner">
-            <div class="flex items-center space-x-4">
-                <img src="gcsemate%20new.png" alt="GCSEMate - Your Ultimate GCSE Revision Partner" class="h-12 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" loading="eager" width="160" height="40" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
-                <div class="hidden sm:block">
-                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-semibold">UK's #1 GCSE Platform</span>
-                </div>
-            </div>
-            <nav class="flex items-center space-x-6" role="navigation" aria-label="Authentication menu">
-                <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-3 py-2" aria-label="Sign in to existing account">
-                    Sign In
-                </button>
-                <button onclick="showAuthPage(false)" class="btn-primary hover-lift transition-all bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300" aria-label="Create free account">
-                    Start Free Trial
-                </button>
-            </nav>
+    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
+        <header class="flex justify-between items-center py-4">
+             <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
+              <div>
+                  <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors mr-4">Login</button>
+                  <button onclick="showAuthPage(false)" class="btn-primary hover-lift transition-all">Sign Up Free</button>
+              </div>
         </header>
-        
-        <!-- Hero Section with Enhanced Value Proposition -->
-        <main role="main">
-            <section class="text-center mt-16 sm:mt-24 mb-24" aria-labelledby="hero-title">
-                <div class="animate-hero-title">
-                    <h1 id="hero-title" class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                        Stop Searching, <span class="text-blue-600 block sm:inline">Start Revising.</span>
-                    </h1>
-                </div>
-                <div class="animate-hero-subtitle">
-                    <p class="mt-6 max-w-3xl mx-auto text-lg sm:text-xl lg:text-2xl text-gray-600 leading-relaxed">
-                        GCSEMate is the all-in-one digital hub trusted by <strong class="text-blue-600">10,000+ students</strong>. 
-                        All your subjects, notes, past papers, and resources—perfectly organized and instantly accessible.
-                    </p>
-                </div>
-                
-                <!-- Enhanced CTA Section -->
-                <div class="mt-12 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
-                    <button onclick="showAuthPage(false)" class="group w-full sm:w-auto px-8 py-5 text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 min-h-[64px] flex items-center justify-center relative overflow-hidden" data-tooltip="Start your free trial - no credit card required">
-                        <span class="relative z-10">🚀 Get Started Free</span>
-                        <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-800 transform translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
-                    </button>
-                    <button onclick="scrollToSection('demo-section')" class="group w-full sm:w-auto px-8 py-5 text-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border-2 border-blue-600 hover:border-blue-700 transition-all duration-300 min-h-[64px] flex items-center justify-center space-x-2" data-tooltip="See how GCSEMate works">
-                        <span>📺 Watch Demo</span>
-                        <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Trust Signals -->
-                <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-gray-500">
-                    <div class="flex items-center space-x-2">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold">A</div>
-                            <div class="w-8 h-8 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold">B</div>
-                            <div class="w-8 h-8 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold">C</div>
-                            <div class="w-8 h-8 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold">+</div>
-                        </div>
-                        <span>Trusted by 10,000+ students</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="flex text-yellow-400">
-                            <span>⭐⭐⭐⭐⭐</span>
-                        </div>
-                        <span>4.9/5 average rating</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-green-600">✓</span>
-                        <span>No credit card required</span>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Enhanced Feature Section -->
-            <section class="mb-24" aria-labelledby="features-title">
-                <div class="text-center mb-16">
-                    <h2 id="features-title" class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">
-                        Everything you need to <span class="text-blue-600">ace your GCSEs</span>
-                    </h2>
-                    <p class="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-                        The ultimate toolkit designed by students, for students. Join thousands who've already improved their grades.
-                    </p>
-                </div>
-                <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    <!-- Feature Card 1: Organized Resources -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.1s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">📚 Organized Resource Hub</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard. 
-                            <strong>Maths, Science, English, and more</strong> - all in one place.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-blue-600 font-semibold">
-                            <span>✓ All GCSE subjects covered</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Feature Card 2: Instant Previews -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.2s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-green-100 text-green-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">⚡ Lightning-Fast Previews</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Instantly preview PDFs, documents, and images directly in-app. No more endless downloading and searching. 
-                            <strong>Save hours every week</strong> with instant access.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-green-600 font-semibold">
-                            <span>✓ Google Docs integration</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Feature Card 3: Progress Tracking -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.3s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-purple-100 text-purple-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">📈 Progress Tracking</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Track your revision progress across all subjects. See what you've mastered and what needs attention. 
-                            <strong>Stay motivated</strong> with visual progress indicators.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-purple-600 font-semibold">
-                            <span>✓ Personal dashboard</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Feature Card 4: Smart Calendar -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.4s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">📅 Smart Calendar System</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Never miss a deadline again. Track homework, assignments, and exam dates with our intelligent calendar. 
-                            <strong>Get automatic reminders</strong> before important dates.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-yellow-600 font-semibold">
-                            <span>✓ Exam countdown timers</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Feature Card 5: Video Resources -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.5s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a3 3 0 013-3M9 10v5a2 2 0 002 2h1M15 10v5a2 2 0 01-2 2H9.5a2.5 2.5 0 01-2.5-2.5v-1"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">🎥 Expert Video Tutorials</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Access curated video explanations from top GCSE teachers. Complex topics made simple with 
-                            <strong>step-by-step walkthroughs</strong> and worked examples.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-red-600 font-semibold">
-                            <span>✓ 1000+ topic videos</span>
-                        </div>
-                    </article>
-                    
-                    <!-- Feature Card 6: AI Assistant -->
-                    <article class="group p-8 bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-feature-card border border-white/50" style="animation-delay: 0.6s;">
-                        <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-indigo-100 text-indigo-600 transition-transform duration-300 group-hover:scale-110">
-                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">🤖 GCSEMate AI Tutor</h3>
-                        <p class="mt-3 text-gray-600 leading-relaxed">
-                            Get instant answers to your GCSE questions with our AI-powered tutor. Available 24/7 to help with 
-                            <strong>any topic, any time</strong> - like having a personal teacher.
-                        </p>
-                        <div class="mt-4 flex items-center text-sm text-indigo-600 font-semibold">
-                            <span>✓ 24/7 AI support</span>
-                        </div>
-                    </article>
-                </div>
-            </section>
-            
-            <!-- Testimonials Section -->
-            <section class="mb-24 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl p-8 sm:p-12" aria-labelledby="testimonials-title">
-                <div class="text-center mb-12">
-                    <h2 id="testimonials-title" class="text-3xl sm:text-4xl font-bold text-gray-800">
-                        Loved by students <span class="text-blue-600">across the UK</span>
-                    </h2>
-                    <p class="mt-4 text-xl text-gray-600">
-                        See how GCSEMate has helped students achieve their dream grades
-                    </p>
-                </div>
-                <div class="grid gap-8 md:grid-cols-3">
-                    <!-- Testimonial 1 -->
-                    <blockquote class="bg-white rounded-xl p-6 shadow-lg">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-yellow-400 text-sm">
-                                <span>⭐⭐⭐⭐⭐</span>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-500">5.0/5</span>
-                        </div>
-                        <p class="text-gray-700 italic mb-4">
-                            "GCSEMate completely transformed my revision. I went from struggling with organization to getting 8s and 9s across all my subjects!"
-                        </p>
-                        <footer>
-                            <cite class="font-semibold text-gray-900">Sarah M.</cite>
-                            <div class="text-sm text-gray-500">Year 11 • Manchester</div>
-                        </footer>
-                    </blockquote>
-                    
-                    <!-- Testimonial 2 -->
-                    <blockquote class="bg-white rounded-xl p-6 shadow-lg">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-yellow-400 text-sm">
-                                <span>⭐⭐⭐⭐⭐</span>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-500">5.0/5</span>
-                        </div>
-                        <p class="text-gray-700 italic mb-4">
-                            "The AI tutor is incredible! It's like having a teacher available 24/7. Helped me understand Maths concepts I'd been struggling with for months."
-                        </p>
-                        <footer>
-                            <cite class="font-semibold text-gray-900">James L.</cite>
-                            <div class="text-sm text-gray-500">Year 10 • Birmingham</div>
-                        </footer>
-                    </blockquote>
-                    
-                    <!-- Testimonial 3 -->
-                    <blockquote class="bg-white rounded-xl p-6 shadow-lg">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-yellow-400 text-sm">
-                                <span>⭐⭐⭐⭐⭐</span>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-500">5.0/5</span>
-                        </div>
-                        <p class="text-gray-700 italic mb-4">
-                            "Finally, all my resources in one place! No more hunting through folders. The calendar feature saved me from missing important deadlines too."
-                        </p>
-                        <footer>
-                            <cite class="font-semibold text-gray-900">Emma K.</cite>
-                            <div class="text-sm text-gray-500">Year 11 • London</div>
-                        </footer>
-                    </blockquote>
-                </div>
-            </section>
-            
-            <!-- Pricing Section with FAQ -->
-            <section class="mb-24" aria-labelledby="pricing-title">
-                <div class="text-center mb-12">
-                    <h2 id="pricing-title" class="text-3xl sm:text-4xl font-bold text-gray-800">
-                        Simple, <span class="text-blue-600">student-friendly</span> pricing
-                    </h2>
-                    <p class="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-                        Choose the plan that fits your needs. Upgrade or cancel anytime.
-                    </p>
-                </div>
-                
-                <!-- Pricing Cards -->
-                <div class="grid gap-8 lg:grid-cols-2 max-w-4xl mx-auto mb-16">
-                    <!-- Free Plan -->
-                    <div class="bg-white rounded-2xl p-8 shadow-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold text-gray-900">Free Plan</h3>
-                            <div class="mt-4 flex items-baseline justify-center">
-                                <span class="text-5xl font-bold text-gray-900">£0</span>
-                                <span class="text-xl text-gray-500 ml-2">/month</span>
-                            </div>
-                            <p class="mt-4 text-gray-600">Perfect for trying GCSEMate</p>
-                        </div>
-                        <ul class="mt-8 space-y-4">
-                            <li class="flex items-center">
-                                <span class="text-green-500 text-lg mr-3">✓</span>
-                                <span>Access to basic resources</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-500 text-lg mr-3">✓</span>
-                                <span>Personal calendar</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-500 text-lg mr-3">✓</span>
-                                <span>Limited AI tutor queries</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-gray-300 text-lg mr-3">×</span>
-                                <span class="text-gray-500">Full subject library</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-gray-300 text-lg mr-3">×</span>
-                                <span class="text-gray-500">Premium video content</span>
-                            </li>
-                        </ul>
-                        <button onclick="showAuthPage(false)" class="mt-8 w-full px-6 py-3 text-lg font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl border-2 border-blue-600 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-300">
-                            Start Free
-                        </button>
-                    </div>
-                    
-                    <!-- Pro Plan -->
-                    <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden transform hover:scale-105 transition-transform">
-                        <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold">
-                            Most Popular
-                        </div>
-                        <div class="text-center">
-                            <h3 class="text-2xl font-bold">Pro Plan</h3>
-                            <div class="mt-4 flex items-baseline justify-center">
-                                <span class="text-5xl font-bold">£9.99</span>
-                                <span class="text-xl opacity-75 ml-2">/month</span>
-                            </div>
-                            <p class="mt-4 opacity-90">Everything you need to excel</p>
-                        </div>
-                        <ul class="mt-8 space-y-4">
-                            <li class="flex items-center">
-                                <span class="text-green-300 text-lg mr-3">✓</span>
-                                <span>Complete GCSE resource library</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-300 text-lg mr-3">✓</span>
-                                <span>Unlimited AI tutor access</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-300 text-lg mr-3">✓</span>
-                                <span>Premium video tutorials</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-300 text-lg mr-3">✓</span>
-                                <span>Advanced progress tracking</span>
-                            </li>
-                            <li class="flex items-center">
-                                <span class="text-green-300 text-lg mr-3">✓</span>
-                                <span>Priority support</span>
-                            </li>
-                        </ul>
-                        <button onclick="showAuthPage(false)" class="mt-8 w-full px-6 py-3 text-lg font-bold text-blue-700 bg-white hover:bg-gray-100 rounded-xl transition-colors focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50">
-                            Start Pro Trial
-                        </button>
-                        <p class="mt-3 text-center text-sm opacity-75">14-day free trial • Cancel anytime</p>
-                    </div>
-                </div>
-                
-                <!-- FAQ Accordion -->
-                <div class="max-w-3xl mx-auto">
-                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Frequently Asked Questions</h3>
-                    <div id="landing-faq-container" class="space-y-4">
-                        <!-- FAQ Item 1 -->
-                        <div class="faq-item bg-white rounded-xl shadow-lg border border-gray-200">
-                            <button class="faq-question w-full text-left p-6 flex items-center justify-between font-semibold text-gray-800 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-xl" aria-expanded="false">
-                                <span>What subjects does GCSEMate cover?</span>
-                                <svg class="faq-arrow w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="faq-answer overflow-hidden">
-                                <div class="p-6 pt-0 text-gray-600">
-                                    <p>GCSEMate covers all major GCSE subjects including Maths, English Language & Literature, Sciences (Biology, Chemistry, Physics), History, Geography, Modern Languages, and more. We support AQA, Edexcel, OCR, and WJEC exam boards.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- FAQ Item 2 -->
-                        <div class="faq-item bg-white rounded-xl shadow-lg border border-gray-200">
-                            <button class="faq-question w-full text-left p-6 flex items-center justify-between font-semibold text-gray-800 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-xl" aria-expanded="false">
-                                <span>Can I cancel my subscription anytime?</span>
-                                <svg class="faq-arrow w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="faq-answer overflow-hidden">
-                                <div class="p-6 pt-0 text-gray-600">
-                                    <p>Absolutely! You can cancel your Pro subscription at any time from your account settings. There are no long-term contracts or cancellation fees. You'll continue to have access until the end of your billing period.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- FAQ Item 3 -->
-                        <div class="faq-item bg-white rounded-xl shadow-lg border border-gray-200">
-                            <button class="faq-question w-full text-left p-6 flex items-center justify-between font-semibold text-gray-800 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-xl" aria-expanded="false">
-                                <span>How does the AI tutor work?</span>
-                                <svg class="faq-arrow w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="faq-answer overflow-hidden">
-                                <div class="p-6 pt-0 text-gray-600">
-                                    <p>Our AI tutor is specifically trained on GCSE curriculum content. You can ask questions about any topic, upload images of problems, or request explanations. It provides step-by-step solutions and adapts to your learning style. It's available 24/7 and gets smarter as you use it.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- FAQ Item 4 -->
-                        <div class="faq-item bg-white rounded-xl shadow-lg border border-gray-200">
-                            <button class="faq-question w-full text-left p-6 flex items-center justify-between font-semibold text-gray-800 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-xl" aria-expanded="false">
-                                <span>Is there a student discount available?</span>
-                                <svg class="faq-arrow w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="faq-answer overflow-hidden">
-                                <div class="p-6 pt-0 text-gray-600">
-                                    <p>Yes! We offer special pricing for students who demonstrate financial need. We also have family plans for households with multiple GCSE students. Contact our support team to learn more about available discounts.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Final CTA Section -->
-            <section class="text-center mb-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-white" aria-labelledby="final-cta-title">
-                <h2 id="final-cta-title" class="text-3xl sm:text-4xl font-bold mb-6">
-                    Ready to ace your GCSEs?
-                </h2>
-                <p class="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-                    Join thousands of students who've already improved their grades with GCSEMate. 
-                    Start your free trial today - no credit card required.
+        <main class="mt-16 sm:mt-24">
+            <div class="animate-hero-title">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+                    Stop Searching, <span class="text-blue-600">Start Revising.</span>
+                </h1>
+            </div>
+            <div class="animate-hero-subtitle">
+                <p class="mt-4 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600">
+                    GCSEMate is the all-in-one digital hub that organizes your entire academic life. All your subjects, notes, past papers, and resources—perfectly structured and instantly accessible.
                 </p>
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <button onclick="showAuthPage(false)" class="px-8 py-4 text-lg font-bold text-blue-700 bg-white hover:bg-gray-100 rounded-xl shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50">
-                        🚀 Start Free Trial
-                    </button>
-                    <p class="text-sm opacity-75">
-                        ✓ 14-day free trial ✓ No credit card required ✓ Cancel anytime
-                    </p>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
+                <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-6 sm:px-8 py-4 text-base font-bold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 min-h-[56px] flex items-center justify-center" data-tooltip="Create your free account now">
+                    Get Started for Free
+                </button>
+                <button onclick="showAuthPage(true)" class="w-full sm:w-auto px-6 sm:px-8 py-4 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors border-2 border-blue-600 min-h-[56px] flex items-center justify-center">
+                    Login
+                </button>
+            </div>
+            <div class="mt-20 sm:mt-32">
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything you will need to ace your exams!</h2>
+                <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
+                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
+                        <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
+                    </div>
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.2s;">
+                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300">
+                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                         </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
+                        <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
+                    </div>
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300">
+                           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Integrated Calendar</h3>
+                        <p class="mt-2 text-gray-600">Keep track of homework, deadlines, and exam dates with a personal and global calendar system.</p>
+                    </div>
                 </div>
-            </section>
+            </div>
         </main>
-        
-        <!-- Enhanced Semantic Footer -->
-        <footer class="border-t border-gray-200/50 pt-16 pb-8 text-center text-gray-500 text-sm" role="contentinfo">
-            <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 text-left max-w-6xl mx-auto mb-12">
-                <!-- Company Info -->
-                <div>
-                    <h3 class="font-bold text-gray-800 mb-4">GCSEMate</h3>
-                    <p class="text-sm mb-4">The UK's most trusted GCSE revision platform, helping students achieve their academic goals.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors" aria-label="Follow us on Twitter">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"></path></svg>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors" aria-label="Follow us on Instagram">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.73-3.016-1.788C4.89 14.47 4.69 13.691 4.69 12.988s.2-1.482.743-2.212c.568-1.058 1.719-1.788 3.016-1.788 1.297 0 2.448.73 3.016 1.788.543.73.743 1.509.743 2.212s-.2 1.482-.743 2.212c-.568 1.058-1.719 1.788-3.016 1.788zm7.117 0c-1.297 0-2.448-.73-3.016-1.788-.543-.73-.743-1.509-.743-2.212s.2-1.482.743-2.212c.568-1.058 1.719-1.788 3.016-1.788 1.297 0 2.448.73 3.016 1.788.543.73.743 1.509.743 2.212s-.2 1.482-.743 2.212c-.568 1.058-1.719 1.788-3.016 1.788z"></path></svg>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Quick Links -->
-                <div>
-                    <h3 class="font-bold text-gray-800 mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#features-section" class="hover:text-blue-600 transition-colors">Features</a></li>
-                        <li><a href="#pricing-section" class="hover:text-blue-600 transition-colors">Pricing</a></li>
-                        <li><a href="#" onclick="event.preventDefault(); showAuthPage(false)" class="hover:text-blue-600 transition-colors">Sign Up</a></li>
-                        <li><a href="#" onclick="event.preventDefault(); showAuthPage(true)" class="hover:text-blue-600 transition-colors">Login</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Support -->
-                <div>
-                    <h3 class="font-bold text-gray-800 mb-4">Support</h3>
-                    <ul class="space-y-2">
-                        <li><a href="mailto:support@gcsemate.com" class="hover:text-blue-600 transition-colors">Help Center</a></li>
-                        <li><a href="mailto:contact@gcsemate.com" class="hover:text-blue-600 transition-colors">Contact Us</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">Student Resources</a></li>
-                        <li><a href="#" class="hover:text-blue-600 transition-colors">System Status</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Legal -->
-                <div>
-                    <h3 class="font-bold text-gray-800 mb-4">Legal</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="hover:text-blue-600 transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="hover:text-blue-600 transition-colors">Terms of Service</a></li>
-                        <li><a href="#" onclick="event.preventDefault(); showDmcaModal()" class="hover:text-blue-600 transition-colors">DMCA Policy</a></li>
-                        <li><button onclick="toggleCookieSettings()" class="hover:text-blue-600 transition-colors text-left">Cookie Settings</button></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Bottom Footer -->
-            <div class="text-center border-t border-gray-200 pt-8">
-                <p class="mb-2">
-                    © <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. 
-                    Made with ❤️ for GCSE students across the UK.
-                </p>
-                <p class="text-xs text-gray-400">
-                    This site is protected by reCAPTCHA and the Google 
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline hover:text-blue-600">Privacy Policy</a> 
-                    and 
-                    <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline hover:text-blue-600">Terms of Service</a> 
-                    apply.
-                </p>
-            </div>
+        <footer class="mt-24 text-center text-gray-500 text-sm">
+             <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
+             <p class="mt-1 text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
         </footer>
     </div>
     
@@ -2382,419 +1696,7 @@ Risk: Comprehensive update - test all functionality post-deployment
       const db = firebase.firestore();
     </script>
     <script>
-        // =============================================================================
-        // PRODUCTION-READY GCSEMATE: Enhanced JavaScript Foundation
-        // =============================================================================
-        
-        // --- DEBUG HELPER SYSTEM ---
-        // Simple debug system that can be toggled on/off for troubleshooting
-        window.__debug = false; // Set to true in console for debugging
-        
-        function debugLog(message, data = null) {
-            if (!window.__debug) return;
-            console.log(`🔧 [GCSEMate Debug] ${message}`, data || '');
-        }
-        
-        function debugWarn(message, data = null) {
-            if (!window.__debug) return;
-            console.warn(`⚠️ [GCSEMate Warning] ${message}`, data || '');
-        }
-        
-        function debugError(message, error = null) {
-            if (!window.__debug) return;
-            console.error(`❌ [GCSEMate Error] ${message}`, error || '');
-        }
-        
-        // --- COOKIE CONSENT & PREFERENCES SYSTEM ---
-        // GDPR-compliant cookie management with user preferences
-        class CookieConsent {
-            constructor() {
-                this.storageKey = 'gcsemate_cookie_preferences';
-                this.preferences = this.loadPreferences();
-                this.init();
-            }
-            
-            loadPreferences() {
-                try {
-                    const stored = localStorage.getItem(this.storageKey);
-                    return stored ? JSON.parse(stored) : null;
-                } catch (error) {
-                    debugError('Failed to load cookie preferences', error);
-                    return null;
-                }
-            }
-            
-            savePreferences(prefs) {
-                try {
-                    localStorage.setItem(this.storageKey, JSON.stringify({
-                        ...prefs,
-                        timestamp: Date.now(),
-                        version: '1.0'
-                    }));
-                    this.preferences = prefs;
-                    debugLog('Cookie preferences saved', prefs);
-                } catch (error) {
-                    debugError('Failed to save cookie preferences', error);
-                }
-            }
-            
-            hasConsent(type = 'essential') {
-                if (!this.preferences) return false;
-                return type === 'essential' ? true : !!this.preferences[type];
-            }
-            
-            init() {
-                // Show banner if user hasn't made a choice yet
-                if (!this.preferences) {
-                    this.showBanner();
-                } else {
-                    debugLog('Cookie preferences already set', this.preferences);
-                }
-                
-                // Set up event listeners for cookie controls
-                this.setupEventListeners();
-            }
-            
-            showBanner() {
-                const banner = document.getElementById('cookie-consent-banner');
-                if (!banner) return;
-                
-                debugLog('Showing cookie consent banner');
-                setTimeout(() => {
-                    banner.style.transform = 'translateY(0)';
-                }, 1000); // Delay to avoid overwhelming new users
-            }
-            
-            hideBanner() {
-                const banner = document.getElementById('cookie-consent-banner');
-                if (!banner) return;
-                
-                banner.style.transform = 'translateY(100%)';
-                setTimeout(() => banner.remove(), 500);
-            }
-            
-            setupEventListeners() {
-                // Banner buttons
-                const acceptAll = document.getElementById('cookie-accept-all');
-                const acceptEssential = document.getElementById('cookie-accept-essential');
-                const settingsBtn = document.getElementById('cookie-settings-btn');
-                
-                if (acceptAll) {
-                    acceptAll.addEventListener('click', () => {
-                        this.acceptAll();
-                    });
-                }
-                
-                if (acceptEssential) {
-                    acceptEssential.addEventListener('click', () => {
-                        this.acceptEssential();
-                    });
-                }
-                
-                if (settingsBtn) {
-                    settingsBtn.addEventListener('click', () => {
-                        this.showSettingsModal();
-                    });
-                }
-                
-                // Settings modal
-                const modal = document.getElementById('cookie-settings-modal');
-                const closeBtn = document.getElementById('cookie-modal-close');
-                const saveBtn = document.getElementById('cookie-save-preferences');
-                
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        this.hideSettingsModal();
-                    });
-                }
-                
-                if (saveBtn) {
-                    saveBtn.addEventListener('click', () => {
-                        this.saveFromModal();
-                    });
-                }
-                
-                // Click outside to close modal
-                if (modal) {
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) {
-                            this.hideSettingsModal();
-                        }
-                    });
-                }
-            }
-            
-            acceptAll() {
-                this.savePreferences({
-                    essential: true,
-                    analytics: true,
-                    functional: true
-                });
-                this.hideBanner();
-                debugLog('User accepted all cookies');
-            }
-            
-            acceptEssential() {
-                this.savePreferences({
-                    essential: true,
-                    analytics: false,
-                    functional: false
-                });
-                this.hideBanner();
-                debugLog('User accepted essential cookies only');
-            }
-            
-            showSettingsModal() {
-                const modal = document.getElementById('cookie-settings-modal');
-                if (!modal) return;
-                
-                // Pre-fill current preferences
-                const analyticsToggle = document.getElementById('analytics-toggle');
-                if (analyticsToggle && this.preferences) {
-                    analyticsToggle.checked = !!this.preferences.analytics;
-                }
-                
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                
-                // Focus management for accessibility
-                const firstFocusable = modal.querySelector('button, input');
-                if (firstFocusable) firstFocusable.focus();
-            }
-            
-            hideSettingsModal() {
-                const modal = document.getElementById('cookie-settings-modal');
-                if (!modal) return;
-                
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-            
-            saveFromModal() {
-                const analyticsToggle = document.getElementById('analytics-toggle');
-                
-                this.savePreferences({
-                    essential: true,
-                    analytics: analyticsToggle ? analyticsToggle.checked : false,
-                    functional: true // For now, we'll include functional cookies with essential
-                });
-                
-                this.hideSettingsModal();
-                this.hideBanner();
-                debugLog('Cookie preferences updated from modal');
-            }
-        }
-        
-        // --- PERFORMANCE & ACCESSIBILITY ENHANCEMENTS ---
-        
-        // Enhanced performance optimization utilities
-        let animationFrameId = null;
-        let debounceTimers = new Map();
-        let throttleTimers = new Map();
-        let lazyLoadObserver = null;
-        
-        // High-performance debounce function with cleanup tracking
-        const debounce = (func, wait, immediate = false) => {
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(debounceTimers.get(func));
-                    debounceTimers.delete(func);
-                    if (!immediate) func(...args);
-                };
-                
-                const callNow = immediate && !debounceTimers.has(func);
-                clearTimeout(debounceTimers.get(func));
-                debounceTimers.set(func, setTimeout(later, wait));
-                
-                if (callNow) func(...args);
-            };
-        };
-        
-        // High-performance throttle with better timing control
-        const throttle = (func, limit) => {
-            return function executedFunction(...args) {
-                if (!throttleTimers.get(func)) {
-                    func.apply(this, args);
-                    throttleTimers.set(func, setTimeout(() => {
-                        throttleTimers.delete(func);
-                    }, limit));
-                }
-            };
-        };
-        
-        // Enhanced lazy loading with intersection observer
-        function initLazyLoading() {
-            if (!('IntersectionObserver' in window)) {
-                debugWarn('IntersectionObserver not supported, skipping lazy loading');
-                return;
-            }
-            
-            const options = {
-                root: null,
-                rootMargin: '50px',
-                threshold: 0.1
-            };
-            
-            lazyLoadObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        if (img.dataset.src) {
-                            img.src = img.dataset.src;
-                            img.removeAttribute('data-src');
-                            lazyLoadObserver.unobserve(img);
-                        }
-                    }
-                });
-            }, options);
-            
-            // Observe all images with data-src
-            document.querySelectorAll('img[data-src]').forEach(img => {
-                lazyLoadObserver.observe(img);
-            });
-        }
-        
-        // Smooth scrolling utility with reduced motion support
-        function smoothScrollTo(targetId, offset = 0) {
-            const element = document.getElementById(targetId);
-            if (!element) return;
-            
-            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            
-            if (reducedMotion) {
-                // Instant scroll for users who prefer reduced motion
-                element.scrollIntoView();
-                return;
-            }
-            
-            const targetPosition = element.getBoundingClientRect().top + window.pageYOffset - offset;
-            
-            window.scrollTo({
-                top: targetPosition,
-                behavior: 'smooth'
-            });
-        }
-        
-        // Enhanced FAQ accordion functionality
-        function initializeLandingFaqAccordion() {
-            const container = document.getElementById('landing-faq-container');
-            if (!container) return;
-            
-            container.addEventListener('click', (e) => {
-                const question = e.target.closest('.faq-question');
-                if (!question) return;
-                
-                const faqItem = question.parentElement;
-                const answer = faqItem.querySelector('.faq-answer');
-                const arrow = question.querySelector('.faq-arrow');
-                const isOpen = faqItem.classList.contains('open');
-                
-                // Close all other FAQ items for better UX
-                container.querySelectorAll('.faq-item.open').forEach(item => {
-                    if (item !== faqItem) {
-                        item.classList.remove('open');
-                        const otherAnswer = item.querySelector('.faq-answer');
-                        const otherArrow = item.querySelector('.faq-arrow');
-                        if (otherAnswer) otherAnswer.style.maxHeight = '0';
-                        if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
-                    }
-                });
-                
-                if (isOpen) {
-                    // Close this item
-                    faqItem.classList.remove('open');
-                    answer.style.maxHeight = '0';
-                    arrow.style.transform = 'rotate(0deg)';
-                    question.setAttribute('aria-expanded', 'false');
-                } else {
-                    // Open this item
-                    faqItem.classList.add('open');
-                    answer.style.maxHeight = answer.scrollHeight + 'px';
-                    arrow.style.transform = 'rotate(180deg)';
-                    question.setAttribute('aria-expanded', 'true');
-                }
-                
-                debugLog('FAQ item toggled', { isOpen: !isOpen });
-            });
-        }
-        
-        // Global error handling with user-friendly messages
-        function setupGlobalErrorHandling() {
-            window.addEventListener('error', (e) => {
-                debugError('Global error caught', e.error);
-                
-                // Show user-friendly error message for critical errors
-                if (e.error && e.error.stack && e.error.stack.includes('firebase')) {
-                    showToast('Connection issue - please check your internet and try again', 'error');
-                }
-            });
-            
-            window.addEventListener('unhandledrejection', (e) => {
-                debugError('Unhandled promise rejection', e.reason);
-                
-                // Handle common promise rejections gracefully
-                if (e.reason && typeof e.reason === 'string' && e.reason.includes('Network')) {
-                    showToast('Network error - please try again', 'error');
-                }
-            });
-        }
-        
-        // Enhanced utility functions for common tasks
-        function safeQuerySelector(selector, context = document) {
-            try {
-                return context.querySelector(selector);
-            } catch (error) {
-                debugError(`Invalid selector: ${selector}`, error);
-                return null;
-            }
-        }
-        
-        function safeQuerySelectorAll(selector, context = document) {
-            try {
-                return context.querySelectorAll(selector);
-            } catch (error) {
-                debugError(`Invalid selector: ${selector}`, error);
-                return [];
-            }
-        }
-        
-        // Helper function for scrolling to sections (used in landing page)
-        function scrollToSection(sectionId) {
-            smoothScrollTo(sectionId, 80); // 80px offset for sticky header
-        }
-        
-        // Helper function to toggle cookie settings modal from anywhere
-        function toggleCookieSettings() {
-            if (window.cookieConsent) {
-                window.cookieConsent.showSettingsModal();
-            }
-        }
-        
-        // Initialize all enhanced systems when DOM is ready
-        function initializeEnhancedSystems() {
-            debugLog('Initializing enhanced systems...');
-            
-            // Initialize cookie consent system
-            window.cookieConsent = new CookieConsent();
-            
-            // Initialize lazy loading
-            initLazyLoading();
-            
-            // Initialize FAQ accordion
-            initializeLandingFaqAccordion();
-            
-            // Set up global error handling
-            setupGlobalErrorHandling();
-            
-            // Update copyright year
-            const currentYear = new Date().getFullYear();
-            const copyrightElements = document.querySelectorAll('#copyright-year, #landing-copyright-year');
-            copyrightElements.forEach(el => el.textContent = currentYear);
-            
-            debugLog('Enhanced systems initialized successfully');
-        }
-        
-        // --- APP STATE --- (Original variables maintained for compatibility)
+        // --- APP STATE---
         let currentUser = null;
         let isGapiReady = false;
         let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
@@ -2919,14 +1821,10 @@ Risk: Comprehensive update - test all functionality post-deployment
             document.body.style.overflow = 'hidden';
         }
 
-        // Enhanced DOM Content Loaded - Initialize all systems
+        // Fallback: ensure hide after window load
+        // Early slide-in on DOM ready
         document.addEventListener('DOMContentLoaded', () => {
-            debugLog('DOM Content Loaded - Starting initialization');
-            
-            // Initialize enhanced systems first
-            initializeEnhancedSystems();
-            
-            // Use requestIdleCallback for better performance on loading animation
+            // Use requestIdleCallback for better performance
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
                     const overlay = document.getElementById('app-loading');
@@ -2935,12 +1833,10 @@ Risk: Comprehensive update - test all functionality post-deployment
                         requestAnimationFrame(() => { 
                             logo.style.opacity = '1'; 
                             logo.style.transform = 'translateY(0)'; 
-                            debugLog('Loading animation started');
                         }); 
                     }
                 }, { timeout: 1000 });
             } else {
-                // Fallback for browsers without requestIdleCallback
                 setTimeout(() => {
                     const overlay = document.getElementById('app-loading');
                     const logo = overlay?.querySelector?.('.animate-logo');
@@ -2948,10 +1844,9 @@ Risk: Comprehensive update - test all functionality post-deployment
                         requestAnimationFrame(() => { 
                             logo.style.opacity = '1'; 
                             logo.style.transform = 'translateY(0)'; 
-                            debugLog('Loading animation started (fallback)');
                         }); 
                     }
-                }, 100); // Slightly longer delay for fallback
+                }, 0);
             }
         }, { once: true });
 
