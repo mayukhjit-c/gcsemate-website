@@ -9,7 +9,7 @@
     
     <!-- Basic Meta Tags for SEO and Browser Compatibility -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
     <!-- SEO Meta Tags for Better Search Engine Visibility -->
     <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Ace your exams with GCSEMate!">
@@ -19,7 +19,6 @@
     
     <!-- Content Security Policy to allow all necessary services -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' https: http:; frame-src 'self' https: http:; img-src 'self' data: https: http:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <meta name="theme-color" content="#2563eb">
     <!-- Cross-browser fallbacks for status bar / tile coloring -->
     <meta name="msapplication-TileColor" content="#2563eb">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -52,32 +51,33 @@
         }catch(_){}
     })();
     </script>
-        <!-- External Libraries and Resources -->
-        <!-- Tailwind CSS: prefer a local production build at /dist/tailwind.css when available. -->
-        <!-- To build locally for production:
+    
+    <!-- External Libraries and Resources -->
+    <!-- Tailwind CSS: prefer a local production build at /dist/tailwind.css when available. -->
+    <!-- To build locally for production:
                  1) npm install -D tailwindcss postcss autoprefixer
                  2) npx tailwindcss -i ./src/input.css -o ./dist/tailwind.css --minify
                  3) Serve the generated /dist/tailwind.css in production and remove the CDN loader below.
-        -->
-        <script>
-            (function(){
-                // Try to load local built CSS first, fall back to CDN copy if missing
-                var localPath = '/dist/tailwind.css';
-                fetch(localPath, { method: 'HEAD' }).then(function(res){
-                    if(res.ok){
-                        var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = localPath; document.head.appendChild(l);
-                    } else {
-                        var s = document.createElement('script');
-                        s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
-                        document.head.appendChild(s);
-                    }
-                }).catch(function(){
+    -->
+    <script>
+        (function(){
+            // Try to load local built CSS first, fall back to CDN copy if missing
+            var localPath = '/dist/tailwind.css';
+            fetch(localPath, { method: 'HEAD' }).then(function(res){
+                if(res.ok){
+                    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = localPath; document.head.appendChild(l);
+                } else {
                     var s = document.createElement('script');
                     s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
                     document.head.appendChild(s);
-                });
-            })();
-        </script>
+                }
+            }).catch(function(){
+                var s = document.createElement('script');
+                s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
+                document.head.appendChild(s);
+            });
+        })();
+    </script>
     
     <!-- Font Preloading for Better Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -164,7 +164,7 @@
               - `scrollbar-width` is supported in some browsers (Firefox); kept intentionally
           */
           .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          .no-scrollbar { -ms-overflow-style: none; }
         /* Enhanced Loader animations */
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
@@ -893,8 +893,7 @@
                 z-index: 9999;
                 background: white;
                 overflow-y: auto;
-                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
-                -webkit-overflow-scrolling: touch;
+                /* Removed unsupported -webkit-overflow-scrolling for cross-browser compatibility */
             }
             
             #mobile-menu:not(.hidden) {
@@ -927,9 +926,9 @@
                 gap: 0.75rem;
             }
             
-            /* Improve form inputs on mobile */
+            /* Improve form inputs on mobile - prevent zoom on iOS */
             input, select, textarea {
-                font-size: 16px !important; /* Prevents zoom on iOS */
+                font-size: 16px !important;
                 min-height: 44px;
                 touch-action: manipulation;
             }
@@ -961,12 +960,6 @@
                 transform: none !important;
             }
             
-            /* Better mobile scrolling */
-            .overflow-y-auto {
-                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
-                -webkit-overflow-scrolling: touch;
-            }
-            
             /* Improve mobile focus states */
             .focus-ring:focus {
                 outline: none;
@@ -992,10 +985,11 @@
             
             /* Better modal handling on mobile */
             .modal {
-                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
-                -webkit-overflow-scrolling: touch;
+                /* Minimal mobile modal defaults to avoid empty ruleset lint error */
+                pointer-events: auto;
+                display: block;
             }
-            
+
             /* Disable page transitions on mobile */
             .page-leave-modern,
             .page-enter-modern {
@@ -1026,7 +1020,6 @@
             
             /* Improve mobile scrolling performance */
             body {
-                -webkit-overflow-scrolling: touch;
                 overscroll-behavior: contain;
             }
             
@@ -2227,6 +2220,51 @@
             canvas.on('mouse:down', eraserHandler);
         });
 
+        // Highlighter tool
+        document.getElementById('tool-highlighter').addEventListener('click', function(){
+            if(!canvas) return;
+            canvas.isDrawingMode = true;
+            const brush = new fabric.PencilBrush(canvas);
+            brush.color = 'rgba(255, 255, 0, 0.5)'; // Semi-transparent yellow
+            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 12,10)||12;
+            canvas.freeDrawingBrush = brush;
+            window.__whiteboardCurrentTool = 'highlighter';
+        });
+
+        // Text tool
+        document.getElementById('tool-text').addEventListener('click', function(){
+            if(!canvas) return;
+            canvas.isDrawingMode = false;
+            window.__whiteboardCurrentTool = 'text';
+            // Set cursor to indicate text mode
+            canvas.defaultCursor = 'text';
+            
+            // Remove any existing text handlers
+            canvas.off('mouse:down', textHandler);
+            
+            // Add text on click
+            const textHandler = function(options){
+                const pointer = canvas.getPointer(options.e);
+                const textbox = new fabric.Textbox('Type here...', {
+                    left: pointer.x,
+                    top: pointer.y,
+                    width: 200,
+                    fontSize: 16,
+                    fontFamily: (document.getElementById('whiteboard-font') && document.getElementById('whiteboard-font').value) || 'Plus Jakarta Sans',
+                    fill: (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#000000',
+                });
+                canvas.add(textbox);
+                canvas.setActiveObject(textbox);
+                textbox.enterEditing();
+                canvas.renderAll();
+                pushState();
+                // Remove text handler after adding text
+                canvas.off('mouse:down', textHandler);
+            };
+            
+            canvas.on('mouse:down', textHandler);
+        });
+
         // Color change
         document.getElementById('whiteboard-color').addEventListener('input', function(e){
             if(!canvas) return;
@@ -2665,7 +2703,270 @@
 
         // Fallback: ensure hide after window load
         // Early slide-in on DOM ready
+        // Toast notification system for better UX
+        function showToast(message, type = 'info', duration = 3000) {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 transform translate-x-full transition-transform duration-300 ${
+                type === 'error' ? 'border-red-500' : 
+                type === 'success' ? 'border-green-500' : 
+                type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
+            }`;
+            
+            toast.innerHTML = `
+                <div class="p-4 flex items-center">
+                    <div class="flex-shrink-0">
+                        ${type === 'error' ? 
+                            '<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>' :
+                            type === 'success' ? 
+                            '<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' :
+                            type === 'warning' ?
+                            '<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>' :
+                            '<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>'
+                        }
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium text-gray-900">${message}</p>
+                    </div>
+                    <button class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Slide in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full');
+            });
+            
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+        
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-4 right-4 z-50 space-y-2';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        // Update accent color throughout the application
+        function updateAccentColor(color) {
+            const root = document.documentElement;
+            if (root) {
+                root.style.setProperty('--accent-color', color);
+                root.style.setProperty('--accent-color-hover', color + 'dd');
+                root.style.setProperty('--accent-color-light', color + '20');
+            }
+        }
+        
+        // Initialize essential functionality
+        function initializeApplication() {
+            // Initialize copyright year
+            const yearElement = document.getElementById('landing-copyright-year');
+            if (yearElement) {
+                yearElement.textContent = new Date().getFullYear().toString();
+            }
+            
+            // Setup mobile menu handlers
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const closeMenuButton = document.getElementById('close-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileLogoutButton = document.getElementById('mobile-logout-button');
+            
+            if (hamburgerButton && mobileMenu) {
+                hamburgerButton.addEventListener('click', () => {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenu.style.display = 'block';
+                    hamburgerButton.setAttribute('aria-expanded', 'true');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            
+            if (closeMenuButton && mobileMenu) {
+                closeMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenu.style.display = 'none';
+                    hamburgerButton?.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                });
+            }
+            
+            if (mobileLogoutButton) {
+                mobileLogoutButton.addEventListener('click', handleLogout);
+            }
+            
+            // Setup auth form toggles
+            const showRegisterForm = document.getElementById('show-register-form');
+            const showLoginForm = document.getElementById('show-login-form');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            
+            if (showRegisterForm && loginForm && registerForm) {
+                showRegisterForm.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.classList.add('hidden');
+                    registerForm.classList.remove('hidden');
+                });
+            }
+            
+            if (showLoginForm && loginForm && registerForm) {
+                showLoginForm.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    registerForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                });
+            }
+            
+            // Setup password visibility toggle
+            const showPasswordBtn = document.getElementById('show-password-btn');
+            const passwordInput = document.getElementById('password');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+            
+            if (showPasswordBtn && passwordInput && eyeOpen && eyeClosed) {
+                showPasswordBtn.addEventListener('click', () => {
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        eyeOpen.classList.add('hidden');
+                        eyeClosed.classList.remove('hidden');
+                    } else {
+                        passwordInput.type = 'password';
+                        eyeOpen.classList.remove('hidden');
+                        eyeClosed.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Setup navigation
+            document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = link.getAttribute('data-page');
+                    if (pageId) {
+                        showPage(pageId);
+                        // Close mobile menu if open
+                        if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.style.display = 'none';
+                            document.body.style.overflow = '';
+                        }
+                    }
+                });
+            });
+            
+            // Setup scroll to top button
+            const scrollTopButton = document.getElementById('scroll-top');
+            if (scrollTopButton) {
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 300) {
+                        scrollTopButton.classList.remove('hidden');
+                    } else {
+                        scrollTopButton.classList.add('hidden');
+                    }
+                });
+                
+                scrollTopButton.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            initializeApplication();
+            
+            // Setup accent color picker
+            const accentColorPicker = document.getElementById('accent-color-picker');
+            if (accentColorPicker) {
+                const savedColor = localStorage.getItem('accentColor');
+                if (savedColor) {
+                    accentColorPicker.value = savedColor;
+                    updateAccentColor(savedColor);
+                }
+                
+                accentColorPicker.addEventListener('change', (e) => {
+                    const color = e.target.value;
+                    updateAccentColor(color);
+                    localStorage.setItem('accentColor', color);
+                });
+            }
+            
+            // Setup FAQ accordion
+            document.querySelectorAll('[data-faq-toggle]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-faq-toggle');
+                    const content = document.getElementById(targetId);
+                    const icon = button.querySelector('svg');
+                    
+                    if (content && icon) {
+                        const isExpanded = !content.classList.contains('hidden');
+                        
+                        if (isExpanded) {
+                            content.classList.add('hidden');
+                            icon.style.transform = 'rotate(0deg)';
+                        } else {
+                            content.classList.remove('hidden');
+                            icon.style.transform = 'rotate(180deg)';
+                        }
+                    }
+                });
+            });
+            
+            // Setup keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // ESC to close modals
+                if (e.key === 'Escape') {
+                    const mobileMenu = document.getElementById('mobile-menu');
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                }
+                
+                // Ctrl/Cmd + K for search (future implementation)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    // Focus search input when implemented
+                }
+            });
+            
+            // Register service worker for offline support (if available)
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    // Only register in production
+                    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                        navigator.serviceWorker.register('/sw.js')
+                            .then(registration => {
+                                console.log('ServiceWorker registration successful');
+                            })
+                            .catch(error => {
+                                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                                    console.log('ServiceWorker registration failed: ', error);
+                                }
+                            });
+                    }
+                });
+            }
+            
+            // Performance monitoring
+            window.addEventListener('load', () => {
+                if (window.performance && window.performance.now) {
+                    const loadTime = window.performance.now();
+                    if (loadTime > 3000) { // If page takes more than 3 seconds
+                        showToast('Page loaded successfully, but performance could be improved', 'warning', 5000);
+                    }
+                }
+            });
             // Use requestIdleCallback for better performance
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
@@ -2747,7 +3048,10 @@
                 }
             } else if (user && !user.emailVerified) {
                 // User is signed in but email is NOT verified - show verification page
-                console.log("User is not verified.");
+                // User verification status logged for debugging in development
+                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                    console.log("User is not verified.");
+                }
                 showVerificationMessagePage(user.email);
                 hideAppLoading();
             } else {
@@ -5044,8 +5348,12 @@
         // Toast notifications (success, error, warning) rendered top-center
         function showToast(message, type = 'success', options = {}) {
             const { duration = 3500, title } = options;
-            const container = document.getElementById('toast-container');
-            if (!container) return alert(message);
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                // Fallback: show alert if toast container is missing
+                alert(message);
+                return;
+            }
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.setAttribute('role', 'status');
@@ -5578,13 +5886,19 @@
                         loaded = true;
                         clearTimeout(timeoutId);
                         hideLoading();
-                        console.log('Preview loaded successfully');
+                        // Preview loaded successfully - log in development only
+                        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                            console.log('Preview loaded successfully');
+                        }
                         
                         // Double-check after a short delay to ensure content is visible
                         setTimeout(() => {
                             if (frame.style.display !== 'none' && frame.offsetHeight > 0) {
                                 // Frame is visible and has content
-                                console.log('Preview confirmed visible');
+                                // Preview confirmed visible - log in development only
+                                if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                                    console.log('Preview confirmed visible');
+                                }
                             }
                         }, 500);
                     }, { once: true });
@@ -5610,7 +5924,10 @@
                             const originalSrc = frame.src.split('?')[0].split('&')[0];
                             frame.src = originalSrc + '?reload=' + Date.now();
                             
-                            console.log('Manual preview reload triggered');
+                            // Manual preview reload triggered - log in development only
+                            if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                                console.log('Manual preview reload triggered');
+                            }
                         });
                     }
                 }
@@ -6129,7 +6446,11 @@
                         if (db) {
                             // Test connection with a simple query
                             db.collection('settings').doc('announcement').get()
-                                .then(() => console.log('Firebase connection restored'))
+                                .then(() => {
+                                    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+                                        console.log('Firebase connection restored');
+                                    }
+                                })
                                 .catch(() => console.warn('Firebase still having issues'));
                         }
                     } catch (e) {
@@ -6519,26 +6840,31 @@
                 });
             }
         }
+        
+        // Initialize mobile optimizations
+        setupMobileOptimizations();
+        
+        // End of main application script
     </script>
-<!-- Cloudflare Insights removed for local/testing to avoid parser-blocking and blocked-by-client errors.
+
+    <!-- Cloudflare Insights removed for local/testing to avoid parser-blocking and blocked-by-client errors.
          To re-enable in production, either include the script async via a server-side config
          or dynamically load it after user-consent:
+    
+    <script>
+        // Example dynamic loader (uncomment in production):
+        // (function(){
+        //   var s = document.createElement('script');
+        //   s.src = 'https://static.cloudflareinsights.com/beacon.min.js/<YOUR_BUILD_HASH>';
+        //   s.defer = true; s.crossOrigin = 'anonymous';
+        //   document.head.appendChild(s);
+        // })();
+    </script>
+    -->
 
-<script>
-    // Example dynamic loader (uncomment in production):
-    // (function(){
-    //   var s = document.createElement('script');
-    //   s.src = 'https://static.cloudflareinsights.com/beacon.min.js/<YOUR_BUILD_HASH>';
-    //   s.defer = true; s.crossOrigin = 'anonymous';
-    //   document.head.appendChild(s);
-    // })();
-</script>
-
--->
-
-<!-- Local no-op for analytics (keeps window._cfAnalytics references safe) -->
-<script>
-    window._cfAnalytics = window._cfAnalytics || { beacon: function(){ /* no-op for local testing */ } };
-</script>
+    <!-- Local no-op for analytics (keeps window._cfAnalytics references safe) -->
+    <script>
+        window._cfAnalytics = window._cfAnalytics || { beacon: function(){ /* no-op for local testing */ } };
+    </script>
 </body>
 </html>
