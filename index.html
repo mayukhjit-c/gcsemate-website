@@ -38,7 +38,19 @@
         }catch(_){}
     })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com" onerror="console.log('Tailwind CSS failed to load from CDN')"></script>
+    <script>
+        // Tailwind config
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
@@ -48,6 +60,11 @@
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <style>
         :root {
@@ -1048,6 +1065,161 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- UK Exam Board Information Section -->
+            <div class="mt-20 sm:mt-32">
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight text-center">UK Exam Boards We Support</h2>
+                <p class="mt-3 text-gray-500 text-center max-w-2xl mx-auto">Comprehensive coverage across all major UK examination boards with tailored content for each specification.</p>
+                
+                <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                    <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card border-2 border-red-200" style="animation-delay: 0.1s;">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 mb-4 mx-auto">
+                                <span class="text-2xl font-bold">AQA</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">AQA</h3>
+                            <p class="text-sm text-gray-600 mt-2">Assessment & Qualifications Alliance</p>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>• Most popular exam board</p>
+                                <p>• Clear marking criteria</p>
+                                <p>• Extensive past papers</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card border-2 border-green-200" style="animation-delay: 0.2s;">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
+                                <span class="text-2xl font-bold">OCR</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">OCR</h3>
+                            <p class="text-sm text-gray-600 mt-2">Oxford Cambridge & RSA</p>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>• Innovative approach</p>
+                                <p>• Strong in sciences</p>
+                                <p>• Coursework options</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card border-2 border-purple-200" style="animation-delay: 0.3s;">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-purple-100 text-purple-600 mb-4 mx-auto">
+                                <span class="text-lg font-bold">Edexcel</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">Edexcel</h3>
+                            <p class="text-sm text-gray-600 mt-2">Pearson Edexcel</p>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>• Structured approach</p>
+                                <p>• Strong in mathematics</p>
+                                <p>• Clear progression</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card border-2 border-yellow-200" style="animation-delay: 0.4s;">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 text-yellow-600 mb-4 mx-auto">
+                                <span class="text-lg font-bold">WJEC</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">WJEC Eduqas</h3>
+                            <p class="text-sm text-gray-600 mt-2">Welsh Joint Education Committee</p>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>• Wales-focused content</p>
+                                <p>• Bilingual support</p>
+                                <p>• Cultural relevance</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card border-2 border-indigo-200" style="animation-delay: 0.5s;">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mb-4 mx-auto">
+                                <span class="text-2xl font-bold">CIE</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">Cambridge CIE</h3>
+                            <p class="text-sm text-gray-600 mt-2">Cambridge International</p>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>• International standard</p>
+                                <p>• Rigorous assessment</p>
+                                <p>• Global recognition</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Exam Board Comparison Table -->
+                <div class="mt-16">
+                    <h3 class="text-2xl font-bold text-gray-800 text-center mb-8">Exam Board Comparison</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100/50">
+                                    <th class="p-4 text-left font-bold text-gray-800 border-b-2 border-gray-200 rounded-tl-2xl">Aspect</th>
+                                    <th class="p-4 text-center font-bold text-red-600 border-b-2 border-gray-200">AQA</th>
+                                    <th class="p-4 text-center font-bold text-green-600 border-b-2 border-gray-200">OCR</th>
+                                    <th class="p-4 text-center font-bold text-purple-600 border-b-2 border-gray-200">Edexcel</th>
+                                    <th class="p-4 text-center font-bold text-yellow-600 border-b-2 border-gray-200">WJEC</th>
+                                    <th class="p-4 text-center font-bold text-indigo-600 border-b-2 border-gray-200 rounded-tr-2xl">CIE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-4 font-medium text-gray-800 border-b border-gray-200">Popularity in UK</td>
+                                    <td class="p-4 text-center text-green-600 border-b border-gray-200">★★★★★</td>
+                                    <td class="p-4 text-center text-green-600 border-b border-gray-200">★★★★☆</td>
+                                    <td class="p-4 text-center text-green-600 border-b border-gray-200">★★★★☆</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">★★★☆☆</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">★★☆☆☆</td>
+                                </tr>
+                                <tr class="bg-gray-50/30">
+                                    <td class="p-4 font-medium text-gray-800 border-b border-gray-200">Content Approach</td>
+                                    <td class="p-4 text-center text-sm border-b border-gray-200">Balanced</td>
+                                    <td class="p-4 text-center text-sm border-b border-gray-200">Innovative</td>
+                                    <td class="p-4 text-center text-sm border-b border-gray-200">Structured</td>
+                                    <td class="p-4 text-center text-sm border-b border-gray-200">Cultural</td>
+                                    <td class="p-4 text-center text-sm border-b border-gray-200">Rigorous</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-medium text-gray-800 border-b border-gray-200">Difficulty Level</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">Medium</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">Medium</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">Medium</td>
+                                    <td class="p-4 text-center text-yellow-600 border-b border-gray-200">Medium</td>
+                                    <td class="p-4 text-center text-red-600 border-b border-gray-200">High</td>
+                                </tr>
+                                <tr class="bg-gray-50/30">
+                                    <td class="p-4 font-medium text-gray-800">Resource Availability</td>
+                                    <td class="p-4 text-center text-green-600">Excellent</td>
+                                    <td class="p-4 text-center text-green-600">Good</td>
+                                    <td class="p-4 text-center text-green-600">Good</td>
+                                    <td class="p-4 text-center text-yellow-600">Fair</td>
+                                    <td class="p-4 text-center text-yellow-600">Fair</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Promotional Section -->
+            <div class="mt-20 sm:mt-32 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 sm:p-12 text-white text-center">
+                <div class="max-w-3xl mx-auto">
+                    <h2 class="text-3xl sm:text-4xl font-bold mb-4">🚀 Free Premium Access for 24 Hours!</h2>
+                    <p class="text-lg sm:text-xl mb-8 opacity-90">Get unlimited access to all subjects, exam board-specific content, and premium features. No credit card required!</p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <button onclick="showAuthPage(false)" class="px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-gray-50 transition-all transform hover:scale-105 shadow-lg">
+                            Start Free Trial Now
+                        </button>
+                        <div class="flex items-center text-sm opacity-80">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            No commitment • Cancel anytime
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
         <footer class="mt-24 text-center text-gray-500 text-sm">
              <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
@@ -1136,14 +1308,18 @@
             </div>
             <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="subject-dashboard-page" data-tooltip="View your subjects">Subjects</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="focus-mode-page" data-tooltip="Focus Mode">Focus Mode</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="pomodoro-page" data-tooltip="Pomodoro Timer">Pomodoro</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="notes-page" data-tooltip="My Notes">Notes</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="progress-page" data-tooltip="Progress Tracker">Progress</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="videos-page" data-tooltip="View Videos">Videos</a>
                  <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="gcsemategpt-page" data-tooltip="Try our AI tutor">GCSEMateGPT</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="blog-page" data-tooltip="View Blog">Blog</a>
                 <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="calendar-page" data-tooltip="View Calendar">Calendar</a>
-                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Useful Links</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About Us</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Features & Pricing</a>
-                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="help-page" data-tooltip="Get help and see FAQs">Help/FAQ</a>
+                <a href="#" id="useful-links-nav" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="useful-links-page" data-tooltip="Useful Links">Links</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="about-page" data-tooltip="Learn about us">About</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="features-page" data-tooltip="See our features and pricing">Pricing</a>
+                <a href="#" class="nav-link py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="help-page" data-tooltip="Get help and see FAQs">Help</a>
             </nav>
             <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
@@ -1170,14 +1346,18 @@
             </div>
             <nav class="flex flex-col p-6 space-y-3" role="navigation" aria-label="Main navigation">
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">📚 Subjects</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="focus-mode-page" tabindex="0">🎯 Focus Mode</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="pomodoro-page" tabindex="0">🍅 Pomodoro</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="notes-page" tabindex="0">📝 Notes</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="progress-page" tabindex="0">📊 Progress</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">🎥 Videos</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="gcsemategpt-page" tabindex="0">🤖 GCSEMateGPT</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">📝 Blog</a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="calendar-page" tabindex="0">📅 Calendar</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">🔗 Useful Links</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="about-page" tabindex="0">ℹ️ About Us</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="features-page" tabindex="0">⭐ Features & Pricing</a>
-                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">❓ Help/FAQ</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">🔗 Links</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="about-page" tabindex="0">ℹ️ About</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="features-page" tabindex="0">⭐ Pricing</a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">❓ Help</a>
             </nav>
             <div class="flex flex-col p-6 border-t border-gray-200 space-y-4 bg-gray-50">
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="account-settings-page" tabindex="0">⚙️ Account</a>
@@ -1199,6 +1379,344 @@
                     </div>
                     <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
                 </div>
+                
+                <!-- Subject Detail Pages -->
+                <div id="subject-detail-page" class="page hidden p-8 max-w-6xl mx-auto">
+                    <div class="mb-6">
+                        <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold mb-4">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back to Subjects
+                        </button>
+                    </div>
+                    
+                    <div id="subject-detail-content">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Study Tools Pages -->
+                <div id="focus-mode-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <div class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+                        <div class="text-center mb-8">
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">🎯 Focus Mode</h1>
+                            <p class="text-gray-600">Eliminate distractions and maximize your concentration</p>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Focus Session</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                                        <select id="focus-subject" class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <option value="">Select Subject</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Session Duration</label>
+                                        <select id="focus-duration" class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <option value="25">25 minutes</option>
+                                            <option value="45">45 minutes</option>
+                                            <option value="60">1 hour</option>
+                                            <option value="90">1.5 hours</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Session Goal</label>
+                                        <input id="focus-goal" type="text" placeholder="e.g., Complete Chapter 3 exercises" 
+                                               class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                    </div>
+                                    <button onclick="startFocusSession()" id="start-focus-btn" 
+                                            class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all">
+                                        Start Focus Session
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Session Stats</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                                        <span class="font-semibold">Today's Focus Time</span>
+                                        <span id="today-focus-time" class="text-green-600 font-bold">0 min</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                                        <span class="font-semibold">Sessions Completed</span>
+                                        <span id="sessions-completed" class="text-blue-600 font-bold">0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                                        <span class="font-semibold">Current Streak</span>
+                                        <span id="focus-streak" class="text-orange-600 font-bold">0 days</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Session Display -->
+                        <div id="active-focus-session" class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white text-center">
+                            <h2 class="text-2xl font-bold mb-4">Focus Session Active</h2>
+                            <div id="focus-timer" class="text-6xl font-bold mb-4">25:00</div>
+                            <div id="focus-current-goal" class="text-lg mb-6 opacity-90"></div>
+                            <div class="flex justify-center space-x-4">
+                                <button onclick="pauseFocusSession()" id="pause-focus-btn" 
+                                        class="px-6 py-3 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition-all">
+                                    Pause
+                                </button>
+                                <button onclick="endFocusSession()" 
+                                        class="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-all">
+                                    End Session
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="pomodoro-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <div class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+                        <div class="text-center mb-8">
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">🍅 Pomodoro Timer</h1>
+                            <p class="text-gray-600">Work in focused 25-minute intervals with 5-minute breaks</p>
+                        </div>
+                        
+                        <div class="max-w-md mx-auto">
+                            <!-- Pomodoro Timer Display -->
+                            <div class="bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl p-8 text-white text-center mb-8">
+                                <div id="pomodoro-phase" class="text-lg font-semibold mb-2">Work Phase</div>
+                                <div id="pomodoro-timer" class="text-6xl font-bold mb-4">25:00</div>
+                                <div id="pomodoro-session-counter" class="text-sm opacity-80">Session 1 of 4</div>
+                                
+                                <div class="flex justify-center space-x-4 mt-6">
+                                    <button onclick="startPomodoro()" id="start-pomodoro-btn" 
+                                            class="px-6 py-3 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition-all">
+                                        Start
+                                    </button>
+                                    <button onclick="pausePomodoro()" id="pause-pomodoro-btn" class="hidden px-6 py-3 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition-all">
+                                        Pause
+                                    </button>
+                                    <button onclick="resetPomodoro()" 
+                                            class="px-6 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Pomodoro Settings -->
+                            <div class="bg-gray-50/50 rounded-xl p-6 mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Settings</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Work Duration (minutes)</label>
+                                        <input id="work-duration" type="number" value="25" min="1" max="60" 
+                                               class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Break Duration (minutes)</label>
+                                        <input id="break-duration" type="number" value="5" min="1" max="30" 
+                                               class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Long Break (minutes)</label>
+                                        <input id="long-break-duration" type="number" value="15" min="5" max="60" 
+                                               class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Today's Progress -->
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Today's Progress</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="text-center">
+                                        <div id="pomodoros-completed" class="text-2xl font-bold text-green-600">0</div>
+                                        <div class="text-sm text-gray-600">Pomodoros</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div id="total-focus-time" class="text-2xl font-bold text-blue-600">0h</div>
+                                        <div class="text-sm text-gray-600">Focus Time</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="notes-page" class="page hidden p-8 max-w-6xl mx-auto">
+                    <div class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-xl border border-white/30">
+                        <div class="p-6 border-b border-gray-200/50">
+                            <div class="flex justify-between items-center">
+                                <h1 class="text-3xl font-bold text-gray-900">📝 My Notes</h1>
+                                <button onclick="createNewNote()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
+                                    New Note
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex h-[600px]">
+                            <!-- Notes Sidebar -->
+                            <div class="w-1/3 p-6 border-r border-gray-200/50">
+                                <div class="mb-4">
+                                    <input id="notes-search" type="text" placeholder="Search notes..." 
+                                           class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <select id="notes-filter" class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                        <option value="all">All Subjects</option>
+                                        <option value="mathematics">Mathematics</option>
+                                        <option value="english">English</option>
+                                        <option value="science">Science</option>
+                                        <option value="history">History</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="notes-list" class="space-y-2 overflow-y-auto h-96">
+                                    <!-- Notes will be loaded here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Note Editor -->
+                            <div class="flex-1 p-6">
+                                <div id="note-editor" class="hidden">
+                                    <div class="mb-4">
+                                        <input id="note-title" type="text" placeholder="Note title..." 
+                                               class="w-full p-3 text-xl font-semibold border-none bg-transparent focus:outline-none placeholder-gray-400">
+                                    </div>
+                                    
+                                    <div class="mb-4 flex space-x-2">
+                                        <select id="note-subject" class="p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <option value="">Select Subject</option>
+                                            <option value="mathematics">Mathematics</option>
+                                            <option value="english">English</option>
+                                            <option value="science">Science</option>
+                                            <option value="history">History</option>
+                                        </select>
+                                        
+                                        <div class="flex space-x-2">
+                                            <button onclick="formatText('bold')" class="p-2 rounded text-gray-600 hover:bg-gray-200 transition-all">
+                                                <strong>B</strong>
+                                            </button>
+                                            <button onclick="formatText('italic')" class="p-2 rounded text-gray-600 hover:bg-gray-200 transition-all">
+                                                <em>I</em>
+                                            </button>
+                                            <button onclick="formatText('underline')" class="p-2 rounded text-gray-600 hover:bg-gray-200 transition-all">
+                                                <u>U</u>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <textarea id="note-content" placeholder="Start writing your notes..." 
+                                              class="w-full h-80 p-4 rounded-lg border border-gray-300 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+                                    
+                                    <div class="mt-4 flex justify-between items-center">
+                                        <div class="text-sm text-gray-500">
+                                            <span id="note-word-count">0 words</span> • 
+                                            <span id="note-last-saved">Never saved</span>
+                                        </div>
+                                        <div class="space-x-2">
+                                            <button onclick="deleteNote()" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                                Delete
+                                            </button>
+                                            <button onclick="saveNote()" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all">
+                                                Save Note
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="notes-empty-state" class="text-center py-16">
+                                    <div class="text-6xl mb-4">📝</div>
+                                    <h2 class="text-xl font-semibold text-gray-700 mb-2">No notes yet</h2>
+                                    <p class="text-gray-500 mb-6">Create your first note to get started</p>
+                                    <button onclick="createNewNote()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
+                                        Create First Note
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="progress-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">📊 Progress Tracker</h1>
+                        <p class="text-gray-600">Monitor your study progress across all subjects</p>
+                    </div>
+                    
+                    <div class="grid lg:grid-cols-3 gap-8 mb-8">
+                        <!-- Overall Stats -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Overall Progress</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Total Study Time</span>
+                                    <span id="total-study-time" class="font-bold text-blue-600">0h 0m</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Sessions Completed</span>
+                                    <span id="total-sessions" class="font-bold text-green-600">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Current Streak</span>
+                                    <span id="study-streak" class="font-bold text-orange-600">0 days</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Notes Created</span>
+                                    <span id="total-notes" class="font-bold text-purple-600">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Weekly Goal -->
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Weekly Goal</h3>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                    <span>Study Hours</span>
+                                    <span id="weekly-progress-text">0 / 10 hours</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="weekly-progress-bar" class="bg-green-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Weekly Goal (hours)</label>
+                                <input id="weekly-goal-input" type="number" value="10" min="1" max="50" 
+                                       class="w-full p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
+                                       onchange="updateWeeklyGoal()">
+                            </div>
+                        </div>
+                        
+                        <!-- This Week -->
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">This Week</h3>
+                            <div class="grid grid-cols-7 gap-1">
+                                <div class="text-xs text-center text-gray-500 p-1">Mon</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Tue</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Wed</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Thu</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Fri</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Sat</div>
+                                <div class="text-xs text-center text-gray-500 p-1">Sun</div>
+                                
+                                <div id="weekly-calendar" class="col-span-7 grid grid-cols-7 gap-1">
+                                    <!-- Days will be populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subject Progress -->
+                    <div class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">Subject Progress</h3>
+                        <div id="subject-progress-charts" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Subject progress will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="gcsemategpt-page" class="page hidden p-8 max-w-5xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-4">GCSEMateGPT</h2>
                     <p class="text-gray-600 mb-6">A premium, GPT‑5 compatible ChatGPT bot tailored for GCSE success — live exam dates, exam board specs, past papers, model answers, flashcards, and focussed study plans across AQA, Edexcel, OCR and WJEC/Eduqas.</p>
@@ -1748,32 +2266,170 @@
         // --- CONFIGURATION ---
         const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
         const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
-        const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
-        const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
-        const subjectIconMap = {
-            // Biology: tree icon
-            biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
-            // Physics: thunderbolt
-            physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
-            // Chemistry: conical flask
-            chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
-            // Geography: globe
-            geography: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
-            // English: book lines
-            english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
-            // Maths: pi symbol outline
-            maths: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16"/><path d="M8 8v8"/><path d="M16 8c0 5-2 8-5 8"/></svg>`,
-            // History: outlined clock face with hands
-            history: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
-            // German: flag
-            german: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3" viewBox="0 0 24 24"><rect width="24" height="8" y="0" fill="#000"/><rect width="24" height="8" y="8" fill="#DD0000"/><rect width="24" height="8" y="16" fill="#FFCE00"/></svg>`,
-            // Music: outlined note with circles
-            music: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6l10-2v10"/><circle cx="7" cy="18" r="3" stroke="currentColor"/><circle cx="19" cy="14" r="3" stroke="currentColor"/></svg>`,
-            // Computing: monitor
-            computing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
-            // Philosophy and Ethics: balanced scales outline
-            "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
+        // --- COMPREHENSIVE SUBJECTS DATABASE WITH EXAM BOARD SPECIFICATIONS ---
+        const SUBJECTS_DATA = {
+            'Mathematics': {
+                name: 'Mathematics',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16"/><path d="M8 8v8"/><path d="M16 8c0 5-2 8-5 8"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8300',
+                        specification: 'Linear qualification with 3 equally-weighted written examination papers. Students must take all assessments in the same series.',
+                        papers: ['Paper 1: Non-calculator (1h 30m, 80 marks)', 'Paper 2: Calculator (1h 30m, 80 marks)', 'Paper 3: Calculator (1h 30m, 80 marks)'],
+                        topics: ['Number', 'Algebra', 'Ratio, proportion and rates of change', 'Geometry and measures', 'Probability', 'Statistics']
+                    },
+                    'Edexcel': {
+                        code: '1MA1',
+                        specification: 'Linear qualification assessed through three examination papers of equal weighting.',
+                        papers: ['Paper 1: Non-calculator (1h 30m, 80 marks)', 'Paper 2: Calculator (1h 30m, 80 marks)', 'Paper 3: Calculator (1h 30m, 80 marks)'],
+                        topics: ['Number', 'Algebra', 'Ratio, proportion and rates of change', 'Geometry and measures', 'Statistics and Probability']
+                    },
+                    'OCR': {
+                        code: 'J560',
+                        specification: 'Three written papers that are externally assessed.',
+                        papers: ['Paper 1: Foundation/Higher (1h 30m, 80 marks)', 'Paper 2: Foundation/Higher (1h 30m, 80 marks)', 'Paper 3: Foundation/Higher (1h 30m, 80 marks)'],
+                        topics: ['Number and the number system', 'Algebra', 'Ratio, proportion and rates of change', 'Geometry and measures', 'Statistics and probability']
+                    }
+                }
+            },
+            'English Language': {
+                name: 'English Language',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8700',
+                        specification: 'Two equally weighted written examination papers.',
+                        papers: ['Paper 1: Explorations in Creative Reading and Writing (1h 45m, 80 marks)', 'Paper 2: Writers\' Viewpoints and Perspectives (1h 45m, 80 marks)'],
+                        topics: ['Reading skills', 'Writing skills', 'Spoken Language (separate endorsement)']
+                    },
+                    'Edexcel': {
+                        code: '1EN0',
+                        specification: 'Two written examination papers of equal weighting plus a separate Spoken Language assessment.',
+                        papers: ['Paper 1: Fiction and Imaginative Writing (1h 45m, 64 marks)', 'Paper 2: Non-fiction and Transactional Writing (2h 5m, 96 marks)'],
+                        topics: ['Reading', 'Writing', 'Spoken Language']
+                    },
+                    'OCR': {
+                        code: 'J351',
+                        specification: 'Two written papers and a Spoken Language assessment.',
+                        papers: ['Paper 1: Communicating Information and Ideas (2h, 80 marks)', 'Paper 2: Exploring Effects and Impact (2h, 80 marks)'],
+                        topics: ['Reading non-fiction texts', 'Reading literature', 'Writing for different purposes', 'Spoken Language']
+                    }
+                }
+            },
+            'English Literature': {
+                name: 'English Literature',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-red-600" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8702',
+                        specification: 'Two written examination papers covering prose, poetry, and drama from different time periods.',
+                        papers: ['Paper 1: Shakespeare and the 19th-century novel (1h 45m, 64 marks)', 'Paper 2: Modern texts and poetry (2h 15m, 96 marks)'],
+                        topics: ['Shakespeare', '19th-century novel', 'Modern texts', 'Poetry', 'Unseen poetry']
+                    },
+                    'Edexcel': {
+                        code: '1ET0',
+                        specification: 'Two written examination papers with a focus on different genres and time periods.',
+                        papers: ['Paper 1: Shakespeare and Post-1914 Literature (2h 15m, 80 marks)', 'Paper 2: 19th Century Novel and Poetry since 1789 (1h 45m, 80 marks)'],
+                        topics: ['Shakespeare', 'Post-1914 prose/drama', '19th-century novel', 'Poetry since 1789']
+                    }
+                }
+            },
+            'Biology': {
+                name: 'Biology',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8461',
+                        specification: 'Two written papers and required practical endorsement.',
+                        papers: ['Paper 1: Biology topics 1-4 (1h 45m, 90 marks)', 'Paper 2: Biology topics 5-7 (1h 45m, 90 marks)'],
+                        topics: ['Cell biology', 'Organisation', 'Infection and response', 'Bioenergetics', 'Homeostasis and response', 'Inheritance, variation and evolution', 'Ecology']
+                    },
+                    'Edexcel': {
+                        code: '1BI0',
+                        specification: 'Two written papers covering all aspects of the specification.',
+                        papers: ['Paper 1: (1h 45m, 90 marks)', 'Paper 2: (1h 45m, 90 marks)'],
+                        topics: ['Key concepts in biology', 'Cells and control', 'Genetics', 'Natural selection and genetic modification', 'Health, disease and medicine', 'Plant structures and functions', 'Animal coordination, control and homeostasis', 'Exchange and transport', 'Ecosystems and material cycles']
+                    },
+                    'OCR': {
+                        code: 'J247',
+                        specification: 'Six written papers across Foundation and Higher tiers.',
+                        papers: ['Paper 1: Cells, tissues and organs (1h 30m, 75 marks)', 'Paper 2: Systems and processes (1h 30m, 75 marks)', 'Paper 3: Life and environmental science (1h 30m, 75 marks)'],
+                        topics: ['Cell level systems', 'Scaling up', 'Organism level systems', 'Community level systems', 'Interaction between systems']
+                    }
+                }
+            },
+            'Chemistry': {
+                name: 'Chemistry',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8462',
+                        specification: 'Two written papers and required practical endorsement.',
+                        papers: ['Paper 1: Chemistry topics 1-5 (1h 45m, 90 marks)', 'Paper 2: Chemistry topics 6-10 (1h 45m, 90 marks)'],
+                        topics: ['Atomic structure and the periodic table', 'Bonding, structure, and properties of matter', 'Quantitative chemistry', 'Chemical changes', 'Energy changes', 'The rate and extent of chemical change', 'Organic chemistry', 'Chemical analysis', 'Chemistry of the atmosphere', 'Using resources']
+                    }
+                }
+            },
+            'Physics': {
+                name: 'Physics',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
+                examBoards: {
+                    'AQA': {
+                        code: '8463',
+                        specification: 'Two written papers and required practical endorsement.',
+                        papers: ['Paper 1: Physics topics 1-4 (1h 45m, 90 marks)', 'Paper 2: Physics topics 5-8 (1h 45m, 90 marks)'],
+                        topics: ['Energy', 'Electricity', 'Particle model of matter', 'Atomic structure', 'Forces', 'Waves', 'Magnetism and electromagnetism', 'Space physics']
+                    }
+                }
+            },
+            'History': {
+                name: 'History',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
+                examBoards: {
+                    'Edexcel': {
+                        code: '1HI0',
+                        specification: 'Three written papers covering different historical periods and skills.',
+                        papers: ['Paper 1: Thematic study and historic environment (1h 15m)', 'Paper 2: Period study and British depth study (1h 45m)', 'Paper 3: Modern depth study (1h 20m)'],
+                        topics: ['Medicine in Britain c1250-present', 'The American West c1835-c1895', 'Weimar and Nazi Germany 1918-39', 'Early Elizabethan England 1558-88']
+                    }
+                }
+            },
+            'Geography': {
+                name: 'Geography',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
+                examBoards: {
+                    'OCR': {
+                        code: 'J384',
+                        specification: 'Three written papers covering physical and human geography plus geographical skills.',
+                        papers: ['Paper 1: Our Natural World (1h 30m, 88 marks)', 'Paper 2: People and Society (1h 30m, 88 marks)', 'Paper 3: Geographical Exploration (1h 30m, 64 marks)'],
+                        topics: ['Landscapes of the UK', 'Weather hazards and climate change', 'Ecosystems of the planet', 'People of the UK', 'Urban futures', 'UK in the 21st century']
+                    }
+                }
+            },
+            'Computer Science': {
+                name: 'Computer Science',
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
+                examBoards: {
+                    'OCR': {
+                        code: 'J277',
+                        specification: 'Two written papers and one non-examined assessment.',
+                        papers: ['Paper 1: Computer systems (1h 30m, 80 marks)', 'Paper 2: Computational thinking, algorithms and programming (1h 30m, 80 marks)'],
+                        topics: ['Systems architecture', 'Memory and storage', 'Computer networks', 'Network security', 'System software', 'Ethical, legal and environmental impacts', 'Algorithms', 'Programming techniques', 'Producing robust programs', 'Boolean logic', 'Programming languages and IDEs']
+                    }
+                }
+            }
         };
+        
+        // Legacy support - extract simple subjects list from comprehensive data
+        const SUBJECTS = Object.keys(SUBJECTS_DATA);
+        
+        // Legacy icon mapping for backward compatibility
+        const subjectIconMap = {};
+        Object.keys(SUBJECTS_DATA).forEach(subject => {
+            subjectIconMap[subject.toLowerCase()] = SUBJECTS_DATA[subject].icon;
+        });
+        
+        const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
         // =================================================================================
         // CORE INITIALIZATION & AUTHENTICATION
         // =================================================================================
@@ -2798,14 +3454,8 @@
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/70 border border-white/30 brand-gradient hover-raise min-h-[120px]';
                         card.setAttribute('data-tooltip', `Open ${subject} folder`);
                         card.addEventListener('click', () => {
-                            if (currentUser.tier === 'free') {
-                                document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
-                                document.getElementById('upgrade-modal').style.display = 'flex';
-                                return;
-                            }
-                            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
-                            handleNavigation(subjectId);
-                            showPage('file-browser-page');
+                            // Show subject detail page with specifications
+                            showSubjectDetail(subject);
                         });
                     } else {
                         card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[120px]';
@@ -2818,6 +3468,259 @@
                 showToast(`Subjects failed to load: ${err.message}`, 'error');
             }
         }
+        
+        // Show detailed subject page with exam board specifications
+        function showSubjectDetail(subjectName) {
+            const subjectData = SUBJECTS_DATA[subjectName];
+            if (!subjectData) {
+                showToast('Subject data not available', 'error');
+                return;
+            }
+            
+            const content = document.getElementById('subject-detail-content');
+            const examBoards = Object.keys(subjectData.examBoards);
+            
+            // Generate exam board tabs
+            let examBoardTabs = examBoards.map((board, index) => 
+                `<button onclick="showExamBoardContent('${subjectName}', '${board}')" 
+                   class="exam-board-tab px-6 py-3 rounded-lg font-semibold transition-all ${index === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" 
+                   data-board="${board}">${board}</button>`
+            ).join('');
+            
+            content.innerHTML = `
+                <div class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/30">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+                        <div class="flex items-center mb-4 lg:mb-0">
+                            <div class="mr-4">${subjectData.icon}</div>
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">${subjectData.name}</h1>
+                                <p class="text-gray-600 mt-1">GCSE Specification Overview</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="openSubjectFiles('${subjectName}')" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                </svg>
+                                Browse Files
+                            </button>
+                            <button onclick="openStudyMode('${subjectName}')" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                                Study Mode
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Exam Board Specifications</h2>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            ${examBoardTabs}
+                        </div>
+                        
+                        <div id="exam-board-content" class="bg-gray-50/50 rounded-xl p-6">
+                            <!-- Content will be loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Study Tips
+                            </h3>
+                            <ul class="space-y-2 text-gray-700">
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 mr-2 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Practice past papers regularly to understand exam format
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 mr-2 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Create revision timetables for consistent study habits
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 mr-2 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Use active recall and spaced repetition techniques
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 mr-2 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Focus on understanding key concepts and connections
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Resources Available
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center p-3 bg-white/60 rounded-lg">
+                                    <svg class="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <div>
+                                        <div class="font-semibold">Past Papers</div>
+                                        <div class="text-sm text-gray-600">Official exam papers with mark schemes</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center p-3 bg-white/60 rounded-lg">
+                                    <svg class="w-8 h-8 mr-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 010-2h4z"></path>
+                                    </svg>
+                                    <div>
+                                        <div class="font-semibold">Revision Notes</div>
+                                        <div class="text-sm text-gray-600">Condensed topic summaries</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center p-3 bg-white/60 rounded-lg">
+                                    <svg class="w-8 h-8 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <div>
+                                        <div class="font-semibold">Video Tutorials</div>
+                                        <div class="text-sm text-gray-600">Expert explanations and walkthroughs</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Show the first exam board by default
+            if (examBoards.length > 0) {
+                showExamBoardContent(subjectName, examBoards[0]);
+            }
+            
+            showPage('subject-detail-page');
+        }
+        
+        // Show specific exam board content
+        function showExamBoardContent(subjectName, examBoard) {
+            const subjectData = SUBJECTS_DATA[subjectName];
+            const boardData = subjectData.examBoards[examBoard];
+            
+            if (!boardData) return;
+            
+            // Update tab styling
+            document.querySelectorAll('.exam-board-tab').forEach(tab => {
+                if (tab.dataset.board === examBoard) {
+                    tab.className = 'exam-board-tab px-6 py-3 rounded-lg font-semibold transition-all bg-blue-600 text-white';
+                } else {
+                    tab.className = 'exam-board-tab px-6 py-3 rounded-lg font-semibold transition-all bg-gray-200 text-gray-700 hover:bg-gray-300';
+                }
+            });
+            
+            const content = document.getElementById('exam-board-content');
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${examBoard} Specification</h3>
+                            <p class="text-sm text-gray-600 font-semibold">Code: ${boardData.code}</p>
+                        </div>
+                        <span class="px-3 py-1 bg-${getExamBoardColor(examBoard)}-100 text-${getExamBoardColor(examBoard)}-800 text-sm font-semibold rounded-full">${examBoard}</span>
+                    </div>
+                    
+                    <div class="bg-white/60 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-2">Overview</h4>
+                        <p class="text-gray-700">${boardData.specification}</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white/60 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Assessment Papers
+                            </h4>
+                            <ul class="space-y-2">
+                                ${boardData.papers.map(paper => `
+                                    <li class="flex items-start">
+                                        <svg class="w-4 h-4 mr-2 text-green-600 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span class="text-sm text-gray-700">${paper}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-white/60 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Key Topics
+                            </h4>
+                            <ul class="space-y-2">
+                                ${boardData.topics.map(topic => `
+                                    <li class="flex items-start">
+                                        <svg class="w-4 h-4 mr-2 text-blue-600 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span class="text-sm text-gray-700">${topic}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Helper function to get exam board colors
+        function getExamBoardColor(examBoard) {
+            const colors = {
+                'AQA': 'red',
+                'OCR': 'green', 
+                'Edexcel': 'purple',
+                'WJEC': 'yellow',
+                'CIE': 'indigo'
+            };
+            return colors[examBoard] || 'gray';
+        }
+        
+        // Open subject files (existing functionality)
+        function openSubjectFiles(subjectName) {
+            const subjectId = allSubjectFolders[subjectName.toLowerCase()];
+            if (!subjectId) {
+                showToast('Subject files not available', 'error');
+                return;
+            }
+            
+            if (currentUser.tier === 'free') {
+                document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
+                document.getElementById('upgrade-modal').style.display = 'flex';
+                return;
+            }
+            
+            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subjectName, id: subjectId }];
+            handleNavigation(subjectId);
+            showPage('file-browser-page');
+        }
+        
+        // Open study mode for a subject
+        function openStudyMode(subjectName) {
+            // This will be implemented when we add the study mode functionality
+            showToast(`Study mode for ${subjectName} coming soon!`, 'info');
+        }
+        
         async function handleNavigation(folderId) {
             await fetchAndRenderFiles(folderId);
         }
