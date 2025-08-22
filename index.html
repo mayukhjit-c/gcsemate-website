@@ -20,6 +20,9 @@
     <!-- Content Security Policy to allow all necessary services -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' https: http:; frame-src 'self' https: http:; img-src 'self' data: https: http:; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="theme-color" content="#2563eb">
+    <!-- Cross-browser fallbacks for status bar / tile coloring -->
+    <meta name="msapplication-TileColor" content="#2563eb">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="canonical" href="/">
     
     <!-- Performance Optimizations - Preconnect to External Domains -->
@@ -49,8 +52,32 @@
         }catch(_){}
     })();
     </script>
-    <!-- External Libraries and Resources -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0"></script>
+        <!-- External Libraries and Resources -->
+        <!-- Tailwind CSS: prefer a local production build at /dist/tailwind.css when available. -->
+        <!-- To build locally for production:
+                 1) npm install -D tailwindcss postcss autoprefixer
+                 2) npx tailwindcss -i ./src/input.css -o ./dist/tailwind.css --minify
+                 3) Serve the generated /dist/tailwind.css in production and remove the CDN loader below.
+        -->
+        <script>
+            (function(){
+                // Try to load local built CSS first, fall back to CDN copy if missing
+                var localPath = '/dist/tailwind.css';
+                fetch(localPath, { method: 'HEAD' }).then(function(res){
+                    if(res.ok){
+                        var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = localPath; document.head.appendChild(l);
+                    } else {
+                        var s = document.createElement('script');
+                        s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
+                        document.head.appendChild(s);
+                    }
+                }).catch(function(){
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio&v=3.4.0';
+                    document.head.appendChild(s);
+                });
+            })();
+        </script>
     
     <!-- Font Preloading for Better Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,9 +159,12 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        /* Utility to hide scrollbars for overflow regions */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          /* Utility to hide scrollbars for overflow regions
+              - `-ms-overflow-style` provides IE/Edge (legacy) behavior
+              - `scrollbar-width` is supported in some browsers (Firefox); kept intentionally
+          */
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* Enhanced Loader animations */
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
@@ -863,6 +893,7 @@
                 z-index: 9999;
                 background: white;
                 overflow-y: auto;
+                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
                 -webkit-overflow-scrolling: touch;
             }
             
@@ -880,8 +911,10 @@
                 touch-action: manipulation;
                 transition: none !important;
                 -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
-                user-select: none;
                 -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
             }
             
             #mobile-menu .nav-link:active {
@@ -930,6 +963,7 @@
             
             /* Better mobile scrolling */
             .overflow-y-auto {
+                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
                 -webkit-overflow-scrolling: touch;
             }
             
@@ -958,6 +992,7 @@
             
             /* Better modal handling on mobile */
             .modal {
+                /* iOS-specific: enable momentum scrolling on older iOS Safari - kept intentionally */
                 -webkit-overflow-scrolling: touch;
             }
             
@@ -1002,10 +1037,10 @@
             
             /* Disable text selection on interactive elements */
             button, a, [role="button"] {
-                user-select: none;
                 -webkit-user-select: none;
                 -moz-user-select: none;
                 -ms-user-select: none;
+                user-select: none;
             }
             
             /* Improve mobile menu link spacing */
@@ -2129,22 +2164,29 @@
 
         function enterAnnotate(){
             if(!canvas) initCanvas();
-            toolbar.classList.remove('hidden');
-            toolbar.setAttribute('aria-hidden','false');
-            canvasEl.classList.add('active');
-            canvasEl.classList.remove('');
-            canvas.isDrawingMode = true;
-            canvas.selection = false;
+            if (toolbar) {
+                toolbar.classList.remove('hidden');
+                toolbar.setAttribute('aria-hidden','false');
+            }
+            if (canvasEl) {
+                canvasEl.classList.add('active');
+            }
+            if (canvas) {
+                canvas.isDrawingMode = true;
+                canvas.selection = false;
+            }
             isAnnotating = true;
             if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','true');
             styleCanvas();
         }
 
         function exitAnnotate(){
-            toolbar.classList.add('hidden');
-            toolbar.setAttribute('aria-hidden','true');
+            if (toolbar) {
+                toolbar.classList.add('hidden');
+                toolbar.setAttribute('aria-hidden','true');
+            }
             if(canvas) canvas.isDrawingMode = false;
-            canvasEl.classList.remove('active');
+            if (canvasEl) canvasEl.classList.remove('active');
             isAnnotating = false;
             if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','false');
             styleCanvas();
@@ -2165,13 +2207,13 @@
             brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
             brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10)||4;
             canvas.freeDrawingBrush = brush;
-            annotationState.currentTool = 'pen';
+            window.__whiteboardCurrentTool = 'pen';
         });
 
         // Eraser tool - removes objects on click and provides a wide white brush fallback
         document.getElementById('tool-eraser').addEventListener('click', function(){
             if(!canvas) return;
-            annotationState.currentTool = 'eraser';
+            window.__whiteboardCurrentTool = 'eraser';
             // Use pointer-based erasing: clicking objects removes them
             canvas.isDrawingMode = false;
             canvas.defaultCursor = 'crosshair';
@@ -2383,33 +2425,42 @@
         measurementId: "G-NSRF8YLS2N"                               // Google Analytics measurement ID
       };
       
-      // Initialize Firebase services for the application
-      firebase.initializeApp(firebaseConfig);
-      
-      // Create service instances for authentication and database
-      const auth = firebase.auth();    // Firebase Authentication service
-      
-      // Initialize Firestore with better error handling
-      let db;
-      try {
-        db = firebase.firestore();
-        
-        // Enable offline persistence with modern configuration (no longer deprecated)
-        db.enablePersistence({
-          synchronizeTabs: true
-        }).catch((err) => {
-          if (err.code == 'failed-precondition') {
-            console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-          } else if (err.code == 'unimplemented') {
-            console.warn('The current browser does not support persistence.');
-          } else {
-            console.warn('Firebase persistence error:', err);
-          }
-        });
-      } catch (error) {
-        console.error('Error initializing Firestore:', error);
-        db = firebase.firestore(); // Fallback initialization
-      }
+            // Initialize Firebase services for the application (compat SDK)
+            // NOTE: This project currently uses the compat SDK. For new projects prefer
+            // the modular v9 API (import { initializeApp } from 'firebase/app'; etc.).
+            firebase.initializeApp(firebaseConfig);
+
+            // Create service instances for authentication and database (compat)
+            const auth = firebase.auth();    // Firebase Authentication service
+
+            // Initialize Firestore with robust persistence settings
+            let db;
+            try {
+                db = firebase.firestore();
+
+                // Apply recommended cache size and enable persistence when possible
+                try {
+                    db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+                } catch (sErr) {
+                    // Some older compat builds may not expose CACHE_SIZE_UNLIMITED - ignore
+                    console.warn('Could not set Firestore cache size:', sErr);
+                }
+
+                // Enable offline persistence (synchronizeTabs helps multi-tab scenarios)
+                db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+                    if (err && err.code === 'failed-precondition') {
+                        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                    } else if (err && err.code === 'unimplemented') {
+                        console.warn('The current browser does not support persistence.');
+                    } else {
+                        console.warn('Firebase persistence error:', err);
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing Firestore (compat):', error);
+                // Attempt to continue with a regular instance - may operate without persistence
+                try { db = firebase.firestore(); } catch(e) { db = null; }
+            }
     </script>
     <!-- Main Application Script - GCSEMate Core Functionality -->
     <script>
@@ -6376,1212 +6427,45 @@
         });
         
         // =================================================================================
-        // DOCUMENT ANNOTATION SYSTEM
+        // LEGACY ANNOTATION SYSTEM REMOVED
         // =================================================================================
-        
-        /**
-         * Global annotation state management
-         */
-        let annotationState = {
-            currentTool: 'select',
-            currentColor: '#ff0000',
-            currentFile: null,
-            currentFileId: null,
-            canvas: null,
-            isDrawing: false,
-            annotations: {},
-            isFullscreen: false
-        };
-        
-        /**
-         * Annotation tools configuration
-         */
-        const annotationTools = {
-            select: { icon: '👆', tooltip: 'Select' },
-            pencil: { icon: '✏️', tooltip: 'Pencil' },
-            highlight: { icon: '🟡', tooltip: 'Highlight' },
-            rectangle: { icon: '⬜', tooltip: 'Rectangle' },
-            circle: { icon: '⭕', tooltip: 'Circle' },
-            text: { icon: 'T', tooltip: 'Text' },
-            eraser: { icon: '🧽', tooltip: 'Eraser' }
-        };
-        
-        /**
-         * Color palette for annotations
-         */
-        const annotationColors = [
-            '#ff0000', '#ff6b35', '#f7931e', '#ffd23f', '#7cb342',
-            '#00c853', '#00bcd4', '#2196f3', '#3f51b5', '#9c27b0',
-            '#e91e63', '#795548', '#607d8b', '#000000', '#ffffff'
-        ];
-        
-        /**
-         * Simple eraser function that removes objects under cursor
-         */
-        function simpleEraser(e) {
-            const canvas = annotationState.canvas;
-            if (!canvas) return;
-            
-            const pointer = canvas.getPointer(e.e);
-            const objects = canvas.getObjects();
-            
-            // Find objects under the cursor
-            const objectsUnderCursor = objects.filter(obj => {
-                const objBounds = obj.getBoundingRect();
-                return pointer.x >= objBounds.left && 
-                       pointer.x <= objBounds.left + objBounds.width &&
-                       pointer.y >= objBounds.top && 
-                       pointer.y <= objBounds.top + objBounds.height;
-            });
-            
-            // Remove objects under cursor
-            objectsUnderCursor.forEach(obj => {
-                canvas.remove(obj);
-            });
-            
-            canvas.renderAll();
-        }
-        
-        /**
-         * Test drawing function to verify canvas is working
-         */
-        function testDrawing() {
-            const canvas = annotationState.canvas;
-            if (!canvas) {
-                console.error('Canvas not available for test drawing');
-                return;
-            }
-            
-            // Add a test line
-            const testLine = new fabric.Line([50, 100, 200, 100], {
-                stroke: 'blue',
-                strokeWidth: 3,
-                selectable: true
-            });
-            
-            canvas.add(testLine);
-            canvas.renderAll();
-            
-            console.log('✅ Test line added to canvas');
-            showToast('Test line added! Try drawing now.', 'success');
-        }
-        
-        /**
-         * Force enable drawing mode
-         */
-        function forceEnableDrawing() {
-            const canvas = annotationState.canvas;
-            if (!canvas) {
-                console.error('Canvas not available');
-                return;
-            }
-            
-            // Force enable drawing mode
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.width = 5;
-            canvas.freeDrawingBrush.color = 'red';
-            
-            // Set current tool
-            annotationState.currentTool = 'pencil';
-            
-            console.log('✅ Drawing mode forced enabled');
-            showToast('Drawing mode forced enabled! Try drawing now.', 'success');
-        }
-        
-        /**
-         * Initializes the annotation system for a document
-         * @param {Object} file - The file object to annotate
-         * @param {string} containerId - The container element ID
-         */
+        // The original legacy annotation module has been removed and replaced by the
+        // modern whiteboard overlay implementation. To avoid breaking older callers,
+        // expose small compatibility shims that delegate to the new whiteboard where
+        // possible, or act as no-ops.
+
+        // Explicitly mark legacy annotations disabled
+        window.__useLegacyAnnotations = false;
+
         function initializeAnnotationSystem(file, containerId) {
-                    // Respect global flag: if legacy annotations are disabled, do nothing.
-                    if (window.__useLegacyAnnotations === false) {
-                        console.log('Legacy annotation system is disabled via global flag');
-                        return;
-                    }
-
-                    if (!file || !containerId) {
-                console.log('Annotation system: Missing file or containerId', { file, containerId });
-                return;
-            }
-            
-            console.log('Initializing annotation system for:', file.name, 'in container:', containerId);
-            
-            // Store current file for annotation system
-            annotationState.currentFile = file;
-            annotationState.currentFileId = file.id;
-            
-            const container = document.getElementById(containerId);
-            if (!container) {
-                console.error('Container not found:', containerId);
-                return;
-            }
-            
-            // Clear existing annotation elements
-            const existingToolbar = container.querySelector('.annotation-toolbar');
-            const existingCanvas = container.querySelector('.annotation-canvas');
-            if (existingToolbar) existingToolbar.remove();
-            if (existingCanvas) existingCanvas.remove();
-            
-            // Create annotation toolbar
-            createAnnotationToolbar(container);
-            
-            // Create fullscreen controls
-            createFullscreenControls(container);
-            
-            // Create annotation canvas
-            createAnnotationCanvas(container);
-            
-            // Setup canvas event listeners
-            setupCanvasEventListeners();
-            
-            // Load existing annotations
-            loadAnnotations(file.id);
-            
-            // Setup keyboard shortcuts
-            setupAnnotationKeyboardShortcuts();
-            
-            // Show annotation help on first use
-            if (!localStorage.getItem('annotation-help-shown')) {
-                setTimeout(() => {
-                    showAnnotationHelp();
-                    localStorage.setItem('annotation-help-shown', 'true');
-                }, 2000);
-            }
-            
-            console.log('Annotation system initialized successfully');
-            
-            // Test annotation system
-            setTimeout(() => {
-                const canvas = document.getElementById('annotation-canvas');
-                const toolbar = document.getElementById('annotation-toolbar');
-                if (canvas && toolbar) {
-                    console.log('✅ Annotation system test passed - Canvas and toolbar found');
-                    showToast('Annotation system ready! Click "Annotate" to start drawing.', 'success');
-                    
-                    // Add a test circle to verify canvas is working
-                    if (annotationState.canvas) {
-                        const testCircle = new fabric.Circle({
-                            left: 50,
-                            top: 50,
-                            radius: 20,
-                            fill: 'red',
-                            stroke: 'black',
-                            strokeWidth: 2
-                        });
-                        annotationState.canvas.add(testCircle);
-                        annotationState.canvas.renderAll();
-                        console.log('✅ Test circle added to canvas');
-                    }
-                } else {
-                    console.error('❌ Annotation system test failed - Missing elements');
-                    showToast('Annotation system not ready. Please refresh and try again.', 'error');
-                }
-            }, 500);
-        }
-        
-        /**
-         * Creates the annotation toolbar with drawing tools
-         * @param {HTMLElement} container - The container element
-         */
-        function createAnnotationToolbar(container) {
-            const toolbar = document.createElement('div');
-            toolbar.className = 'annotation-toolbar';
-            toolbar.id = 'annotation-toolbar';
-            
-            // Add tool buttons
-            Object.entries(annotationTools).forEach(([toolName, tool]) => {
-                const button = document.createElement('button');
-                button.className = 'annotation-tool';
-                button.setAttribute('data-tool', toolName);
-                button.setAttribute('data-tooltip', tool.tooltip);
-                button.innerHTML = tool.icon;
-                button.onclick = () => selectAnnotationTool(toolName);
-                toolbar.appendChild(button);
-            });
-            
-            // Add color picker
-            const colorPicker = document.createElement('input');
-            colorPicker.type = 'color';
-            colorPicker.className = 'color-picker';
-            colorPicker.value = annotationState.currentColor;
-            colorPicker.onchange = (e) => {
-                annotationState.currentColor = e.target.value;
-                updateAnnotationCanvas();
-            };
-            toolbar.appendChild(colorPicker);
-            
-            // Add color palette
-            annotationColors.forEach(color => {
-                const colorBtn = document.createElement('button');
-                colorBtn.className = 'color-picker';
-                colorBtn.style.backgroundColor = color;
-                colorBtn.onclick = () => {
-                    annotationState.currentColor = color;
-                    colorPicker.value = color;
-                    updateAnnotationCanvas();
-                };
-                toolbar.appendChild(colorBtn);
-            });
-            
-            // Add clear all button
-            const clearBtn = document.createElement('button');
-            clearBtn.className = 'annotation-tool';
-            clearBtn.setAttribute('data-tool', 'clear');
-            clearBtn.setAttribute('data-tooltip', 'Clear All');
-            clearBtn.innerHTML = '🗑️';
-            clearBtn.onclick = clearAllAnnotations;
-            toolbar.appendChild(clearBtn);
-            
-            // Add test drawing button
-            const testBtn = document.createElement('button');
-            testBtn.className = 'annotation-tool';
-            testBtn.setAttribute('data-tool', 'test');
-            testBtn.setAttribute('data-tooltip', 'Test Drawing');
-            testBtn.innerHTML = '🧪';
-            testBtn.onclick = testDrawing;
-            toolbar.appendChild(testBtn);
-            
-            // Add force drawing button
-            const forceBtn = document.createElement('button');
-            forceBtn.className = 'annotation-tool';
-            forceBtn.setAttribute('data-tool', 'force');
-            forceBtn.setAttribute('data-tooltip', 'Force Drawing');
-            forceBtn.innerHTML = '🎨';
-            forceBtn.onclick = forceEnableDrawing;
-            toolbar.appendChild(forceBtn);
-            
-            container.appendChild(toolbar);
-        }
-        
-        /**
-         * Creates fullscreen controls
-         * @param {HTMLElement} container - The container element
-         */
-        function createFullscreenControls(container) {
-            const controls = document.createElement('div');
-            controls.className = 'fullscreen-controls';
-            controls.id = 'fullscreen-controls';
-            
-            const fullscreenBtn = document.createElement('button');
-            fullscreenBtn.innerHTML = '⛶';
-            fullscreenBtn.setAttribute('data-tooltip', 'Toggle Fullscreen');
-            fullscreenBtn.onclick = toggleFullscreen;
-            controls.appendChild(fullscreenBtn);
-            
-            const saveBtn = document.createElement('button');
-            saveBtn.innerHTML = '💾';
-            saveBtn.setAttribute('data-tooltip', 'Save Annotations');
-            saveBtn.onclick = saveAnnotations;
-            controls.appendChild(saveBtn);
-            
-            const clearBtn = document.createElement('button');
-            clearBtn.innerHTML = '🗑️';
-            clearBtn.setAttribute('data-tooltip', 'Clear All Annotations');
-            clearBtn.onclick = clearAllAnnotations;
-            controls.appendChild(clearBtn);
-            
-            container.appendChild(controls);
-        }
-        
-        /**
-         * Creates the annotation canvas overlay
-         * @param {HTMLElement} container - The container element
-         */
-        function createAnnotationCanvas(container) {
-            const canvas = document.createElement('canvas');
-            canvas.className = 'annotation-canvas';
-            canvas.id = 'annotation-canvas';
-            canvas.style.position = 'absolute';
-            canvas.style.top = '0';
-            canvas.style.left = '0';
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
-            canvas.style.pointerEvents = 'none';
-            canvas.style.zIndex = '9999'; // Higher z-index to be above iframe
-            canvas.style.border = '2px solid red'; // Debug border to see canvas
-            
-            // Initialize Fabric.js canvas
-            try {
-                annotationState.canvas = new fabric.Canvas(canvas, {
-                    isDrawingMode: true, // Enable drawing mode by default
-                    selection: true,
-                    backgroundColor: 'transparent',
-                    width: container.offsetWidth,
-                    height: container.offsetHeight
-                });
-                
-                // Setup drawing mode
-                annotationState.canvas.freeDrawingBrush = new fabric.PencilBrush(annotationState.canvas);
-                annotationState.canvas.freeDrawingBrush.width = 3;
-                annotationState.canvas.freeDrawingBrush.color = annotationState.currentColor;
-                
-                console.log('Annotation canvas created successfully with dimensions:', container.offsetWidth, 'x', container.offsetHeight);
-                console.log('Drawing mode enabled by default');
-            } catch (error) {
-                console.error('Error creating annotation canvas:', error);
-                // Fallback: create a simple canvas without Fabric.js
-                canvas.style.pointerEvents = 'auto';
-                canvas.style.zIndex = '9999';
-            }
-            
-            container.appendChild(canvas);
-            resizeAnnotationCanvas();
-        }
-        
-        /**
-         * Sets up event listeners for the annotation canvas
-         */
-        function setupCanvasEventListeners() {
-            const canvas = annotationState.canvas;
-            if (!canvas) return;
-            
-            canvas.on('mouse:down', (options) => {
-                annotationState.isDrawing = true;
-                console.log('Mouse down on canvas at:', options.pointer.x, options.pointer.y);
-                
-                // Test: Add a small circle at click point
-                const testCircle = new fabric.Circle({
-                    left: options.pointer.x - 5,
-                    top: options.pointer.y - 5,
-                    radius: 5,
-                    fill: 'yellow',
-                    stroke: 'black',
-                    strokeWidth: 1
-                });
-                canvas.add(testCircle);
-                canvas.renderAll();
-                
-                // Enable drawing mode if pencil tool is selected
-                if (annotationState.currentTool === 'pencil') {
-                    canvas.isDrawingMode = true;
-                    console.log('Drawing mode enabled for pencil tool');
-                }
-            });
-            
-            canvas.on('mouse:up', (options) => {
-                annotationState.isDrawing = false;
-                console.log('Mouse up on canvas');
-                saveAnnotations();
-            });
-            
-            canvas.on('mouse:move', (options) => {
-                if (annotationState.isDrawing) {
-                    console.log('Drawing at:', options.pointer.x, options.pointer.y);
-                }
-            });
-            
-            // Add path:created event to track when drawing happens
-            canvas.on('path:created', (options) => {
-                console.log('✅ Path created:', options.path);
-                showToast('Drawing detected!', 'success');
-            });
-            
-            canvas.on('object:added', (options) => {
-                console.log('Object added to canvas:', options.target);
-                saveAnnotations();
-            });
-            
-            canvas.on('object:modified', (options) => {
-                console.log('Object modified on canvas:', options.target);
-                saveAnnotations();
-            });
-            
-            canvas.on('object:removed', (options) => {
-                console.log('Object removed from canvas:', options.target);
-                saveAnnotations();
-            });
-            
-            console.log('Canvas event listeners set up successfully');
-        }
-        
-        /**
-         * Selects an annotation tool
-         * @param {string} toolName - The name of the tool to select
-         */
-        function selectAnnotationTool(toolName) {
-            console.log('Selecting annotation tool:', toolName);
-            
-            // Remove active class from all tools
-            document.querySelectorAll('.annotation-tool').forEach(tool => {
-                tool.classList.remove('active');
-            });
-            
-            // Add active class to selected tool
-            const selectedTool = document.querySelector(`[data-tool="${toolName}"]`);
-            if (selectedTool) {
-                selectedTool.classList.add('active');
-            }
-            
-            annotationState.currentTool = toolName;
-            const canvas = annotationState.canvas;
-            
-            if (!canvas) {
-                console.error('Canvas not available for tool selection');
-                showToast('Canvas not available. Please refresh and try again.', 'error');
-                return;
-            }
-            
-            try {
-                switch (toolName) {
-                    case 'select':
-                        canvas.isDrawingMode = false;
-                        canvas.selection = true;
-                        canvas.defaultCursor = 'default';
-                        break;
-                    case 'pencil':
-                        canvas.isDrawingMode = true;
-                        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                        canvas.freeDrawingBrush.width = 3;
-                        canvas.freeDrawingBrush.color = annotationState.currentColor;
-                        console.log('Pencil tool selected - Drawing mode enabled');
-                        break;
-                    case 'highlight':
-                        canvas.isDrawingMode = true;
-                        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                        canvas.freeDrawingBrush.width = 20;
-                        canvas.freeDrawingBrush.color = annotationState.currentColor + '40'; // Add transparency
-                        break;
-                    case 'rectangle':
-                        canvas.isDrawingMode = false;
-                        canvas.selection = false;
-                        canvas.defaultCursor = 'crosshair';
-                        canvas.on('mouse:down', startDrawingRectangle);
-                        break;
-                    case 'circle':
-                        canvas.isDrawingMode = false;
-                        canvas.selection = false;
-                        canvas.defaultCursor = 'crosshair';
-                        canvas.on('mouse:down', startDrawingCircle);
-                        break;
-                    case 'text':
-                        canvas.isDrawingMode = false;
-                        canvas.selection = false;
-                        canvas.defaultCursor = 'text';
-                        canvas.on('mouse:down', addTextAnnotation);
-                        break;
-                    case 'eraser':
-                        canvas.isDrawingMode = false;
-                        canvas.selection = false;
-                        canvas.defaultCursor = 'crosshair';
-                        // Use simple eraser that removes objects on click
-                        canvas.on('mouse:down', simpleEraser);
-                        console.log('Using simple eraser (click to remove objects)');
-                        break;
-                    default:
-                        console.warn('Unknown tool:', toolName);
-                        break;
-                }
-                
-                console.log('Tool selected successfully:', toolName);
-            } catch (error) {
-                console.error('Error selecting tool:', toolName, error);
-                showToast(`Error selecting ${toolName} tool. Please try again.`, 'error');
-                
-                // Fallback to select tool
-                canvas.isDrawingMode = false;
-                canvas.selection = true;
-                canvas.defaultCursor = 'default';
-            }
+            console.log('initializeAnnotationSystem: legacy annotation system removed. Use enterWhiteboard() to open the whiteboard overlay.');
         }
 
-        // Compatibility shim: if there's a global whiteboard controller (from newer code), delegate to it
-        if (!window.selectAnnotationTool) {
-            window.selectAnnotationTool = function(toolName){
-                try{
-                    // prefer the Fabric-based canvas if available
-                    if(typeof window.setupWhiteboardKeyboardShortcuts === 'function'){
-                        // map common tool names
-                        const map = { pencil: 'tool-pen', highlight: 'tool-highlighter', eraser: 'tool-eraser', text: 'tool-text' };
-                        const btnId = map[toolName] || null;
-                        if(btnId){ const btn = document.getElementById(btnId); if(btn) return btn.click(); }
-                    }
-                }catch(e){ console.warn('Legacy selectAnnotationTool delegation failed', e); }
-            };
-        }
-        
-        /**
-         * Starts drawing a rectangle
-         * @param {Object} options - Mouse event options
-         */
-        function startDrawingRectangle(options) {
-            const canvas = annotationState.canvas;
-            const pointer = canvas.getPointer(options.e);
-            
-            const rect = new fabric.Rect({
-                left: pointer.x,
-                top: pointer.y,
-                width: 0,
-                height: 0,
-                fill: 'transparent',
-                stroke: annotationState.currentColor,
-                strokeWidth: 2,
-                selectable: true,
-                evented: true
-            });
-            
-            canvas.add(rect);
-            canvas.setActiveObject(rect);
-            
-            canvas.on('mouse:move', (options) => {
-                const pointer = canvas.getPointer(options.e);
-                rect.set({
-                    width: pointer.x - rect.left,
-                    height: pointer.y - rect.top
-                });
-                canvas.renderAll();
-            });
-            
-            canvas.on('mouse:up', () => {
-                canvas.off('mouse:move');
-                canvas.off('mouse:up');
-                canvas.defaultCursor = 'default';
-                canvas.selection = true;
-            });
-        }
-        
-        /**
-         * Starts drawing a circle
-         * @param {Object} options - Mouse event options
-         */
-        function startDrawingCircle(options) {
-            const canvas = annotationState.canvas;
-            const pointer = canvas.getPointer(options.e);
-            
-            const circle = new fabric.Circle({
-                left: pointer.x,
-                top: pointer.y,
-                radius: 0,
-                fill: 'transparent',
-                stroke: annotationState.currentColor,
-                strokeWidth: 2,
-                selectable: true,
-                evented: true
-            });
-            
-            canvas.add(circle);
-            canvas.setActiveObject(circle);
-            
-            canvas.on('mouse:move', (options) => {
-                const pointer = canvas.getPointer(options.e);
-                const radius = Math.sqrt(
-                    Math.pow(pointer.x - circle.left, 2) + 
-                    Math.pow(pointer.y - circle.top, 2)
-                );
-                circle.set({ radius });
-                canvas.renderAll();
-            });
-            
-            canvas.on('mouse:up', () => {
-                canvas.off('mouse:move');
-                canvas.off('mouse:up');
-                canvas.defaultCursor = 'default';
-                canvas.selection = true;
-            });
-        }
-        
-        /**
-         * Adds text annotation
-         * @param {Object} options - Mouse event options
-         */
-        function addTextAnnotation(options) {
-            const canvas = annotationState.canvas;
-            const pointer = canvas.getPointer(options.e);
-            
-            const text = new fabric.IText('Click to edit', {
-                left: pointer.x,
-                top: pointer.y,
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fill: annotationState.currentColor,
-                selectable: true,
-                evented: true
-            });
-            
-            canvas.add(text);
-            canvas.setActiveObject(text);
-            text.enterEditing();
-            
-            canvas.defaultCursor = 'default';
-            canvas.selection = true;
-        }
-        
-        /**
-         * Updates the annotation canvas with current settings
-         */
-        function updateAnnotationCanvas() {
-            const canvas = annotationState.canvas;
-            if (!canvas) return;
-            
-            if (canvas.freeDrawingBrush) {
-                canvas.freeDrawingBrush.color = annotationState.currentColor;
-            }
-        }
-        
-        /**
-         * Resizes the annotation canvas to match container
-         */
-        function resizeAnnotationCanvas() {
-            const canvas = annotationState.canvas;
-            if (!canvas) return;
-            
-            const container = canvas.wrapperEl.parentElement;
-            if (container) {
-                const width = container.offsetWidth;
-                const height = container.offsetHeight;
-                
-                canvas.setDimensions({
-                    width: width,
-                    height: height
-                });
-                canvas.renderAll();
-                
-                console.log('Canvas resized to:', width, 'x', height);
-            }
-        }
-        
-        /**
-         * Toggles fullscreen mode
-         */
-        function toggleFullscreen() {
-            const container = document.getElementById('preview-modal');
-            if (!container) return;
-            
-            if (!annotationState.isFullscreen) {
-                container.style.position = 'fixed';
-                container.style.top = '0';
-                container.style.left = '0';
-                container.style.width = '100vw';
-                container.style.height = '100vh';
-                container.style.zIndex = '9999';
-                container.style.backgroundColor = 'black';
-                annotationState.isFullscreen = true;
-                
-                // Hide other elements
-                document.querySelectorAll('body > *:not(#preview-modal)').forEach(el => {
-                    el.style.display = 'none';
-                });
-            } else {
-                container.style.position = '';
-                container.style.top = '';
-                container.style.left = '';
-                container.style.width = '';
-                container.style.height = '';
-                container.style.zIndex = '';
-                container.style.backgroundColor = '';
-                annotationState.isFullscreen = false;
-                
-                // Show other elements
-                document.querySelectorAll('body > *').forEach(el => {
-                    el.style.display = '';
-                });
-            }
-            
-            setTimeout(resizeAnnotationCanvas, 100);
-        }
-        
-        /**
-         * Saves annotations to Firestore
-         */
-        async function saveAnnotations() {
-            if (!annotationState.currentFile || !annotationState.canvas) return;
-            
-            try {
-                const canvasData = annotationState.canvas.toJSON();
-                const annotations = {
-                    fileId: annotationState.currentFile.id,
-                    userId: currentUser.uid,
-                    canvasData: canvasData,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                await db.collection('annotations').doc(`${currentUser.uid}_${annotationState.currentFile.id}`).set(annotations);
-                
-                // Show save indicator
-                showSaveIndicator();
-            } catch (error) {
-                console.error('Error saving annotations:', error);
-                // Don't show error to user if it's just a permissions issue
-                if (error.code !== 'permission-denied') {
-                    showToast('Failed to save annotations', 'error');
-                }
-            }
-        }
-        
-        /**
-         * Loads annotations from Firestore
-         * @param {string} fileId - The file ID to load annotations for
-         */
-        async function loadAnnotations(fileId) {
-            if (!currentUser || !fileId) return;
-            
-            try {
-                const doc = await db.collection('annotations').doc(`${currentUser.uid}_${fileId}`).get();
-                if (doc.exists && annotationState.canvas) {
-                    const data = doc.data();
-                    annotationState.canvas.loadFromJSON(data.canvasData, () => {
-                        annotationState.canvas.renderAll();
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading annotations:', error);
-                // Don't show error to user if it's just a permissions issue
-                if (error.code !== 'permission-denied') {
-                    showToast('Could not load annotations', 'error');
-                }
-            }
-        }
-        
-        /**
-         * Clears all annotations from the canvas
-         */
-        function clearAllAnnotations() {
-            if (!annotationState.canvas) return;
-            
-            showConfirmationModal('Are you sure you want to clear all annotations? This cannot be undone.', () => {
-                annotationState.canvas.clear();
-                saveAnnotations();
-                showToast('All annotations cleared', 'success');
-            });
-        }
-        
-        /**
-         * Shows a save indicator
-         */
-        function showSaveIndicator() {
-            let indicator = document.getElementById('annotation-save-indicator');
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.id = 'annotation-save-indicator';
-                indicator.className = 'annotation-save-indicator';
-                indicator.textContent = 'Annotations saved';
-                document.body.appendChild(indicator);
-            }
-            
-            indicator.classList.add('show');
-            setTimeout(() => {
-                indicator.classList.remove('show');
-            }, 2000);
-        }
-        
-        /**
-         * Sets up PDF.js viewer for PDF files
-         * @param {Object} file - The PDF file object
-         * @param {HTMLElement} container - The container element
-         */
-        async function setupPDFViewer(file, container) {
-            try {
-                // Set PDF.js worker with proper configuration
-                if (typeof pdfjsLib !== 'undefined') {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                }
-                
-                // Use Google Drive viewer URL instead of direct download to avoid CORS
-                const pdfUrl = file.webViewLink || 
-                              `https://drive.google.com/file/d/${file.id}/preview` ||
-                              `https://drive.google.com/uc?export=view&id=${file.id}`;
-                
-                // Create PDF viewer container with fallback handling
-                const pdfContainer = document.createElement('div');
-                pdfContainer.className = 'pdf-viewer w-full h-full';
-                
-                // Try iframe first, with fallback to direct link
-                const iframe = document.createElement('iframe');
-                iframe.src = pdfUrl;
-                iframe.className = 'w-full h-full border-0';
-                iframe.title = `PDF Preview: ${file.name}`;
-                iframe.onload = () => {
-                    // Setup annotation canvas after iframe loads (legacy) only if enabled
-                    if (window.__useLegacyAnnotations !== false) {
-                        setupPDFAnnotationCanvas(container);
-                    }
-                };
-                iframe.onerror = () => {
-                    // If iframe fails, show fallback message
-                    showPDFFallback(file, container);
-                };
-                
-                // Add timeout to handle cases where iframe loads but content is blocked
-                setTimeout(() => {
-                    try {
-                        // Check if iframe content is accessible
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        if (!iframeDoc || iframeDoc.body.innerHTML.includes('Access Denied') || iframeDoc.body.innerHTML.includes('403')) {
-                            showPDFFallback(file, container);
-                        }
-                    } catch (e) {
-                        // If we can't access iframe content due to CORS, check if iframe is actually working
-                        // by looking at the iframe's src attribute and dimensions
-                        if (iframe.src && iframe.offsetHeight > 0) {
-                            // Iframe seems to be working, don't show fallback
-                            console.log('PDF iframe appears to be working');
-                            
-                            // Hide loading screen for PDF viewer
-                            const loadingElement = document.getElementById('preview-loading');
-                            if (loadingElement) {
-                                loadingElement.style.display = 'none';
-                            }
-                        } else {
-                            showPDFFallback(file, container);
-                        }
-                    }
-                }, 3000);
-                
-                pdfContainer.appendChild(iframe);
-                container.appendChild(pdfContainer);
-                
-                // Setup annotation canvas for PDF (legacy) only if enabled
-                if (window.__useLegacyAnnotations !== false) {
-                    setupPDFAnnotationCanvas(container);
-                }
-                
-            } catch (error) {
-                console.error('Error setting up PDF viewer:', error);
-                // Show user-friendly error message
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'text-center p-8 bg-red-50 border border-red-200 rounded-lg';
-                errorMessage.innerHTML = `
-                    <div class="text-red-600 mb-4">
-                        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h4 class="text-lg font-semibold text-red-800 mb-2">PDF Preview Unavailable</h4>
-                    <p class="text-red-600 mb-4">This PDF cannot be previewed due to access restrictions.</p>
-                    <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                        Open in Google Drive
-                    </a>
-                `;
-                container.appendChild(errorMessage);
-            }
-        }
-        
-        /**
-         * Shows fallback message when PDF preview fails
-         * @param {Object} file - The PDF file object
-         * @param {HTMLElement} container - The container element
-         */
-        function showPDFFallback(file, container) {
-            // Remove existing iframe
-            const iframe = container.querySelector('iframe');
-            if (iframe) {
-                iframe.remove();
-            }
-            
-            // Show fallback message with better styling
-            const fallbackMessage = document.createElement('div');
-            fallbackMessage.className = 'text-center p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm';
-            fallbackMessage.innerHTML = `
-                <div class="text-blue-600 mb-6">
-                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h4 class="text-xl font-bold text-blue-800 mb-3">PDF Preview Unavailable</h4>
-                <p class="text-blue-600 mb-6 max-w-md mx-auto">This PDF cannot be previewed in the browser due to access restrictions or browser security settings.</p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                    <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                        Open in Google Drive
-                    </a>
-                    <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Download PDF
-                    </a>
-                </div>
-                <div class="mt-4 text-sm text-blue-500">
-                    <p>💡 Tip: You can still annotate this document by downloading it first</p>
-                </div>
-            `;
-            container.appendChild(fallbackMessage);
-        }
-        
-        /**
-         * Hides the preview loading screen
-         */
-        function hidePreviewLoading() {
-            const loadingElement = document.getElementById('preview-loading');
-            if (loadingElement) {
-                loadingElement.style.display = 'none';
-            }
-            
-            // Initialize annotation system after loading
-            const iframe = document.getElementById('file-preview-frame');
-            if (iframe && iframe.contentWindow) {
-                try {
-                    // No legacy annotation initialization for preview modal (preview remains normal)
-                } catch (e) {
-                    console.log('Annotation system initialization delayed');
-                }
-            }
-        }
-        
-        /**
-         * Shows the preview fallback when iframe fails
-         */
-        function showPreviewFallback() {
-            const loadingElement = document.getElementById('preview-loading');
-            const fallbackElement = document.getElementById('preview-fallback');
-            
-            if (loadingElement) {
-                loadingElement.style.display = 'none';
-            }
-            
-            if (fallbackElement) {
-                fallbackElement.classList.remove('hidden');
-                fallbackElement.classList.add('flex');
-            }
-        }
-        
-        /**
-         * Sets up annotation canvas for PDF pages
-         * @param {HTMLElement} container - The container element
-         */
         function setupPDFAnnotationCanvas(container) {
-                    if (window.__useLegacyAnnotations === false) {
-                        // No-op when legacy annotations are disabled; whiteboard overlay will be used instead.
-                        return;
-                    }
-
-                    const pages = container.querySelectorAll('.pdf-page');
-                    pages.forEach((page, index) => {
-                        const annotationLayer = document.createElement('div');
-                        annotationLayer.className = 'annotation-layer';
-                        annotationLayer.style.position = 'absolute';
-                        annotationLayer.style.top = '0';
-                        annotationLayer.style.left = '0';
-                        annotationLayer.style.width = '100%';
-                        annotationLayer.style.height = '100%';
-                        annotationLayer.style.pointerEvents = 'none';
-                
-                        page.appendChild(annotationLayer);
-                    });
-        }
-        
-        // For preview, use the existing showPreview function (normal behaviour)
-        function showPreviewWithAnnotations(file) {
-            // Alias to standard preview to avoid legacy annotation integration
-            if (typeof showPreview === 'function') {
-                return showPreview(file);
-            }
-            // Fallback: open in new tab
-            window.open(file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`, '_blank', 'noopener');
+            // No-op: PDF preview remains unchanged; use the whiteboard overlay instead.
+            return;
         }
 
-        // Add timeout to hide loading screen if iframe doesn't load
-        setTimeout(() => {
-            const loadingElement = document.getElementById('preview-loading');
-            if (loadingElement && loadingElement.style.display !== 'none') {
-                console.log('Loading timeout reached, showing fallback');
-                showPreviewFallback();
-            }
-        }, 10000); // 10 second timeout
-
-    // No whiteboard/annotation initialization for preview modal - keep preview normal
-        
-        /**
-         * Toggles annotation mode on/off
-         */
         function toggleAnnotationMode() {
-                    if (window.__useLegacyAnnotations === false) {
-                        console.log('toggleAnnotationMode: legacy annotation mode is disabled');
-                        // If a modern whiteboard exists, delegate to it instead
-                        if (typeof window.enterWhiteboard === 'function') {
-                            window.enterWhiteboard();
-                        }
-                        return;
-                    }
+            // Prefer the modern whiteboard entrypoint if available
+            if (typeof window.enterWhiteboard === 'function') return window.enterWhiteboard();
+            console.log('toggleAnnotationMode: legacy annotation system removed.');
+        }
 
-                    const canvas = document.getElementById('annotation-canvas');
-            if (!canvas) {
-                console.error('Annotation canvas not found');
-                showToast('Annotation canvas not available', 'error');
-                return;
-            }
-            
-            const isActive = canvas.classList.contains('active');
-            if (isActive) {
-                canvas.classList.remove('active');
-                canvas.style.pointerEvents = 'none';
-                canvas.style.border = '2px solid red'; // Debug border
-                showToast('Annotation mode disabled', 'info');
-                
-                // Re-enable iframe pointer events when annotation mode is disabled
-                const iframe = document.getElementById('file-preview-frame');
-                if (iframe) {
-                    iframe.style.pointerEvents = 'auto';
-                }
-            } else {
-                canvas.classList.add('active');
-                canvas.style.pointerEvents = 'all';
-                canvas.style.border = '2px solid green'; // Debug border when active
-                showToast('Annotation mode enabled - Click and drag to draw!', 'success');
-                
-                // Select pencil tool by default when enabling
-                selectAnnotationTool('pencil');
-                
-                // Make sure canvas is visible and on top
-                canvas.style.display = 'block';
-                canvas.style.visibility = 'visible';
-                canvas.style.opacity = '1';
-                canvas.style.zIndex = '9999';
-                
-                // Disable iframe pointer events when annotation mode is active
-                const iframe = document.getElementById('file-preview-frame');
-                if (iframe) {
-                    iframe.style.pointerEvents = 'none';
-                }
-            }
-            
-            console.log('Annotation mode toggled:', !isActive, 'Canvas pointer-events:', canvas.style.pointerEvents);
+        function selectAnnotationTool(toolName) {
+            if (typeof window.selectAnnotationTool === 'function') return window.selectAnnotationTool(toolName);
+            console.log('selectAnnotationTool: legacy function removed. Use whiteboard toolbar instead. Requested tool:', toolName);
         }
-        
-        /**
-         * Sets up keyboard shortcuts for annotation tools
-         */
-        function setupAnnotationKeyboardShortcuts() {
-            document.addEventListener('keydown', (e) => {
-                // Only handle shortcuts when annotation canvas is active
-                const canvas = document.getElementById('annotation-canvas');
-                if (!canvas || !canvas.classList.contains('active')) return;
-                
-                // Prevent default behavior for annotation shortcuts
-                if (['KeyP', 'KeyH', 'KeyR', 'KeyC', 'KeyT', 'KeyE', 'KeyS', 'Escape', 'Delete', 'Backspace'].includes(e.code)) {
-                    e.preventDefault();
-                }
-                
-                switch (e.code) {
-                    case 'KeyP': // Pencil tool
-                        selectAnnotationTool('pencil');
-                        break;
-                    case 'KeyH': // Highlight tool
-                        selectAnnotationTool('highlight');
-                        break;
-                    case 'KeyR': // Rectangle tool
-                        selectAnnotationTool('rectangle');
-                        break;
-                    case 'KeyC': // Circle tool
-                        selectAnnotationTool('circle');
-                        break;
-                    case 'KeyT': // Text tool
-                        selectAnnotationTool('text');
-                        break;
-                    case 'KeyE': // Eraser tool
-                        selectAnnotationTool('eraser');
-                        break;
-                    case 'KeyS': // Select tool
-                        selectAnnotationTool('select');
-                        break;
-                    case 'Escape': // Exit annotation mode
-                        toggleAnnotationMode();
-                        break;
-                    case 'Delete':
-                    case 'Backspace': // Delete selected objects
-                        if (annotationState.canvas) {
-                            const activeObjects = annotationState.canvas.getActiveObjects();
-                            if (activeObjects.length > 0) {
-                                activeObjects.forEach(obj => annotationState.canvas.remove(obj));
-                                annotationState.canvas.discardActiveObject();
-                                annotationState.canvas.renderAll();
-                                saveAnnotations();
-                            }
-                        }
-                        break;
-                }
-            });
-        }
-        
-        /**
-         * Shows annotation help modal
-         */
-        function showAnnotationHelp() {
-            const helpContent = `
-                <div class="bg-white/95 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800">Annotation Tools Help</h3>
-                        <button onclick="this.closest('.modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800">×</button>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                                <h4 class="font-semibold text-gray-700">Mouse Tools:</h4>
-                                <div class="text-sm space-y-1">
-                                    <div>👆 <strong>Select</strong> - Select and move annotations</div>
-                                    <div>✏️ <strong>Pencil</strong> - Draw freehand lines</div>
-                                    <div>🟡 <strong>Highlight</strong> - Highlight text with transparency</div>
-                                    <div>⬜ <strong>Rectangle</strong> - Draw rectangles</div>
-                                    <div>⭕ <strong>Circle</strong> - Draw circles</div>
-                                    <div>T <strong>Text</strong> - Add text annotations</div>
-                                    <div>🧽 <strong>Eraser</strong> - Erase annotations</div>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <h4 class="font-semibold text-gray-700">Keyboard Shortcuts:</h4>
-                                <div class="text-sm space-y-1">
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">P</kbd> <strong>Pencil</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">H</kbd> <strong>Highlight</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">R</kbd> <strong>Rectangle</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">C</kbd> <strong>Circle</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">T</kbd> <strong>Text</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">E</kbd> <strong>Eraser</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">S</kbd> <strong>Select</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">Esc</kbd> <strong>Exit Mode</strong></div>
-                                    <div><kbd class="px-2 py-1 bg-gray-200 rounded">Del</kbd> <strong>Delete Selected</strong></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-t pt-4">
-                            <h4 class="font-semibold text-gray-700 mb-2">Tips:</h4>
-                            <ul class="text-sm space-y-1 text-gray-600">
-                                <li>• Click the "✏️ Annotate" button to enable annotation mode</li>
-                                <li>• Use the color picker to change annotation colors</li>
-                                <li>• Annotations are automatically saved to your account</li>
-                                <li>• Use fullscreen mode (⛶) for better annotation experience</li>
-                                <li>• Click the help button (?) for this information</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] modal';
-            modal.innerHTML = helpContent;
-            modal.onclick = (e) => {
-                if (e.target === modal) modal.style.display = 'none';
-            };
-            document.body.appendChild(modal);
-        }
-        
-        // Provide compatibility helper for mixed references
-        window.getWhiteboardElement = function(id){
-            // Accept both legacy annotation-* and new whiteboard-* ids
-            const candidates = [id, id.replace('annotation-', 'whiteboard-'), id.replace('whiteboard-', 'annotation-')];
-            for(const c of candidates){
-                const el = document.getElementById(c);
-                if(el) return el;
-            }
-            return null;
-        };
 
-        // Initialize keyboard shortcuts when the page loads
+        async function saveAnnotations(){ console.log('saveAnnotations: legacy removed'); }
+        async function loadAnnotations(fileId){ console.log('loadAnnotations: legacy removed'); }
+        function clearAllAnnotations(){ console.log('clearAllAnnotations: legacy removed'); }
+        function setupAnnotationKeyboardShortcuts(){ /* legacy no-op */ }
+
+        // Start modern whiteboard keyboard shortcuts and mobile optimizations when DOM ready
         document.addEventListener('DOMContentLoaded', () => {
-            // Old annotation shortcut initializer is deprecated; prefer whiteboard shortcuts
-            if(typeof setupWhiteboardKeyboardShortcuts === 'function') setupWhiteboardKeyboardShortcuts();
-            else if(typeof setupAnnotationKeyboardShortcuts === 'function') {
-                // Keep as a fallback but do not run if it relies on legacy elements
-                try{ setupAnnotationKeyboardShortcuts(); }catch(e){ console.warn('Skipping legacy annotation keyboard setup', e); }
-            }
-            setupMobileOptimizations();
+            if (typeof setupWhiteboardKeyboardShortcuts === 'function') setupWhiteboardKeyboardShortcuts();
+            if (typeof setupMobileOptimizations === 'function') setupMobileOptimizations();
         });
         
         /**
@@ -7636,6 +6520,25 @@
             }
         }
     </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
+<!-- Cloudflare Insights removed for local/testing to avoid parser-blocking and blocked-by-client errors.
+         To re-enable in production, either include the script async via a server-side config
+         or dynamically load it after user-consent:
+
+<script>
+    // Example dynamic loader (uncomment in production):
+    // (function(){
+    //   var s = document.createElement('script');
+    //   s.src = 'https://static.cloudflareinsights.com/beacon.min.js/<YOUR_BUILD_HASH>';
+    //   s.defer = true; s.crossOrigin = 'anonymous';
+    //   document.head.appendChild(s);
+    // })();
+</script>
+
+-->
+
+<!-- Local no-op for analytics (keeps window._cfAnalytics references safe) -->
+<script>
+    window._cfAnalytics = window._cfAnalytics || { beacon: function(){ /* no-op for local testing */ } };
+</script>
 </body>
 </html>
