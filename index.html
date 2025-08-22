@@ -320,6 +320,7 @@
             border-radius: 0.5rem;
             padding: 0.75rem 1.5rem;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
         
@@ -347,6 +348,7 @@
         /* Glass morphism effect */
         .glass-effect {
             background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -632,6 +634,9 @@
         .animate-hero-subtitle { animation: slideInUp 0.8s ease-out 0.4s forwards; opacity: 0; }
         .animate-hero-buttons { animation: slideInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
         .animate-feature-card { animation: slideInUp 0.7s ease-out forwards; opacity: 0; }
+    .delay-100 { animation-delay: 0.1s !important; }
+    .delay-200 { animation-delay: 0.2s !important; }
+    .delay-300 { animation-delay: 0.3s !important; }
         /* Clock styles */
         /* Gmail-style indeterminate progress bar */
         .progress-bar { position: relative; height: 6px; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
@@ -727,6 +732,7 @@
              box-shadow: 0 6px 18px rgba(0,0,0,0.12);
              background-color: #fff;
              border: 1px solid rgba(255,255,255,0.7);
+             -webkit-backdrop-filter: blur(8px);
              backdrop-filter: blur(8px);
              animation: toastIn 0.18s ease-out;
              will-change: opacity, transform;
@@ -774,6 +780,7 @@
             padding: 0 1.25rem 0 1.25rem; /* match px-5 to keep layout stable */
             margin: 0;
         }
+    .faq-answer.collapsed { max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
         .faq-item.open .faq-answer { transition: max-height 0.32s ease, padding 0.2s ease; }
         .faq-item .faq-arrow {
             transition: transform 0.3s ease-in-out;
@@ -1136,6 +1143,7 @@
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
@@ -1300,6 +1308,13 @@
         .annotation-layer.active {
             pointer-events: all;
         }
+
+        /* Loading logo initial animation state (moved from inline style) */
+        .loading-logo-hidden {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
     </style>
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -1307,13 +1322,32 @@
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
-        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo drop-shadow-[0_6px_12px_rgba(37,99,235,0.25)]" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate'; }" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
+        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo drop-shadow-[0_6px_12px_rgba(37,99,235,0.25)] loading-logo-hidden" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate'; }">
         <div class="w-[300px] max-w-[80vw] progress-bar">
             <div class="bar bar1"></div>
             <div class="bar bar2"></div>
         </div>
         <p class="mt-4 text-sm text-gray-500">Loading GCSEMate…</p>
     </div>
+    <script>
+        // Disable legacy annotation auto-initialization and provide a safe stub for selectAnnotationTool
+        // New whiteboard implementation will be used instead.
+        window.__useLegacyAnnotations = false;
+        // Provide a safe stub early so any legacy calls won't throw. If a modern whiteboard exists, delegate to it.
+        window.selectAnnotationTool = function(toolName){
+            try{
+                if(window.__useLegacyAnnotations) return; // intentionally no-op when disabled
+                // If a newer whiteboard API (enterWhiteboard) exists, attempt to open it and select a tool.
+                if(typeof window.enterWhiteboard === 'function'){
+                    window.enterWhiteboard();
+                    const map = { pencil: 'pen', highlight: 'highlighter', text: 'text', eraser: 'eraser' };
+                    const t = map[toolName] || toolName;
+                    const btn = document.getElementById('tool-' + t) || document.getElementById('tool-' + toolName);
+                    if(btn) btn.click();
+                }
+            }catch(e){ console.warn('Legacy selectAnnotationTool disabled', e); }
+        };
+    </script>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
     <!-- Subtle site-wide watermark -->
@@ -1351,21 +1385,21 @@
                 <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Everything you will need to ace your exams!</h2>
                 <p class="mt-3 text-gray-500">The ultimate toolkit designed by a student, for students.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.1s;">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-100">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300">
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Centralised Hub</h3>
                         <p class="mt-2 text-gray-600">Say goodbye to scattered files. Access all your subjects and resources from one beautifully organized dashboard.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.2s;">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-200">
                          <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300">
                              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                          </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Seamless Previews</h3>
                         <p class="mt-2 text-gray-600">Instantly preview PDFs, documents, and images directly in the app. No more endless downloading and searching.</p>
                     </div>
-                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card" style="animation-delay: 0.3s;">
+                    <div class="p-8 bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg card-hover animate-feature-card delay-300">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300">
                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
@@ -1475,8 +1509,8 @@
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
                 <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
-                <!-- Annotate toggle: shows annotation tools and enables drawing overlay -->
-                <button id="annotate-toggle" class="ml-3 p-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex-shrink-0" aria-pressed="false" title="Annotate / Draw on screen">Annotate</button>
+                <!-- Whiteboard toggle: shows whiteboard tools and enables drawing overlay -->
+                <button id="whiteboard-toggle" class="ml-3 p-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex-shrink-0" aria-pressed="false" title="Whiteboard / Draw on screen">Whiteboard</button>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
@@ -1585,10 +1619,10 @@
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-3xl font-bold text-gray-800">Calendar</h2>
                         <div class="flex items-center space-x-2">
-                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month" title="Previous month" aria-label="Previous month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
                             <h3 id="month-year-header" class="text-xl font-semibold text-gray-700 w-40 text-center"></h3>
-                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
-                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm"></select>
+                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month" title="Next month" aria-label="Next month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm" title="Select year" aria-label="Select year"></select>
                         </div>
                     </div>
                     <div class="bg-white/50 p-4 rounded-xl shadow-md border border-white/30">
@@ -1619,15 +1653,15 @@
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
-                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base">
+                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base" title="Sort files" aria-label="Sort files">
                                 <option value="az">Sort A-Z</option>
                                 <option value="za">Sort Z-A</option>
                             </select>
                             <div id="view-toggle" class="flex items-center rounded-lg border border-gray-300/50 bg-white/50 p-1">
-                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View">
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View" title="List view" aria-label="List view">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                                 </button>
-                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View">
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View" title="Grid view" aria-label="Grid view">
                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                                 </button>
                             </div>
@@ -1825,7 +1859,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
                             </div>
                         </div>
@@ -1834,7 +1868,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I change the accent colour?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Use the colour picker in the top-right of the header (desktop) to pick your accent colour. Your choice is saved on this device. Click Reset to return to the default blue.</p>
                             </div>
                         </div>
@@ -1843,7 +1877,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Are there keyboard shortcuts?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos).</p>
                             </div>
                         </div>
@@ -1852,7 +1886,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I preview files without downloading?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Yes. PDFs and images can be previewed directly in the app. Other file types may open in Google Drive viewer.</p>
                             </div>
                         </div>
@@ -1861,7 +1895,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I report an issue or suggest a feature?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Please email us via the link on the Upgrade page or use the contact option in the footer. We welcome feedback to improve GCSEMate.</p>
                             </div>
                         </div>
@@ -1870,7 +1904,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">What is the 'Star' icon for?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Clicking the star icon next to a file pins it to the top of its current folder. This is a great way to mark important documents like exam papers or key notes for quick access. Starred items are always displayed first in both list and grid views.</p>
                             </div>
                         </div>
@@ -1879,7 +1913,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How does the Calendar work?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>The calendar helps you track important dates. Click on any day to add a personal event, like homework deadlines or revision topics. You can also enable a 'Countdown Banner' for specific events. Admins may add 'Global Events', like exam dates, which appear for all users and are marked with a green dot.</p>
                             </div>
                         </div>
@@ -1888,7 +1922,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I upload my own files?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Currently, file uploading is not a feature for users. The file structure is managed by administrators to ensure all resources are relevant, high-quality, and well-organized for all students. This helps maintain a consistent and reliable revision library.</p>
                             </div>
                         </div>
@@ -1897,7 +1931,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I delete my account?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
                             </div>
                         </div>
@@ -1906,7 +1940,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">What file types can I preview?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>GCSEMate supports previewing PDFs, Word documents, Google Docs, Google Slides, Google Sheets, PowerPoint presentations, images (JPEG, PNG, GIF), and text files. If a file can't be previewed directly, you can always open it in Google Drive or download it.</p>
                             </div>
                         </div>
@@ -1915,7 +1949,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I access GCSEMate offline?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>GCSEMate requires an internet connection to access files and sync data. However, you can download files locally for offline study. We're working on offline capabilities for basic features in future updates.</p>
                             </div>
                         </div>
@@ -1924,7 +1958,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How accurate is GCSEMateGPT?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>GCSEMateGPT is trained specifically on GCSE curricula and past papers, making it highly accurate for GCSE-level questions. However, always cross-reference important information with official sources and your teachers. It's a powerful study aid, not a replacement for your textbooks.</p>
                             </div>
                         </div>
@@ -1933,7 +1967,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Can I share files with classmates?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Currently, file sharing happens through Google Drive's sharing features. Click "Open in Google Drive" on any file to access sharing options. We're developing native sharing features for future releases.</p>
                             </div>
                         </div>
@@ -1942,7 +1976,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Is my data safe and private?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Absolutely. We use industry-standard encryption, minimal data collection, and transparent privacy policies. Your study materials remain in your Google Drive, and we only access metadata necessary for organization. Read our full Privacy Policy for details.</p>
                             </div>
                         </div>
@@ -1951,7 +1985,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">Why choose GCSEMate over other study apps?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (£1/month), and features designed around the actual GCSE curriculum and exam formats.</p>
                             </div>
                         </div>
@@ -1960,7 +1994,7 @@
                                 <h3 class="font-semibold text-lg text-gray-800">How do I get the most out of GCSEMate?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                            <div class="faq-answer collapsed px-5 pb-5 text-gray-600">
                                 <p>Start by exploring each subject's file browser, star your most important documents, use the calendar for deadline tracking, engage with GCSEMateGPT for quick explanations, and take advantage of keyboard shortcuts for faster navigation. Regular use builds familiarity and efficiency.</p>
                             </div>
                         </div>
@@ -2000,35 +2034,44 @@
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
-    <!-- Annotation UI -->
-    <div id="annotation-toolbar" class="annotation-toolbar hidden" role="toolbar" aria-hidden="true">
+    <!-- Whiteboard UI -->
+    <div id="whiteboard-toolbar" class="annotation-toolbar hidden" role="toolbar" aria-hidden="true">
         <button class="annotation-tool" id="tool-pen" data-tooltip="Pen">✏️</button>
-        <button class="annotation-tool" id="tool-eraser" data-tooltip="Eraser">🩹</button>
-        <input id="color-picker" class="color-picker" type="color" value="#ff0000" aria-label="Choose annotation color">
-        <select id="pen-size" class="annotation-tool" title="Pen size" aria-label="Pen size">
+        <button class="annotation-tool" id="tool-highlighter" data-tooltip="Highlighter">🟡</button>
+        <button class="annotation-tool" id="tool-eraser" data-tooltip="Eraser">🧽</button>
+        <button class="annotation-tool" id="tool-text" data-tooltip="Text">T</button>
+        <input id="whiteboard-color" class="color-picker" type="color" value="#ff0000" aria-label="Choose ink color">
+        <select id="whiteboard-pen-size" class="annotation-tool" title="Pen size" aria-label="Pen size">
             <option value="2">2</option>
             <option value="4" selected>4</option>
             <option value="6">6</option>
             <option value="8">8</option>
             <option value="12">12</option>
         </select>
+        <select id="whiteboard-font" class="annotation-tool" title="Font" aria-label="Font">
+            <option value="Plus Jakarta Sans" selected>Plus Jakarta Sans</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+        </select>
         <button class="annotation-tool" id="undo-btn" data-tooltip="Undo">↶</button>
-        <button class="annotation-tool" id="clear-btn" data-tooltip="Clear">🗑️</button>
+        <button class="annotation-tool" id="clear-btn" data-tooltip="Clear All">🗑️</button>
+        <button class="annotation-tool" id="paste-btn" data-tooltip="Paste Image/Text">📋</button>
         <button class="annotation-tool" id="save-btn" data-tooltip="Save PNG">💾</button>
     </div>
     <canvas id="annotation-canvas" class="annotation-canvas" aria-hidden="true"></canvas>
 
-    <div id="annotation-save-indicator" class="annotation-save-indicator">Saved</div>
+    <div id="whiteboard-save-indicator" class="annotation-save-indicator">Saved</div>
 
     <script>
     (function(){
         // Safe guards
         if(typeof fabric === 'undefined') return; // fabric.js not loaded
 
-        const annotateToggle = document.getElementById('annotate-toggle');
-        const toolbar = document.getElementById('annotation-toolbar');
-        const canvasEl = document.getElementById('annotation-canvas');
-        const saveIndicator = document.getElementById('annotation-save-indicator');
+    const whiteboardToggle = document.getElementById('whiteboard-toggle');
+    const toolbar = document.getElementById('whiteboard-toolbar');
+    const canvasEl = document.getElementById('annotation-canvas'); // keep legacy id for compatibility
+    const saveIndicator = document.getElementById('whiteboard-save-indicator');
 
         let canvas = null;
         let stateStack = [];
@@ -2062,8 +2105,8 @@
 
             // default brush
             const brush = new fabric.PencilBrush(canvas);
-            brush.color = document.getElementById('color-picker').value || '#ff0000';
-            brush.width = parseInt(document.getElementById('pen-size').value,10) || 4;
+            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
+            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10) || 4;
             canvas.freeDrawingBrush = brush;
 
             // record history
@@ -2093,7 +2136,7 @@
             canvas.isDrawingMode = true;
             canvas.selection = false;
             isAnnotating = true;
-            annotateToggle.setAttribute('aria-pressed','true');
+            if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','true');
             styleCanvas();
         }
 
@@ -2103,59 +2146,66 @@
             if(canvas) canvas.isDrawingMode = false;
             canvasEl.classList.remove('active');
             isAnnotating = false;
-            annotateToggle.setAttribute('aria-pressed','false');
+            if(whiteboardToggle) whiteboardToggle.setAttribute('aria-pressed','false');
             styleCanvas();
         }
 
         // toggle
-        annotateToggle && annotateToggle.addEventListener('click', function(e){
+        whiteboardToggle && whiteboardToggle.addEventListener('click', function(e){
             e.preventDefault();
             if(!isAnnotating) enterAnnotate(); else exitAnnotate();
         });
 
         // tools
+        // Pen tool
         document.getElementById('tool-pen').addEventListener('click', function(){
             if(!canvas) return;
             canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.color = document.getElementById('color-picker').value;
-            canvas.freeDrawingBrush.width = parseInt(document.getElementById('pen-size').value,10)||4;
+            const brush = new fabric.PencilBrush(canvas);
+            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
+            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10)||4;
+            canvas.freeDrawingBrush = brush;
+            annotationState.currentTool = 'pen';
         });
 
+        // Eraser tool - removes objects on click and provides a wide white brush fallback
         document.getElementById('tool-eraser').addEventListener('click', function(){
             if(!canvas) return;
-            // simple eraser: remove paths under pointer by switching to 'eraser' brush which makes lines transparent
-            const EraserBrush = fabric.EraserBrush || null;
-            if(EraserBrush){
-                canvas.freeDrawingBrush = new EraserBrush(canvas);
-            } else {
-                // fallback: set brush to pencil with white color and larger width
-                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-                canvas.freeDrawingBrush.color = 'rgba(255,255,255,1)';
-                canvas.freeDrawingBrush.width = (parseInt(document.getElementById('pen-size').value,10)||4) * 3;
-            }
-            canvas.isDrawingMode = true;
+            annotationState.currentTool = 'eraser';
+            // Use pointer-based erasing: clicking objects removes them
+            canvas.isDrawingMode = false;
+            canvas.defaultCursor = 'crosshair';
+            // temporary mouse:down handler
+            const eraserHandler = function(options){
+                if(!options.target) return;
+                try{ canvas.remove(options.target); canvas.renderAll(); pushState(); }catch(_){ }
+            };
+            // remove previous eraser handlers then attach
+            canvas.off('mouse:down', eraserHandler);
+            canvas.on('mouse:down', eraserHandler);
         });
 
-        document.getElementById('color-picker').addEventListener('input', function(e){
+        // Color change
+        document.getElementById('whiteboard-color').addEventListener('input', function(e){
             if(!canvas) return;
             const brush = new fabric.PencilBrush(canvas);
             brush.color = e.target.value;
-            brush.width = parseInt(document.getElementById('pen-size').value,10)||4;
+            brush.width = parseInt((document.getElementById('whiteboard-pen-size') && document.getElementById('whiteboard-pen-size').value) || 4,10)||4;
             canvas.freeDrawingBrush = brush;
             canvas.isDrawingMode = true;
         });
 
-        document.getElementById('pen-size').addEventListener('change', function(e){
+        document.getElementById('whiteboard-pen-size').addEventListener('change', function(e){
             if(!canvas) return;
             const brush = new fabric.PencilBrush(canvas);
-            brush.color = document.getElementById('color-picker').value || '#ff0000';
+            brush.color = (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#ff0000';
             brush.width = parseInt(e.target.value,10)||4;
             canvas.freeDrawingBrush = brush;
             canvas.isDrawingMode = true;
         });
 
-        document.getElementById('undo-btn').addEventListener('click', function(){
+    // Undo
+    document.getElementById('undo-btn').addEventListener('click', function(){
             if(!canvas) return;
             if(stateStack.length>1){
                 // pop current
@@ -2169,13 +2219,15 @@
             }
         });
 
-        document.getElementById('clear-btn').addEventListener('click', function(){
+    // Clear all
+    document.getElementById('clear-btn').addEventListener('click', function(){
             if(!canvas) return;
             canvas.clear();
             stateStack = [];
             try{ stateStack.push(JSON.stringify(canvas.toJSON())); }catch(e){}
         });
 
+        // Save whiteboard PNG
         document.getElementById('save-btn').addEventListener('click', function(){
             if(!canvas) return;
             // convert to data URL at device pixel ratio to preserve quality
@@ -2193,7 +2245,62 @@
             setTimeout(()=> saveIndicator.classList.remove('show'), 1400);
         });
 
-        // keep annotation layer above all
+        // Paste support (images and text) — triggered by paste button or clipboard paste
+        document.getElementById('paste-btn').addEventListener('click', function(){
+            // Focus to capture next paste
+            showToast('Press Ctrl+V / Cmd+V to paste image or text onto the whiteboard', 'info');
+            // We set up a one-time paste listener
+            const onPaste = function(e){
+                handlePasteEvent(e);
+                window.removeEventListener('paste', onPaste);
+            };
+            window.addEventListener('paste', onPaste);
+        });
+
+        // Global paste handler when whiteboard active
+        window.addEventListener('paste', function(e){
+            if(!isAnnotating) return; // only when whiteboard active
+            handlePasteEvent(e);
+        });
+
+        function handlePasteEvent(e){
+            if(!e.clipboardData) return;
+            const items = Array.from(e.clipboardData.items || []);
+            const imageItem = items.find(i => i.type && i.type.indexOf('image') === 0);
+            if(imageItem){
+                const blob = imageItem.getAsFile();
+                const url = URL.createObjectURL(blob);
+                fabric.Image.fromURL(url, function(img){
+                    img.set({ left: 50, top: 50, scaleX: 0.5, scaleY: 0.5, selectable: true });
+                    canvas.add(img);
+                    canvas.renderAll();
+                    pushState();
+                    URL.revokeObjectURL(url);
+                });
+                return;
+            }
+
+            // If text
+            const textData = e.clipboardData.getData('text/plain');
+            if(textData){
+                const tb = new fabric.Textbox(textData, {
+                    left: 60,
+                    top: 60,
+                    width: 300,
+                    fontFamily: (document.getElementById('whiteboard-font') && document.getElementById('whiteboard-font').value) || 'Plus Jakarta Sans',
+                    fontSize: 16,
+                    fill: (document.getElementById('whiteboard-color') && document.getElementById('whiteboard-color').value) || '#111',
+                });
+                // store original markdown/text
+                tb.set('dataMarkdown', textData);
+                canvas.add(tb);
+                canvas.setActiveObject(tb);
+                canvas.renderAll();
+                pushState();
+            }
+        }
+
+    // keep whiteboard layer above all
         const styleCanvas = function(){
             canvasEl.style.position = 'fixed';
             canvasEl.style.top = '0';
@@ -2206,11 +2313,52 @@
         const observer = new MutationObserver(function(){ styleCanvas(); });
         observer.observe(canvasEl, { attributes: true });
 
-        // ensure keyboard ESC exits annotate
+        // ensure keyboard ESC exits whiteboard
         window.addEventListener('keydown', function(e){ if(e.key === 'Escape' && isAnnotating) exitAnnotate(); });
+
+        // Helper to push state for undo
+        function pushState(){
+            try{ stateStack.push(JSON.stringify(canvas.toJSON(['selectable','dataMarkdown']))); if(stateStack.length>80) stateStack.shift(); }catch(e){}
+        }
+
+        // Setup keyboard shortcuts for whiteboard
+        window.setupWhiteboardKeyboardShortcuts = function(){
+            document.addEventListener('keydown', (e) => {
+                // Only handle shortcuts when whiteboard canvas is active
+                const canvasElLocal = document.getElementById('annotation-canvas');
+                if (!canvasElLocal || !canvasElLocal.classList.contains('active')) return;
+                if (['KeyP', 'KeyH', 'KeyT', 'KeyE', 'KeyS', 'Escape', 'Delete', 'Backspace', 'KeyZ'].includes(e.code)) {
+                    e.preventDefault();
+                }
+                switch (e.code) {
+                    case 'KeyP': // Pencil
+                        document.getElementById('tool-pen').click(); break;
+                    case 'KeyH': // Highlight
+                        document.getElementById('tool-highlighter').click(); break;
+                    case 'KeyT': // Text
+                        document.getElementById('tool-text').click(); break;
+                    case 'KeyE': // Eraser
+                        document.getElementById('tool-eraser').click(); break;
+                    case 'KeyS': // Save
+                        document.getElementById('save-btn').click(); break;
+                    case 'KeyZ': // Undo (Ctrl/Cmd + Z)
+                        if((e.ctrlKey||e.metaKey)) document.getElementById('undo-btn').click(); break;
+                    case 'Escape':
+                        exitAnnotate(); break;
+                    case 'Delete':
+                    case 'Backspace':
+                        if(canvas){ const active = canvas.getActiveObjects(); if(active.length){ active.forEach(o=>canvas.remove(o)); canvas.discardActiveObject(); canvas.renderAll(); pushState(); }}
+                        break;
+                }
+            });
+        };
 
     // initialize but do not enable until toggled
     // initCanvas will be lazily called on first open
+    // expose entrypoints for compatibility
+    window.enterWhiteboard = enterAnnotate;
+    window.exitWhiteboard = exitAnnotate;
+
     styleCanvas();
     })();
     </script>
@@ -3970,7 +4118,7 @@
                     if (isFolder) {
                         itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
-                        itemElement.addEventListener('click', () => showPreviewWithAnnotations(file));
+                        itemElement.addEventListener('click', () => showPreview(file));
                     }
                     
                     // Add action buttons for files (star and download)
@@ -4017,7 +4165,7 @@
                     if (isFolder) {
                         mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
                     } else {
-                        mainInfo.addEventListener('click', () => showPreviewWithAnnotations(file));
+                        mainInfo.addEventListener('click', () => showPreview(file));
                     }
                     // Create action buttons container
                     const actions = document.createElement('div');
@@ -6347,7 +6495,13 @@
          * @param {string} containerId - The container element ID
          */
         function initializeAnnotationSystem(file, containerId) {
-            if (!file || !containerId) {
+                    // Respect global flag: if legacy annotations are disabled, do nothing.
+                    if (window.__useLegacyAnnotations === false) {
+                        console.log('Legacy annotation system is disabled via global flag');
+                        return;
+                    }
+
+                    if (!file || !containerId) {
                 console.log('Annotation system: Missing file or containerId', { file, containerId });
                 return;
             }
@@ -6731,6 +6885,21 @@
                 canvas.defaultCursor = 'default';
             }
         }
+
+        // Compatibility shim: if there's a global whiteboard controller (from newer code), delegate to it
+        if (!window.selectAnnotationTool) {
+            window.selectAnnotationTool = function(toolName){
+                try{
+                    // prefer the Fabric-based canvas if available
+                    if(typeof window.setupWhiteboardKeyboardShortcuts === 'function'){
+                        // map common tool names
+                        const map = { pencil: 'tool-pen', highlight: 'tool-highlighter', eraser: 'tool-eraser', text: 'tool-text' };
+                        const btnId = map[toolName] || null;
+                        if(btnId){ const btn = document.getElementById(btnId); if(btn) return btn.click(); }
+                    }
+                }catch(e){ console.warn('Legacy selectAnnotationTool delegation failed', e); }
+            };
+        }
         
         /**
          * Starts drawing a rectangle
@@ -7024,8 +7193,10 @@
                 iframe.className = 'w-full h-full border-0';
                 iframe.title = `PDF Preview: ${file.name}`;
                 iframe.onload = () => {
-                    // Setup annotation canvas after iframe loads
-                    setupPDFAnnotationCanvas(container);
+                    // Setup annotation canvas after iframe loads (legacy) only if enabled
+                    if (window.__useLegacyAnnotations !== false) {
+                        setupPDFAnnotationCanvas(container);
+                    }
                 };
                 iframe.onerror = () => {
                     // If iframe fails, show fallback message
@@ -7061,8 +7232,10 @@
                 pdfContainer.appendChild(iframe);
                 container.appendChild(pdfContainer);
                 
-                // Setup annotation canvas for PDF
-                setupPDFAnnotationCanvas(container);
+                // Setup annotation canvas for PDF (legacy) only if enabled
+                if (window.__useLegacyAnnotations !== false) {
+                    setupPDFAnnotationCanvas(container);
+                }
                 
             } catch (error) {
                 console.error('Error setting up PDF viewer:', error);
@@ -7145,8 +7318,7 @@
             const iframe = document.getElementById('file-preview-frame');
             if (iframe && iframe.contentWindow) {
                 try {
-                    // Initialize annotation system
-                    initializeAnnotationSystem(window.currentPreviewFile, 'preview-modal');
+                    // No legacy annotation initialization for preview modal (preview remains normal)
                 } catch (e) {
                     console.log('Annotation system initialization delayed');
                 }
@@ -7175,131 +7347,61 @@
          * @param {HTMLElement} container - The container element
          */
         function setupPDFAnnotationCanvas(container) {
-            const pages = container.querySelectorAll('.pdf-page');
-            pages.forEach((page, index) => {
-                const annotationLayer = document.createElement('div');
-                annotationLayer.className = 'annotation-layer';
-                annotationLayer.style.position = 'absolute';
-                annotationLayer.style.top = '0';
-                annotationLayer.style.left = '0';
-                annotationLayer.style.width = '100%';
-                annotationLayer.style.height = '100%';
-                annotationLayer.style.pointerEvents = 'none';
+                    if (window.__useLegacyAnnotations === false) {
+                        // No-op when legacy annotations are disabled; whiteboard overlay will be used instead.
+                        return;
+                    }
+
+                    const pages = container.querySelectorAll('.pdf-page');
+                    pages.forEach((page, index) => {
+                        const annotationLayer = document.createElement('div');
+                        annotationLayer.className = 'annotation-layer';
+                        annotationLayer.style.position = 'absolute';
+                        annotationLayer.style.top = '0';
+                        annotationLayer.style.left = '0';
+                        annotationLayer.style.width = '100%';
+                        annotationLayer.style.height = '100%';
+                        annotationLayer.style.pointerEvents = 'none';
                 
-                page.appendChild(annotationLayer);
-            });
+                        page.appendChild(annotationLayer);
+                    });
         }
         
-        /**
-         * Enhanced showPreview function with annotation support
-         * @param {Object} file - The file to preview
-         */
+        // For preview, use the existing showPreview function (normal behaviour)
         function showPreviewWithAnnotations(file) {
-            const modal = document.getElementById('preview-modal');
-            const embedUrl = getPreviewEmbedUrl(file);
-            let content = '';
-            
-            if (embedUrl) {
-                const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
-                content = `
-                    <div class="w-full h-full relative">
-                        <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30 z-10">
-                            <div class="dots-spinner"><i></i><i></i><i></i></div>
-                            <span class="ml-2 text-white font-semibold">Loading preview…</span>
-                            <img src="gcsemate%20new.png" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90">
-                        </div>
-                        <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade" onload="hidePreviewLoading()" onerror="showPreviewFallback()"></iframe>
-                        <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6 z-20">
-                            <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
-                                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
-                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-bold text-gray-800 mb-2">Preview Unavailable</h4>
-                                <p class="text-sm text-gray-600 mb-4">This file cannot be previewed directly. This might be due to browser security settings, file format limitations, or temporary connectivity issues.</p>
-                                <div class="flex flex-col gap-3">
-                                    <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        Try Again
-                                    </button>
-                                    <div class="flex flex-col sm:flex-row gap-2">
-                                        <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                            </svg>
-                                            View Online
-                                        </a>
-                                        <button onclick="downloadFile('${file.id}', '${file.name}', '${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}')" class="px-4 py-2 rounded-md bg-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            Download
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            } else {
-                content = `
-                    <div class="text-center bg-gray-100 p-8 rounded-lg">
-                        <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4" alt="${file.name}">
-                        <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
-                        <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
-                        <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
-                            <img src="gcsemate%20new.png" alt="GCSEMate" class="h-5 w-5">
-                            Open in Google Drive
-                        </a>
-                    </div>
-                `;
+            // Alias to standard preview to avoid legacy annotation integration
+            if (typeof showPreview === 'function') {
+                return showPreview(file);
             }
-            
-            const externalUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
-            
-            // Store current file for annotation system
-            window.currentPreviewFile = file;
-            
-            modal.innerHTML = `
-                <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
-                    <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
-                        <div class="flex items-center min-w-0 gap-2">
-                            <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
-                            <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="toggleAnnotationMode()" class="px-3 py-1.5 rounded-md bg-green-600 text-white text-sm font-semibold hover:bg-green-700" data-tooltip="Toggle Annotation Mode">✏️ Annotate</button>
-                            <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" data-tooltip="Open in Google Drive">Open</a>
-                            <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
-                        </div>
-                    </div>
-                    <div class="flex-grow bg-gray-800 relative" id="preview-container">${content}</div>
-                </div>
-            `;
-            modal.style.display = 'flex';
-            
-            // Add timeout to hide loading screen if iframe doesn't load
-            setTimeout(() => {
-                const loadingElement = document.getElementById('preview-loading');
-                if (loadingElement && loadingElement.style.display !== 'none') {
-                    console.log('Loading timeout reached, showing fallback');
-                    showPreviewFallback();
-                }
-            }, 10000); // 10 second timeout
-            
-            // Initialize annotation system after modal is shown
-            setTimeout(() => {
-                initializeAnnotationSystem(file, 'preview-container');
-            }, 100);
+            // Fallback: open in new tab
+            window.open(file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`, '_blank', 'noopener');
         }
+
+        // Add timeout to hide loading screen if iframe doesn't load
+        setTimeout(() => {
+            const loadingElement = document.getElementById('preview-loading');
+            if (loadingElement && loadingElement.style.display !== 'none') {
+                console.log('Loading timeout reached, showing fallback');
+                showPreviewFallback();
+            }
+        }, 10000); // 10 second timeout
+
+    // No whiteboard/annotation initialization for preview modal - keep preview normal
         
         /**
          * Toggles annotation mode on/off
          */
         function toggleAnnotationMode() {
-            const canvas = document.getElementById('annotation-canvas');
+                    if (window.__useLegacyAnnotations === false) {
+                        console.log('toggleAnnotationMode: legacy annotation mode is disabled');
+                        // If a modern whiteboard exists, delegate to it instead
+                        if (typeof window.enterWhiteboard === 'function') {
+                            window.enterWhiteboard();
+                        }
+                        return;
+                    }
+
+                    const canvas = document.getElementById('annotation-canvas');
             if (!canvas) {
                 console.error('Annotation canvas not found');
                 showToast('Annotation canvas not available', 'error');
@@ -7460,9 +7562,25 @@
             document.body.appendChild(modal);
         }
         
+        // Provide compatibility helper for mixed references
+        window.getWhiteboardElement = function(id){
+            // Accept both legacy annotation-* and new whiteboard-* ids
+            const candidates = [id, id.replace('annotation-', 'whiteboard-'), id.replace('whiteboard-', 'annotation-')];
+            for(const c of candidates){
+                const el = document.getElementById(c);
+                if(el) return el;
+            }
+            return null;
+        };
+
         // Initialize keyboard shortcuts when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            setupAnnotationKeyboardShortcuts();
+            // Old annotation shortcut initializer is deprecated; prefer whiteboard shortcuts
+            if(typeof setupWhiteboardKeyboardShortcuts === 'function') setupWhiteboardKeyboardShortcuts();
+            else if(typeof setupAnnotationKeyboardShortcuts === 'function') {
+                // Keep as a fallback but do not run if it relies on legacy elements
+                try{ setupAnnotationKeyboardShortcuts(); }catch(e){ console.warn('Skipping legacy annotation keyboard setup', e); }
+            }
             setupMobileOptimizations();
         });
         
