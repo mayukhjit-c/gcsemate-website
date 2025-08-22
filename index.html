@@ -1142,7 +1142,7 @@
             padding: 8px;
             display: flex;
             gap: 4px;
-            z-index: 1000;
+            z-index: 10001;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             transition: all 0.3s ease;
         }
@@ -1475,6 +1475,8 @@
                 <span id="welcome-message" class="text-xs xl:text-sm mr-3 font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
                 <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0">
                 <a href="#" class="nav-link text-sm font-semibold py-2 hover:text-blue-600 transition-colors flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
+                <!-- Annotate toggle: shows annotation tools and enables drawing overlay -->
+                <button id="annotate-toggle" class="ml-3 p-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex-shrink-0" aria-pressed="false" title="Annotate / Draw on screen">Annotate</button>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors flex-shrink-0" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
@@ -1998,6 +2000,220 @@
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <!-- Annotation UI -->
+    <div id="annotation-toolbar" class="annotation-toolbar hidden" role="toolbar" aria-hidden="true">
+        <button class="annotation-tool" id="tool-pen" data-tooltip="Pen">✏️</button>
+        <button class="annotation-tool" id="tool-eraser" data-tooltip="Eraser">🩹</button>
+        <input id="color-picker" class="color-picker" type="color" value="#ff0000" aria-label="Choose annotation color">
+        <select id="pen-size" class="annotation-tool" title="Pen size" aria-label="Pen size">
+            <option value="2">2</option>
+            <option value="4" selected>4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+            <option value="12">12</option>
+        </select>
+        <button class="annotation-tool" id="undo-btn" data-tooltip="Undo">↶</button>
+        <button class="annotation-tool" id="clear-btn" data-tooltip="Clear">🗑️</button>
+        <button class="annotation-tool" id="save-btn" data-tooltip="Save PNG">💾</button>
+    </div>
+    <canvas id="annotation-canvas" class="annotation-canvas" aria-hidden="true"></canvas>
+
+    <div id="annotation-save-indicator" class="annotation-save-indicator">Saved</div>
+
+    <script>
+    (function(){
+        // Safe guards
+        if(typeof fabric === 'undefined') return; // fabric.js not loaded
+
+        const annotateToggle = document.getElementById('annotate-toggle');
+        const toolbar = document.getElementById('annotation-toolbar');
+        const canvasEl = document.getElementById('annotation-canvas');
+        const saveIndicator = document.getElementById('annotation-save-indicator');
+
+        let canvas = null;
+        let stateStack = [];
+        let isAnnotating = false;
+
+        function initCanvas(){
+            // size to viewport
+            function resize(){
+                const dpr = window.devicePixelRatio || 1;
+                const w = document.documentElement.clientWidth;
+                const h = document.documentElement.clientHeight;
+                canvasEl.width = Math.floor(w * dpr);
+                canvasEl.height = Math.floor(h * dpr);
+                canvasEl.style.width = w + 'px';
+                canvasEl.style.height = h + 'px';
+                if(canvas){
+                    canvas.setWidth(canvasEl.width);
+                    canvas.setHeight(canvasEl.height);
+                    canvas.calcOffset();
+                    // scale objects if necessary (we keep pixel-perfect simple)
+                }
+            }
+
+            canvas = new fabric.Canvas(canvasEl, {
+                isDrawingMode: true,
+                selection: false,
+                skipTargetFind: true,
+                backgroundColor: 'transparent',
+                renderOnAddition: true,
+            });
+
+            // default brush
+            const brush = new fabric.PencilBrush(canvas);
+            brush.color = document.getElementById('color-picker').value || '#ff0000';
+            brush.width = parseInt(document.getElementById('pen-size').value,10) || 4;
+            canvas.freeDrawingBrush = brush;
+
+            // record history
+            function pushState(){
+                try{
+                    stateStack.push(JSON.stringify(canvas.toJSON(['selectable'])));
+                    if(stateStack.length>50) stateStack.shift();
+                }catch(e){ console.warn('pushState',e); }
+            }
+
+            canvas.on('path:created', function(){ pushState(); });
+
+            // initial state
+            pushState();
+
+            // responsive
+            window.addEventListener('resize', resize);
+            resize();
+        }
+
+        function enterAnnotate(){
+            if(!canvas) initCanvas();
+            toolbar.classList.remove('hidden');
+            toolbar.setAttribute('aria-hidden','false');
+            canvasEl.classList.add('active');
+            canvasEl.classList.remove('');
+            canvas.isDrawingMode = true;
+            canvas.selection = false;
+            isAnnotating = true;
+            annotateToggle.setAttribute('aria-pressed','true');
+            styleCanvas();
+        }
+
+        function exitAnnotate(){
+            toolbar.classList.add('hidden');
+            toolbar.setAttribute('aria-hidden','true');
+            if(canvas) canvas.isDrawingMode = false;
+            canvasEl.classList.remove('active');
+            isAnnotating = false;
+            annotateToggle.setAttribute('aria-pressed','false');
+            styleCanvas();
+        }
+
+        // toggle
+        annotateToggle && annotateToggle.addEventListener('click', function(e){
+            e.preventDefault();
+            if(!isAnnotating) enterAnnotate(); else exitAnnotate();
+        });
+
+        // tools
+        document.getElementById('tool-pen').addEventListener('click', function(){
+            if(!canvas) return;
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.color = document.getElementById('color-picker').value;
+            canvas.freeDrawingBrush.width = parseInt(document.getElementById('pen-size').value,10)||4;
+        });
+
+        document.getElementById('tool-eraser').addEventListener('click', function(){
+            if(!canvas) return;
+            // simple eraser: remove paths under pointer by switching to 'eraser' brush which makes lines transparent
+            const EraserBrush = fabric.EraserBrush || null;
+            if(EraserBrush){
+                canvas.freeDrawingBrush = new EraserBrush(canvas);
+            } else {
+                // fallback: set brush to pencil with white color and larger width
+                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                canvas.freeDrawingBrush.color = 'rgba(255,255,255,1)';
+                canvas.freeDrawingBrush.width = (parseInt(document.getElementById('pen-size').value,10)||4) * 3;
+            }
+            canvas.isDrawingMode = true;
+        });
+
+        document.getElementById('color-picker').addEventListener('input', function(e){
+            if(!canvas) return;
+            const brush = new fabric.PencilBrush(canvas);
+            brush.color = e.target.value;
+            brush.width = parseInt(document.getElementById('pen-size').value,10)||4;
+            canvas.freeDrawingBrush = brush;
+            canvas.isDrawingMode = true;
+        });
+
+        document.getElementById('pen-size').addEventListener('change', function(e){
+            if(!canvas) return;
+            const brush = new fabric.PencilBrush(canvas);
+            brush.color = document.getElementById('color-picker').value || '#ff0000';
+            brush.width = parseInt(e.target.value,10)||4;
+            canvas.freeDrawingBrush = brush;
+            canvas.isDrawingMode = true;
+        });
+
+        document.getElementById('undo-btn').addEventListener('click', function(){
+            if(!canvas) return;
+            if(stateStack.length>1){
+                // pop current
+                stateStack.pop();
+                const prev = stateStack[stateStack.length-1];
+                if(prev){
+                    canvas.loadFromJSON(prev, function(){ canvas.renderAll(); });
+                }
+            } else {
+                canvas.clear();
+            }
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', function(){
+            if(!canvas) return;
+            canvas.clear();
+            stateStack = [];
+            try{ stateStack.push(JSON.stringify(canvas.toJSON())); }catch(e){}
+        });
+
+        document.getElementById('save-btn').addEventListener('click', function(){
+            if(!canvas) return;
+            // convert to data URL at device pixel ratio to preserve quality
+            const dpr = window.devicePixelRatio || 1;
+            const dataURL = canvas.toDataURL({ format: 'png', multiplier: dpr });
+            // download
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = 'annotation.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // show saved indicator
+            saveIndicator.classList.add('show');
+            setTimeout(()=> saveIndicator.classList.remove('show'), 1400);
+        });
+
+        // keep annotation layer above all
+        const styleCanvas = function(){
+            canvasEl.style.position = 'fixed';
+            canvasEl.style.top = '0';
+            canvasEl.style.left = '0';
+            canvasEl.style.zIndex = 9999;
+            canvasEl.style.pointerEvents = isAnnotating ? 'auto' : 'none';
+        };
+
+        // observe annotate mode to toggle pointer events
+        const observer = new MutationObserver(function(){ styleCanvas(); });
+        observer.observe(canvasEl, { attributes: true });
+
+        // ensure keyboard ESC exits annotate
+        window.addEventListener('keydown', function(e){ if(e.key === 'Escape' && isAnnotating) exitAnnotate(); });
+
+    // initialize but do not enable until toggled
+    // initCanvas will be lazily called on first open
+    styleCanvas();
+    })();
+    </script>
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
