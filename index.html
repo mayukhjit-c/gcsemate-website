@@ -6078,6 +6078,624 @@
             debounceTimers.forEach(timer => clearTimeout(timer));
             throttleTimers.forEach(timer => clearTimeout(timer));
         });
+        
+        // =================================================================================
+        // STUDY TOOLS FUNCTIONALITY
+        // =================================================================================
+        
+        // Study data storage
+        let studyData = {
+            focusSessions: [],
+            pomodoros: [],
+            notes: [],
+            dailyProgress: {},
+            weeklyGoal: 10,
+            streakCount: 0
+        };
+        
+        // Load study data from localStorage
+        function loadStudyData() {
+            try {
+                const saved = localStorage.getItem('gcsemate-study-data');
+                if (saved) {
+                    studyData = { ...studyData, ...JSON.parse(saved) };
+                }
+            } catch (error) {
+                console.error('Error loading study data:', error);
+            }
+        }
+        
+        // Save study data to localStorage
+        function saveStudyData() {
+            try {
+                localStorage.setItem('gcsemate-study-data', JSON.stringify(studyData));
+            } catch (error) {
+                console.error('Error saving study data:', error);
+            }
+        }
+        
+        // Initialize study tools
+        function initializeStudyTools() {
+            loadStudyData();
+            populateSubjectSelectors();
+            updateProgressStats();
+            loadNotes();
+            initializeWeeklyCalendar();
+        }
+        
+        // Populate subject selectors
+        function populateSubjectSelectors() {
+            const selectors = ['focus-subject', 'note-subject'];
+            selectors.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    // Clear existing options except the first
+                    select.innerHTML = select.firstElementChild.outerHTML;
+                    SUBJECTS.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.toLowerCase();
+                        option.textContent = subject;
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+        
+        // =================================================================================
+        // FOCUS MODE FUNCTIONALITY
+        // =================================================================================
+        
+        let focusSession = {
+            active: false,
+            startTime: null,
+            duration: 25,
+            subject: '',
+            goal: '',
+            timer: null,
+            remaining: 0,
+            paused: false
+        };
+        
+        function startFocusSession() {
+            const subject = document.getElementById('focus-subject').value;
+            const duration = parseInt(document.getElementById('focus-duration').value);
+            const goal = document.getElementById('focus-goal').value.trim();
+            
+            if (!subject || !goal) {
+                showToast('Please select a subject and set a goal', 'error');
+                return;
+            }
+            
+            focusSession = {
+                active: true,
+                startTime: new Date(),
+                duration: duration,
+                subject: subject,
+                goal: goal,
+                timer: null,
+                remaining: duration * 60,
+                paused: false
+            };
+            
+            document.getElementById('focus-current-goal').textContent = goal;
+            document.getElementById('active-focus-session').classList.remove('hidden');
+            
+            startFocusTimer();
+            showToast(`Focus session started for ${duration} minutes`, 'success');
+        }
+        
+        function startFocusTimer() {
+            focusSession.timer = setInterval(() => {
+                if (!focusSession.paused) {
+                    focusSession.remaining--;
+                    updateFocusDisplay();
+                    
+                    if (focusSession.remaining <= 0) {
+                        completeFocusSession();
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateFocusDisplay() {
+            const minutes = Math.floor(focusSession.remaining / 60);
+            const seconds = focusSession.remaining % 60;
+            document.getElementById('focus-timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function pauseFocusSession() {
+            focusSession.paused = !focusSession.paused;
+            const btn = document.getElementById('pause-focus-btn');
+            btn.textContent = focusSession.paused ? 'Resume' : 'Pause';
+        }
+        
+        function completeFocusSession() {
+            clearInterval(focusSession.timer);
+            
+            // Record session
+            studyData.focusSessions.push({
+                date: new Date().toDateString(),
+                subject: focusSession.subject,
+                goal: focusSession.goal,
+                duration: focusSession.duration,
+                completed: true
+            });
+            
+            recordDailyProgress(focusSession.duration);
+            updateProgressStats();
+            saveStudyData();
+            
+            // Reset UI
+            endFocusSession();
+            showToast(`Focus session completed! Great job on ${focusSession.goal}`, 'success');
+        }
+        
+        function endFocusSession() {
+            if (focusSession.timer) {
+                clearInterval(focusSession.timer);
+            }
+            
+            focusSession.active = false;
+            document.getElementById('active-focus-session').classList.add('hidden');
+            
+            // Clear form
+            document.getElementById('focus-subject').value = '';
+            document.getElementById('focus-goal').value = '';
+        }
+        
+        // =================================================================================
+        // POMODORO TIMER FUNCTIONALITY
+        // =================================================================================
+        
+        let pomodoro = {
+            active: false,
+            timer: null,
+            phase: 'work', // 'work', 'break', 'longbreak'
+            session: 1,
+            remaining: 25 * 60,
+            workDuration: 25,
+            breakDuration: 5,
+            longBreakDuration: 15,
+            paused: false
+        };
+        
+        function startPomodoro() {
+            if (!pomodoro.active) {
+                pomodoro.active = true;
+                pomodoro.workDuration = parseInt(document.getElementById('work-duration').value);
+                pomodoro.breakDuration = parseInt(document.getElementById('break-duration').value);
+                pomodoro.longBreakDuration = parseInt(document.getElementById('long-break-duration').value);
+                pomodoro.remaining = pomodoro.workDuration * 60;
+            }
+            
+            pomodoro.paused = false;
+            document.getElementById('start-pomodoro-btn').classList.add('hidden');
+            document.getElementById('pause-pomodoro-btn').classList.remove('hidden');
+            
+            pomodoro.timer = setInterval(() => {
+                pomodoro.remaining--;
+                updatePomodoroDisplay();
+                
+                if (pomodoro.remaining <= 0) {
+                    handlePomodoroPhaseComplete();
+                }
+            }, 1000);
+        }
+        
+        function pausePomodoro() {
+            if (pomodoro.timer) {
+                clearInterval(pomodoro.timer);
+            }
+            
+            pomodoro.paused = true;
+            document.getElementById('start-pomodoro-btn').classList.remove('hidden');
+            document.getElementById('pause-pomodoro-btn').classList.add('hidden');
+        }
+        
+        function resetPomodoro() {
+            if (pomodoro.timer) {
+                clearInterval(pomodoro.timer);
+            }
+            
+            pomodoro = {
+                active: false,
+                timer: null,
+                phase: 'work',
+                session: 1,
+                remaining: 25 * 60,
+                workDuration: 25,
+                breakDuration: 5,
+                longBreakDuration: 15,
+                paused: false
+            };
+            
+            document.getElementById('start-pomodoro-btn').classList.remove('hidden');
+            document.getElementById('pause-pomodoro-btn').classList.add('hidden');
+            document.getElementById('pomodoro-phase').textContent = 'Work Phase';
+            document.getElementById('pomodoro-session-counter').textContent = 'Session 1 of 4';
+            updatePomodoroDisplay();
+        }
+        
+        function updatePomodoroDisplay() {
+            const minutes = Math.floor(pomodoro.remaining / 60);
+            const seconds = pomodoro.remaining % 60;
+            document.getElementById('pomodoro-timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function handlePomodoroPhaseComplete() {
+            clearInterval(pomodoro.timer);
+            
+            if (pomodoro.phase === 'work') {
+                // Record completed pomodoro
+                studyData.pomodoros.push({
+                    date: new Date().toDateString(),
+                    duration: pomodoro.workDuration
+                });
+                recordDailyProgress(pomodoro.workDuration);
+                
+                // Start break
+                if (pomodoro.session % 4 === 0) {
+                    pomodoro.phase = 'longbreak';
+                    pomodoro.remaining = pomodoro.longBreakDuration * 60;
+                    document.getElementById('pomodoro-phase').textContent = 'Long Break';
+                } else {
+                    pomodoro.phase = 'break';
+                    pomodoro.remaining = pomodoro.breakDuration * 60;
+                    document.getElementById('pomodoro-phase').textContent = 'Break Time';
+                }
+                
+                showToast('Work session complete! Time for a break.', 'success');
+            } else {
+                // Break complete, start new work session
+                pomodoro.phase = 'work';
+                pomodoro.session++;
+                pomodoro.remaining = pomodoro.workDuration * 60;
+                document.getElementById('pomodoro-phase').textContent = 'Work Phase';
+                document.getElementById('pomodoro-session-counter').textContent = 
+                    `Session ${pomodoro.session} of 4`;
+                
+                showToast('Break complete! Ready for the next work session.', 'info');
+            }
+            
+            updatePomodoroDisplay();
+            updateProgressStats();
+            saveStudyData();
+            
+            // Auto-start next phase
+            startPomodoro();
+        }
+        
+        // =================================================================================
+        // NOTES FUNCTIONALITY
+        // =================================================================================
+        
+        let currentNote = null;
+        let notesList = [];
+        
+        function loadNotes() {
+            notesList = studyData.notes || [];
+            renderNotesList();
+            
+            if (notesList.length === 0) {
+                showNotesEmptyState();
+            }
+        }
+        
+        function renderNotesList() {
+            const container = document.getElementById('notes-list');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            notesList.forEach((note, index) => {
+                const noteElement = document.createElement('div');
+                noteElement.className = `note-item p-3 rounded-lg cursor-pointer transition-all hover:bg-blue-50 border ${
+                    currentNote && currentNote.id === note.id ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                }`;
+                
+                noteElement.innerHTML = `
+                    <h4 class="font-semibold text-gray-800 truncate">${note.title || 'Untitled'}</h4>
+                    <p class="text-sm text-gray-600 mt-1">${note.subject || 'No subject'}</p>
+                    <p class="text-xs text-gray-500 mt-1">${new Date(note.lastModified).toLocaleDateString()}</p>
+                `;
+                
+                noteElement.addEventListener('click', () => loadNote(note));
+                container.appendChild(noteElement);
+            });
+        }
+        
+        function createNewNote() {
+            currentNote = {
+                id: Date.now(),
+                title: '',
+                content: '',
+                subject: '',
+                created: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+            
+            showNoteEditor();
+            document.getElementById('note-title').focus();
+        }
+        
+        function loadNote(note) {
+            currentNote = note;
+            showNoteEditor();
+            
+            document.getElementById('note-title').value = note.title || '';
+            document.getElementById('note-content').value = note.content || '';
+            document.getElementById('note-subject').value = note.subject || '';
+            
+            updateWordCount();
+            updateLastSaved();
+        }
+        
+        function showNoteEditor() {
+            document.getElementById('notes-empty-state').classList.add('hidden');
+            document.getElementById('note-editor').classList.remove('hidden');
+        }
+        
+        function showNotesEmptyState() {
+            document.getElementById('note-editor').classList.add('hidden');
+            document.getElementById('notes-empty-state').classList.remove('hidden');
+        }
+        
+        function saveNote() {
+            if (!currentNote) return;
+            
+            const title = document.getElementById('note-title').value.trim();
+            const content = document.getElementById('note-content').value.trim();
+            const subject = document.getElementById('note-subject').value;
+            
+            if (!title && !content) {
+                showToast('Cannot save empty note', 'error');
+                return;
+            }
+            
+            currentNote.title = title || 'Untitled';
+            currentNote.content = content;
+            currentNote.subject = subject;
+            currentNote.lastModified = new Date().toISOString();
+            
+            const existingIndex = notesList.findIndex(n => n.id === currentNote.id);
+            if (existingIndex >= 0) {
+                notesList[existingIndex] = currentNote;
+            } else {
+                notesList.push(currentNote);
+            }
+            
+            studyData.notes = notesList;
+            saveStudyData();
+            renderNotesList();
+            updateProgressStats();
+            updateLastSaved();
+            
+            showToast('Note saved successfully', 'success');
+        }
+        
+        function deleteNote() {
+            if (!currentNote) return;
+            
+            if (confirm('Are you sure you want to delete this note?')) {
+                notesList = notesList.filter(n => n.id !== currentNote.id);
+                studyData.notes = notesList;
+                saveStudyData();
+                renderNotesList();
+                updateProgressStats();
+                
+                if (notesList.length === 0) {
+                    showNotesEmptyState();
+                } else {
+                    currentNote = null;
+                    showNotesEmptyState();
+                }
+                
+                showToast('Note deleted', 'info');
+            }
+        }
+        
+        function updateWordCount() {
+            const content = document.getElementById('note-content')?.value || '';
+            const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const element = document.getElementById('note-word-count');
+            if (element) element.textContent = `${wordCount} words`;
+        }
+        
+        function updateLastSaved() {
+            const lastSaved = currentNote ? new Date(currentNote.lastModified).toLocaleTimeString() : 'Never saved';
+            const element = document.getElementById('note-last-saved');
+            if (element) element.textContent = `Last saved: ${lastSaved}`;
+        }
+        
+        function formatText(command) {
+            const textarea = document.getElementById('note-content');
+            if (!textarea) return;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (!selectedText) {
+                showToast('Please select text to format', 'info');
+                return;
+            }
+            
+            let formattedText;
+            switch (command) {
+                case 'bold':
+                    formattedText = `**${selectedText}**`;
+                    break;
+                case 'italic':
+                    formattedText = `*${selectedText}*`;
+                    break;
+                case 'underline':
+                    formattedText = `_${selectedText}_`;
+                    break;
+                default:
+                    return;
+            }
+            
+            textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start, start + formattedText.length);
+        }
+        
+        // =================================================================================
+        // PROGRESS TRACKING FUNCTIONALITY
+        // =================================================================================
+        
+        function recordDailyProgress(minutes) {
+            const today = new Date().toDateString();
+            if (!studyData.dailyProgress[today]) {
+                studyData.dailyProgress[today] = { minutes: 0, sessions: 0 };
+            }
+            studyData.dailyProgress[today].minutes += minutes;
+            studyData.dailyProgress[today].sessions += 1;
+        }
+        
+        function updateProgressStats() {
+            // Calculate total stats
+            let totalMinutes = 0;
+            let totalSessions = 0;
+            
+            Object.values(studyData.dailyProgress).forEach(day => {
+                totalMinutes += day.minutes;
+                totalSessions += day.sessions;
+            });
+            
+            // Today's focus time
+            const today = new Date().toDateString();
+            const todayMinutes = studyData.dailyProgress[today]?.minutes || 0;
+            
+            // Update displays
+            const elements = {
+                'today-focus-time': `${todayMinutes} min`,
+                'sessions-completed': todayMinutes > 0 ? studyData.dailyProgress[today].sessions : 0,
+                'total-study-time': `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
+                'total-sessions': totalSessions,
+                'total-notes': studyData.notes?.length || 0
+            };
+            
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+            
+            // Pomodoros completed today
+            const todayPomodoros = studyData.pomodoros.filter(p => p.date === today).length;
+            const pomodoroEl = document.getElementById('pomodoros-completed');
+            const focusTimeEl = document.getElementById('total-focus-time');
+            if (pomodoroEl) pomodoroEl.textContent = todayPomodoros;
+            if (focusTimeEl) focusTimeEl.textContent = `${Math.floor(todayMinutes / 60)}h`;
+            
+            // Update weekly progress and streak
+            updateWeeklyProgress();
+            updateStreak();
+        }
+        
+        function updateWeeklyProgress() {
+            const weekStart = getWeekStart(new Date());
+            let weeklyMinutes = 0;
+            
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+                const dayStr = day.toDateString();
+                weeklyMinutes += studyData.dailyProgress[dayStr]?.minutes || 0;
+            }
+            
+            const weeklyHours = weeklyMinutes / 60;
+            const goal = studyData.weeklyGoal || 10;
+            const progress = Math.min((weeklyHours / goal) * 100, 100);
+            
+            const progressText = document.getElementById('weekly-progress-text');
+            const progressBar = document.getElementById('weekly-progress-bar');
+            
+            if (progressText) progressText.textContent = `${weeklyHours.toFixed(1)} / ${goal} hours`;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+        }
+        
+        function updateWeeklyGoal() {
+            const input = document.getElementById('weekly-goal-input');
+            if (!input) return;
+            
+            const newGoal = parseInt(input.value);
+            studyData.weeklyGoal = newGoal;
+            saveStudyData();
+            updateWeeklyProgress();
+        }
+        
+        function updateStreak() {
+            // Calculate current streak
+            let streak = 0;
+            const today = new Date();
+            
+            for (let i = 0; i < 30; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                const dateStr = checkDate.toDateString();
+                
+                if (studyData.dailyProgress[dateStr]?.minutes > 0) {
+                    streak++;
+                } else if (i === 0) {
+                    // If today has no progress, check yesterday
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            
+            studyData.streakCount = streak;
+            const focusStreak = document.getElementById('focus-streak');
+            const studyStreak = document.getElementById('study-streak');
+            
+            if (focusStreak) focusStreak.textContent = `${streak} days`;
+            if (studyStreak) studyStreak.textContent = `${streak} days`;
+        }
+        
+        function initializeWeeklyCalendar() {
+            const calendar = document.getElementById('weekly-calendar');
+            if (!calendar) return;
+            
+            const weekStart = getWeekStart(new Date());
+            calendar.innerHTML = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+                const dayStr = day.toDateString();
+                const minutes = studyData.dailyProgress[dayStr]?.minutes || 0;
+                
+                const dayElement = document.createElement('div');
+                dayElement.className = `aspect-square p-1 rounded text-xs text-center ${
+                    minutes > 0 ? 'bg-green-200 text-green-800' : 'bg-gray-100 text-gray-500'
+                }`;
+                dayElement.textContent = day.getDate();
+                dayElement.title = `${day.toDateString()}: ${minutes} minutes`;
+                
+                calendar.appendChild(dayElement);
+            }
+        }
+        
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday as start
+            return new Date(d.setDate(diff));
+        }
+        
+        // Initialize study tools when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeStudyTools();
+            
+            // Add event listeners for notes
+            const noteContent = document.getElementById('note-content');
+            if (noteContent) {
+                noteContent.addEventListener('input', updateWordCount);
+            }
+        });
     </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
