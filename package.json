@@ -1,0 +1,13 @@
+{
+  "name": "gcsemate-website",
+  "version": "1.0.0",
+  "description": "GCSEMate - GCSE Revision Platform",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
+

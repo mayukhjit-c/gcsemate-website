@@ -1,15 +1,10 @@
 /* Tailwind CSS - Production Build */
-/* This file contains the compiled Tailwind CSS utilities used throughout the application */
-
-/* Base styles and utilities are included in styles.css */
-/* This file serves as a placeholder for Tailwind utilities */
-/* In a full production setup, this would be generated via: npx tailwindcss -i ./src/input.css -o ./tailwind.css --minify */
-
-/* For now, we'll include essential Tailwind utilities inline */
-/* Note: The application uses Tailwind utility classes extensively */
-/* In production, run: npm install -D tailwindcss && npx tailwindcss init */
-/* Then build with: npx tailwindcss -i ./src/input.css -o ./tailwind.css --minify */
-
-/* Essential Tailwind utilities are already included via inline styles and styles.css */
-/* This file ensures compatibility and can be replaced with a full Tailwind build */
-
+/* 
+ * To build this file, run: npm install && npm run build:css
+ * 
+ * For now, this file is empty. After building, it will contain
+ * all compiled Tailwind utilities used in the project.
+ * 
+ * Until built, the site uses the Tailwind CDN (which shows a warning).
+ * To remove the warning, build this file using the commands above.
+ */

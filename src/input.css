@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles that work with Tailwind */
+@layer base {
+  /* Your custom base styles here */
+}
+
+@layer components {
+  /* Your custom component styles here */
+}
+
+@layer utilities {
+  /* Your custom utility styles here */
+}
+
