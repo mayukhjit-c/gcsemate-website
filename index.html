@@ -202,28 +202,46 @@
     <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link">
     <script>
         (function() {
+            // Store original console.warn before any modifications
+            const originalConsoleWarn = console.warn;
+            let warnOverrideActive = false;
+            
+            // Safe wrapper function that only suppresses Tailwind CDN warnings
+            function createWarnWrapper() {
+                return function(...args) {
+                    // Only suppress if this is specifically the Tailwind CDN production warning
+                    const firstArg = args[0];
+                    if (firstArg && typeof firstArg === 'string') {
+                        const message = firstArg.toLowerCase();
+                        // Check for Tailwind CDN production warning patterns
+                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss')) && 
+                            (message.includes('production') || message.includes('not recommended'))) {
+                            return; // Suppress only this specific warning
+                        }
+                    }
+                    // Pass through all other warnings
+                    originalConsoleWarn.apply(console, args);
+                };
+            }
+            
             // Load Tailwind CDN immediately as fallback
             // This ensures styles work even if tailwind.css is not built yet
             const script = document.createElement('script');
             script.src = 'https://cdn.tailwindcss.com';
+            
             script.onload = function() {
-                // Suppress console warning about CDN usage
-                const originalWarn = console.warn;
-                console.warn = function(...args) {
-                    if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com') && args[0].includes('production')) {
-                        return; // Suppress Tailwind CDN production warning
-                    }
-                    originalWarn.apply(console, args);
-                };
+                // Only apply override if script loads successfully
+                if (!warnOverrideActive) {
+                    console.warn = createWarnWrapper();
+                    warnOverrideActive = true;
+                }
                 
                 // Check if compiled tailwind.css exists and has real content
-                // If so, we could switch to it, but for now CDN works fine
                 fetch('tailwind.css')
                     .then(res => res.text())
                     .then(text => {
                         if (text && text.trim().length > 1000) {
                             // Compiled file exists with content
-                            // Optionally switch to it, but CDN is already loaded
                             console.log('Tailwind CSS: Compiled file found. To use it, build with: npm run build:css');
                         }
                     })
@@ -231,6 +249,12 @@
                         // File doesn't exist, CDN is already loaded
                     });
             };
+            
+            script.onerror = function() {
+                // If CDN fails to load, don't modify console.warn
+                console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
+            };
+            
             document.head.appendChild(script);
         })();
     </script>
@@ -256,7 +280,7 @@
     
     </head>
     <!-- External JavaScript will be loaded after body for better performance -->
-    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <body class="bg-gray-100 min-h-screen">
     <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
@@ -278,26 +302,26 @@
     <div id="no-ai-badge" class="fixed bottom-4 left-4 z-[60] select-none pointer-events-none text-xs text-gray-400 opacity-20">
         Proudly made using no generative AI
     </div>
-    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
-        <header class="flex justify-between items-center py-4">
-             <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
-              <div class="flex items-center gap-4">
+    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 text-center fade-in">
+        <header class="flex justify-between items-center py-4 sm:py-6 mb-8 sm:mb-12">
+             <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 sm:h-12 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
+              <div class="flex items-center gap-3 sm:gap-4">
                   <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-tooltip="Sign in to your account">Sign In</button>
                   <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your free account">Get Started</button>
               </div>
         </header>
-        <main class="mt-16 sm:mt-24">
+        <main class="mt-8 sm:mt-12 lg:mt-16">
             <div class="animate-hero-title">
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight px-4">
                     Ace Your GCSEs with <span class="text-blue-600">Zero Stress</span>
                 </h1>
             </div>
             <div class="animate-hero-subtitle">
-                <p class="mt-4 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600">
+                <p class="mt-6 sm:mt-8 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 px-4">
                     Join 10,000+ students who've transformed their revision with GCSEMate. Get instant access to organized notes, past papers, AI tutoring, and everything you need to achieve top grades—all in one place.
                 </p>
             </div>
-            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
+            <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
                 <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 sm:px-10 py-4 text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 min-h-[60px] flex items-center justify-center" data-tooltip="Start your GCSE success journey today">
                     Start Free Today
                 </button>
@@ -305,12 +329,12 @@
                     Already have an account? Sign In
                 </button>
             </div>
-            <div class="mt-6 text-center">
+            <div class="mt-6 sm:mt-8 text-center px-4">
                 <p class="text-sm text-gray-500">Free forever • No credit card required • Join in 30 seconds</p>
             </div>
-            <div class="mt-20 sm:mt-32">
-                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Why 10,000+ Students Choose GCSEMate</h2>
-                <p class="mt-3 text-gray-500">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
+            <div class="mt-16 sm:mt-20 lg:mt-24 px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">Why 10,000+ Students Choose GCSEMate</h2>
+                <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
                     <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.1s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 hover:scale-110">
@@ -337,37 +361,37 @@
             </div>
             
             <!-- Real Statistics Section -->
-            <div class="mt-20 sm:mt-24">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Trusted by Students Across the UK</h2>
-                    <p class="text-gray-600 mb-8">Real numbers from real students achieving real results</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+            <div class="mt-16 sm:mt-20 lg:mt-24 px-4">
+                <div class="text-center mb-10 sm:mb-12">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">Trusted by Students Across the UK</h2>
+                    <p class="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg">Real numbers from real students achieving real results</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-users text-4xl text-blue-600"></i>
+                                <i class="fas fa-users text-3xl sm:text-4xl text-blue-600"></i>
                             </div>
-                            <div class="text-3xl font-bold text-blue-600 mb-2">10,000+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">10,000+</div>
                             <div class="text-sm text-gray-600">Active Students</div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-star text-4xl text-yellow-500"></i>
+                                <i class="fas fa-star text-3xl sm:text-4xl text-yellow-500"></i>
                             </div>
-                            <div class="text-3xl font-bold text-yellow-600 mb-2">4.9/5</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-yellow-600 mb-2">4.9/5</div>
                             <div class="text-sm text-gray-600">Average Rating</div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-chart-line text-4xl text-green-600"></i>
+                                <i class="fas fa-chart-line text-3xl sm:text-4xl text-green-600"></i>
                             </div>
-                            <div class="text-3xl font-bold text-green-600 mb-2">95%</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-green-600 mb-2">95%</div>
                             <div class="text-sm text-gray-600">Grade Improvement</div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-file-alt text-4xl text-purple-600"></i>
+                                <i class="fas fa-file-alt text-3xl sm:text-4xl text-purple-600"></i>
                             </div>
-                            <div class="text-3xl font-bold text-purple-600 mb-2">50,000+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">1,000+</div>
                             <div class="text-sm text-gray-600">Resources Available</div>
                         </div>
                     </div>
@@ -854,10 +878,13 @@
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Account Management</h2>
                     <div id="admin-panel" class="hidden space-y-8">
                         <!-- Enhanced Admin Dashboard Header -->
-                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl shadow-lg text-white">
+                        <div class="bg-blue-600 p-6 rounded-xl shadow-lg text-white">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h2 class="text-2xl font-bold mb-2">Admin Dashboard</h2>
+                                    <h2 class="text-2xl font-bold mb-2 flex items-center gap-2">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        Admin Dashboard
+                                    </h2>
                                     <p class="text-blue-100">Manage users, content, and site settings</p>
                                 <div class="mt-2 text-sm text-blue-200">
                                     <span id="server-time" class="font-mono"></span>
@@ -877,9 +904,7 @@
                                     <div id="total-users-count" class="text-3xl font-bold">-</div>
                                     <div class="text-xs text-blue-200 mt-1">
                                         <span id="growth-indicator" class="inline-flex items-center gap-1">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                            </svg>
+                                            <i class="fas fa-arrow-up text-xs"></i>
                                             <span id="growth-percentage">-</span>% this week
                                         </span>
                                     </div>
@@ -893,9 +918,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="p-2 bg-blue-100 rounded-lg">
-                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                            </svg>
+                                            <i class="fas fa-users w-6 h-6 text-blue-600"></i>
                                         </div>
                                         <div class="ml-3">
                                             <p class="text-sm font-medium text-gray-600">Free Users</p>
@@ -912,9 +935,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="p-2 bg-green-100 rounded-lg">
-                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
+                                            <i class="fas fa-user-check w-6 h-6 text-green-600"></i>
                                         </div>
                                         <div class="ml-3">
                                             <p class="text-sm font-medium text-gray-600">Paid Users</p>
@@ -931,10 +952,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="p-2 bg-red-100 rounded-lg">
-                                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            </svg>
+                                            <i class="fas fa-user-shield w-6 h-6 text-red-600"></i>
                                         </div>
                                         <div class="ml-3">
                                             <p class="text-sm font-medium text-gray-600">Admins</p>
@@ -951,9 +969,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="p-2 bg-purple-100 rounded-lg">
-                                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                            </svg>
+                                            <i class="fas fa-chart-line w-6 h-6 text-purple-600"></i>
                                         </div>
                                         <div class="ml-3">
                                             <p class="text-sm font-medium text-gray-600">Active Today</p>
@@ -998,15 +1014,11 @@
                                 <h3 class="text-2xl font-bold text-gray-800">User Management</h3>
                                 <div class="flex gap-2">
                                     <button onclick="refreshUserData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh user data">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
+                                        <i class="fas fa-sync-alt"></i>
                                         Refresh
                                     </button>
                                     <button onclick="exportUserData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2" data-tooltip="Export user data to CSV">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
+                                        <i class="fas fa-download"></i>
                                         Export
                                     </button>
                                 </div>
@@ -1028,9 +1040,7 @@
                             <!-- Site Announcement -->
                             <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                                 <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-                                    </svg>
+                                    <i class="fas fa-bullhorn text-blue-600"></i>
                                     Site Announcement
                                 </h3>
                                 <textarea id="announcement-text" placeholder="Enter announcement text here..." class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
@@ -1043,9 +1053,7 @@
                             <!-- System Health -->
                             <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                                 <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i class="fas fa-heartbeat text-green-600"></i>
                                     System Health
                                 </h3>
                                 <div class="space-y-3">
@@ -1067,11 +1075,9 @@
                         </div>
 
                         <!-- Maintenance Mode -->
-                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                             <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
+                                <i class="fas fa-tools text-yellow-600"></i>
                                 Maintenance Mode
                             </h3>
                             <div class="space-y-3">
@@ -1104,9 +1110,7 @@
                         <!-- Advanced Analytics -->
                         <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                             <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
+                                <i class="fas fa-chart-bar text-purple-600"></i>
                                 Advanced Analytics
                             </h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1132,9 +1136,7 @@
                         <!-- Quick Actions -->
                         <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                             <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
+                                <i class="fas fa-bolt text-indigo-600"></i>
                                 Quick Actions
                             </h3>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">

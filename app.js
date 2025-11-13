@@ -2371,6 +2371,97 @@ const subjectSummaries = {
         description: 'GCSE Philosophy and Ethics examines philosophical questions, ethical theories, religious beliefs, and moral reasoning. Students develop critical thinking skills and explore fundamental questions about life, meaning, and values.'
     }
 };
+
+// Subject specification PDF links by exam board
+const subjectSpecifications = {
+    biology: {
+        'AQA': {
+            url: 'https://filestore.aqa.org.uk/resources/biology/specifications/AQA-8461-SP-2016.PDF',
+            label: 'AQA GCSE Biology (Triple/Higher)',
+            tier: 'Triple/Higher'
+        }
+    },
+    chemistry: {
+        'AQA': {
+            url: 'https://filestore.aqa.org.uk/resources/chemistry/specifications/AQA-8462-SP-2016.PDF',
+            label: 'AQA GCSE Chemistry (Triple/Higher)',
+            tier: 'Triple/Higher'
+        }
+    },
+    physics: {
+        'AQA': {
+            url: 'https://filestore.aqa.org.uk/resources/physics/specifications/AQA-8463-SP-2016.PDF',
+            label: 'AQA GCSE Physics (Triple/Higher)',
+            tier: 'Triple/Higher'
+        }
+    },
+    maths: {
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/mathematics/2015/specification-and-sample-assesment/gcse-maths-2015-specification.pdf',
+            label: 'Edexcel GCSE Mathematics (Higher/Foundation)',
+            tier: 'Higher/Foundation'
+        },
+        'AQA Further': {
+            url: 'https://filestore.aqa.org.uk/resources/mathematics/specifications/AQA-8365-SP-2018.PDF',
+            label: 'AQA Level 2 Certificate in Further Mathematics',
+            tier: 'Further'
+        }
+    },
+    english: {
+        'AQA': {
+            url: 'https://filestore.aqa.org.uk/resources/english/specifications/AQA-8700-SP-2015.PDF',
+            label: 'AQA GCSE English Language',
+            tier: ''
+        },
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/english-language/2015/specification-and-sample-assessments/GCSE_English_Language_Specification.pdf',
+            label: 'Edexcel GCSE English Language',
+            tier: ''
+        }
+    },
+    history: {
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/history/2016/specification-and-sample-assessments/GCSE_History_Specification.pdf',
+            label: 'Edexcel GCSE History',
+            tier: ''
+        }
+    },
+    geography: {
+        'OCR': {
+            url: 'https://www.ocr.org.uk/Images/207306-specification-accredited-gcse-geography-b-j384.pdf',
+            label: 'OCR GCSE Geography B (Exams ending 2026)',
+            tier: ''
+        }
+    },
+    computing: {
+        'OCR': {
+            url: 'https://www.ocr.org.uk/Images/234975-specification-accredited-gcse-computer-science-j277.pdf',
+            label: 'OCR GCSE Computer Science',
+            tier: ''
+        }
+    },
+    german: {
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/german/2016/specification-and-sample-assessments/GCSE_German_Specification.pdf',
+            label: 'Edexcel GCSE German',
+            tier: ''
+        }
+    },
+    music: {
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/music/2016/specification-and-sample-assessments/GCSE_Music_Specification.pdf',
+            label: 'Edexcel GCSE Music',
+            tier: ''
+        }
+    },
+    'philosophy and ethics': {
+        'Eduqas': {
+            url: 'https://www.eduqas.co.uk/qualifications/religious-studies/gcse/eduqas-gcse-religious-studies-spec-from-2016.pdf',
+            label: 'Eduqas GCSE Religious Studies (Philosophy & Ethics)',
+            tier: ''
+        }
+    }
+};
 const subjectIconMap = {
     // Biology: tree icon
     biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
@@ -2882,7 +2973,7 @@ function showMaintenancePage(message) {
     // Create maintenance page
     const maintenancePage = document.createElement('div');
     maintenancePage.id = 'maintenance-page';
-    maintenancePage.className = 'fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 z-[20000]';
+    maintenancePage.className = 'fixed inset-0 bg-blue-50 flex items-center justify-center p-4 z-[20000]';
     maintenancePage.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl p-8 max-w-md text-center">
             <div class="mb-6">
@@ -3633,7 +3724,7 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Expiring Soon!</h2>
                     <p id="renewal-message" class="text-gray-600 mb-4"></p>
-                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-lg mb-6">
+                    <div class="bg-green-600 text-white p-4 rounded-lg mb-6">
                         <p class="text-sm font-semibold mb-1">Special Renewal Offer</p>
                         <p class="text-2xl font-bold">£1.00/month</p>
                         <p class="text-xs opacity-90">Save 20p! (Regular price: £1.20/month)</p>
@@ -6610,9 +6701,28 @@ async function renderDashboard() {
             summary.textContent = subjectData.summary;
             summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
             wrapper.appendChild(summary);
+            
+            // Add "View Specification" button(s)
+            const specContainer = document.createElement('div');
+            specContainer.className = 'mt-3 w-full px-2';
+            const specs = subjectSpecifications[subject.toLowerCase()];
+            if (specs) {
+                Object.entries(specs).forEach(([board, spec]) => {
+                    const specButton = document.createElement('button');
+                    specButton.className = 'w-full mt-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5';
+                    specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i> <span>View Spec${spec.tier ? ` (${spec.tier})` : ''}</span>`;
+                    specButton.setAttribute('data-tooltip', spec.label);
+                    specButton.onclick = (e) => {
+                        e.stopPropagation(); // Prevent card click
+                        window.open(spec.url, '_blank', 'noopener,noreferrer');
+                    };
+                    specContainer.appendChild(specButton);
+                });
+            }
+            wrapper.appendChild(specContainer);
             card.appendChild(wrapper);
             if (subjectId) {
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[180px] max-h-[220px]';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[200px]';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
