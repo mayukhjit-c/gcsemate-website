@@ -246,26 +246,73 @@ async function safeExecuteAsync(fn, context = '', fallback = null) {
     }
 }
 
-// Input validation utilities
+// Enhanced input validation utilities with detailed feedback
 const Validator = {
     email(email) {
+        if (!email || !email.trim()) {
+            return { valid: false, error: 'Email is required' };
+        }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        if (!emailRegex.test(email)) {
+            return { valid: false, error: 'Please enter a valid email address' };
+        }
+        if (email.length > 254) {
+            return { valid: false, error: 'Email is too long (max 254 characters)' };
+        }
+        return { valid: true };
     },
     
-    password(password) {
-        return password && password.length >= 6;
+    password(password, isNew = false) {
+        if (!password) {
+            return { valid: false, error: 'Password is required' };
+        }
+        if (password.length < 6) {
+            return { valid: false, error: 'Password must be at least 6 characters' };
+        }
+        if (password.length > 128) {
+            return { valid: false, error: 'Password is too long (max 128 characters)' };
+        }
+        if (isNew) {
+            // Additional strength checks for new passwords
+            if (password.length < 8) {
+                return { valid: false, error: 'For better security, use at least 8 characters' };
+            }
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const strength = (hasUpper ? 1 : 0) + (hasLower ? 1 : 0) + (hasNumber ? 1 : 0);
+            if (strength < 2) {
+                return { valid: true, warning: 'Consider using a mix of letters and numbers for better security' };
+            }
+        }
+        return { valid: true };
     },
     
     displayName(name) {
-        return name && name.trim().length >= 2 && name.trim().length <= 50;
+        if (!name || !name.trim()) {
+            return { valid: false, error: 'Name is required' };
+        }
+        const trimmed = name.trim();
+        if (trimmed.length < 2) {
+            return { valid: false, error: 'Name must be at least 2 characters' };
+        }
+        if (trimmed.length > 50) {
+            return { valid: false, error: 'Name is too long (max 50 characters)' };
+        }
+        if (!/^[a-zA-Z\s'-]+$/.test(trimmed)) {
+            return { valid: false, error: 'Name can only contain letters, spaces, hyphens, and apostrophes' };
+        }
+        return { valid: true };
     },
     
     file(file, options = {}) {
         const { maxSize = 5 * 1024 * 1024, allowedTypes = [] } = options;
         
         if (!file) return { valid: false, error: 'No file provided' };
-        if (file.size > maxSize) return { valid: false, error: 'File too large' };
+        if (file.size > maxSize) {
+            const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1);
+            return { valid: false, error: `File too large (max ${maxSizeMB}MB)` };
+        }
         if (allowedTypes.length && !allowedTypes.includes(file.type)) {
             return { valid: false, error: 'Invalid file type' };
         }
@@ -274,14 +321,150 @@ const Validator = {
     },
     
     url(url) {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
+        if (!url || !url.trim()) {
+            return { valid: false, error: 'URL is required' };
         }
+        try {
+            const urlObj = new URL(url);
+            if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                return { valid: false, error: 'URL must start with http:// or https://' };
+            }
+            return { valid: true };
+        } catch {
+            return { valid: false, error: 'Please enter a valid URL' };
+        }
+    },
+    
+    title(title) {
+        if (!title || !title.trim()) {
+            return { valid: false, error: 'Title is required' };
+        }
+        const trimmed = title.trim();
+        if (trimmed.length < 2) {
+            return { valid: false, error: 'Title must be at least 2 characters' };
+        }
+        if (trimmed.length > 200) {
+            return { valid: false, error: 'Title is too long (max 200 characters)' };
+        }
+        return { valid: true };
     }
 };
+
+// Form validation helper with real-time feedback
+function setupFormValidation(formId, validationRules) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    
+    Object.keys(validationRules).forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        
+        const rule = validationRules[inputId];
+        let errorElement = input.parentElement.querySelector(`#${inputId}-error`) || 
+                          input.nextElementSibling;
+        
+        if (!errorElement || !errorElement.classList.contains('error-message')) {
+            errorElement = document.createElement('div');
+            errorElement.id = `${inputId}-error`;
+            errorElement.className = 'error-message text-red-600 text-sm mt-1 h-4 transition-all';
+            errorElement.setAttribute('role', 'alert');
+            errorElement.setAttribute('aria-live', 'polite');
+            input.parentElement.appendChild(errorElement);
+        }
+        
+        // Real-time validation on input
+        input.addEventListener('input', () => {
+            const value = input.value.trim();
+            const result = rule.validator(value, rule.options);
+            
+            if (result.valid) {
+                input.classList.remove('border-red-500', 'bg-red-50');
+                input.classList.add('border-gray-300');
+                errorElement.textContent = '';
+                if (result.warning) {
+                    errorElement.textContent = result.warning;
+                    errorElement.className = 'error-message text-amber-600 text-sm mt-1 h-4 transition-all';
+                }
+            } else {
+                input.classList.add('border-red-500', 'bg-red-50');
+                input.classList.remove('border-gray-300');
+                errorElement.textContent = result.error;
+                errorElement.className = 'error-message text-red-600 text-sm mt-1 h-4 transition-all';
+            }
+        });
+        
+        // Validation on blur
+        input.addEventListener('blur', () => {
+            const value = input.value.trim();
+            const result = rule.validator(value, rule.options);
+            if (!result.valid) {
+                input.classList.add('border-red-500', 'bg-red-50');
+                errorElement.textContent = result.error;
+                errorElement.className = 'error-message text-red-600 text-sm mt-1 h-4 transition-all';
+            }
+        });
+    });
+}
+
+// Initialize form validations on page load
+function initializeFormValidations() {
+    // Login form
+    setupFormValidation('login-form', {
+        'email': {
+            validator: (value) => Validator.email(value),
+            options: {}
+        },
+        'password': {
+            validator: (value) => Validator.password(value, false),
+            options: {}
+        }
+    });
+    
+    // Register form
+    setupFormValidation('register-form', {
+        'register-displayname': {
+            validator: (value) => Validator.displayName(value),
+            options: {}
+        },
+        'register-email': {
+            validator: (value) => Validator.email(value),
+            options: {}
+        },
+        'register-password': {
+            validator: (value) => Validator.password(value, true),
+            options: {}
+        }
+    });
+    
+    // Add link form
+    setupFormValidation('add-link-form-container', {
+        'link-title': {
+            validator: (value) => Validator.title(value),
+            options: {}
+        },
+        'link-url': {
+            validator: (value) => Validator.url(value),
+            options: {}
+        }
+    });
+    
+    // User settings form
+    setupFormValidation('user-details-form', {
+        'user-displayname': {
+            validator: (value) => Validator.displayName(value),
+            options: {}
+        },
+        'user-password': {
+            validator: (value) => {
+                if (!value || !value.trim()) {
+                    return { valid: true }; // Optional field
+                }
+                return Validator.password(value, true);
+            },
+            options: {}
+        }
+    });
+}
 
 // Resource cleanup manager
 class ResourceManager {
@@ -2148,19 +2331,19 @@ const subjectIconMap = {
     // Chemistry: conical flask
     chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
     // Geography: globe
-    geography: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-emerald-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.5 3.1c2.6.4 4.8 2.4 5.4 5h-3.7c-.2-1.8-.8-3.3-1.7-5zM11 5.3c-1.2 1.9-2 3.9-2.2 5.8H5.1c.5-2.8 2.7-5.1 5.9-5.8zM5.1 13h3.7c.2 1.9 1 3.9 2.2 5.8-3.2-.7-5.4-3-5.9-5.8zm6.4 5.9c.9-1.7 1.4-3.3 1.6-5h3.8c-.6 2.6-2.8 4.7-5.4 5z"/></svg>`,
+    geography: `<i class="fas fa-globe text-4xl text-emerald-600 mb-3"></i>`,
     // English: book lines
     english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
-    // Maths: pi symbol outline
-    maths: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M12 4v16"/><path d="M6 6l4 4M14 14l4 4"/></svg>`,
+    // Maths: calculator
+    maths: `<i class="fas fa-calculator text-4xl text-indigo-600 mb-3"></i>`,
     // History: outlined clock face with hands
     history: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
     // German: flag
     german: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3" viewBox="0 0 24 24"><rect width="24" height="8" y="0" fill="#000"/><rect width="24" height="8" y="8" fill="#DD0000"/><rect width="24" height="8" y="16" fill="#FFCE00"/></svg>`,
-    // Music: outlined note with circles
-    music: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="18.5" cy="14" r="2.5"/></svg>`,
-    // Computing: monitor
-    computing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v10H4z"/><path d="M2 17h20v2H2z"/></svg>`,
+    // Music: music note
+    music: `<i class="fas fa-music text-4xl text-purple-600 mb-3"></i>`,
+    // Computing: laptop
+    computing: `<i class="fas fa-laptop text-4xl text-blue-600 mb-3"></i>`,
     // Philosophy and Ethics: balanced scales outline
     "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
 };
@@ -2214,6 +2397,9 @@ function showAppLoading() {
 // Fallback: ensure hide after window load
 // Early slide-in on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize form validations
+    initializeFormValidations();
+    
     // Use requestIdleCallback for better performance
     if ('requestIdleCallback' in window) {
         requestIdleCallback(() => {
@@ -2804,21 +2990,34 @@ async function handleRegister() {
         if (passwordErrorEl) passwordErrorEl.textContent = '';
         
         // Enhanced validation using Validator
-        if (!Validator.displayName(displayName)) {
-            if (nameErrorEl) nameErrorEl.textContent = 'Name must be 2-50 characters';
-            if (document.getElementById('register-displayname')) document.getElementById('register-displayname').focus();
+        // Enhanced validation with detailed feedback
+        const nameValidation = Validator.displayName(displayName);
+        if (!nameValidation.valid) {
+            if (nameErrorEl) nameErrorEl.textContent = nameValidation.error;
+            if (document.getElementById('register-displayname')) {
+                document.getElementById('register-displayname').focus();
+                document.getElementById('register-displayname').classList.add('border-red-500', 'bg-red-50');
+            }
             return;
         }
         
-        if (!Validator.email(email)) {
-            if (emailErrorEl) emailErrorEl.textContent = 'Please enter a valid email address';
-            if (document.getElementById('register-email')) document.getElementById('register-email').focus();
+        const emailValidation = Validator.email(email);
+        if (!emailValidation.valid) {
+            if (emailErrorEl) emailErrorEl.textContent = emailValidation.error;
+            if (document.getElementById('register-email')) {
+                document.getElementById('register-email').focus();
+                document.getElementById('register-email').classList.add('border-red-500', 'bg-red-50');
+            }
             return;
         }
         
-        if (!Validator.password(password)) {
-            if (passwordErrorEl) passwordErrorEl.textContent = 'Password must be at least 6 characters';
-            if (document.getElementById('register-password')) document.getElementById('register-password').focus();
+        const passwordValidation = Validator.password(password, true);
+        if (!passwordValidation.valid) {
+            if (passwordErrorEl) passwordErrorEl.textContent = passwordValidation.error;
+            if (document.getElementById('register-password')) {
+                document.getElementById('register-password').focus();
+                document.getElementById('register-password').classList.add('border-red-500', 'bg-red-50');
+            }
             return;
         }
         
@@ -2919,24 +3118,22 @@ async function handleLogin() {
     emailErrorEl.textContent = '';
     passwordErrorEl.textContent = '';
     
-    // Basic validation
-    if (!email) {
-        emailErrorEl.textContent = 'Email is required';
-        document.getElementById('email').focus();
+    // Enhanced validation with detailed feedback
+    const emailValidation = Validator.email(email);
+    if (!emailValidation.valid) {
+        emailErrorEl.textContent = emailValidation.error;
+        const emailInput = document.getElementById('email');
+        emailInput.focus();
+        emailInput.classList.add('border-red-500', 'bg-red-50');
         return;
     }
     
-    if (!password) {
-        passwordErrorEl.textContent = 'Password is required';
-        document.getElementById('password').focus();
-        return;
-    }
-    
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        emailErrorEl.textContent = 'Please enter a valid email address';
-        document.getElementById('email').focus();
+    const passwordValidation = Validator.password(password, false);
+    if (!passwordValidation.valid) {
+        passwordErrorEl.textContent = passwordValidation.error;
+        const passwordInput = document.getElementById('password');
+        passwordInput.focus();
+        passwordInput.classList.add('border-red-500', 'bg-red-50');
         return;
     }
     
@@ -5176,7 +5373,7 @@ async function updateAnalytics() {
         
         // Update enhanced analytics
         const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0.0';
-        const monthlyRevenue = paidUsers * 1; // £1 per user per month
+        const monthlyRevenue = paidUsers * 0.20; // 20p per user per month (excluding VAT)
         const growthPercentage = await calculateGrowthPercentage();
         
         document.getElementById('free-conversion-rate').textContent = conversionRate + '%';
@@ -5567,10 +5764,45 @@ async function clearSystemCache() {
     }
 }
 async function handleUpdateUserSettings() {
-    const displayName = document.getElementById('user-displayname').value.trim();
-    const newPassword = document.getElementById('user-password').value;
+    const displayNameInput = document.getElementById('user-displayname');
+    const passwordInput = document.getElementById('user-password');
+    const displayName = displayNameInput.value.trim();
+    const newPassword = passwordInput.value;
     const messageEl = document.getElementById('user-settings-message');
+    const nameErrorEl = document.getElementById('user-displayname-error') || displayNameInput.nextElementSibling;
+    const passwordErrorEl = document.getElementById('user-password-error') || passwordInput.nextElementSibling;
+    
+    // Clear previous errors
     messageEl.textContent = '';
+    messageEl.className = 'text-sm text-center h-4';
+    if (nameErrorEl) nameErrorEl.textContent = '';
+    if (passwordErrorEl) passwordErrorEl.textContent = '';
+    
+    // Enhanced validation
+    const nameValidation = Validator.displayName(displayName);
+    if (!nameValidation.valid) {
+        displayNameInput.classList.add('border-red-500', 'bg-red-50');
+        if (nameErrorEl) {
+            nameErrorEl.textContent = nameValidation.error;
+            nameErrorEl.className = 'text-red-600 text-sm mt-1 h-4';
+        }
+        displayNameInput.focus();
+        return;
+    }
+    
+    if (newPassword) {
+        const passwordValidation = Validator.password(newPassword, true);
+        if (!passwordValidation.valid) {
+            passwordInput.classList.add('border-red-500', 'bg-red-50');
+            if (passwordErrorEl) {
+                passwordErrorEl.textContent = passwordValidation.error;
+                passwordErrorEl.className = 'text-red-600 text-sm mt-1 h-4';
+            }
+            passwordInput.focus();
+            return;
+        }
+    }
+    
     try {
         // Update Firestore display name
         await db.collection('users').doc(currentUser.uid).update({ displayName });
@@ -5579,6 +5811,7 @@ async function handleUpdateUserSettings() {
         // Update password if provided
         if (newPassword) {
             await auth.currentUser.updatePassword(newPassword);
+            passwordInput.value = '';
         }
         
         // Update local state
@@ -5586,12 +5819,25 @@ async function handleUpdateUserSettings() {
         updateWelcomeMessage();
         messageEl.textContent = 'Settings saved successfully!';
         messageEl.className = 'text-green-600 text-sm text-center h-4';
+        displayNameInput.classList.remove('border-red-500', 'bg-red-50');
+        passwordInput.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => messageEl.textContent = '', 3000);
     } catch (error) {
         console.error("Error updating user settings:", error);
         const friendlyMessage = handleAPIError(error, 'updating settings');
         messageEl.textContent = friendlyMessage;
         messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
+        
+        // Handle specific password errors
+        if (error.code === 'auth/weak-password') {
+            passwordInput.classList.add('border-red-500', 'bg-red-50');
+            if (passwordErrorEl) {
+                passwordErrorEl.textContent = 'Password is too weak. Please choose a stronger password.';
+                passwordErrorEl.className = 'text-red-600 text-sm mt-1 h-4';
+            }
+        } else if (error.code === 'auth/requires-recent-login') {
+            messageEl.textContent = 'For security, please log out and log back in before changing your password.';
+        }
     }
 }
 
@@ -5971,7 +6217,7 @@ async function renderDashboard() {
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
-                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.';
+                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just 20p/month (excluding VAT).';
                         document.getElementById('upgrade-modal').style.display = 'flex';
                         return;
                     }
@@ -6602,11 +6848,12 @@ function showPlaylistViewer(playlist) {
             </div>
             <div class="aspect-w-16 aspect-h-9 bg-black">
                 <iframe 
-                    src="https://www.youtube.com/embed/videoseries?list=${playlist.playlistId}" 
+                    src="https://www.youtube.com/embed/videoseries?list=${playlist.playlistId}&enablejsapi=1&origin=${window.location.origin}" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen>
+                    allowfullscreen
+                    loading="lazy">
                 </iframe>
             </div>
         </div>
@@ -6623,12 +6870,12 @@ function parseYoutubeUrl(url) {
         if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
             const playlistId = urlObj.searchParams.get('list');
             if (playlistId) {
-                return { type: 'youtube_playlist', id: playlistId, embedUrl: `https://www.youtube.com/embed/videoseries?list=${playlistId}` };
+                return { type: 'youtube_playlist', id: playlistId, embedUrl: `https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&origin=${window.location.origin}` };
             }
             let videoId = urlObj.searchParams.get('v');
             if (!videoId && urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.slice(1);
             if (videoId) {
-                return { type: 'youtube_video', id: videoId, embedUrl: `https://www.youtube.com/embed/${videoId}` };
+                return { type: 'youtube_video', id: videoId, embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}` };
             }
         }
     } catch (e) { console.error("Could not parse URL", e); }
@@ -6639,15 +6886,42 @@ async function handleAddLink() {
     const titleInput = document.getElementById('link-title');
     const urlInput = document.getElementById('link-url');
     const messageEl = document.getElementById('add-link-message');
+    const titleErrorEl = document.getElementById('link-title-error') || titleInput.nextElementSibling;
+    const urlErrorEl = document.getElementById('link-url-error') || urlInput.nextElementSibling;
+    
     const title = titleInput.value.trim();
     const url = urlInput.value.trim();
-    if (!title || !url) {
-        messageEl.textContent = 'Please fill in both title and URL.';
-        messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+    
+    // Clear previous errors
+    messageEl.textContent = '';
+    messageEl.className = 'text-sm mt-2 h-4';
+    if (titleErrorEl) titleErrorEl.textContent = '';
+    if (urlErrorEl) urlErrorEl.textContent = '';
+    
+    // Enhanced validation
+    const titleValidation = Validator.title(title);
+    if (!titleValidation.valid) {
+        titleInput.classList.add('border-red-500', 'bg-red-50');
+        if (titleErrorEl) {
+            titleErrorEl.textContent = titleValidation.error;
+            titleErrorEl.className = 'text-red-600 text-sm mt-1 h-4';
+        }
+        titleInput.focus();
         return;
     }
+    
+    const urlValidation = Validator.url(url);
+    if (!urlValidation.valid) {
+        urlInput.classList.add('border-red-500', 'bg-red-50');
+        if (urlErrorEl) {
+            urlErrorEl.textContent = urlValidation.error;
+            urlErrorEl.className = 'text-red-600 text-sm mt-1 h-4';
+        }
+        urlInput.focus();
+        return;
+    }
+    
     try {
-        new URL(url); // Validate URL
         const youtubeData = parseYoutubeUrl(url);
         const linkData = {
             title,
@@ -6661,10 +6935,12 @@ async function handleAddLink() {
         messageEl.className = 'text-green-600 text-sm mt-2 h-4';
         titleInput.value = '';
         urlInput.value = '';
+        titleInput.classList.remove('border-red-500', 'bg-red-50');
+        urlInput.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => messageEl.textContent = '', 3000);
     } catch (error) {
         console.error("Error adding link:", error);
-        messageEl.textContent = 'Please enter a valid URL.';
+        messageEl.textContent = 'Failed to add link. Please try again.';
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
     }
 }

@@ -67,34 +67,134 @@
     })();
     </script>
     <script>
-    // Lightweight tooltip system
+    // Enhanced tooltip system with smart positioning
     (function(){
         let layer;
+        const TOOLTIP_OFFSET = 12;
+        const TOOLTIP_MIN_DISTANCE = 8;
+        
         function ensureLayer(){
-            if (!layer) { layer = document.createElement('div'); layer.className = 'tooltip-layer'; document.body.appendChild(layer); }
+            if (!layer) { 
+                layer = document.createElement('div'); 
+                layer.className = 'tooltip-layer'; 
+                document.body.appendChild(layer); 
+            }
             return layer;
         }
+        
         function positionTooltip(node, content){
             const l = ensureLayer();
             l.innerHTML = '';
-            const tip = document.createElement('div'); tip.className = 'tooltip'; tip.textContent = content;
+            const tip = document.createElement('div'); 
+            tip.className = 'tooltip'; 
+            tip.textContent = content;
             l.appendChild(tip);
+            
+            // Force layout calculation
+            tip.style.visibility = 'hidden';
+            tip.style.display = 'block';
+            const tipWidth = tip.offsetWidth;
+            const tipHeight = tip.offsetHeight;
+            tip.style.visibility = 'visible';
+            
             const rect = node.getBoundingClientRect();
-            const x = rect.left + rect.width/2 - tip.offsetWidth/2;
-            const y = Math.max(8, rect.top - tip.offsetHeight - 10);
-            tip.style.position = 'fixed'; tip.style.left = Math.max(8, Math.min(x, window.innerWidth - tip.offsetWidth - 8)) + 'px'; tip.style.top = y + 'px';
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Calculate available space in each direction
+            const spaceAbove = rect.top;
+            const spaceBelow = viewportHeight - rect.bottom;
+            const spaceLeft = rect.left;
+            const spaceRight = viewportWidth - rect.right;
+            
+            let x, y;
+            let position = 'top'; // default
+            
+            // Determine best position: prefer above, then below, then sides
+            if (spaceAbove >= tipHeight + TOOLTIP_OFFSET) {
+                // Position above
+                position = 'top';
+                x = rect.left + rect.width / 2 - tipWidth / 2;
+                y = rect.top - tipHeight - TOOLTIP_OFFSET;
+            } else if (spaceBelow >= tipHeight + TOOLTIP_OFFSET) {
+                // Position below
+                position = 'bottom';
+                x = rect.left + rect.width / 2 - tipWidth / 2;
+                y = rect.bottom + TOOLTIP_OFFSET;
+            } else if (spaceRight >= tipWidth + TOOLTIP_OFFSET) {
+                // Position to the right
+                position = 'right';
+                x = rect.right + TOOLTIP_OFFSET;
+                y = rect.top + rect.height / 2 - tipHeight / 2;
+            } else if (spaceLeft >= tipWidth + TOOLTIP_OFFSET) {
+                // Position to the left
+                position = 'left';
+                x = rect.left - tipWidth - TOOLTIP_OFFSET;
+                y = rect.top + rect.height / 2 - tipHeight / 2;
+            } else {
+                // Fallback: position above with adjustments
+                position = 'top';
+                x = rect.left + rect.width / 2 - tipWidth / 2;
+                y = Math.max(TOOLTIP_MIN_DISTANCE, rect.top - tipHeight - TOOLTIP_OFFSET);
+            }
+            
+            // Ensure tooltip stays within viewport bounds
+            x = Math.max(TOOLTIP_MIN_DISTANCE, Math.min(x, viewportWidth - tipWidth - TOOLTIP_MIN_DISTANCE));
+            y = Math.max(TOOLTIP_MIN_DISTANCE, Math.min(y, viewportHeight - tipHeight - TOOLTIP_MIN_DISTANCE));
+            
+            // Ensure tooltip doesn't overlap the hovered element
+            if (position === 'top' && y + tipHeight >= rect.top) {
+                y = rect.top - tipHeight - TOOLTIP_OFFSET;
+            } else if (position === 'bottom' && y <= rect.bottom) {
+                y = rect.bottom + TOOLTIP_OFFSET;
+            } else if (position === 'right' && x <= rect.right) {
+                x = rect.right + TOOLTIP_OFFSET;
+            } else if (position === 'left' && x + tipWidth >= rect.left) {
+                x = rect.left - tipWidth - TOOLTIP_OFFSET;
+            }
+            
+            tip.style.position = 'fixed';
+            tip.style.left = x + 'px';
+            tip.style.top = y + 'px';
+            tip.style.zIndex = '10001';
         }
+        
         let currentNode = null;
+        let hideTimeout = null;
+        
         document.addEventListener('mouseover', (e)=>{
             const t = e.target.closest('[data-tooltip]');
-            if (!t) { if (layer) layer.innerHTML=''; currentNode=null; return; }
-            currentNode = t; positionTooltip(t, t.getAttribute('data-tooltip'));
+            if (!t) { 
+                if (layer) layer.innerHTML=''; 
+                currentNode=null; 
+                if (hideTimeout) clearTimeout(hideTimeout);
+                return; 
+            }
+            if (hideTimeout) clearTimeout(hideTimeout);
+            currentNode = t; 
+            positionTooltip(t, t.getAttribute('data-tooltip'));
         }, { passive: true });
+        
         document.addEventListener('mouseout', (e)=>{
-            if (layer && (!currentNode || !currentNode.matches(':hover'))) layer.innerHTML='';
+            if (layer && (!currentNode || !currentNode.contains(e.relatedTarget))) {
+                hideTimeout = setTimeout(() => {
+                    if (layer) layer.innerHTML='';
+                    currentNode = null;
+                }, 100);
+            }
         }, { passive: true });
-        window.addEventListener('scroll', ()=>{ if (currentNode) positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); }, { passive: true });
-        window.addEventListener('resize', ()=>{ if (currentNode) positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); });
+        
+        window.addEventListener('scroll', ()=>{ 
+            if (currentNode) {
+                positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); 
+            }
+        }, { passive: true });
+        
+        window.addEventListener('resize', ()=>{ 
+            if (currentNode) {
+                positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); 
+            }
+        });
     })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -436,7 +536,7 @@
             <div class="flex-shrink-0">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto transition-transform duration-200 hover:scale-105" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>
-            <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
+            <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar" style="overflow-y: visible;">
                 <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="subject-dashboard-page" data-tooltip="View your subjects">
                     <i class="fas fa-folder-open w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
                     Subjects
@@ -673,9 +773,15 @@
                     <div id="add-link-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
                         <h3 class="text-xl font-semibold mb-4">Add a New Link or Video</h3>
                         <div class="space-y-4">
-                            <input id="link-title" type="text" placeholder="Title (e.g., 'BBC Bitesize Physics')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link">
-                            <input id="link-url" type="url" placeholder="URL (Standard link or YouTube video/playlist)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL">
-                            <button id="add-link-btn" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new link">Add Link</button>
+                            <div>
+                                <input id="link-title" type="text" placeholder="Title (e.g., 'BBC Bitesize Physics')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link" aria-describedby="link-title-error">
+                                <div id="link-title-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                            </div>
+                            <div>
+                                <input id="link-url" type="url" placeholder="URL (Standard link or YouTube video/playlist)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL" aria-describedby="link-url-error">
+                                <div id="link-url-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                            </div>
+                            <button id="add-link-btn" onclick="handleAddLink()" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new link">Add Link</button>
                         </div>
                         <p id="add-link-message" class="text-sm mt-2 h-4"></p>
                     </div>
@@ -827,57 +933,11 @@
                         </div>
 
                         <!-- Additional Analytics Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="text-sm font-semibold text-gray-700">User Engagement</h4>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                </div>
-                                <div class="space-y-2">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Avg Session</span>
-                                        <span id="avg-session-time" class="font-medium">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Page Views</span>
-                                        <span id="total-page-views" class="font-medium">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Bounce Rate</span>
-                                        <span id="bounce-rate" class="font-medium">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="text-sm font-semibold text-gray-700">Content Performance</h4>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                </div>
-                                <div class="space-y-2">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Files Downloaded</span>
-                                        <span id="files-downloaded" class="font-medium">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Blog Views</span>
-                                        <span id="blog-views" class="font-medium">-</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">Video Plays</span>
-                                        <span id="video-plays" class="font-medium">-</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
                             <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="text-sm font-semibold text-gray-700">System Health</h4>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                                    <i class="fas fa-heartbeat text-gray-400"></i>
                                 </div>
                                 <div class="space-y-2">
                                     <div class="flex justify-between text-sm">
@@ -891,249 +951,6 @@
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-600">Uptime</span>
                                         <span id="system-uptime" class="font-medium text-green-600">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Real-time Activity Dashboard -->
-                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-2xl font-bold text-gray-800">Real-time Activity</h3>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-3 bg-green-500 rounded-full live-indicator"></div>
-                                        <span class="text-sm text-gray-600">Live Updates</span>
-                                    </div>
-                                    <button onclick="refreshActivityData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh activity data">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        Refresh
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Activity Stats -->
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-medium text-blue-600">Active Sessions</p>
-                                            <p id="active-sessions-count" class="text-2xl font-bold text-blue-800">-</p>
-                                        </div>
-                                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-medium text-green-600">Files Opened Today</p>
-                                            <p id="files-opened-today" class="text-2xl font-bold text-green-800">-</p>
-                                        </div>
-                                        <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-medium text-purple-600">Subjects Studied</p>
-                                            <p id="subjects-studied-today" class="text-2xl font-bold text-purple-800">-</p>
-                                        </div>
-                                        <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-medium text-orange-600">Avg Study Time</p>
-                                            <p id="avg-study-time" class="text-2xl font-bold text-orange-800">-</p>
-                                        </div>
-                                        <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Live Activity Feed -->
-                            <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Live Activity Feed</h4>
-                                <div id="realtime-activity-feed" class="space-y-3 max-h-96 overflow-y-auto">
-                                    <div class="text-center text-gray-500 py-8">
-                                        <div class="dots-spinner text-blue-600 mb-2">
-                                            <i></i><i></i><i></i>
-                                        </div>
-                                        <p>Loading real-time activity...</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- User Activity Table -->
-                            <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-gray-800 mb-4">User Activity Overview</h4>
-                                <div class="overflow-x-auto">
-                                    <table class="activity-table w-full bg-white rounded-lg shadow-sm">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Subject</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Files Opened</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Study Time</th>
-                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="user-activity-table" class="bg-white divide-y divide-gray-200">
-                                            <tr>
-                                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                                    Loading user activity data...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Subject Activity Chart -->
-                            <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Subject Activity Distribution</h4>
-                                <div id="subject-activity-chart" class="bg-gray-50 rounded-lg p-4 h-64 flex items-center justify-center">
-                                    <div class="text-center text-gray-500">
-                                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                        </svg>
-                                        <p>Loading subject activity data...</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- User Calendar & Analytics Dashboard -->
-                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-2xl font-bold text-gray-800">User Calendar & Analytics</h3>
-                                <div class="flex items-center gap-4">
-                                    <select id="user-selector" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="loadUserCalendar()">
-                                        <option value="">Select User</option>
-                                    </select>
-                                    <button onclick="refreshCalendarData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh calendar data">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        Refresh
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Calendar Navigation -->
-                            <div class="flex items-center justify-between mb-6">
-                                <div class="flex items-center gap-4">
-                                    <button onclick="previousMonth()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <h4 id="calendar-month-year" class="text-xl font-bold text-gray-800">Loading...</h4>
-                                    <button onclick="nextMonth()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Active Day</span>
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full ml-4"></div>
-                                    <span class="text-sm text-gray-600">Study Day</span>
-                                    <div class="w-3 h-3 bg-gray-300 rounded-full ml-4"></div>
-                                    <span class="text-sm text-gray-600">No Activity</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Calendar Grid -->
-                            <div id="calendar-grid" class="grid grid-cols-7 gap-1 mb-6">
-                                <!-- Calendar will be populated by JavaScript -->
-                            </div>
-                            
-                            <!-- Daily Activity Details -->
-                            <div id="daily-details" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
-                                <h5 class="text-lg font-semibold text-gray-800 mb-4">Daily Activity Details</h5>
-                                <div id="daily-stats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    <!-- Daily stats will be populated here -->
-                                </div>
-                                <div id="daily-subjects" class="mb-4">
-                                    <h6 class="font-semibold text-gray-700 mb-2">Subjects Studied</h6>
-                                    <div id="subjects-list" class="flex flex-wrap gap-2">
-                                        <!-- Subjects will be populated here -->
-                                    </div>
-                                </div>
-                                <div id="daily-files">
-                                    <h6 class="font-semibold text-gray-700 mb-2">Files Accessed</h6>
-                                    <div id="files-list" class="flex flex-wrap gap-2">
-                                        <!-- Files will be populated here -->
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Activity Graphs -->
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <!-- Login/Logout Times Chart -->
-                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Login/Logout Times</h5>
-                                    <div id="login-logout-chart" class="h-64 flex items-center justify-center">
-                                        <div class="text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                            </svg>
-                                            <p>Loading chart data...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Subject Study Time Chart -->
-                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Subject Study Time</h5>
-                                    <div id="subject-time-chart" class="h-64 flex items-center justify-center">
-                                        <div class="text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                            </svg>
-                                            <p>Loading chart data...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Daily Activity Heatmap -->
-                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Activity Heatmap (Last 30 Days)</h5>
-                                    <div id="activity-heatmap" class="h-64 flex items-center justify-center">
-                                        <div class="text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                            </svg>
-                                            <p>Loading heatmap data...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Study Streak Chart -->
-                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Study Streak</h5>
-                                    <div id="study-streak-chart" class="h-64 flex items-center justify-center">
-                                        <div class="text-center text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                            </svg>
-                                            <p>Loading streak data...</p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1325,7 +1142,8 @@
                         <form id="user-details-form" class="space-y-4" onsubmit="event.preventDefault(); handleUpdateUserSettings();">
                             <div>
                                 <label for="user-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
-                                <input id="user-displayname" type="text" required class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                <input id="user-displayname" type="text" required class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-describedby="user-displayname-error">
+                                <div id="user-displayname-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                             </div>
                              <div>
                                 <label for="user-email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -1333,7 +1151,8 @@
                             </div>
                              <div>
                                 <label for="user-password" class="block text-sm font-medium text-gray-700">New Password (optional)</label>
-                                <input id="user-password" type="password" placeholder="Leave blank to keep current password" class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                <input id="user-password" type="password" placeholder="Leave blank to keep current password" class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-describedby="user-password-error">
+                                <div id="user-password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                             </div>
                             <button type="submit" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Save Changes</button>
                             <p id="user-settings-message" class="text-sm text-center h-4"></p>
@@ -1520,7 +1339,7 @@
                             </table>
                         </div>
                         <div class="p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-50/70 to-transparent">
-                            <div class="text-gray-700 text-sm text-center sm:text-left">Pro is just <span class="font-bold text-blue-700 text-lg">£1/month</span>. Cancel anytime.</div>
+                            <div class="text-gray-700 text-sm text-center sm:text-left">Pro is just <span class="font-bold text-blue-700 text-lg">20p/month</span> (excluding VAT). Cancel anytime.</div>
                             <button class="w-full sm:w-auto px-8 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg" onclick="showPage('checkout-page')">Upgrade to Pro</button>
                         </div>
                     </div>
@@ -1528,8 +1347,8 @@
                     <!-- Pricing CTA -->
                     <div class="mt-12 text-center p-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-xl text-white">
                         <h3 class="text-3xl font-bold mb-4">Get Full Access Today</h3>
-                        <div class="text-6xl font-extrabold my-6">£1<span class="text-2xl font-medium text-blue-200">/month</span></div>
-                        <p class="mb-8 text-blue-100 text-lg max-w-2xl mx-auto">For less than the price of a coffee, unlock unlimited access to all features and ensure you have the best tools for your GCSE success.</p>
+                        <div class="text-6xl font-extrabold my-6">20p<span class="text-2xl font-medium text-blue-200">/month</span></div>
+                        <p class="mb-8 text-blue-100 text-lg max-w-2xl mx-auto">Just 20p/month (excluding VAT) - unlock unlimited access to all features and ensure you have the best tools for your GCSE success.</p>
                         <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                             <button class="w-full sm:w-auto px-8 py-4 rounded-lg bg-white text-blue-600 font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg" data-tooltip="Subscribe to get full access" onclick="showPage('checkout-page')">Subscribe Now</button>
                             <p class="text-sm text-blue-200">Free trial • Cancel anytime • No hidden fees</p>
@@ -1694,7 +1513,7 @@
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                             <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
-                                <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (£1/month), and features designed around the actual GCSE curriculum and exam formats.</p>
+                                <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (20p/month excluding VAT), and features designed around the actual GCSE curriculum and exam formats.</p>
                             </div>
                         </div>
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
@@ -1715,7 +1534,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <p class="text-gray-700 mb-6">
-                            To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
+                            To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>20p/month</strong> (excluding VAT), please send an email to the address below to arrange payment.
                         </p>
                         <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
                             <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dece9e0e4e3cdeaeefee8e0ecf9e8a3eee2e0">[email&#160;protected]</a>
@@ -1750,7 +1569,7 @@
     <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
-        <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
+        <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just 20p/month (excluding VAT).</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
     </div>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
