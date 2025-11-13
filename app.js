@@ -6726,8 +6726,7 @@ async function renderDashboard() {
             if (subjectId) {
                 // Set consistent height constraints to maintain grid alignment
                 // Max height accommodates cards with up to 2 specification buttons
-                // Modern premium card design with glassmorphism
-                card.className = 'p-4 sm:p-6 rounded-3xl shadow-xl cursor-pointer transition-all duration-400 transform hover:scale-105 hover:shadow-2xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-md border border-white/50 hover:border-blue-300/60 subject-card-modern min-h-[200px] max-h-[280px] overflow-hidden';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[200px] max-h-[280px] overflow-hidden';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
