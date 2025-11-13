@@ -18,10 +18,12 @@ service cloud.firestore {
       // Create own profile at signup
       allow create: if isSignedIn() && request.auth.uid == uid;
 
-      // Read/update own profile (including preferences/storage and profile pictures)
+      // Read/update own profile (including preferences/storage, profile pictures, and subscription data)
+      // Note: Users can update their own profile fields including subscription-related fields
+      // Subscription fields are managed by the system and admin, but users can read them
       allow read, update: if isSignedIn() && request.auth.uid == uid;
 
-      // Admin full control for support (including password reset, account deletion)
+      // Admin full control for support (including password reset, account deletion, subscription management)
       allow read, update, delete: if isAdmin();
 
       // Per-user events subcollection

@@ -2637,6 +2637,14 @@ function initializeAppState() {
         renderDashboard();
         // Log client access context for auditing
         logClientAccess().catch(() => {});
+        
+        // Check subscription expiry on login
+        checkSubscriptionExpiry();
+    }
+    
+    // Set up periodic subscription expiry check (every hour)
+    if (!window.subscriptionExpiryInterval) {
+        window.subscriptionExpiryInterval = setInterval(checkSubscriptionExpiry, 60 * 60 * 1000);
     }
 
     // First-time tutorial (skippable)
@@ -3546,6 +3554,141 @@ async function checkTemporaryAccessExpiry() {
     }
 }
 
+// Subscription expiration checking and warnings
+async function checkSubscriptionExpiry() {
+    try {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // Check for expired subscriptions
+        const expiredUsers = await db.collection('users')
+            .where('tier', '==', 'paid')
+            .where('subscriptionExpiresAt', '!=', null)
+            .get();
+        
+        const batch = db.batch();
+        expiredUsers.forEach(doc => {
+            const user = doc.data();
+            if (user.subscriptionExpiresAt) {
+                const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
+                const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+                
+                if (expiryDay < today) {
+                    // Subscription expired - downgrade to free
+                    batch.update(doc.ref, {
+                        tier: 'free',
+                        subscriptionExpiresAt: null,
+                        subscriptionExpiredAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            }
+        });
+        
+        if (expiredUsers.size > 0) {
+            await batch.commit();
+        }
+        
+        // Check current user's subscription status
+        if (currentUser && currentUser.tier === 'paid' && currentUser.subscriptionExpiresAt) {
+            checkUserSubscriptionWarning(currentUser);
+        }
+        
+    } catch (error) {
+        logError(error, 'Check Subscription Expiry');
+    }
+}
+
+function checkUserSubscriptionWarning(user) {
+    if (!user.subscriptionExpiresAt) return;
+    
+    const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
+    const now = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+    
+    // Check if we should show warning (5, 3, 2, 1 days before or on expiry day)
+    const warningDays = [5, 3, 2, 1, 0];
+    const lastWarningShown = user.lastSubscriptionWarningShown || 0;
+    
+    if (warningDays.includes(daysUntilExpiry) && daysUntilExpiry !== lastWarningShown) {
+        showSubscriptionRenewalOffer(daysUntilExpiry, expiryDate);
+        
+        // Mark warning as shown
+        db.collection('users').doc(user.uid).update({
+            lastSubscriptionWarningShown: daysUntilExpiry
+        }).catch(err => logError(err, 'Update Warning Shown'));
+    }
+}
+
+function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
+    const modal = document.getElementById('subscription-renewal-modal');
+    if (!modal) {
+        // Create modal if it doesn't exist
+        const modalHTML = `
+            <div id="subscription-renewal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10002]">
+                <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in">
+                    <div class="mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Expiring Soon!</h2>
+                    <p id="renewal-message" class="text-gray-600 mb-4"></p>
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-lg mb-6">
+                        <p class="text-sm font-semibold mb-1">Special Renewal Offer</p>
+                        <p class="text-2xl font-bold">£1.00/month</p>
+                        <p class="text-xs opacity-90">Save 20p! (Regular price: £1.20/month)</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button onclick="document.getElementById('subscription-renewal-modal').classList.add('hidden')" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button>
+                        <button onclick="handleSubscriptionRenewal()" class="px-6 py-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-colors">Renew Now - £1/month</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    const messageEl = document.getElementById('renewal-message');
+    let message = '';
+    if (daysLeft === 0) {
+        message = `Your subscription expires today (${formatDateUK(expiryDate)}). Renew now to continue enjoying Pro features!`;
+    } else if (daysLeft === 1) {
+        message = `Your subscription expires tomorrow (${formatDateUK(expiryDate)}). Renew now to avoid interruption!`;
+    } else {
+        message = `Your subscription expires in ${daysLeft} days (${formatDateUK(expiryDate)}). Renew now at a special discounted rate!`;
+    }
+    
+    if (messageEl) messageEl.textContent = message;
+    document.getElementById('subscription-renewal-modal').classList.remove('hidden');
+}
+
+async function handleSubscriptionRenewal() {
+    if (!currentUser) return;
+    
+    try {
+        // For now, just show the checkout page
+        // In production, this would integrate with payment processing
+        showToast('Redirecting to checkout...', 'info');
+        document.getElementById('subscription-renewal-modal').classList.add('hidden');
+        showPage('checkout-page');
+        
+        // Update user to extend subscription by 1 month
+        const newExpiryDate = new Date();
+        newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
+        
+        await db.collection('users').doc(currentUser.uid).update({
+            subscriptionExpiresAt: firebase.firestore.Timestamp.fromDate(newExpiryDate),
+            lastSubscriptionWarningShown: null,
+            subscriptionRenewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showToast('Subscription renewed successfully!', 'success');
+    } catch (error) {
+        logError(error, 'Handle Subscription Renewal');
+        showToast('Failed to process renewal. Please try again.', 'error');
+    }
+}
+
 // View User Tracking Data
 async function viewUserTracking(userId) {
     if (currentUser.role !== 'admin') return;
@@ -3918,6 +4061,21 @@ async function openEditUserModal(userId) {
                                  <option value="paid" ${user.tier === 'paid' ? 'selected' : ''}>Paid</option>
                              </select>
                          </div>
+                         <div>
+                             <label for="edit-subscription-expiry" class="block text-sm font-medium text-gray-700">Subscription Expiry</label>
+                             <select id="edit-subscription-expiry-type" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2">
+                                 <option value="never" ${!user.subscriptionExpiresAt ? 'selected' : ''}>Never Expires</option>
+                                 <option value="months" ${user.subscriptionExpiresAt ? 'selected' : ''}>Set Months</option>
+                                 <option value="date" ${user.subscriptionExpiresAt ? 'selected' : ''}>Set Specific Date</option>
+                             </select>
+                             <div id="subscription-months-container" class="hidden">
+                                 <input type="number" id="edit-subscription-months" min="1" max="120" value="1" placeholder="Number of months" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             </div>
+                             <div id="subscription-date-container" class="hidden">
+                                 <input type="date" id="edit-subscription-date" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             </div>
+                             ${user.subscriptionExpiresAt ? `<p class="text-xs text-gray-500 mt-1">Current expiry: ${formatDateUK(user.subscriptionExpiresAt)}</p>` : '<p class="text-xs text-gray-500 mt-1">No expiration set</p>'}
+                         </div>
                           <div>
                              <label for="edit-role" class="block text-sm font-medium text-gray-700">User Role</label>
                              <select id="edit-role" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
@@ -3948,6 +4106,29 @@ async function openEditUserModal(userId) {
             `;
             subjectContainer.appendChild(label);
         });
+        
+        // Handle subscription expiry type change
+        const expiryTypeSelect = modal.querySelector('#edit-subscription-expiry-type');
+        const monthsContainer = modal.querySelector('#subscription-months-container');
+        const dateContainer = modal.querySelector('#subscription-date-container');
+        
+        if (user.subscriptionExpiresAt) {
+            const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
+            modal.querySelector('#edit-subscription-date').value = expiryDate.toISOString().split('T')[0];
+        }
+        
+        expiryTypeSelect.addEventListener('change', function() {
+            monthsContainer.classList.add('hidden');
+            dateContainer.classList.add('hidden');
+            if (this.value === 'months') {
+                monthsContainer.classList.remove('hidden');
+            } else if (this.value === 'date') {
+                dateContainer.classList.remove('hidden');
+            }
+        });
+        
+        // Trigger initial state
+        expiryTypeSelect.dispatchEvent(new Event('change'));
     } catch (error) {
         console.error("Error opening edit modal:", error);
         showToast("Could not load user data for editing.", 'error');
@@ -3959,15 +4140,41 @@ async function handleUpdateUser(userId) {
         const newTier = document.getElementById('edit-tier').value;
         const newRole = document.getElementById('edit-role').value;
         const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
-        await db.collection('users').doc(userId).update({
+        
+        const updateData = {
             displayName: newDisplayName,
             tier: newTier,
             role: newRole,
             allowedSubjects: newSubjects.length > 0 ? newSubjects : null
-        });
+        };
+        
+        // Handle subscription expiry
+        const expiryType = document.getElementById('edit-subscription-expiry-type').value;
+        if (expiryType === 'never') {
+            updateData.subscriptionExpiresAt = null;
+        } else if (expiryType === 'months') {
+            const months = parseInt(document.getElementById('edit-subscription-months').value) || 1;
+            const expiryDate = new Date();
+            expiryDate.setMonth(expiryDate.getMonth() + months);
+            updateData.subscriptionExpiresAt = firebase.firestore.Timestamp.fromDate(expiryDate);
+        } else if (expiryType === 'date') {
+            const dateValue = document.getElementById('edit-subscription-date').value;
+            if (dateValue) {
+                const expiryDate = new Date(dateValue);
+                expiryDate.setHours(23, 59, 59, 999); // End of day
+                updateData.subscriptionExpiresAt = firebase.firestore.Timestamp.fromDate(expiryDate);
+            }
+        }
+        
+        await db.collection('users').doc(userId).update(updateData);
         
         document.getElementById('edit-user-modal').style.display = 'none';
         showToast('User updated successfully!', 'success');
+        
+        // Refresh user list
+        if (typeof renderUserManagementPanel === 'function') {
+            renderUserManagementPanel(allUsers);
+        }
     } catch (error) {
         console.error("Failed to update user:", error);
         showToast("Failed to save changes.", 'error');
@@ -4732,7 +4939,8 @@ async function toggleMaintenanceMode() {
 async function setMaintenanceMessage() {
     if (currentUser.role !== 'admin') return;
     
-    const currentMessage = document.getElementById('maintenance-message').textContent;
+    const currentMessageEl = document.getElementById('maintenance-message');
+    const currentMessage = currentMessageEl ? currentMessageEl.textContent : '';
     const message = prompt('Enter maintenance message:', currentMessage || 'System is currently under maintenance. Please check back later.');
     if (message === null) return;
     
@@ -4749,11 +4957,124 @@ async function setMaintenanceMessage() {
             updatedBy: currentUser.uid
         }, { merge: true });
         
-        document.getElementById('maintenance-message').textContent = message.trim();
+        if (currentMessageEl) currentMessageEl.textContent = message.trim();
         showToast('Maintenance message updated', 'success');
     } catch (error) {
         logError(error, 'Set Maintenance Message');
         showToast('Failed to update maintenance message', 'error');
+    }
+}
+
+// Maintenance template system
+const maintenanceTemplates = {
+    scheduled: {
+        message: 'We are currently performing scheduled maintenance to improve your experience. We expect to be back online shortly. Thank you for your patience.',
+        defaultETA: 2 // hours
+    },
+    emergency: {
+        message: 'We are experiencing technical difficulties and are working to resolve them as quickly as possible. We apologize for any inconvenience.',
+        defaultETA: 1 // hours
+    },
+    update: {
+        message: 'We are updating our systems with new features and improvements. The site will be back online shortly. Thank you for your patience.',
+        defaultETA: 3 // hours
+    },
+    upgrade: {
+        message: 'We are upgrading our infrastructure to provide you with better performance and reliability. We expect to be back online soon.',
+        defaultETA: 4 // hours
+    },
+    security: {
+        message: 'We are performing important security updates to keep your data safe. The site will be temporarily unavailable. We apologize for any inconvenience.',
+        defaultETA: 2 // hours
+    }
+};
+
+function showMaintenanceTemplateModal() {
+    if (currentUser.role !== 'admin') return;
+    
+    const modal = document.getElementById('maintenance-template-modal');
+    if (!modal) return;
+    
+    modal.classList.remove('hidden');
+    
+    // Reset form
+    document.getElementById('maintenance-template-select').value = '';
+    document.getElementById('maintenance-template-message').value = '';
+    document.getElementById('maintenance-eta-date').value = '';
+    document.getElementById('maintenance-eta-time').value = '';
+    
+    // Add template change listener
+    const select = document.getElementById('maintenance-template-select');
+    select.onchange = function() {
+        const template = maintenanceTemplates[this.value];
+        if (template) {
+            document.getElementById('maintenance-template-message').value = template.message;
+            // Set default ETA to 2 hours from now
+            const defaultDate = new Date();
+            defaultDate.setHours(defaultDate.getHours() + template.defaultETA);
+            document.getElementById('maintenance-eta-date').value = defaultDate.toISOString().split('T')[0];
+            document.getElementById('maintenance-eta-time').value = defaultDate.toTimeString().slice(0, 5);
+        }
+    };
+}
+
+async function applyMaintenanceTemplate() {
+    if (currentUser.role !== 'admin') return;
+    
+    const templateSelect = document.getElementById('maintenance-template-select');
+    const messageTextarea = document.getElementById('maintenance-template-message');
+    const etaDate = document.getElementById('maintenance-eta-date');
+    const etaTime = document.getElementById('maintenance-eta-time');
+    
+    if (!templateSelect.value && !messageTextarea.value.trim()) {
+        showToast('Please select a template or enter a message', 'error');
+        return;
+    }
+    
+    const message = messageTextarea.value.trim();
+    if (!message) {
+        showToast('Message cannot be empty', 'error');
+        return;
+    }
+    
+    let etaTimestamp = null;
+    if (etaDate.value && etaTime.value) {
+        const etaDateTime = new Date(`${etaDate.value}T${etaTime.value}`);
+        if (!isNaN(etaDateTime.getTime())) {
+            etaTimestamp = firebase.firestore.Timestamp.fromDate(etaDateTime);
+        }
+    }
+    
+    try {
+        const maintenanceData = {
+            enabled: true,
+            message: message,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: currentUser.uid
+        };
+        
+        if (etaTimestamp) {
+            maintenanceData.eta = etaTimestamp;
+        }
+        
+        await db.collection('settings').doc('maintenance').set(maintenanceData, { merge: true });
+        
+        // Update UI
+        const messageEl = document.getElementById('maintenance-message');
+        if (messageEl) messageEl.textContent = message;
+        
+        const etaEl = document.getElementById('maintenance-eta');
+        if (etaEl && etaTimestamp) {
+            etaEl.textContent = formatDateUK(etaDateTime);
+        } else if (etaEl) {
+            etaEl.textContent = '-';
+        }
+        
+        document.getElementById('maintenance-template-modal').classList.add('hidden');
+        showToast('Maintenance mode activated with template', 'success');
+    } catch (error) {
+        logError(error, 'Apply Maintenance Template');
+        showToast('Failed to apply maintenance template', 'error');
     }
 }
 
@@ -6915,28 +7236,51 @@ function handlePlaylistClick(playlist) {
 }
 function showPlaylistViewer(playlist) {
     const modal = document.getElementById('playlist-viewer-modal');
+    if (!modal) return;
+    
+    // Extract playlist ID from URL if not already stored
+    let playlistId = playlist.playlistId;
+    if (!playlistId && playlist.url) {
+        try {
+            const urlObj = new URL(playlist.url);
+            playlistId = urlObj.searchParams.get('list');
+        } catch (e) {
+            console.error('Error parsing playlist URL:', e);
+        }
+    }
+    
+    if (!playlistId) {
+        showToast('Invalid playlist URL. Please check the playlist link.', 'error');
+        return;
+    }
+    
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
-            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center gap-2 min-w-0">
                     <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
                     <h3 class="text-lg font-semibold text-gray-800 truncate">${playlist.title}</h3>
                 </div>
                 <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
             </div>
-            <div class="aspect-w-16 aspect-h-9 bg-black">
-                <iframe 
-                    src="https://www.youtube.com/embed/videoseries?list=${playlist.playlistId}&enablejsapi=1&origin=${window.location.origin}" 
-                    title="YouTube video player" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen
-                    loading="lazy">
-                </iframe>
+            <div class="flex-1 p-4 overflow-hidden">
+                <div class="relative w-full" style="padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                    <iframe 
+                        src="https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&modestbranding=1&rel=0" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen
+                        loading="lazy"
+                        class="absolute top-0 left-0 w-full h-full"
+                        style="border: none;">
+                    </iframe>
+                </div>
             </div>
         </div>
     `;
     modal.style.display = 'flex';
+    modal.classList.remove('hidden');
 }
 // =================================================================================
 // USEFUL LINKS LOGIC (SHARED PARSER)
@@ -7102,22 +7446,32 @@ function renderCalendar(userEvents, globalEvents) {
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
         const dayEl = document.createElement('div');
-        dayEl.className = 'text-center font-semibold text-gray-600 text-sm py-2';
+        dayEl.className = 'text-center font-bold text-gray-700 text-xs sm:text-sm py-3 bg-gray-50/80 rounded-t-lg border-b-2 border-gray-200';
         dayEl.textContent = day;
         calendarGrid.appendChild(dayEl);
     });
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    for (let i = 0; i < firstDayOfMonth; i++) calendarGrid.appendChild(document.createElement('div'));
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[80px] bg-gray-50/30 border border-gray-100 rounded';
+        calendarGrid.appendChild(emptyCell);
+    }
     for (let day = 1; day <= daysInMonth; day++) {
         const dayEl = document.createElement('div');
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        dayEl.className = 'calendar-day text-center py-4 border-t border-l border-gray-200/50 cursor-pointer hover:bg-blue-100/50 transition-colors';
-        dayEl.textContent = day;
+        dayEl.className = 'calendar-day min-h-[80px] p-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-all duration-200 flex flex-col';
         dayEl.dataset.date = dateKey;
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'text-sm font-semibold text-gray-800 mb-1';
+        dayNumber.textContent = day;
+        dayEl.appendChild(dayNumber);
+        
         const today = new Date();
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-            dayEl.classList.add('today');
+            dayEl.classList.add('today', 'ring-2', 'ring-blue-500', 'ring-offset-1', 'bg-blue-50');
+            dayNumber.classList.add('text-blue-700');
         }
         
         const filterVal = document.getElementById('calendar-category-filter')?.value || 'all';
@@ -7134,21 +7488,37 @@ function renderCalendar(userEvents, globalEvents) {
         if (userHas || globalHas) {
             dayEl.classList.add('has-event');
             if (globalHas) dayEl.classList.add('has-global-event');
-            // Add dot indicators: blue for user, green for global, purple if title hints due/exam
-            const dotWrap = document.createElement('div');
-            dotWrap.className = 'mt-1 flex items-center justify-center gap-1';
-            if (userHas) { const d=document.createElement('span'); d.className='inline-block w-1.5 h-1.5 rounded-full bg-blue-500'; dotWrap.appendChild(d); }
-            if (globalHas) { const d=document.createElement('span'); d.className='inline-block w-1.5 h-1.5 rounded-full bg-green-500'; dotWrap.appendChild(d); }
-            const titles = [...userEventsForDay, ...globalEventsForDay].map(e=> (e.title||'').toLowerCase());
-            if (titles.some(t=> t.includes('exam') || t.includes('due') || t.includes('deadline'))) {
-                const d=document.createElement('span'); d.className='inline-block w-1.5 h-1.5 rounded-full bg-purple-500'; dotWrap.appendChild(d);
+            
+            // Create event indicators container
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'flex-1 flex flex-col gap-1 mt-1';
+            
+            // Show event titles (max 2-3 visible)
+            const allEvents = [...userEventsForDay, ...globalEventsForDay].filter(categoryMatches);
+            const visibleEvents = allEvents.slice(0, 2);
+            visibleEvents.forEach(event => {
+                const eventDot = document.createElement('div');
+                eventDot.className = 'text-xs px-1.5 py-0.5 rounded truncate text-white font-medium';
+                if (event.color && /^#([0-9a-f]{3}){1,2}$/i.test(event.color)) {
+                    eventDot.style.backgroundColor = event.color;
+                } else if (userEventsForDay.includes(event)) {
+                    eventDot.className += ' bg-blue-500';
+                } else {
+                    eventDot.className += ' bg-green-500';
+                }
+                eventDot.textContent = event.title || 'Event';
+                eventDot.setAttribute('data-tooltip', `${event.title || 'Event'}${event.description ? ': ' + event.description : ''}`);
+                eventsContainer.appendChild(eventDot);
+            });
+            
+            if (allEvents.length > 2) {
+                const moreEvents = document.createElement('div');
+                moreEvents.className = 'text-xs text-gray-500 font-semibold mt-auto';
+                moreEvents.textContent = `+${allEvents.length - 2} more`;
+                eventsContainer.appendChild(moreEvents);
             }
-            // add small colour tag if any event has custom colour
-            const colorEvent = [...userEventsForDay, ...globalEventsForDay].find(e => e.color);
-            if (colorEvent && /^#([0-9a-f]{3}){1,2}$/i.test(colorEvent.color)) {
-                const d=document.createElement('span'); d.className='inline-block w-1.5 h-1.5 rounded-full'; d.style.backgroundColor = colorEvent.color; dotWrap.appendChild(d);
-            }
-            dayEl.appendChild(dotWrap);
+            
+            dayEl.appendChild(eventsContainer);
         }
         // Month grid drag target
         dayEl.ondragover = (ev)=> ev.preventDefault();
@@ -8351,16 +8721,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
     document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
     document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
-    document.getElementById('prev-month-btn').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        renderCalendar(calendarUserEvents, calendarGlobalEvents);
-        updateCountdownBanner(); // Update countdown when month changes
-    });
-    document.getElementById('next-month-btn').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        renderCalendar(calendarUserEvents, calendarGlobalEvents);
-        updateCountdownBanner(); // Update countdown when month changes
-    });
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar(calendarUserEvents, calendarGlobalEvents);
+            updateCountdownBanner(); // Update countdown when month changes
+        });
+    }
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar(calendarUserEvents, calendarGlobalEvents);
+            updateCountdownBanner(); // Update countdown when month changes
+        });
+    }
     // Setup file browser controls
     // Debounced auto-search with smooth feedback
     let searchDebounce;

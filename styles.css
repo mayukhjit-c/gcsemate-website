@@ -612,13 +612,30 @@ position: absolute;
 bottom: -2px;
 left: 50%;
 transform: translateX(-50%) scaleX(0);
-width: 100%;
+width: calc(100% - 0.5rem);
 height: 3px;
 background: linear-gradient(90deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
 border-radius: 2px;
 transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 opacity: 0;
 z-index: 1;
+        }
+        
+        /* Ensure nav container and header allow overflow for active indicators */
+        nav {
+overflow: visible !important;
+        }
+        
+        nav .nav-link {
+overflow: visible !important;
+        }
+        
+        header {
+overflow: visible !important;
+        }
+        
+        header nav {
+overflow: visible !important;
         }
         
         .nav-link:hover::before {
@@ -1863,5 +1880,37 @@ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         
         .gradient-subtle {
 background: linear-gradient(135deg, rgba(249, 250, 251, 1) 0%, rgba(243, 244, 246, 1) 100%);
+        }
+        
+        /* Enhanced Calendar Styles */
+        .calendar-day {
+position: relative;
+        }
+        
+        .calendar-day.today {
+background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%);
+border-color: rgb(59, 130, 246) !important;
+        }
+        
+        .calendar-day.has-event {
+border-left: 3px solid rgb(59, 130, 246);
+        }
+        
+        .calendar-day.has-global-event {
+border-left: 3px solid rgb(34, 197, 94);
+        }
+        
+        .calendar-day:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Calendar event badges */
+        .calendar-day .event-badge {
+font-size: 0.625rem;
+line-height: 1.2;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
         }
     
