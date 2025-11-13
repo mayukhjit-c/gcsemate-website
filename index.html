@@ -1601,6 +1601,65 @@
         <!-- External JavaScript -->
     <script src="app.js"></script>
     
+    <!-- Developer Tools Enablement -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // Check if in development mode
+        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev');
+        
+        // Enable right-click context menu for dev tools (no restrictions)
+        // Right-click context menu is enabled by default in browsers
+        
+        // Keyboard shortcuts for dev tools
+        document.addEventListener('keydown', function(e) {
+            // F12 - Open DevTools (browser handles natively, but we log it)
+            if (e.key === 'F12') {
+                if (isDev) {
+                    console.log('F12 pressed - DevTools should open');
+                }
+                // Don't prevent default - let browser handle it
+                return;
+            }
+            
+            // Ctrl+Shift+I (Windows/Linux) or Cmd+Option+I (Mac) - Open DevTools
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+                if (isDev) {
+                    console.log('Ctrl+Shift+I pressed - DevTools should open');
+                }
+                // Don't prevent default - let browser handle it
+                return;
+            }
+            
+            // Ctrl+Shift+J (Windows/Linux) or Cmd+Option+J (Mac) - Open Console
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+                if (isDev) {
+                    console.log('Ctrl+Shift+J pressed - Console should open');
+                }
+                // Don't prevent default - let browser handle it
+                return;
+            }
+            
+            // Ctrl+Shift+C (Windows/Linux) or Cmd+Option+C (Mac) - Inspect Element
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                if (isDev) {
+                    console.log('Ctrl+Shift+C pressed - Inspect Element mode should activate');
+                }
+                // Don't prevent default - let browser handle it
+                return;
+            }
+        }, false);
+        
+        // Log dev tools shortcuts availability in development
+        if (isDev) {
+            console.log('%cDeveloper Tools Enabled', 'color: #3b82f6; font-size: 16px; font-weight: bold;');
+            console.log('Shortcuts: F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C');
+            console.log('Right-click: Inspect Element available');
+        }
+    })();
+    </script>
+    
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
 </body>
 </html>

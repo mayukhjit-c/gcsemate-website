@@ -2323,6 +2323,54 @@ const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
 const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
 const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
 const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+
+// Subject summaries and descriptions
+const subjectSummaries = {
+    biology: {
+        summary: 'Explore living organisms, cells, genetics, and ecosystems. Master topics from human biology to plant science.',
+        description: 'GCSE Biology covers the study of living organisms, including cell structure, genetics, evolution, ecology, and human physiology. Students learn about biological processes, disease, and the environment.'
+    },
+    chemistry: {
+        summary: 'Understand atoms, molecules, reactions, and chemical processes. Learn about elements, compounds, and practical chemistry.',
+        description: 'GCSE Chemistry focuses on atomic structure, chemical bonding, reactions, acids and bases, organic chemistry, and chemical analysis. Students develop practical skills and understand chemical principles.'
+    },
+    physics: {
+        summary: 'Study forces, energy, waves, electricity, and magnetism. Explore the fundamental laws that govern the universe.',
+        description: 'GCSE Physics covers mechanics, energy, waves, electricity, magnetism, and particle physics. Students learn about physical laws, calculations, and practical applications of physics principles.'
+    },
+    maths: {
+        summary: 'Master algebra, geometry, statistics, and problem-solving. Build essential mathematical skills for exams and beyond.',
+        description: 'GCSE Mathematics includes algebra, geometry, trigonometry, statistics, probability, and calculus foundations. Students develop problem-solving skills and mathematical reasoning.'
+    },
+    english: {
+        summary: 'Develop reading, writing, and analytical skills. Study literature, language, and creative writing techniques.',
+        description: 'GCSE English covers literature analysis, creative writing, language study, and communication skills. Students explore texts, develop critical thinking, and improve written expression.'
+    },
+    history: {
+        summary: 'Explore past events, societies, and historical analysis. Study key periods, conflicts, and social changes.',
+        description: 'GCSE History examines significant historical periods, events, and themes. Students develop analytical skills, understand cause and effect, and learn to evaluate historical sources.'
+    },
+    geography: {
+        summary: 'Study physical and human geography, maps, and global issues. Understand environments, populations, and sustainability.',
+        description: 'GCSE Geography covers physical geography (landforms, weather, climate), human geography (population, settlements, development), and environmental issues. Students develop map skills and spatial awareness.'
+    },
+    computing: {
+        summary: 'Learn programming, algorithms, and computer systems. Develop coding skills and understand technology fundamentals.',
+        description: 'GCSE Computing covers programming, algorithms, data structures, computer systems, networks, and cybersecurity. Students develop practical coding skills and computational thinking.'
+    },
+    german: {
+        summary: 'Master German language skills: speaking, listening, reading, and writing. Explore German culture and communication.',
+        description: 'GCSE German develops language skills in speaking, listening, reading, and writing. Students learn grammar, vocabulary, and cultural understanding while building communication confidence.'
+    },
+    music: {
+        summary: 'Study music theory, composition, and performance. Explore different genres, instruments, and musical analysis.',
+        description: 'GCSE Music covers music theory, composition, performance, and music history. Students develop practical skills, analyze musical works, and understand musical elements and structures.'
+    },
+    'philosophy and ethics': {
+        summary: 'Explore philosophical questions, ethical theories, and moral reasoning. Study religion, philosophy, and critical thinking.',
+        description: 'GCSE Philosophy and Ethics examines philosophical questions, ethical theories, religious beliefs, and moral reasoning. Students develop critical thinking skills and explore fundamental questions about life, meaning, and values.'
+    }
+};
 const subjectIconMap = {
     // Biology: tree icon
     biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
@@ -6194,15 +6242,17 @@ async function renderDashboard() {
             const board = examBoardBySubject[subject.toLowerCase()];
             const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
             const name = subject && subject.trim() ? subject : 'Subject';
+            const subjectData = subjectSummaries[subject.toLowerCase()] || { summary: 'Access revision materials and resources for this subject.', description: '' };
+            
             // Build DOM nodes instead of innerHTML to avoid any async repaint issue
             const wrapper = document.createElement('div');
-            wrapper.className = 'flex flex-col items-center justify-center gap-2';
+            wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full';
             const iconHost = document.createElement('div');
-            iconHost.className = 'flex items-center justify-center h-12 w-12';
+            iconHost.className = 'flex items-center justify-center h-12 w-12 mb-1';
             iconHost.innerHTML = `${iconSvg}`;
             wrapper.appendChild(iconHost);
             const title = document.createElement('h3');
-            title.className = 'text-xl font-bold text-gray-800';
+            title.className = 'text-xl font-bold text-gray-800 mb-1';
             title.textContent = name;
             title.setAttribute('data-animate','fade-up');
             wrapper.appendChild(title);
@@ -6211,9 +6261,15 @@ async function renderDashboard() {
                 badgeWrap.innerHTML = badge;
                 wrapper.appendChild(badgeWrap.firstChild);
             }
+            // Add summary text
+            const summary = document.createElement('p');
+            summary.className = 'text-xs text-gray-600 mt-2 px-2 text-center leading-relaxed line-clamp-2';
+            summary.textContent = subjectData.summary;
+            summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
+            wrapper.appendChild(summary);
             card.appendChild(wrapper);
             if (subjectId) {
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/70 border border-white/30 brand-gradient hover-raise min-h-[120px]';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[180px] max-h-[220px]';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -6230,7 +6286,7 @@ async function renderDashboard() {
                     showPage('file-browser-page');
                 });
             } else {
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[120px]';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[180px] max-h-[220px]';
                 card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
             }
             subjectGrid.appendChild(card);

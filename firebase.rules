@@ -209,7 +209,7 @@ service cloud.firestore {
     // System logs (written by client for error reporting; visible to admins)
     match /systemLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAdmin() || isSignedIn() &&
+      allow create: if (isAdmin() || isSignedIn()) &&
         // Allow any signed-in user to write logs (so client can report errors), but keep read restricted to admins
         request.resource.data.keys().hasOnly(['level','message','details','timestamp','userId','userAgent','url']) &&
         request.resource.data.level is string &&
@@ -220,7 +220,7 @@ service cloud.firestore {
     // Error logs (diagnostic/error tracking; admins read, clients can write)
     match /errorLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAdmin() || isSignedIn() &&
+      allow create: if (isAdmin() || isSignedIn()) &&
         request.resource.data.keys().hasOnly(['type','message','stack','timestamp','userId','userAgent']) &&
         request.resource.data.message is string &&
         request.resource.data.timestamp != null;
