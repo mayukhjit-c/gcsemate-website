@@ -7034,9 +7034,10 @@ function renderItems() {
                 actions.innerHTML = `
                     <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
             } else {
+                const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                 actions.innerHTML = `
                     <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
-                    <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                    <a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${file.name}', 'download', '${path[path.length-1]?.name || 'Unknown'}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
@@ -7596,7 +7597,7 @@ function renderCalendar(userEvents, globalEvents) {
     for (let day = 1; day <= daysInMonth; day++) {
         const dayEl = document.createElement('div');
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        dayEl.className = 'calendar-day min-h-[80px] p-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-all duration-200 flex flex-col';
+        dayEl.className = 'calendar-day min-h-[80px] p-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50/70 hover:border-blue-400 hover:shadow-md transition-all duration-200 flex flex-col relative';
         dayEl.dataset.date = dateKey;
         
         const dayNumber = document.createElement('div');
@@ -7611,8 +7612,25 @@ function renderCalendar(userEvents, globalEvents) {
         }
         
         const filterVal = document.getElementById('calendar-category-filter')?.value || 'all';
-        const userEventsForDay = calendarUserEvents[dateKey] || [];
-        const globalEventsForDay = calendarGlobalEvents[dateKey] || [];
+        
+        // Get events for this day, including multi-day events that span this date
+        const getEventsForDate = (eventsObj) => {
+            const directEvents = eventsObj[dateKey] || [];
+            const multiDayEvents = Object.entries(eventsObj).flatMap(([key, events]) => {
+                return events.filter(ev => {
+                    if (!ev.endDate || ev.endDate === ev.date) return false;
+                    const start = new Date(ev.date + 'T00:00:00');
+                    const end = new Date(ev.endDate + 'T00:00:00');
+                    const current = new Date(dateKey + 'T00:00:00');
+                    return current >= start && current <= end;
+                });
+            });
+            return [...directEvents, ...multiDayEvents];
+        };
+        
+        const userEventsForDay = getEventsForDate(calendarUserEvents);
+        const globalEventsForDay = getEventsForDate(calendarGlobalEvents);
+        
         const categoryMatches = (ev) => {
             if (filterVal === 'all') return true;
             const title = (ev.title||'').toLowerCase();
@@ -7866,7 +7884,8 @@ async function handleSaveBlogPost() {
     
     const postId = document.getElementById('blog-post-id').value;
     const title = document.getElementById('blog-post-title').value.trim();
-    const content = document.getElementById('blog-post-content').value.trim();
+    const contentEl = document.getElementById('blog-post-content');
+    const content = contentEl ? contentEl.innerHTML.trim() : '';
     const image = document.getElementById('blog-post-image').value.trim();
     const messageEl = document.getElementById('add-blog-post-message');
     if (!title || !content) {
@@ -7899,24 +7918,44 @@ async function handleSaveBlogPost() {
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
     }
 }
-// Blog helpers: live preview & toolbar
-function insertMarkdown(snippet) {
-    const ta = document.getElementById('blog-post-content');
-    const start = ta.selectionStart || 0;
-    const end = ta.selectionEnd || 0;
-    const value = ta.value;
-    ta.value = value.slice(0, start) + snippet + value.slice(end);
-    ta.focus();
-    ta.selectionStart = ta.selectionEnd = start + snippet.length;
-    updateBlogPreview();
+// WYSIWYG Rich Text Editor Functions
+function formatText(command, value = null) {
+    const editor = document.getElementById('blog-post-content');
+    if (!editor) return;
+    
+    editor.focus();
+    document.execCommand(command, false, value);
+    updateToolbarState();
 }
-function updateBlogPreview() {
-    const src = document.getElementById('blog-post-content').value;
-    const preview = document.getElementById('blog-preview');
-    if (preview) preview.innerHTML = renderMarkdown(src);
+
+function insertLink() {
+    const url = prompt('Enter URL:');
+    if (url) {
+        formatText('createLink', url);
+    }
 }
+
+function updateToolbarState() {
+    const toolbar = document.getElementById('blog-editor-toolbar');
+    if (!toolbar) return;
+    
+    const commands = ['bold', 'italic', 'underline'];
+    commands.forEach(cmd => {
+        const btn = toolbar.querySelector(`[data-command="${cmd}"]`);
+        if (btn) {
+            const isActive = document.queryCommandState(cmd);
+            btn.classList.toggle('bg-blue-100', isActive);
+            btn.classList.toggle('border-blue-500', isActive);
+        }
+    });
+}
+
+// Initialize toolbar state updates
+document.addEventListener('selectionchange', updateToolbarState);
+document.addEventListener('mouseup', updateToolbarState);
+document.addEventListener('keyup', updateToolbarState);
+
 document.addEventListener('input', (e) => {
-    if (e.target && e.target.id === 'blog-post-content') updateBlogPreview();
     if (e.target && e.target.id === 'blog-post-image') {
         const wrap = document.getElementById('blog-image-preview');
         if (!wrap) return;
@@ -7935,6 +7974,10 @@ function resetBlogPostForm() {
     document.getElementById('add-blog-post-form').reset();
     document.getElementById('blog-post-id').value = '';
     document.getElementById('blog-form-title').textContent = 'Create New Blog Post';
+    const contentEl = document.getElementById('blog-post-content');
+    if (contentEl) {
+        contentEl.innerHTML = '';
+    }
 }
 function editBlogPost(postId) {
     const post = allBlogPosts.find(p => p.id === postId);
@@ -7943,7 +7986,10 @@ function editBlogPost(postId) {
     document.getElementById('blog-form-title').textContent = 'Edit Blog Post';
     document.getElementById('blog-post-id').value = post.id;
     document.getElementById('blog-post-title').value = post.title;
-    document.getElementById('blog-post-content').value = post.content;
+    const contentEl = document.getElementById('blog-post-content');
+    if (contentEl) {
+        contentEl.innerHTML = post.content || '';
+    }
     document.getElementById('blog-post-image').value = post.image || '';
     document.getElementById('add-blog-post-form-container').scrollIntoView({ behavior: 'smooth' });
 }
@@ -9356,8 +9402,18 @@ function openEventModal(date) {
                 <h4 class="font-bold text-gray-800" id="event-form-title">Add New Event</h4>
                 <form id="event-form" class="space-y-3" onsubmit="event.preventDefault(); handleSaveEvent('${date}')">
                      <input type="hidden" id="event-id">
-                     <input id="event-title" type="text" placeholder="Event Title" required class="w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-                     <textarea id="event-description" placeholder="Description (optional)" class="w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 h-24"></textarea>
+                     <input id="event-title" type="text" placeholder="Event Title" required class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                     <textarea id="event-description" placeholder="Description (optional)" class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 h-24"></textarea>
+                     <div class="grid grid-cols-2 gap-3">
+                         <div>
+                             <label class="block text-sm font-semibold text-gray-700 mb-1">Start Date</label>
+                             <input id="event-start-date" type="date" value="${date}" required class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                         </div>
+                         <div>
+                             <label class="block text-sm font-semibold text-gray-700 mb-1">End Date (optional)</label>
+                             <input id="event-end-date" type="date" class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                         </div>
+                     </div>
                      <div class="flex items-center gap-3">
                          <label class="text-sm text-gray-700 font-semibold">Colour</label>
                          <input id="event-color" type="color" value="#2563eb" class="w-8 h-8 p-0 border rounded cursor-pointer" title="Event colour">
@@ -9395,12 +9451,16 @@ async function handleSaveEvent(date) {
     if (!title) return;
     const eventId = document.getElementById('event-id').value || db.collection('dummy').doc().id;
     const isGlobal = document.getElementById('event-sync')?.checked || false;
+    const startDate = document.getElementById('event-start-date').value;
+    const endDate = document.getElementById('event-end-date').value || startDate;
     
     const eventData = {
         title,
         description: document.getElementById('event-description').value.trim(),
         enableCountdown: document.getElementById('event-countdown').checked,
-        date: date,
+        date: startDate,
+        endDate: endDate,
+        isMultiDay: endDate !== startDate,
         color: document.getElementById('event-color')?.value || null,
         category: document.getElementById('event-category')?.value || null
     };
@@ -9412,21 +9472,30 @@ async function handleSaveEvent(date) {
         await collectionRef.doc(eventId).set(eventData);
         document.getElementById('event-modal').style.display = 'none';
         resetEventForm();
-         showToast('Event saved!', 'success');
+        showToast('Event saved!', 'success');
     } catch (error) {
         console.error("Error saving event:", error);
         showToast("Could not save the event.", 'error');
     }
 }
 function editEvent(date, eventId, isGlobal) {
-    const eventList = isGlobal ? calendarGlobalEvents[date] : calendarUserEvents[date];
-    const event = eventList?.find(e => e.id === eventId);
+    // Find event across all dates (for multi-day events)
+    let event = null;
+    const allUserEvents = Object.values(calendarUserEvents).flat();
+    const allGlobalEvents = Object.values(calendarGlobalEvents).flat();
+    const allEvents = isGlobal ? allGlobalEvents : allUserEvents;
+    event = allEvents.find(e => e.id === eventId);
+    
     if (!event) return;
     document.getElementById('event-form-title').textContent = 'Edit Event';
     document.getElementById('event-id').value = event.id;
     document.getElementById('event-title').value = event.title;
-    document.getElementById('event-description').value = event.description;
-    document.getElementById('event-countdown').checked = event.enableCountdown;
+    document.getElementById('event-description').value = event.description || '';
+    document.getElementById('event-countdown').checked = event.enableCountdown || false;
+    const startDateInput = document.getElementById('event-start-date');
+    if (startDateInput) startDateInput.value = event.date || date;
+    const endDateInput = document.getElementById('event-end-date');
+    if (endDateInput) endDateInput.value = event.endDate || event.date || date;
     const colorInput = document.getElementById('event-color'); if (colorInput) colorInput.value = event.color || '#2563eb';
     const catInput = document.getElementById('event-category'); if (catInput) catInput.value = event.category || '';
     if (document.getElementById('event-sync')) {

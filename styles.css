@@ -434,15 +434,51 @@ transform: translateY(-2px);
         /* Enhanced Input Styles */
         .glass-input {
 background: rgba(255, 255, 255, 1);
-border: 1px solid rgba(0, 0, 0, 0.2);
+border: 2px solid rgba(0, 0, 0, 0.25);
 transition: border-color 0.15s ease-out;
         }
         
         .glass-input:focus {
 background: rgba(255, 255, 255, 1);
-border-color: rgba(59, 130, 246, 0.5);
-outline: 2px solid rgba(59, 130, 246, 0.2);
-outline-offset: 2px;
+border-color: rgba(59, 130, 246, 0.8);
+outline: none;
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        
+        /* Ensure all inputs and textareas have visible borders for accessibility */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="url"],
+        input[type="search"],
+        input[type="date"],
+        input[type="time"],
+        input[type="number"],
+        textarea,
+        select {
+border: 2px solid rgba(0, 0, 0, 0.25) !important;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="url"]:focus,
+        input[type="search"]:focus,
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+outline: none !important;
+border-color: rgba(59, 130, 246, 0.8) !important;
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+        
+        /* ContentEditable placeholder */
+        [contenteditable="true"][placeholder]:empty:before {
+content: attr(placeholder);
+color: #9ca3af;
+pointer-events: none;
         }
         
         /* Enhanced Text Readability */
@@ -606,18 +642,16 @@ transform: translateZ(0);
 overflow: visible;
         }
         
-        .nav-link::before {
+        .nav-link::after {
 content: '';
 position: absolute;
 bottom: -2px;
-left: 50%;
-transform: translateX(-50%) scaleX(0);
-width: calc(100% - 0.5rem);
+left: 0;
+width: 0;
 height: 3px;
 background: linear-gradient(90deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
 border-radius: 2px;
-transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-opacity: 0;
+transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 z-index: 1;
         }
         
@@ -638,9 +672,8 @@ overflow: visible !important;
 overflow: visible !important;
         }
         
-        .nav-link:hover::before {
-transform: translateX(-50%) scaleX(1);
-opacity: 1;
+        .nav-link:hover::after {
+width: 100%;
         }
         
         /* Active navigation link style */
@@ -649,9 +682,8 @@ color: rgb(var(--accent-600));
 font-weight: 700;
         }
         
-        .nav-link.active::before {
-transform: translateX(-50%) scaleX(1);
-opacity: 1;
+        .nav-link.active::after {
+width: 100%;
         }
         
         /* Override old nav-link styles for enhanced animations */
@@ -1900,9 +1932,19 @@ border-left: 3px solid rgb(59, 130, 246);
 border-left: 3px solid rgb(34, 197, 94);
         }
         
+        .calendar-day {
+position: relative;
+overflow: visible;
+        }
+        
         .calendar-day:hover {
-transform: translateY(-2px);
-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+transform: translateY(-2px) scale(1.02);
+box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+z-index: 10;
+        }
+        
+        .calendar-day:active {
+transform: translateY(0) scale(1);
         }
         
         /* Calendar event badges */
