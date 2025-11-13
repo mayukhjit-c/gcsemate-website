@@ -6680,7 +6680,7 @@ async function renderDashboard() {
             
             // Build DOM nodes instead of innerHTML to avoid any async repaint issue
             const wrapper = document.createElement('div');
-            wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full';
+            wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full h-full';
             const iconHost = document.createElement('div');
             iconHost.className = 'flex items-center justify-center h-12 w-12 mb-1';
             iconHost.innerHTML = `${iconSvg}`;
@@ -6704,12 +6704,14 @@ async function renderDashboard() {
             
             // Add "View Specification" button(s)
             const specContainer = document.createElement('div');
-            specContainer.className = 'mt-3 w-full px-2';
+            specContainer.className = 'mt-3 w-full px-2 flex-shrink-0';
             const specs = subjectSpecifications[subject.toLowerCase()];
             if (specs) {
-                Object.entries(specs).forEach(([board, spec]) => {
+                // Limit to 2 buttons max to maintain consistent card height
+                const specEntries = Object.entries(specs).slice(0, 2);
+                specEntries.forEach(([board, spec]) => {
                     const specButton = document.createElement('button');
-                    specButton.className = 'w-full mt-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5';
+                    specButton.className = 'w-full mt-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5 flex-shrink-0';
                     specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i> <span>View Spec${spec.tier ? ` (${spec.tier})` : ''}</span>`;
                     specButton.setAttribute('data-tooltip', spec.label);
                     specButton.onclick = (e) => {
@@ -6722,7 +6724,10 @@ async function renderDashboard() {
             wrapper.appendChild(specContainer);
             card.appendChild(wrapper);
             if (subjectId) {
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[200px]';
+                // Set consistent height constraints to maintain grid alignment
+                // Max height accommodates cards with up to 2 specification buttons
+                // Modern premium card design with glassmorphism
+                card.className = 'p-4 sm:p-6 rounded-3xl shadow-xl cursor-pointer transition-all duration-400 transform hover:scale-105 hover:shadow-2xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-md border border-white/50 hover:border-blue-300/60 subject-card-modern min-h-[200px] max-h-[280px] overflow-hidden';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
