@@ -1,0 +1,262 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function userDoc() {
+      return isSignedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
+    }
+    function isAdmin() { return isSignedIn() && userDoc().role == 'admin'; }
+    function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
+
+    // Users collection
+    match /users/{uid} {
+      // Create own profile at signup
+      allow create: if isSignedIn() && request.auth.uid == uid;
+
+      // Read/update own profile (including preferences/storage and profile pictures)
+      allow read, update: if isSignedIn() && request.auth.uid == uid;
+
+      // Admin full control for support (including password reset, account deletion)
+      allow read, update, delete: if isAdmin();
+
+      // Per-user events subcollection
+      match /events/{eventId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // Per-user file index subcollection (metadata only)
+      match /userFiles/{fileId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // Per-user notes (e.g., subjectNotes)
+      match /notes/{docId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // Per-user flashcards storage
+      match /flashcards/{subjectId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // Annotations collection - NEW
+    match /annotations/{annotationId} {
+      // Users can only access their own annotations
+      // Annotation ID format: {userId}_{fileId}
+      allow read, write: if isSignedIn() &&
+        annotationId.matches(request.auth.uid + '_.*');
+
+      // Admins can read all annotations for support
+      allow read: if isAdmin();
+
+      // Validation for annotation data
+      allow create, update: if isSignedIn() &&
+        annotationId.matches(request.auth.uid + '_.*') &&
+        request.resource.data.keys().hasOnly(['userId','fileId','canvasData','createdAt','updatedAt']) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.fileId is string &&
+        request.resource.data.canvasData is map;
+    }
+
+    // Lessons: admins write; paid users (and admins) read
+    match /lessons/{lessonId} {
+      allow read: if isPaid() || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Video playlists: readable by signed-in; writable by admin
+    match /videoPlaylists/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Useful links: readable by signed-in; writable by admin
+    match /usefulLinks/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Blog posts and comments
+    match /blogPosts/{postId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && (isPaid() || isAdmin()) &&
+          request.resource.data.keys().hasOnly(['text','authorId','authorName','createdAt']) &&
+          request.resource.data.text is string && request.resource.data.text.size() > 0 &&
+          request.resource.data.authorId == request.auth.uid;
+        allow update: if isSignedIn() &&
+          (isAdmin() || resource.data.authorId == request.auth.uid) &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['text','updatedAt']) &&
+          request.resource.data.text is string && request.resource.data.text.size() > 0;
+        allow delete: if isSignedIn() &&
+          (isAdmin() || resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    // Global events
+    match /globalEvents/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Settings (announcement, siteControls, etc.)
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // SUBJECT RESOURCES (read for signed-in; admin writes)
+    match /subjectResources/{subjectId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // USER STUDY PLANS
+    match /userStudyPlans/{uid} {
+      allow read, write: if false; // disallow direct doc ops at root
+      match /subjects/{subjectId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // USER PROGRESS
+    match /userProgress/{uid} {
+      allow read, write: if false;
+      match /subjects/{subjectId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // USER EXAM RESULTS
+    match /userExamResults/{uid} {
+      allow read, write: if false;
+      match /subjects/{subjectId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // USER STUDY SESSIONS (analytics - created by the signed-in user, readable by admin)
+    match /userStudySessions/{sessionId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // USER FILE VIEWS (analytics - created by the signed-in user, readable by admin)
+    match /userFileViews/{viewId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userId','subject','fileId','fileName','startedAt','endedAt','durationMs','durationSeconds']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // USER ACTIVITIES (comprehensive activity tracking)
+    match /userActivities/{activityId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userId','userEmail','activityType','sessionId','ip','location','userAgent','timestamp','additionalData']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // USER SESSIONS (active session tracking)
+    match /userSessions/{sessionId} {
+      allow create, update: if isSignedIn() &&
+        request.resource.data.keys().hasOnly([
+          'userId','sessionId','ip','location','userAgent',
+          'isActive','lastSeen','lastActivity','currentSubject',
+          'openedFiles','sessionDuration','timestamp','currentFile',
+          'pageUrl','screenResolution','timezone'
+        ]) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // USER DAILY STATS (daily activity statistics)
+    match /userDailyStats/{dailyStatsId} {
+      allow create, update: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userId','date','loginCount','totalSessionTime','subjectsStudied','filesAccessed','studyStreak','lastUpdated']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // ACCOUNT VIOLATIONS (account sharing detection)
+    match /accountViolations/{violationId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userId','userEmail','violationType','detectedAt','concurrentSessions','currentIP','currentUserAgent']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
+    }
+
+    // Admin audit log for tracking admin actions
+    match /adminAuditLog/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['adminId','adminEmail','action','targetUserId','targetUserEmail','timestamp','details']) &&
+        request.resource.data.adminId == request.auth.uid;
+    }
+
+    // System logs (written by client for error reporting; visible to admins)
+    match /systemLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || isSignedIn() &&
+        // Allow any signed-in user to write logs (so client can report errors), but keep read restricted to admins
+        request.resource.data.keys().hasOnly(['level','message','details','timestamp','userId','userAgent','url']) &&
+        request.resource.data.level is string &&
+        request.resource.data.message is string &&
+        request.resource.data.timestamp != null;
+    }
+
+    // Error logs (diagnostic/error tracking; admins read, clients can write)
+    match /errorLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || isSignedIn() &&
+        request.resource.data.keys().hasOnly(['type','message','stack','timestamp','userId','userAgent']) &&
+        request.resource.data.message is string &&
+        request.resource.data.timestamp != null;
+    }
+
+    // Backups (created by admin-only tools)
+    match /backups/{backupId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Bulk emails queue (queued by admin-only tool in UI)
+    match /bulkEmails/{emailId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['subject','message','sentBy','sentAt','recipientCount']) &&
+        request.resource.data.subject is string &&
+        request.resource.data.message is string &&
+        request.resource.data.sentBy == request.auth.uid &&
+        request.resource.data.recipientCount is int;
+      allow update, delete: if isAdmin();
+    }
+
+    // Diagnostic tests (used by admin diagnostics panel)
+    match /diagnosticTests/{testId} {
+      allow read, create: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['testId','timestamp','userId']);
+    }
+
+    // System health (ping/uptime; admin-only by default)
+    match /systemHealth/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
+
+

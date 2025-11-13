@@ -1,0 +1,1767 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="google-adsense-account" content="ca-pub-3142302168894001">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
+     crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Mayukhjit Chakraborty - Proudly made using no generative AI">
+    <title>GCSEMate - Your Ultimate GCSE Revision Partner</title>
+    <meta name="description" content="Your ultimate partner for GCSE success. Access free revision notes, past papers, and study guides for Maths, Science, English, and more. Created by Mayukhjit Chakraborty to help students ace their exams with GCSEMate!">
+    <link rel="preconnect" href="https://drive.google.com">
+    <meta name="keywords" content="GCSE, revision, study, exams, past papers, study notes, GCSEMate, AQA, Edexcel, OCR, Maths, Science, English, History, Geography, Videos, Blog, FAQ, Help">
+    <meta name="author" content="Mayukhjit Chakraborty - Creator of GCSEMate">
+    <meta name="copyright" content="© 2024 Mayukhjit Chakraborty. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="canonical" href="/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
+    <meta property="og:description" content="Ace your exams with organized revision notes, past papers, videos, and more. Created by Mayukhjit Chakraborty for students worldwide.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
+    <meta property="og:url" content="https://gcsemate.com/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GCSEMate - Your Ultimate GCSE Revision Partner">
+    <meta name="twitter:description" content="Ace your exams with organized revision notes, past papers, videos, and more.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/3B82F6/FFFFFF?text=GCSEMate">
+    <link rel="canonical" href="https://gcsemate.com/">
+
+    <link rel="icon" type="image/png" href="gcsemate favicon.png">
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Website",
+      "name": "GCSEMate",
+      "url": "https://gcsemate.com/",
+      "description": "Your ultimate partner for GCSE success. Revision notes, papers, videos, blog and more.",
+      "inLanguage": "en-GB",
+      "publisher": {
+        "@type": "Organization",
+        "name": "GCSEMate",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://placehold.co/512x512/3B82F6/FFFFFF?text=G"
+        }
+      }
+    }
+    </script>
+    <script>
+    (function(){
+        try{
+            var primary = 'gcsemate favicon.png';
+            var img = new Image();
+            img.onerror = function(){
+                var alt = document.querySelector('link[data-fallback-favicon]');
+                if(!alt) return;
+                document.querySelectorAll('link[rel="icon"]').forEach(function(n){ n.parentNode.removeChild(n); });
+                document.head.appendChild(alt.cloneNode(true));
+            };
+            img.src = primary;
+        }catch(_){}
+    })();
+    </script>
+    <script>
+    // Lightweight tooltip system
+    (function(){
+        let layer;
+        function ensureLayer(){
+            if (!layer) { layer = document.createElement('div'); layer.className = 'tooltip-layer'; document.body.appendChild(layer); }
+            return layer;
+        }
+        function positionTooltip(node, content){
+            const l = ensureLayer();
+            l.innerHTML = '';
+            const tip = document.createElement('div'); tip.className = 'tooltip'; tip.textContent = content;
+            l.appendChild(tip);
+            const rect = node.getBoundingClientRect();
+            const x = rect.left + rect.width/2 - tip.offsetWidth/2;
+            const y = Math.max(8, rect.top - tip.offsetHeight - 10);
+            tip.style.position = 'fixed'; tip.style.left = Math.max(8, Math.min(x, window.innerWidth - tip.offsetWidth - 8)) + 'px'; tip.style.top = y + 'px';
+        }
+        let currentNode = null;
+        document.addEventListener('mouseover', (e)=>{
+            const t = e.target.closest('[data-tooltip]');
+            if (!t) { if (layer) layer.innerHTML=''; currentNode=null; return; }
+            currentNode = t; positionTooltip(t, t.getAttribute('data-tooltip'));
+        }, { passive: true });
+        document.addEventListener('mouseout', (e)=>{
+            if (layer && (!currentNode || !currentNode.matches(':hover'))) layer.innerHTML='';
+        }, { passive: true });
+        window.addEventListener('scroll', ()=>{ if (currentNode) positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); }, { passive: true });
+        window.addEventListener('resize', ()=>{ if (currentNode) positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); });
+    })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://apis.google.com" crossorigin>
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Security Layer - Copyright © 2024 Mayukhjit Chakraborty -->
+    <script src="security.js"></script>
+    <!-- Preconnect to Firebase for faster connection -->
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://firestore.googleapis.com">
+    <link rel="dns-prefetch" href="https://www.google.com">
+    
+    </head>
+    <!-- External JavaScript will be loaded after body for better performance -->
+    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
+    <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
+    <!-- Loading Overlay -->
+    <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
+        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/220x64/3B82F6/FFFFFF?text=GCSEMate'; }" style="opacity:0; transform: translateY(8px); transition: opacity .35s ease-out, transform .35s cubic-bezier(0.22, 1, 0.36, 1);">
+        <div class="w-[300px] max-w-[80vw] progress-bar">
+            <div class="bar bar1"></div>
+            <div class="bar bar2"></div>
+        </div>
+        <p class="mt-4 text-sm text-gray-500">Loading GCSEMate…</p>
+    </div>
+    <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
+    <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
+    <!-- Subtle site-wide watermark -->
+    <div id="site-watermark" aria-hidden="true" class="fixed bottom-4 right-4 z-[60] select-none pointer-events-none">
+        <img src="gcsemate%20new.png" alt="" class="h-8 w-auto opacity-10 grayscale">
+    </div>
+    <!-- Proudly made using no generative AI -->
+    <div id="no-ai-badge" class="fixed bottom-4 left-4 z-[60] select-none pointer-events-none text-xs text-gray-400 opacity-20">
+        Proudly made using no generative AI
+    </div>
+    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 text-center fade-in">
+        <header class="flex justify-between items-center py-4">
+             <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
+              <div class="flex items-center gap-4">
+                  <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-tooltip="Sign in to your account">Sign In</button>
+                  <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your free account">Get Started</button>
+              </div>
+        </header>
+        <main class="mt-16 sm:mt-24">
+            <div class="animate-hero-title">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+                    Ace Your GCSEs with <span class="text-blue-600">Zero Stress</span>
+                </h1>
+            </div>
+            <div class="animate-hero-subtitle">
+                <p class="mt-4 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600">
+                    Join 10,000+ students who've transformed their revision with GCSEMate. Get instant access to organized notes, past papers, AI tutoring, and everything you need to achieve top grades—all in one place.
+                </p>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
+                <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 sm:px-10 py-4 text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 min-h-[60px] flex items-center justify-center" data-tooltip="Start your GCSE success journey today">
+                    Start Free Today
+                </button>
+                <button onclick="showAuthPage(true)" class="w-full sm:w-auto px-6 sm:px-8 py-4 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors border-2 border-blue-600 min-h-[60px] flex items-center justify-center">
+                    Already have an account? Sign In
+                </button>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">Free forever • No credit card required • Join in 30 seconds</p>
+            </div>
+            <div class="mt-20 sm:mt-32">
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Why 10,000+ Students Choose GCSEMate</h2>
+                <p class="mt-3 text-gray-500">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
+                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 hover:scale-110">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">One-Stop Revision Hub</h3>
+                        <p class="mt-2 text-gray-600">No more hunting through folders or losing important files. Everything you need for every subject is organized and instantly accessible from one dashboard.</p>
+                    </div>
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.2s;">
+                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300 hover:scale-110">
+                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                         </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">⚡ Instant File Previews</h3>
+                        <p class="mt-2 text-gray-600">Preview PDFs, documents, and images instantly without downloading. Save time and storage space while studying more efficiently.</p>
+                    </div>
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300 hover:scale-110">
+                           <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">📅 Smart Calendar System</h3>
+                        <p class="mt-2 text-gray-600">Never miss another deadline. Track homework, exam dates, and revision schedules with our intelligent calendar that keeps you organized and on track.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Proof Section -->
+            <div class="mt-20 sm:mt-24">
+                <div class="text-center mb-12">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Trusted by Students Across the UK</h2>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-8 text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-blue-600">10,000+</span>
+                            <span>Active Students</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-green-600">4.9/5</span>
+                            <span>Student Rating</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-purple-600">95%</span>
+                            <span>Grade Improvement</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Testimonials -->
+                <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <span>⭐⭐⭐⭐⭐</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-4">"GCSEMate saved me hours every week. Everything I need is organized and easy to find. My grades improved by 2 levels!"</p>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-bold">S</span>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">Sarah M.</p>
+                                <p class="text-sm text-gray-500">Year 11 Student</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <span>⭐⭐⭐⭐⭐</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-4">"The AI tutor feature is incredible. It explains concepts in ways I actually understand. Worth every penny!"</p>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <span class="text-green-600 font-bold">J</span>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">James K.</p>
+                                <p class="text-sm text-gray-500">Year 10 Student</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <span>⭐⭐⭐⭐⭐</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-4">"Finally, a platform that gets how students actually study. The calendar feature keeps me organized and stress-free."</p>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span class="text-purple-600 font-bold">E</span>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">Emma L.</p>
+                                <p class="text-sm text-gray-500">Year 11 Student</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action Section -->
+            <div class="mt-20 sm:mt-24 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 text-center text-white">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Ready to Transform Your GCSE Journey?</h2>
+                <p class="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                    Join thousands of students who've already discovered the secret to stress-free revision and better grades.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 py-4 text-lg font-bold text-blue-600 bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/30 min-h-[60px] flex items-center justify-center">
+                        Start Your Success Story
+                    </button>
+                    <p class="text-sm text-blue-200">Free forever • No credit card required</p>
+                </div>
+            </div>
+        </main>
+        <footer class="mt-24 text-center text-gray-500 text-sm">
+             <div class="space-y-2">
+                 <div class="flex items-center justify-center gap-2">
+                     <span>Made with</span>
+                     <span class="text-red-500 animate-pulse">❤️</span>
+                     <span>by</span>
+                     <span class="font-semibold text-blue-600">Mayukhjit Chakraborty</span>
+                 </div>
+                 <p class="text-xs text-gray-400">Creator & Developer of GCSEMate</p>
+                 <p>© <span id="landing-copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a></p>
+                 <p class="mt-1 text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
+             </div>
+        </footer>
+    </div>
+    
+    <div id="email-verify-page" class="hidden w-full max-w-md fade-in text-center">
+        <div class="modern-card rounded-2xl shadow-xl p-8">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+            <p id="verification-email-display" class="text-gray-600 mb-6">We've sent a verification link to your email address. Please check your spam/junk folder and inbox and click the link to activate your account.</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="resendVerificationEmail()" id="resend-verification-btn" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Send another verification email">Resend Verification Email</button>
+                <button onclick="handleLogout()" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors" data-tooltip="Return to login page">Back to Login</button>
+            </div>
+             <p id="resend-message" class="text-sm text-green-600 mt-4 h-4"></p>
+        </div>
+    </div>
+    <div id="login-page" class="hidden w-full max-w-sm fade-in">
+        <div class="modern-card rounded-2xl shadow-xl p-8">
+            <div class="flex justify-center items-center mb-4">
+                <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
+            </div>
+            <h2 id="form-title" class="text-center text-gray-700 mb-6 text-xl">Your Ultimate Revision Hub</h2>
+            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
+                <!-- reCAPTCHA v3 runs invisibly; no widget needed -->
+                <div id="recaptcha-container" class="hidden"></div>
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your email" aria-describedby="email-error">
+                    <div id="email-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                </div>
+                <div class="relative">
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" type="password" placeholder="Password" autocomplete="current-password" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your password" aria-describedby="password-error">
+                    <button type="button" id="show-password-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-l-none" data-tooltip="Show/Hide password" aria-label="Toggle password visibility">
+                        <svg id="eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        <svg id="eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-3.11 3.586-5.416 6.66-6.325M16.5 5.5c2.25 1.06 4.103 2.9 5.042 5.5-1.274 4.057-5.064 7-9.542 7a10.02 10.02 0 01-2.09-.25M9 12a3 3 0 116 0 3 3 0 01-6 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"></path></svg>
+                    </button>
+                    <div id="password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <label class="flex items-center text-gray-600 select-none">
+                        <input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-tooltip="Keep me logged in">
+                        <span class="ml-2">Remember Me</span>
+                    </label>
+                    <a href="#" onclick="event.preventDefault(); showPasswordResetModal()" class="font-semibold text-blue-600 hover:underline">Forgot Password?</a>
+                </div>
+                <button type="submit" id="login-button" class="w-full p-4 rounded-lg glass-button text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to log in">Login</button>
+                <p id="auth-error" class="text-red-500 text-sm text-center h-4"></p>
+                <p class="text-center text-sm text-gray-600">Don't have an account? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Register</a></p>
+            </form>
+            <form id="register-form" class="hidden space-y-4" onsubmit="event.preventDefault(); handleRegister();">
+                <div>
+                    <label for="register-displayname" class="sr-only">Full Name</label>
+                    <input id="register-displayname" type="text" placeholder="Your Name" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your full name" aria-describedby="register-name-error">
+                    <div id="register-name-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                </div>
+                <div>
+                    <label for="register-email" class="sr-only">Email address</label>
+                    <input id="register-email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose an email" aria-describedby="register-email-error">
+                    <div id="register-email-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                </div>
+                <div>
+                    <label for="register-password" class="sr-only">Password</label>
+                    <input id="register-password" type="password" placeholder="Password (min. 6 characters)" autocomplete="new-password" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose a password" aria-describedby="register-password-error">
+                    <div id="register-password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
+                </div>
+                <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
+                <button type="submit" id="register-button" class="w-full p-4 rounded-lg glass-button text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to create your account">Create Free Account</button>
+                <p id="register-error" class="text-red-500 text-sm text-center h-4"></p>
+                <p class="text-center text-sm text-gray-600">Already have an account? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Login</a></p>
+            </form>
+        </div>
+    </div>
+    <div id="main-app" class="hidden w-full h-screen bg-white/80 backdrop-blur-xl flex flex-col border border-white/40 rounded-xl shadow-2xl overflow-hidden">
+        <!-- Tutorial modal (first-time) -->
+        <div id="tutorial-overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-[12000]" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+            <div class="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-6 max-w-lg w-full">
+                <h2 id="tutorial-title" class="text-xl font-bold text-gray-900 mb-2">Welcome to GCSEMate</h2>
+                <p id="tutorial-step" class="text-gray-700 mb-6">Let’s take a 20-second tour. You can skip anytime.</p>
+                <div class="flex items-center justify-between">
+                    <button id="tutorial-skip" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Skip</button>
+                    <div class="flex gap-2">
+                        <button id="tutorial-prev" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Back</button>
+                        <button id="tutorial-next" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="event-countdown-banner" class="hidden"></div>
+        <div id="site-announcement-banner" class="hidden"></div>
+        
+        <header class="bg-white/90 backdrop-blur-xl p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-3 flex-shrink-0 relative shadow-sm">
+            <div class="flex-shrink-0">
+                <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto transition-transform duration-200 hover:scale-105" loading="lazy" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
+            </div>
+            <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar">
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="subject-dashboard-page" data-tooltip="View your subjects">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Subjects
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="videos-page" data-tooltip="Educational videos">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Videos
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="blog-page" data-tooltip="Study tips and news">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                    </svg>
+                    Blog
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="calendar-page" data-tooltip="Important dates">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Calendar
+                </a>
+                <a href="#" id="useful-links-nav" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="useful-links-page" data-tooltip="Useful Links">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                    Links
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="about-page" data-tooltip="Learn about us">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    About
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="features-page" data-tooltip="See our features and pricing">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Features
+                </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="help-page" data-tooltip="Get help and see FAQs">
+                    <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Help
+                </a>
+            </nav>
+            <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600 mr-3">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse online-status"></div>
+                    <span class="online-text">Online</span>
+                </div>
+                <span id="welcome-message" class="text-xs xl:text-sm font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
+                <img id="profile-picture" src="" alt="PFP" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0 transition-transform duration-200 hover:scale-110">
+                <a href="#" class="nav-link text-sm font-semibold py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
+                <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-all duration-200 flex-shrink-0 hover:shadow-md transform hover:scale-105" data-tooltip="End your session">Logout</button>
+            </div>
+            <div class="lg:hidden flex items-center ml-auto">
+                <button id="hamburger-button" class="p-3 rounded-lg text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu" data-tooltip="Open navigation menu">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-white sticky top-0">
+                <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto " loading="lazy" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='imghippo'; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';} else { this.onerror=null; this.src='https://placehold.co/160x40/3B82F6/FFFFFF?text=GCSEMate'; }">
+                <button id="close-menu-button" class="p-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" aria-label="Close navigation menu" data-tooltip="Close navigation menu">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <nav class="flex flex-col p-6 space-y-3" role="navigation" aria-label="Main navigation">
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">
+                    <span class="text-2xl mr-3"></span>
+                    <div>
+                        <div class="font-semibold">Subjects</div>
+                        <div class="text-sm text-gray-500">Access your revision materials</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">
+                    <span class="text-2xl mr-3">🎥</span>
+                    <div>
+                        <div class="font-semibold">Videos</div>
+                        <div class="text-sm text-gray-500">Educational playlists & tutorials</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">
+                    <span class="text-2xl mr-3"></span>
+                    <div>
+                        <div class="font-semibold">Blog</div>
+                        <div class="text-sm text-gray-500">Study tips & latest news</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="calendar-page" tabindex="0">
+                    <span class="text-2xl mr-3">📅</span>
+                    <div>
+                        <div class="font-semibold">Calendar</div>
+                        <div class="text-sm text-gray-500">Track deadlines & events</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">
+                    <span class="text-2xl mr-3">🔗</span>
+                    <div>
+                        <div class="font-semibold">Useful Links</div>
+                        <div class="text-sm text-gray-500">Quick access resources</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="about-page" tabindex="0">
+                    <span class="text-2xl mr-3">ℹ️</span>
+                    <div>
+                        <div class="font-semibold">About Us</div>
+                        <div class="text-sm text-gray-500">Our story & mission</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="features-page" tabindex="0">
+                    <span class="text-2xl mr-3">⭐</span>
+                    <div>
+                        <div class="font-semibold">Features & Pricing</div>
+                        <div class="text-sm text-gray-500">See what's included</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">
+                    <span class="text-2xl mr-3">❓</span>
+                    <div>
+                        <div class="font-semibold">Help & FAQ</div>
+                        <div class="text-sm text-gray-500">Get support & answers</div>
+                    </div>
+                </a>
+            </nav>
+            <div class="flex flex-col p-6 border-t border-gray-200 space-y-4 bg-gray-50">
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="account-settings-page" tabindex="0">⚙️ Account</a>
+                <button id="mobile-logout-button" class="w-full px-4 py-4 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-lg min-h-[56px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2" tabindex="0" data-tooltip="Sign out of your account">🚪 Logout</button>
+            </div>
+        </div>
+        <main id="page-content" class="flex-grow overflow-y-auto bg-transparent">
+            <button id="scroll-top" class="hidden fixed bottom-6 right-6 z-[1000] p-3 rounded-full shadow-lg bg-blue-600 text-white hover:bg-blue-700 transition-all" aria-label="Scroll to top" data-tooltip="Scroll to top of page">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12z"/></svg>
+            </button>
+            <div id="page-container" class="relative">
+                <div id="subject-dashboard-page" class="page p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+                        <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
+                        <div id="dashboard-clock" class="bg-white/50 backdrop-blur-lg p-3 rounded-xl shadow-md border border-white/30 text-center">
+                            <p id="clock-time" class="text-2xl font-bold text-gray-800 tracking-wider"></p>
+                            <p id="clock-date" class="text-xs text-gray-500 font-semibold uppercase tracking-widest"></p>
+                        </div>
+                    </div>
+                    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
+                </div>
+                <div id="videos-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Revision Video Playlists</h2>
+                     <div id="add-playlist-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                         <h3 class="text-xl font-semibold mb-4">Add New YouTube Playlist</h3>
+                         <form id="add-playlist-form" class="space-y-4" onsubmit="event.preventDefault(); handleAddPlaylist();">
+                             <input id="playlist-title" type="text" placeholder="Playlist Title (e.g., 'AQA Physics Paper 1')" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter a descriptive title for the playlist">
+                             <input id="playlist-url" type="url" placeholder="YouTube Playlist URL" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full YouTube playlist URL">
+                             <label class="flex items-center text-sm text-gray-700 select-none">
+                                 <input id="playlist-sync-confirm" type="checkbox" required class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                 <span class="ml-2">I confirm this playlist is for all paid users.</span>
+                             </label>
+                             <button type="submit" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new playlist">Add Playlist</button>
+                         </form>
+                         <p id="add-playlist-message" class="text-sm mt-2 h-4"></p>
+                     </div>
+                    <div id="playlist-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        </div>
+                </div>
+                <div id="blog-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
+                    <div id="add-blog-post-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                        <h3 id="blog-form-title" class="text-xl font-semibold mb-4">Create New Blog Post</h3>
+                        <form id="add-blog-post-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveBlogPost();">
+                            <input type="hidden" id="blog-post-id">
+                            <input id="blog-post-title" type="text" placeholder="Post Title" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input id="blog-post-image" type="url" placeholder="Optional: Image URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <textarea id="blog-post-content" placeholder="Write your post in Markdown..." required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 h-64 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                <div class="p-3 rounded-lg border border-gray-300/50 bg-white/50 overflow-auto">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="text-sm text-gray-500">Live Preview</div>
+                                        <div class="flex gap-2">
+                                            <button type="button" class="px-2 py-1 text-xs border rounded" onclick="insertMarkdown('# ')" title="Heading">H1</button>
+                                            <button type="button" class="px-2 py-1 text-xs border rounded" onclick="insertMarkdown('**bold**')" title="Bold">B</button>
+                                            <button type="button" class="px-2 py-1 text-xs border rounded" onclick="insertMarkdown('*italic*')" title="Italic">I</button>
+                                            <button type="button" class="px-2 py-1 text-xs border rounded" onclick="insertMarkdown('\n\n- item')" title="List">•</button>
+                                        </div>
+                                    </div>
+                                    <div id="blog-preview" class="prose prose-sm max-w-none"></div>
+                                </div>
+                            </div>
+                            <div id="blog-image-preview" class="mt-2 hidden"><img alt="Post image preview" class="max-h-48 rounded border" onerror="this.parentElement.classList.add('hidden');"></div>
+                            <div class="flex justify-end gap-3">
+                                <button type="button" onclick="resetBlogPostForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Post</button>
+                            </div>
+                        </form>
+                        <p id="add-blog-post-message" class="text-sm mt-2 h-4"></p>
+                    </div>
+                    <div id="blog-post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        </div>
+                </div>
+                <div id="calendar-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Calendar</h2>
+                        <div class="flex items-center space-x-2">
+                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Previous Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                            <h3 id="month-year-header" class="text-xl font-semibold text-gray-700 w-40 text-center"></h3>
+                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors" data-tooltip="Next Month"><svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                            <select id="calendar-year-select" class="ml-2 rounded-lg border-gray-300/60 bg-white/70 px-2 py-1 text-sm"></select>
+                        </div>
+                    </div>
+                    <div class="bg-white/50 p-4 rounded-xl shadow-md border border-white/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2 text-sm">
+                                <label class="font-semibold text-gray-700">View:</label>
+                                <select id="calendar-view-mode" class="rounded border-gray-300/60 bg-white/70 px-2 py-1">
+                                    <option value="month">Month</option>
+                                    <option value="week">Week</option>
+                                    <option value="agenda">Agenda</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="hidden sm:flex items-center gap-3 text-xs text-gray-600">
+                                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> My</span>
+                                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Global</span>
+                                    <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Exam/Due</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm">
+                                    <label class="font-semibold text-gray-700">Filter:</label>
+                                    <select id="calendar-category-filter" class="rounded border-gray-300/60 bg-white/70 px-2 py-1">
+                                        <option value="all">All</option>
+                                        <option value="exam">Exam</option>
+                                        <option value="homework">Homework</option>
+                                        <option value="revision">Revision</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-px"></div>
+                        <div id="calendar-agenda" class="hidden"></div>
+                    </div>
+                </div>
+                <div id="useful-links-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Useful Links</h2>
+                    <div id="add-link-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Add a New Link or Video</h3>
+                        <div class="space-y-4">
+                            <input id="link-title" type="text" placeholder="Title (e.g., 'BBC Bitesize Physics')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link">
+                            <input id="link-url" type="url" placeholder="URL (Standard link or YouTube video/playlist)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL">
+                            <button id="add-link-btn" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new link">Add Link</button>
+                        </div>
+                        <p id="add-link-message" class="text-sm mt-2 h-4"></p>
+                    </div>
+                    <div class="bg-white/50 p-6 rounded-xl shadow-md border border-white/30">
+                        <h3 class="text-xl font-semibold mb-4">Saved Links & Resources</h3>
+                        <div id="links-container" class="space-y-4"></div>
+                    </div>
+                </div>
+                <div id="file-browser-page" class="page hidden h-full flex flex-col">
+                    <div id="breadcrumb" class="p-3 border-b border-gray-200/50 text-sm flex-shrink-0 text-gray-800 bg-gray-100/30"></div>
+                    <div id="file-browser-controls" class="p-3 border-b border-gray-200/50 flex-shrink-0 bg-gray-50/20 flex flex-col sm:flex-row items-center gap-3">
+                        <div class="relative flex-grow w-full sm:w-auto">
+                            <input type="search" id="file-search-input" placeholder="Search in folder..." class="pl-10 pr-4 py-3 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                             <select id="file-sort-select" class="rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 py-3 px-3 text-base">
+                                <option value="az">Sort A-Z</option>
+                                <option value="za">Sort Z-A</option>
+                            </select>
+                            <div id="view-toggle" class="flex items-center rounded-lg border border-gray-300/50 bg-white/50 p-1">
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="list" data-tooltip="List View">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                                </button>
+                                <button class="view-btn p-2 rounded-md hover:bg-gray-100 transition-colors" data-view="grid" data-tooltip="Grid View">
+                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="file-list" class="p-4 overflow-y-auto flex-grow" aria-live="polite" aria-busy="false"></div>
+                </div>
+                <div id="account-settings-page" class="page hidden p-8 max-w-7xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Account Management</h2>
+                    <div id="admin-panel" class="hidden space-y-8">
+                        <!-- Enhanced Admin Dashboard Header -->
+                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl shadow-lg text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-2xl font-bold mb-2">Admin Dashboard</h2>
+                                    <p class="text-blue-100">Manage users, content, and site settings</p>
+                                <div class="mt-2 text-sm text-blue-200">
+                                    <span id="server-time" class="font-mono"></span>
+                                    <span class="mx-2">•</span>
+                                    <span id="uptime-status" class="inline-flex items-center gap-1">
+                                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse online-status"></div>
+                                        <span class="online-text">System Online</span>
+                                    </span>
+                                    <span class="mx-2">•</span>
+                                    <button onclick="showSystemHealthModal()" class="text-blue-200 hover:text-white underline">
+                                        System Health
+                                    </button>
+                                </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-blue-100">Total Users</div>
+                                    <div id="total-users-count" class="text-3xl font-bold">-</div>
+                                    <div class="text-xs text-blue-200 mt-1">
+                                        <span id="growth-indicator" class="inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span id="growth-percentage">-</span>% this week
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Quick Stats Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30 hover:shadow-lg transition-all duration-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-blue-100 rounded-lg">
+                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-600">Free Users</p>
+                                            <p id="free-users-count" class="text-lg font-semibold text-gray-900">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">Conversion</div>
+                                        <div id="free-conversion-rate" class="text-sm font-medium text-gray-700">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30 hover:shadow-lg transition-all duration-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-green-100 rounded-lg">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-600">Paid Users</p>
+                                            <p id="paid-users-count" class="text-lg font-semibold text-gray-900">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">Revenue</div>
+                                        <div id="monthly-revenue" class="text-sm font-medium text-green-600">£-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30 hover:shadow-lg transition-all duration-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-red-100 rounded-lg">
+                                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-600">Admins</p>
+                                            <p id="admin-users-count" class="text-lg font-semibold text-gray-900">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">Actions</div>
+                                        <div id="admin-actions-today" class="text-sm font-medium text-red-600">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30 hover:shadow-lg transition-all duration-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-purple-100 rounded-lg">
+                                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-600">Active Today</p>
+                                            <p id="active-today-count" class="text-lg font-semibold text-gray-900">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">Peak</div>
+                                        <div id="peak-concurrent" class="text-sm font-medium text-purple-600">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Analytics Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">User Engagement</h4>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Avg Session</span>
+                                        <span id="avg-session-time" class="font-medium">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Page Views</span>
+                                        <span id="total-page-views" class="font-medium">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Bounce Rate</span>
+                                        <span id="bounce-rate" class="font-medium">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">Content Performance</h4>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Files Downloaded</span>
+                                        <span id="files-downloaded" class="font-medium">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Blog Views</span>
+                                        <span id="blog-views" class="font-medium">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Video Plays</span>
+                                        <span id="video-plays" class="font-medium">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/30">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">System Health</h4>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Response Time</span>
+                                        <span id="avg-response-time" class="font-medium text-green-600">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Error Rate</span>
+                                        <span id="error-rate" class="font-medium text-red-600">-</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Uptime</span>
+                                        <span id="system-uptime" class="font-medium text-green-600">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Activity Dashboard -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-2xl font-bold text-gray-800">Real-time Activity</h3>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full live-indicator"></div>
+                                        <span class="text-sm text-gray-600">Live Updates</span>
+                                    </div>
+                                    <button onclick="refreshActivityData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh activity data">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Activity Stats -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-blue-600">Active Sessions</p>
+                                            <p id="active-sessions-count" class="text-2xl font-bold text-blue-800">-</p>
+                                        </div>
+                                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-600">Files Opened Today</p>
+                                            <p id="files-opened-today" class="text-2xl font-bold text-green-800">-</p>
+                                        </div>
+                                        <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-purple-600">Subjects Studied</p>
+                                            <p id="subjects-studied-today" class="text-2xl font-bold text-purple-800">-</p>
+                                        </div>
+                                        <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-orange-600">Avg Study Time</p>
+                                            <p id="avg-study-time" class="text-2xl font-bold text-orange-800">-</p>
+                                        </div>
+                                        <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Activity Feed -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Live Activity Feed</h4>
+                                <div id="realtime-activity-feed" class="space-y-3 max-h-96 overflow-y-auto">
+                                    <div class="text-center text-gray-500 py-8">
+                                        <div class="dots-spinner text-blue-600 mb-2">
+                                            <i></i><i></i><i></i>
+                                        </div>
+                                        <p>Loading real-time activity...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Activity Table -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">User Activity Overview</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="activity-table w-full bg-white rounded-lg shadow-sm">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Subject</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Files Opened</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Study Time</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="user-activity-table" class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                                    Loading user activity data...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Subject Activity Chart -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Subject Activity Distribution</h4>
+                                <div id="subject-activity-chart" class="bg-gray-50 rounded-lg p-4 h-64 flex items-center justify-center">
+                                    <div class="text-center text-gray-500">
+                                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                        <p>Loading subject activity data...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Calendar & Analytics Dashboard -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-2xl font-bold text-gray-800">User Calendar & Analytics</h3>
+                                <div class="flex items-center gap-4">
+                                    <select id="user-selector" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="loadUserCalendar()">
+                                        <option value="">Select User</option>
+                                    </select>
+                                    <button onclick="refreshCalendarData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh calendar data">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Calendar Navigation -->
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-4">
+                                    <button onclick="previousMonth()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <h4 id="calendar-month-year" class="text-xl font-bold text-gray-800">Loading...</h4>
+                                    <button onclick="nextMonth()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-600">Active Day</span>
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full ml-4"></div>
+                                    <span class="text-sm text-gray-600">Study Day</span>
+                                    <div class="w-3 h-3 bg-gray-300 rounded-full ml-4"></div>
+                                    <span class="text-sm text-gray-600">No Activity</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Calendar Grid -->
+                            <div id="calendar-grid" class="grid grid-cols-7 gap-1 mb-6">
+                                <!-- Calendar will be populated by JavaScript -->
+                            </div>
+                            
+                            <!-- Daily Activity Details -->
+                            <div id="daily-details" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
+                                <h5 class="text-lg font-semibold text-gray-800 mb-4">Daily Activity Details</h5>
+                                <div id="daily-stats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <!-- Daily stats will be populated here -->
+                                </div>
+                                <div id="daily-subjects" class="mb-4">
+                                    <h6 class="font-semibold text-gray-700 mb-2">Subjects Studied</h6>
+                                    <div id="subjects-list" class="flex flex-wrap gap-2">
+                                        <!-- Subjects will be populated here -->
+                                    </div>
+                                </div>
+                                <div id="daily-files">
+                                    <h6 class="font-semibold text-gray-700 mb-2">Files Accessed</h6>
+                                    <div id="files-list" class="flex flex-wrap gap-2">
+                                        <!-- Files will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Activity Graphs -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Login/Logout Times Chart -->
+                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Login/Logout Times</h5>
+                                    <div id="login-logout-chart" class="h-64 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                            <p>Loading chart data...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Subject Study Time Chart -->
+                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Subject Study Time</h5>
+                                    <div id="subject-time-chart" class="h-64 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                            <p>Loading chart data...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Daily Activity Heatmap -->
+                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Activity Heatmap (Last 30 Days)</h5>
+                                    <div id="activity-heatmap" class="h-64 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                            <p>Loading heatmap data...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Study Streak Chart -->
+                                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Study Streak</h5>
+                                    <div id="study-streak-chart" class="h-64 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                            <p>Loading streak data...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced User Management -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-2xl font-bold text-gray-800">User Management</h3>
+                                <div class="flex gap-2">
+                                    <button onclick="refreshUserData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" data-tooltip="Refresh user data">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Refresh
+                                    </button>
+                                    <button onclick="exportUserData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2" data-tooltip="Export user data to CSV">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="text-sm text-gray-600">Sort users by:</div>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-1.5 rounded-md border text-sm" onclick="setUserSort('recent')">Recent</button>
+                                    <button class="px-3 py-1.5 rounded-md border text-sm" onclick="setUserSort('name')">Name</button>
+                                    <button class="px-3 py-1.5 rounded-md border text-sm" onclick="setUserSort('tier')">Tier</button>
+                                    <button class="px-3 py-1.5 rounded-md border text-sm" onclick="setUserSort('role')">Role</button>
+                                </div>
+                            </div>
+                            <div id="user-management-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+
+                        <!-- Site Management Tools -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Site Announcement -->
+                            <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                                <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                                    </svg>
+                                    Site Announcement
+                                </h3>
+                                <textarea id="announcement-text" placeholder="Enter announcement text here..." class="w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+                                <div class="flex space-x-2 mt-4">
+                                    <button id="post-announcement-btn" class="flex-grow p-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">Post Banner</button>
+                                    <button id="clear-announcement-btn" class="flex-grow p-3 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition-colors">Clear Banner</button>
+                                </div>
+                            </div>
+
+                            <!-- System Health -->
+                            <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                                <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    System Health
+                                </h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Database Status</span>
+                                        <span id="db-status" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Connected</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Storage Usage</span>
+                                        <span id="storage-usage" class="text-sm font-semibold text-gray-800">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Last Backup</span>
+                                        <span id="last-backup" class="text-sm font-semibold text-gray-800">-</span>
+                                    </div>
+                                </div>
+                                <button onclick="checkSystemHealth()" class="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Check Health</button>
+                            </div>
+                        </div>
+
+                        <!-- Maintenance Mode -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Maintenance Mode
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Status</span>
+                                    <span id="maintenance-status" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Message</span>
+                                    <span id="maintenance-message" class="text-sm font-semibold text-gray-800">-</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <button onclick="toggleMaintenanceMode()" id="toggle-maintenance-btn" class="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                                    Disable Maintenance
+                                </button>
+                                <button onclick="setMaintenanceMessage()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    Set Message
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Analytics -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                Advanced Analytics
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold text-gray-800 mb-2">User Activity</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div><span class="font-medium">Active Today:</span> <span id="active-today-count">-</span></div>
+                                        <div><span class="font-medium">Active This Week:</span> <span id="active-week-count">-</span></div>
+                                        <div><span class="font-medium">New This Month:</span> <span id="new-month-count">-</span></div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Content Stats</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div><span class="font-medium">Total Files:</span> <span id="total-files-count">-</span></div>
+                                        <div><span class="font-medium">Blog Posts:</span> <span id="blog-posts-count">-</span></div>
+                                        <div><span class="font-medium">Video Playlists:</span> <span id="playlists-count">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Quick Actions
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <button onclick="exportAllData()" class="px-3 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                                    Export All Data
+                                </button>
+                                <button onclick="sendBulkEmail()" class="px-3 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors text-sm">
+                                    Send Bulk Email
+                                </button>
+                                <button onclick="backupDatabase()" class="px-3 py-2 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600 transition-colors text-sm">
+                                    Backup Database
+                                </button>
+                                <button onclick="viewSystemLogs()" class="px-3 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                                    View Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="user-settings-panel" class="hidden bg-white/50 p-8 rounded-xl shadow-lg border border-white/30 max-w-lg mx-auto">
+                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Account</h3>
+                        
+                        <!-- Profile Picture Section -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-3">Profile Picture</h4>
+                            <div class="flex items-center gap-4">
+                                <div class="relative">
+                                    <img id="account-profile-picture" src="" alt="Profile Picture" class="w-16 h-16 rounded-full border-2 border-gray-300 shadow-sm">
+                                    <div class="absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex gap-2">
+                                        <button onclick="showProfilePictureUploadModal()" class="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                                            Upload Photo
+                                        </button>
+                                        <button onclick="removeProfilePicture()" class="px-3 py-2 bg-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Available for Pro users only</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="user-details-form" class="space-y-4" onsubmit="event.preventDefault(); handleUpdateUserSettings();">
+                            <div>
+                                <label for="user-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
+                                <input id="user-displayname" type="text" required class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                             <div>
+                                <label for="user-email" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input id="user-email" type="email" required disabled class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-gray-200/50 text-gray-500 cursor-not-allowed">
+                            </div>
+                             <div>
+                                <label for="user-password" class="block text-sm font-medium text-gray-700">New Password (optional)</label>
+                                <input id="user-password" type="password" placeholder="Leave blank to keep current password" class="mt-1 w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                            <button type="submit" class="w-full p-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Save Changes</button>
+                            <p id="user-settings-message" class="text-sm text-center h-4"></p>
+                        </form>
+                        <div class="mt-8 pt-6 border-t border-gray-200 space-y-3">
+                            <h4 class="text-lg font-semibold text-gray-800">Appearance</h4>
+                            <div class="flex items-center gap-3">
+                                <label for="accent-picker" class="text-sm text-gray-700">Accent colour</label>
+                                <input id="accent-picker" type="color" aria-label="Accent color" class="w-9 h-9 rounded cursor-pointer border border-gray-300/70 bg-white" />
+                                <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
+                            </div>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
+                              <div>
+                                <h4 class="text-lg font-semibold text-gray-800">Account Actions</h4>
+                                <p class="text-sm text-gray-500 mt-1">Manage your account security and data.</p>
+                            </div>
+                            <button onclick="showPasswordResetModal(currentUser.email)" class="w-full p-3 rounded-lg bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-colors">Reset Password</button>
+                             <div class="mt-6 pt-6 border-t border-red-200">
+                                <h4 class="text-lg font-semibold text-red-700">Danger Zone</h4>
+                                <p class="text-sm text-red-500 mt-1">This action is permanent and cannot be undone.</p>
+                                <button onclick="showDeleteAccountModal()" class="mt-4 w-full p-3 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors">Delete My Account</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="about-page" class="page hidden p-8 max-w-4xl mx-auto text-gray-800">
+                    <div class="prose prose-lg max-w-none">
+                        <h2 class="text-4xl font-extrabold text-gray-900 mb-4 text-center">The GCSEMate Story</h2>
+                        <p class="text-center text-xl text-gray-600 mb-8">From a student's frustration to a nationwide tool.</p>
+                        
+                        <figure class="my-8">
+                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop" alt="A group of students studying together in a library." class="rounded-xl shadow-lg w-full h-auto">
+                            <figcaption class="text-center text-gray-500 mt-2">Built by a student, for students.</figcaption>
+                        </figure>
+                        
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-blue-800 mb-2">The Spark of an Idea</h3>
+                            <p class="text-blue-700">GCSEMate wasn't born in a boardroom; it was conceived during late-night revision sessions. As a Year 10 student, our founder found himself drowning in a sea of digital chaos. Revision notes were in one app, past papers downloaded into another folder, useful websites were lost in a long list of bookmarks, and collaborating with friends meant endless email chains. He knew there had to be a better way. Armed with a passion for coding and a clear problem to solve, he began building the first version of GCSEMate.</p>
+                        </div>
+                        
+                        <div class="bg-green-50 border-l-4 border-green-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-green-800 mb-2">Our Mission: Simplify to Succeed</h3>
+                            <p class="text-green-700">This journey started with a simple idea: to empower fellow students to cut through the revision clutter and achieve their full potential. We believe that your focus should be on learning, not on fighting with disorganized files. GCSEMate eliminates the friction of traditional study methods by providing a single, intelligent source of truth for all subjects, curated and organized for maximum impact. Every feature is built with the student experience at its core, ensuring GCSEMate is a tool that genuinely helps, not hinders, your path to success.</p>
+                        </div>
+                        
+                        <div class="bg-purple-50 border-l-4 border-purple-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-purple-800 mb-2">Built by Students, For Students</h3>
+                            <p class="text-purple-700">What makes GCSEMate different isn't just the technology—it's the understanding. Our team consists of current and recent GCSE students who have lived through the stress, the late nights, and the overwhelming feeling of not knowing where to start. We've felt the frustration of finding the perfect revision guide only to lose it in a folder maze, or discovering an amazing YouTube explanation but forgetting to bookmark it. This isn't theoretical for us; it's personal.</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-yellow-800 mb-2">The Technology Behind the Magic</h3>
+                            <p class="text-yellow-700">Behind the clean interface lies a carefully crafted system designed for speed, reliability, and accessibility. We've integrated with Google Drive's powerful API to provide seamless file access, built intelligent search functionality to help you find exactly what you need, and implemented progressive web app technology so GCSEMate works perfectly on any device.</p>
+                        </div>
+                        
+                        <div class="bg-red-50 border-l-4 border-red-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-red-800 mb-2">Privacy and Security First</h3>
+                            <p class="text-red-700">We understand that your study materials and personal information are precious. That's why GCSEMate is built with privacy by design. We use industry-standard encryption, minimal data collection practices, and transparent policies. You own your data, and we're simply here to help you organize and access it more effectively. Our authentication system is secure, our servers are protected, and your trust is our top priority.</p>
+                        </div>
+                        
+                        <div class="bg-indigo-50 border-l-4 border-indigo-400 p-6 my-8 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-indigo-800 mb-2">Looking Forward</h3>
+                            <p class="text-indigo-700">This is just the beginning. We're constantly listening to feedback from our community of users, implementing new features, and refining existing ones. From interactive revision tools to collaborative study spaces, from AI-powered study plans to comprehensive progress tracking—we're building the future of digital education, one feature at a time. Join us on this journey to make GCSE success accessible to everyone.</p>
+                        </div>
+                        
+                        <div class="mt-12 text-center bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl border border-blue-200">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-4">Ready to Join Our Community?</h3>
+                            <p class="text-gray-600 mb-6">Be part of the movement that's transforming how students approach GCSE revision.</p>
+                            <button onclick="showAuthPage(false)" class="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105">
+                                Start Your Journey Today
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="features-page" class="page hidden p-4 sm:p-8 max-w-6xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Features & Pricing</h2>
+                        <p class="text-lg text-gray-600 max-w-3xl mx-auto">Everything you need to ace your GCSEs, designed by students for students</p>
+                    </div>
+                    
+                    <div class="mb-8 p-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                        <div class="flex items-start gap-4">
+                            <div class="text-3xl">🎓</div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-800 mb-2">Education Should Be Accessible</h3>
+                                <p class="text-blue-700 leading-relaxed">
+                                    GCSEMate is built to open education for everyone — regardless of monetary status. Most features are free, and our <span class="font-semibold text-blue-800">Pro</span> plan costs less than a coffee: it sustains hosting and keeps the lights on. If you can't afford it, reach out — education shouldn't hide behind a paywall.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Centralized Subject Hubs</h3>
+                                <p class="text-gray-600">Access all your notes, past papers, and resources for every subject, neatly organized in one place.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 text-yellow-600 mb-4">
+                                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">File Starring & Download</h3>
+                                <p class="text-gray-600">Pin your most important files to the top of any folder and download them with a single click.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-600 mb-4">
+                                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Seamless Previews</h3>
+                                <p class="text-gray-600">Preview documents, images, and PDFs directly within the app without needing to download them first.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-12 bg-white/70 border border-white/30 rounded-2xl shadow-xl overflow-hidden">
+                        <div class="p-6 border-b border-gray-200/60 text-center">
+                            <h3 class="text-2xl font-bold text-gray-800">Free vs Pro Comparison</h3>
+                            <p class="text-gray-600">Choose the plan that supports your goals. Upgrade any time.</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm" id="pricing-compare">
+                                <thead class="bg-gray-50/70">
+                                    <tr>
+                                        <th class="px-4 py-3 font-semibold text-gray-800">Feature</th>
+                                        <th class="px-4 py-3 font-semibold text-gray-800">Free</th>
+                                        <th class="px-4 py-3 font-semibold text-gray-800">Pro</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricing-compare-body" class="divide-y divide-gray-100">
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Subjects Dashboard</td>
+                                        <td class="px-4 py-3 text-gray-500">Limited</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Unlimited</td>
+                                    </tr>
+                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                         <td class="px-4 py-3 font-medium text-gray-800">AI Tutor</td>
+                                         <td class="px-4 py-3 text-gray-500">External access</td>
+                                         <td class="px-4 py-3 text-green-700 font-semibold">Integrated link + guidance</td>
+                                      </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">File Browser & Previews</td>
+                                        <td class="px-4 py-3 text-gray-500">Basic</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Full access with Google Docs/Slides/Sheets preview</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Videos & Playlists</td>
+                                        <td class="px-4 py-3 text-green-600">Included</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Blog Comments</td>
+                                        <td class="px-4 py-3 text-gray-500">Read-only</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Post and engage</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Calendar & Events</td>
+                                        <td class="px-4 py-3 text-gray-500">Personal events</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Personal + Global events with countdowns</td>
+                                    </tr>
+                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                         <td class="px-4 py-3 font-medium text-gray-800">Accessibility</td>
+                                         <td class="px-4 py-3 text-green-600">Semantic HTML, skip links, ARIA labels</td>
+                                         <td class="px-4 py-3 text-green-700 font-semibold">Everything in Free + higher contrast presets and keyboard flows</td>
+                                     </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-50/70 to-transparent">
+                            <div class="text-gray-700 text-sm text-center sm:text-left">Pro is just <span class="font-bold text-blue-700 text-lg">£1/month</span>. Cancel anytime.</div>
+                            <button class="w-full sm:w-auto px-8 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg" onclick="showPage('checkout-page')">Upgrade to Pro</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing CTA -->
+                    <div class="mt-12 text-center p-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-xl text-white">
+                        <h3 class="text-3xl font-bold mb-4">Get Full Access Today</h3>
+                        <div class="text-6xl font-extrabold my-6">£1<span class="text-2xl font-medium text-blue-200">/month</span></div>
+                        <p class="mb-8 text-blue-100 text-lg max-w-2xl mx-auto">For less than the price of a coffee, unlock unlimited access to all features and ensure you have the best tools for your GCSE success.</p>
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                            <button class="w-full sm:w-auto px-8 py-4 rounded-lg bg-white text-blue-600 font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg" data-tooltip="Subscribe to get full access" onclick="showPage('checkout-page')">Subscribe Now</button>
+                            <p class="text-sm text-blue-200">Free trial • Cancel anytime • No hidden fees</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="help-page" class="page hidden p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
+                        <div class="bg-white/60 border border-white/30 backdrop-blur-lg rounded-xl p-4 mb-4">
+                            <div class="flex flex-col gap-3">
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-800">Keyboard shortcuts</h3>
+                                    <ul class="mt-1 text-sm text-gray-700 grid sm:grid-cols-2 gap-1">
+                                        <li><span class="font-semibold">?</span>: Open this Help/FAQ</li>
+                                        <li><span class="font-semibold">/</span>: Focus file search</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">d</span>: Go to Dashboard</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">v</span>: Go to Videos</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">b</span>: Go to Blog</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">c</span>: Go to Calendar</li>
+                                    <li><span class="font-semibold">g</span> then <span class="font-semibold">g</span>: Go to AI Tutor</li>
+                                        
+                                        <li><span class="font-semibold">Esc</span>: Close modals/tooltips</li>
+                                    </ul>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input id="faq-search" type="search" placeholder="Search FAQs..." class="flex-1 px-3 py-2 rounded-lg border border-gray-300/60 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Search FAQs" />
+                                    <span id="faq-results-count" class="text-xs text-gray-500"></span>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- FAQ Container -->
+                    <div id="faq-container" class="space-y-4">
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I access my revision files?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>To access files, you need a 'Pro' account. Once upgraded, navigate to the 'Subjects' dashboard and click on any subject card. This will open the file browser for that subject, where you can navigate through folders, preview files, and download what you need.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I change the accent colour?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Use the colour picker in the top-right of the header (desktop) to pick your accent colour. Your choice is saved on this device. Click Reset to return to the default blue.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Are there keyboard shortcuts?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos).</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I preview files without downloading?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Yes. PDFs and images can be previewed directly in the app. Other file types may open in Google Drive viewer.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I report an issue or suggest a feature?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Please email us via the link on the Upgrade page or use the contact option in the footer. We welcome feedback to improve GCSEMate.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">What is the 'Star' icon for?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Clicking the star icon next to a file pins it to the top of its current folder. This is a great way to mark important documents like exam papers or key notes for quick access. Starred items are always displayed first in both list and grid views.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How does the Calendar work?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>The calendar helps you track important dates. Click on any day to add a personal event, like homework deadlines or revision topics. You can also enable a 'Countdown Banner' for specific events. Admins may add 'Global Events', like exam dates, which appear for all users and are marked with a green dot.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I upload my own files?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Currently, file uploading is not a feature for users. The file structure is managed by administrators to ensure all resources are relevant, high-quality, and well-organized for all students. This helps maintain a consistent and reliable revision library.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I delete my account?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>You can delete your account by going to the 'Account' page. At the bottom, in the 'Danger Zone', you will find a "Delete My Account" button. Please be aware that this action is irreversible and will permanently delete your user profile and any associated personal data, such as calendar events.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">What file types can I preview?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate supports previewing PDFs, Word documents, Google Docs, Google Slides, Google Sheets, PowerPoint presentations, images (JPEG, PNG, GIF), and text files. If a file can't be previewed directly, you can always open it in Google Drive or download it.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I access GCSEMate offline?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate requires an internet connection to access files and sync data. However, you can download files locally for offline study. We're working on offline capabilities for basic features in future updates.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How accurate is the AI Tutor?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>The AI Tutor is trained specifically on GCSE curricula and past papers, making it highly accurate for GCSE-level questions. However, always cross-reference important information with official sources and your teachers. It's a powerful study aid, not a replacement for your textbooks.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Can I share files with classmates?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Currently, file sharing happens through Google Drive's sharing features. Click "Open in Google Drive" on any file to access sharing options. We're developing native sharing features for future releases.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Is my data safe and private?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Absolutely. We use industry-standard encryption, minimal data collection, and transparent privacy policies. Your study materials remain in your Google Drive, and we only access metadata necessary for organization. Read our full Privacy Policy for details.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">Why choose GCSEMate over other study apps?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>GCSEMate is built specifically for UK GCSE students by fellow students who understand the unique challenges. We offer seamless file organization, integrated AI tutoring, affordable pricing (£1/month), and features designed around the actual GCSE curriculum and exam formats.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">How do I get the most out of GCSEMate?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>Start by exploring each subject's file browser, star your most important documents, use the calendar for deadline tracking, engage with the AI Tutor for quick explanations, and take advantage of keyboard shortcuts for faster navigation. Regular use builds familiarity and efficiency.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="checkout-page" class="page hidden p-8 max-w-lg mx-auto text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Upgrade to Pro</h2>
+                    <div class="bg-white/50 p-8 rounded-xl shadow-md border border-white/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-gray-700 mb-6">
+                            To upgrade to the <strong>GCSEMate Pro</strong> plan for <strong>£1/month</strong>, please send an email to the address below to arrange payment.
+                        </p>
+                        <p class="text-lg font-bold text-blue-700 bg-blue-50/50 py-3 rounded-lg border border-blue-200/50 mb-8">
+                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dece9e0e4e3cdeaeefee8e0ecf9e8a3eee2e0">[email&#160;protected]</a>
+                        </p>
+                        <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer id="page-footer" class="bg-gray-100/50 p-6 text-center text-sm text-gray-600 border-t border-gray-200/50 flex-shrink-0">
+            <div id="footer-content" class="space-y-3">
+                <div class="flex items-center justify-center gap-2">
+                    <span>Made with</span>
+                    <span class="text-red-500 animate-pulse">❤️</span>
+                    <span>by</span>
+                    <span class="font-semibold text-blue-600">Mayukhjit Chakraborty</span>
+                </div>
+                <p class="text-xs text-gray-500">Creator & Developer of GCSEMate</p>
+                <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
+                <p class="text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <div id="toast-container"></div>
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
+        <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1/month.</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
+    </div>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAGIgvwuqKr5vIPyimCx4CyKdhXlwc9gyo",
+        authDomain: "gcsemate.firebaseapp.com",
+        projectId: "gcsemate",
+        storageBucket: "gcsemate.appspot.com",
+        messagingSenderId: "704190559234",
+        appId: "1:704190559234:web:dd6ecc107df886c70b231b",
+        measurementId: "G-NSRF8YLS2N"
+      };
+      
+      // Environment-based configuration
+      const isProduction = window.location.hostname === 'gcsemate.com';
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      // Enhanced error logging for production - moved to main script section
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+      const storage = firebase.storage();
+    </script>
+        <!-- External JavaScript -->
+    <script src="app.js"></script>
+    
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"96e0902719929532","version":"2025.7.0","r":1,"token":"541e634d1bf9422f847b0ad79711efd4","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
+</body>
+</html>
