@@ -434,51 +434,15 @@ transform: translateY(-2px);
         /* Enhanced Input Styles */
         .glass-input {
 background: rgba(255, 255, 255, 1);
-border: 2px solid rgba(0, 0, 0, 0.25);
+border: 1px solid rgba(0, 0, 0, 0.2);
 transition: border-color 0.15s ease-out;
         }
         
         .glass-input:focus {
 background: rgba(255, 255, 255, 1);
-border-color: rgba(59, 130, 246, 0.8);
-outline: none;
-box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-        
-        /* Ensure all inputs and textareas have visible borders for accessibility */
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="url"],
-        input[type="search"],
-        input[type="date"],
-        input[type="time"],
-        input[type="number"],
-        textarea,
-        select {
-border: 2px solid rgba(0, 0, 0, 0.25) !important;
-        }
-        
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="password"]:focus,
-        input[type="url"]:focus,
-        input[type="search"]:focus,
-        input[type="date"]:focus,
-        input[type="time"]:focus,
-        input[type="number"]:focus,
-        textarea:focus,
-        select:focus {
-outline: none !important;
-border-color: rgba(59, 130, 246, 0.8) !important;
-box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
-        }
-        
-        /* ContentEditable placeholder */
-        [contenteditable="true"][placeholder]:empty:before {
-content: attr(placeholder);
-color: #9ca3af;
-pointer-events: none;
+border-color: rgba(59, 130, 246, 0.5);
+outline: 2px solid rgba(59, 130, 246, 0.2);
+outline-offset: 2px;
         }
         
         /* Enhanced Text Readability */
@@ -642,38 +606,24 @@ transform: translateZ(0);
 overflow: visible;
         }
         
-        .nav-link::after {
+        .nav-link::before {
 content: '';
 position: absolute;
 bottom: -2px;
-left: 0;
-width: 0;
+left: 50%;
+transform: translateX(-50%) scaleX(0);
+width: 100%;
 height: 3px;
 background: linear-gradient(90deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
 border-radius: 2px;
-transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+opacity: 0;
 z-index: 1;
         }
         
-        /* Ensure nav container and header allow overflow for active indicators */
-        nav {
-overflow: visible !important;
-        }
-        
-        nav .nav-link {
-overflow: visible !important;
-        }
-        
-        header {
-overflow: visible !important;
-        }
-        
-        header nav {
-overflow: visible !important;
-        }
-        
-        .nav-link:hover::after {
-width: 100%;
+        .nav-link:hover::before {
+transform: translateX(-50%) scaleX(1);
+opacity: 1;
         }
         
         /* Active navigation link style */
@@ -682,8 +632,9 @@ color: rgb(var(--accent-600));
 font-weight: 700;
         }
         
-        .nav-link.active::after {
-width: 100%;
+        .nav-link.active::before {
+transform: translateX(-50%) scaleX(1);
+opacity: 1;
         }
         
         /* Override old nav-link styles for enhanced animations */
@@ -1831,128 +1782,427 @@ perspective: 1000px;
 will-change: transform;
         }
         
-        /* Text truncation utilities */
-        .line-clamp-1 {
-display: -webkit-box;
--webkit-line-clamp: 1;
--webkit-box-orient: vertical;
-overflow: hidden;
+        /* Exam Timetable Styles - Integrated into GCSEMate */
+        .exam-timetable-wrapper {
+font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         }
         
-        .line-clamp-2 {
-display: -webkit-box;
--webkit-line-clamp: 2;
--webkit-box-orient: vertical;
-overflow: hidden;
+        .exam-timetable-wrapper :root {
+--one-exam: #FFE36B;
+--multi-exam: #F56A6A;
+--no-exam: #D9D9D9;
+--table-header: #0f4379;
+--table-header-text: #ffffff;
+--table-grid: #234260;
+--row-divider: rgba(0,0,0,.08);
+--page-bg: transparent;
+--card-bg: rgba(255, 255, 255, 0.95);
+--ink: #182230;
+--muted: #4d5b6a;
+--primary: #0f4379;
+--primary-hover: #1a5a9e;
+--success: #10b981;
+--border: #e6ecf4;
+--border-hover: #d1dae6;
         }
         
-        .line-clamp-3 {
-display: -webkit-box;
--webkit-line-clamp: 3;
--webkit-box-orient: vertical;
-overflow: hidden;
+        .exam-timetable-wrapper .wrap {
+max-width: 100%;
+margin: 0;
+padding: 0;
         }
         
-        /* Enhanced professional card styles */
-        .professional-card {
-background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
-border: 1px solid rgba(0, 0, 0, 0.08);
-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        .exam-timetable-wrapper .page-title {
+display: flex;
+align-items: baseline;
+gap: 12px;
+margin: 0 0 20px;
+        }
+        
+        .exam-timetable-wrapper .page-title h1 {
+margin: 0;
+font-size: 28px;
+font-weight: 800;
+letter-spacing: .2px;
+color: var(--ink);
+        }
+        
+        .exam-timetable-wrapper .page-title .sub {
+color: var(--muted);
+font-size: 14px;
+        }
+        
+        .exam-timetable-wrapper .layout {
+display: grid;
+grid-template-columns: 1fr 320px;
+gap: 18px;
+align-items: start;
+        }
+        
+        .exam-timetable-wrapper .card {
+background: var(--card-bg);
+border-radius: 12px;
+box-shadow: 0 4px 12px rgba(12,24,44,.08);
+overflow: hidden;
+border: 1px solid var(--border);
+transition: all 0.3s ease;
+backdrop-filter: blur(10px);
+        }
+        
+        .exam-timetable-wrapper .card:hover {
+box-shadow: 0 6px 20px rgba(12,24,44,.12);
+        }
+        
+        .exam-timetable-wrapper table.timetable {
+width: 100%;
+border-collapse: separate;
+border-spacing: 0;
+table-layout: fixed;
+        }
+        
+        .exam-timetable-wrapper .timetable thead th {
+background: var(--table-header);
+color: var(--table-header-text);
+padding: 12px 10px;
+text-align: left;
+font-weight: 700;
+font-size: 14px;
+border-right: 1px solid rgba(255,255,255,.15);
+        }
+        
+        .exam-timetable-wrapper .timetable thead th:last-child {
+border-right: none;
+        }
+        
+        .exam-timetable-wrapper .timetable colgroup col:nth-child(1) { width: 20%; }
+        .exam-timetable-wrapper .timetable colgroup col:nth-child(2) { width: 38%; }
+        .exam-timetable-wrapper .timetable colgroup col:nth-child(3) { width: 20%; }
+        .exam-timetable-wrapper .timetable colgroup col:nth-child(4) { width: 12%; }
+        .exam-timetable-wrapper .timetable colgroup col:nth-child(5) { width: 10%; }
+        
+        .exam-timetable-wrapper .row {
+display: grid;
+grid-template-columns: 20% 38% 20% 12% 10%;
+border-bottom: 1px solid var(--row-divider);
+min-height: 42px;
+transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+transform: translateX(0);
+opacity: 1;
+        }
+        
+        .exam-timetable-wrapper .row.hidden {
+opacity: 0;
+transform: translateX(-20px);
+height: 0;
+min-height: 0;
+overflow: hidden;
+border-bottom: none;
+margin: 0;
+        }
+        
+        .exam-timetable-wrapper .cell {
+padding: 10px;
+display: flex;
+align-items: center;
+font-size: 14px;
+line-height: 1.25;
+        }
+        
+        .exam-timetable-wrapper .subject {
+font-weight: 700;
+        }
+        
+        .exam-timetable-wrapper .paper {
+font-weight: 500;
+        }
+        
+        .exam-timetable-wrapper .date,
+        .exam-timetable-wrapper .time,
+        .exam-timetable-wrapper .duration {
+font-weight: 600;
+        }
+        
+        .exam-timetable-wrapper .date-input {
+background: rgba(255,255,255,0.2);
+border: 2px solid rgba(255,255,255,0.3);
+border-radius: 6px;
+padding: 4px 8px;
+font-family: inherit;
+font-weight: 600;
+font-size: 14px;
+color: inherit;
+cursor: pointer;
+transition: all 0.2s ease;
+max-width: 140px;
+width: 100%;
+        }
+        
+        .exam-timetable-wrapper .date-input:hover {
+background: rgba(255,255,255,0.3);
+border-color: rgba(255,255,255,0.5);
+        }
+        
+        .exam-timetable-wrapper .date-input:focus {
+outline: none;
+background: rgba(255,255,255,0.9);
+color: #333;
+border-color: var(--primary);
+box-shadow: 0 0 0 3px rgba(15,67,121,0.15);
+        }
+        
+        .exam-timetable-wrapper .row.colored {
+color: #111;
+        }
+        
+        .exam-timetable-wrapper .row.dark-text {
+color: #ffffff;
+        }
+        
+        .exam-timetable-wrapper .row.dark-text .date-input {
+background: rgba(255,255,255,0.15);
+border-color: rgba(255,255,255,0.25);
+        }
+        
+        .exam-timetable-wrapper .row.dark-text .date-input:hover {
+background: rgba(255,255,255,0.25);
+        }
+        
+        .exam-timetable-wrapper .filter-card {
+padding: 16px;
+margin-bottom: 14px;
+        }
+        
+        .exam-timetable-wrapper .filter-card h3 {
+margin: 0 0 12px;
+font-size: 16px;
+font-weight: 800;
+color: var(--ink);
+        }
+        
+        .exam-timetable-wrapper .subject-filters {
+display: grid;
+gap: 8px;
+        }
+        
+        .exam-timetable-wrapper .subject-toggle {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 8px 10px;
+border-radius: 8px;
+cursor: pointer;
+transition: all 0.2s ease;
+border: 1px solid transparent;
+        }
+        
+        .exam-timetable-wrapper .subject-toggle:hover {
+background: rgba(15,67,121,0.05);
+border-color: var(--border-hover);
+        }
+        
+        .exam-timetable-wrapper .subject-checkbox {
+width: 18px;
+height: 18px;
+border: 2px solid var(--border);
+border-radius: 4px;
+position: relative;
+transition: all 0.2s ease;
+flex-shrink: 0;
+        }
+        
+        .exam-timetable-wrapper .subject-checkbox.checked {
+background: var(--primary);
+border-color: var(--primary);
+        }
+        
+        .exam-timetable-wrapper .subject-checkbox.checked::after {
+content: "✓";
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+color: white;
+font-size: 12px;
+font-weight: 700;
+        }
+        
+        .exam-timetable-wrapper .subject-label {
+font-weight: 600;
+font-size: 14px;
+color: var(--ink);
+user-select: none;
+        }
+        
+        .exam-timetable-wrapper .subject-count {
+font-size: 12px;
+font-weight: 500;
+color: var(--muted);
+background: rgba(0,0,0,0.05);
+padding: 2px 6px;
+border-radius: 12px;
+margin-left: auto;
+        }
+        
+        .exam-timetable-wrapper .aside {
+display: grid;
+gap: 14px;
+        }
+        
+        .exam-timetable-wrapper .key.card {
+padding: 16px;
+        }
+        
+        .exam-timetable-wrapper .key h3 {
+margin: 0 0 10px;
+font-size: 18px;
+font-weight: 800;
+text-align: center;
+border: 2px solid #2b2b2b;
+display: inline-block;
+padding: 4px 10px;
+border-radius: 6px;
+width: 100%;
+        }
+        
+        .exam-timetable-wrapper .key .legend {
+display: grid;
+grid-template-columns: 1fr;
+gap: 10px;
+margin-top: 8px;
+padding: 8px;
+border: 1px dashed #c7ced8;
+border-radius: 8px;
+        }
+        
+        .exam-timetable-wrapper .leg-item {
+display: flex;
+align-items: center;
+gap: 10px;
+font-weight: 600;
+        }
+        
+        .exam-timetable-wrapper .swatch {
+width: 28px;
+height: 18px;
+border-radius: 4px;
+border: 1px solid rgba(0,0,0,.15);
+flex-shrink: 0;
+        }
+        
+        .exam-timetable-wrapper .swatch.one {
+background: var(--one-exam);
+        }
+        
+        .exam-timetable-wrapper .swatch.multi {
+background: var(--multi-exam);
+        }
+        
+        .exam-timetable-wrapper .cal.card {
+padding: 12px 14px 16px;
+        }
+        
+        .exam-timetable-wrapper .cal .title {
+text-align: center;
+font-weight: 800;
+font-size: 24px;
+margin: 4px 0 10px;
+        }
+        
+        .exam-timetable-wrapper .cal .grid {
+display: grid;
+grid-template-columns: repeat(7, 1fr);
+gap: 6px;
+        }
+        
+        .exam-timetable-wrapper .cal .dow {
+text-align: center;
+font-weight: 700;
+font-size: 12px;
+color: #2b2b2b;
+        }
+        
+        .exam-timetable-wrapper .cal .day {
+height: 36px;
+border-radius: 8px;
+background: #ffffff;
+border: 1px solid #e2e6ee;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 700;
+font-size: 14px;
+color: #2a2a2a;
 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .professional-card:hover {
-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-transform: translateY(-2px);
-border-color: rgba(59, 130, 246, 0.2);
+        .exam-timetable-wrapper .cal .day.single {
+background: var(--one-exam);
+border-color: rgba(0,0,0,.15);
+transform: scale(1.05);
         }
         
-        /* Enhanced button styles */
-        .btn-professional {
-background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(37, 99, 235) 100%);
-color: white;
+        .exam-timetable-wrapper .cal .day.multi {
+background: var(--multi-exam);
+color: #fff;
+border-color: rgba(0,0,0,.12);
+transform: scale(1.05);
+        }
+        
+        .exam-timetable-wrapper .cal .day.empty {
+background: var(--no-exam);
+color: #777;
+border-color: rgba(0,0,0,.08);
+        }
+        
+        .exam-timetable-wrapper .controls {
+display: flex;
+gap: 12px;
+margin-bottom: 16px;
+align-items: center;
+flex-wrap: wrap;
+        }
+        
+        .exam-timetable-wrapper .btn {
+padding: 8px 16px;
+border: 2px solid var(--border);
+border-radius: 8px;
+background: white;
+color: var(--ink);
+font-family: inherit;
 font-weight: 600;
-padding: 0.75rem 1.5rem;
-border-radius: 0.75rem;
+font-size: 14px;
+cursor: pointer;
 transition: all 0.2s ease;
-box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+display: flex;
+align-items: center;
+gap: 6px;
         }
         
-        .btn-professional:hover {
-background: linear-gradient(135deg, rgb(37, 99, 235) 0%, rgb(29, 78, 216) 100%);
-box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        .exam-timetable-wrapper .btn:hover {
+background: var(--primary);
+color: white;
+border-color: var(--primary);
 transform: translateY(-1px);
         }
         
-        .btn-professional:active {
-transform: translateY(0);
-box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
+        .exam-timetable-wrapper .stats {
+color: var(--muted);
+font-size: 14px;
+margin-left: auto;
         }
         
-        /* Enhanced input styles */
-        .input-professional {
-background: white;
-border: 1.5px solid rgba(0, 0, 0, 0.1);
-border-radius: 0.75rem;
-padding: 0.75rem 1rem;
-transition: all 0.2s ease;
-font-size: 0.9375rem;
+        .exam-timetable-wrapper .updating {
+animation: pulse 0.8s ease-in-out;
         }
         
-        .input-professional:focus {
-outline: none;
-border-color: rgb(59, 130, 246);
-box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        @keyframes pulse {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.5; }
         }
         
-        /* Professional gradient backgrounds */
-        .gradient-professional {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .gradient-subtle {
-background: linear-gradient(135deg, rgba(249, 250, 251, 1) 0%, rgba(243, 244, 246, 1) 100%);
-        }
-        
-        /* Enhanced Calendar Styles */
-        .calendar-day {
-position: relative;
-        }
-        
-        .calendar-day.today {
-background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%);
-border-color: rgb(59, 130, 246) !important;
-        }
-        
-        .calendar-day.has-event {
-border-left: 3px solid rgb(59, 130, 246);
-        }
-        
-        .calendar-day.has-global-event {
-border-left: 3px solid rgb(34, 197, 94);
-        }
-        
-        .calendar-day {
-position: relative;
-overflow: visible;
-        }
-        
-        .calendar-day:hover {
-transform: translateY(-2px) scale(1.02);
-box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
-z-index: 10;
-        }
-        
-        .calendar-day:active {
-transform: translateY(0) scale(1);
-        }
-        
-        /* Calendar event badges */
-        .calendar-day .event-badge {
-font-size: 0.625rem;
-line-height: 1.2;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
+        @media (max-width: 1020px) {
+.exam-timetable-wrapper .layout {
+grid-template-columns: 1fr;
+}
         }
     

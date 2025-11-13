@@ -627,6 +627,10 @@
                     <i class="fas fa-calendar-alt w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
                     Calendar
                 </a>
+                <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="exam-timetable-page" data-tooltip="Exam Timetable">
+                    <i class="fas fa-calendar-check w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
+                    Exam Timetable
+                </a>
                 <a href="#" id="useful-links-nav" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="useful-links-page" data-tooltip="Useful Links">
                     <i class="fas fa-link w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
                     Links
@@ -698,6 +702,13 @@
                     <div>
                         <div class="font-semibold">Calendar</div>
                         <div class="text-sm text-gray-500">Track deadlines & events</div>
+                    </div>
+                </a>
+                <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="exam-timetable-page" tabindex="0">
+                    <i class="fas fa-calendar-check text-2xl mr-3"></i>
+                    <div>
+                        <div class="font-semibold">Exam Timetable</div>
+                        <div class="text-sm text-gray-500">May–June 2026 schedule</div>
                     </div>
                 </a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="useful-links-page" tabindex="0">
@@ -860,6 +871,9 @@
                         <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
                         <div id="calendar-agenda" class="hidden"></div>
                     </div>
+                </div>
+                <div id="exam-timetable-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div id="exam-timetable-container" class="exam-timetable-wrapper"></div>
                 </div>
                 <div id="useful-links-page" class="page hidden p-8 max-w-4xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Useful Links</h2>
