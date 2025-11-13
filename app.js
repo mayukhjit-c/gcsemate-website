@@ -7031,13 +7031,17 @@ function renderItems() {
             const actions = document.createElement('div');
             actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
             if (isFolder) {
+                const safeFolderId = escapeJS(file.id);
                 actions.innerHTML = `
-                    <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                    <button onclick='handleToggleStar("${safeFolderId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
             } else {
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
+                const safeFileName = escapeJS(file.name);
+                const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
+                const safeFileId = escapeJS(file.id);
                 actions.innerHTML = `
-                    <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
-                    <a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${file.name}', 'download', '${path[path.length-1]?.name || 'Unknown'}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                    <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
+                    <a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
@@ -7079,11 +7083,15 @@ function renderItems() {
             actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
             // Add star button for both files and folders
             if (isFolder) {
-                actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                const safeFolderId = escapeJS(file.id);
+                actions.innerHTML += `<button onclick='handleToggleStar("${safeFolderId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
             } else {
-                actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                const safeFileId = escapeJS(file.id);
+                const safeFileName = escapeJS(file.name);
+                const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
+                actions.innerHTML += `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
-                actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${file.name}', 'download', '${path[path.length-1]?.name || 'Unknown'}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(mainInfo);
             itemElement.appendChild(actions);
@@ -7919,21 +7927,22 @@ async function handleSaveBlogPost() {
     }
 }
 // WYSIWYG Rich Text Editor Functions
-function formatText(command, value = null) {
+// Make functions globally accessible for inline onclick handlers
+window.formatText = function(command, value = null) {
     const editor = document.getElementById('blog-post-content');
     if (!editor) return;
     
     editor.focus();
     document.execCommand(command, false, value);
     updateToolbarState();
-}
+};
 
-function insertLink() {
+window.insertLink = function() {
     const url = prompt('Enter URL:');
     if (url) {
-        formatText('createLink', url);
+        window.formatText('createLink', url);
     }
-}
+};
 
 function updateToolbarState() {
     const toolbar = document.getElementById('blog-editor-toolbar');
@@ -8032,7 +8041,7 @@ function showBlogPostViewer(postId) {
                 ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
                 <div class="p-8 prose prose-lg max-w-none">
                     <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
-                    ${post.content}
+                    <div class="blog-content">${sanitizeHTML(post.content)}</div>
                     <div class="mt-6 flex items-center gap-2">
                         <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
                     </div>
@@ -9367,25 +9376,95 @@ function applyAccent(p) {
     r.style.setProperty('--accent-700', get(p.sevenHundred || p.sevenHunded || p.sixHundred).join(' '));
 }
 
+// Security helper: Escape JavaScript string for use in onclick handlers
+function escapeJS(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+}
+
+// Security helper: Sanitize HTML content to prevent XSS
+// Allows safe formatting tags from contentEditable but removes script tags and dangerous attributes
+function sanitizeHTML(html) {
+    if (!html) return '';
+    // Create a temporary container
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    
+    // Remove script tags and event handlers
+    const scripts = temp.querySelectorAll('script, style[on*], *[onclick], *[onerror], *[onload]');
+    scripts.forEach(el => el.remove());
+    
+    // Remove dangerous attributes
+    const allElements = temp.querySelectorAll('*');
+    allElements.forEach(el => {
+        // Remove all event handler attributes
+        Array.from(el.attributes).forEach(attr => {
+            if (attr.name.startsWith('on')) {
+                el.removeAttribute(attr.name);
+            }
+            // Remove javascript: and data: URLs
+            if (attr.name === 'href' || attr.name === 'src') {
+                const value = attr.value.toLowerCase();
+                if (value.startsWith('javascript:') || value.startsWith('data:')) {
+                    el.removeAttribute(attr.name);
+                }
+            }
+        });
+    });
+    
+    return temp.innerHTML;
+}
+
 // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
 function openEventModal(date) {
     const modal = document.getElementById('event-modal');
     const userIsAdmin = currentUser.role === 'admin';
-    const eventsForDay = calendarUserEvents[date] || [];
-    const globalEventsForDay = calendarGlobalEvents[date] || [];
+    
+    // Get events for this day, including multi-day events that span this date (same logic as renderCalendar)
+    const getEventsForDate = (eventsObj) => {
+        const directEvents = eventsObj[date] || [];
+        const multiDayEvents = Object.entries(eventsObj).flatMap(([key, events]) => {
+            return events.filter(ev => {
+                if (!ev.endDate || ev.endDate === ev.date) return false;
+                const start = new Date(ev.date + 'T00:00:00');
+                const end = new Date(ev.endDate + 'T00:00:00');
+                const current = new Date(date + 'T00:00:00');
+                return current >= start && current <= end;
+            });
+        });
+        return [...directEvents, ...multiDayEvents];
+    };
+    
+    const eventsForDay = getEventsForDate(calendarUserEvents);
+    const globalEventsForDay = getEventsForDate(calendarGlobalEvents);
     
     let eventsHtml = '<p class="text-gray-500 text-sm">No events for this day.</p>';
     if (eventsForDay.length > 0 || globalEventsForDay.length > 0) {
-        eventsHtml = [...globalEventsForDay, ...eventsForDay].map(event => `
+        eventsHtml = [...globalEventsForDay, ...eventsForDay].map(event => {
+            const safeDate = escapeJS(date);
+            const safeId = escapeJS(event.id);
+            const safeTitle = escapeJS(event.title);
+            const safeDesc = escapeJS(event.description || '');
+            // Escape HTML for display
+            const safeTitleHTML = String(event.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+            const safeDescHTML = String(event.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+            return `
             <div class="p-3 rounded-lg ${event.isGlobal ? 'bg-green-100' : 'bg-blue-100'}">
-                <p class="font-bold text-gray-800">${event.title}</p>
-                <p class="text-sm text-gray-600">${event.description || ''}</p>
+                <p class="font-bold text-gray-800">${safeTitleHTML}</p>
+                <p class="text-sm text-gray-600">${safeDescHTML}</p>
                 <div class="text-right mt-2">
-                    <button onclick="editEvent('${date}', '${event.id}', ${event.isGlobal})" class="text-sm font-semibold text-blue-600 hover:underline">Edit</button>
-                    <button onclick="deleteEvent('${date}', '${event.id}', ${event.isGlobal})" class="text-sm font-semibold text-red-600 hover:underline ml-2">Delete</button>
+                    <button onclick="editEvent('${safeDate}', '${safeId}', ${event.isGlobal})" class="text-sm font-semibold text-blue-600 hover:underline">Edit</button>
+                    <button onclick="deleteEvent('${safeDate}', '${safeId}', ${event.isGlobal})" class="text-sm font-semibold text-red-600 hover:underline ml-2">Delete</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
