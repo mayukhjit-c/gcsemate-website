@@ -5453,12 +5453,15 @@ async function updateAnalytics() {
         updateServerTime();
         
         // Content stats
-        document.getElementById('total-files-count').textContent = Object.keys(allSubjectFolders).length;
-        document.getElementById('blog-posts-count').textContent = allBlogPosts.length;
+        const totalFilesEl = document.getElementById('total-files-count');
+        if (totalFilesEl) totalFilesEl.textContent = Object.keys(allSubjectFolders).length;
+        const blogPostsEl = document.getElementById('blog-posts-count');
+        if (blogPostsEl) blogPostsEl.textContent = allBlogPosts.length;
         
         // Get playlists count
         const playlistsSnapshot = await db.collection('videoPlaylists').get();
-        document.getElementById('playlists-count').textContent = playlistsSnapshot.size;
+        const playlistsCountEl = document.getElementById('playlists-count');
+        if (playlistsCountEl) playlistsCountEl.textContent = playlistsSnapshot.size;
         
         // Update engagement metrics
         await updateEngagementMetrics();
