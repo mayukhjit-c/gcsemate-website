@@ -230,6 +230,9 @@
             script.src = 'https://cdn.tailwindcss.com';
             
             script.onload = function() {
+                // Mark Tailwind as loaded to show content
+                document.body.classList.add('tailwind-loaded');
+                
                 // Only apply override if script loads successfully
                 if (!warnOverrideActive) {
                     console.warn = createWarnWrapper();
@@ -249,6 +252,11 @@
                         // File doesn't exist, CDN is already loaded
                     });
             };
+            
+            // Fallback: Show content after timeout if Tailwind doesn't load
+            setTimeout(() => {
+                document.body.classList.add('tailwind-loaded');
+            }, 3000);
             
             script.onerror = function() {
                 // If CDN fails to load, don't modify console.warn
@@ -280,7 +288,13 @@
     
     </head>
     <!-- External JavaScript will be loaded after body for better performance -->
-    <body class="bg-gray-100 min-h-screen">
+    <body class="bg-gray-100 min-h-screen relative">
+    <!-- Hide content until Tailwind loads to prevent FOUC -->
+    <style>
+        body:not(.tailwind-loaded) > *:not(#app-loading):not(script) {
+            visibility: hidden;
+        }
+    </style>
     <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
@@ -517,8 +531,8 @@
              <p id="resend-message" class="text-sm text-green-600 mt-4 h-4"></p>
         </div>
     </div>
-    <div id="login-page" class="hidden w-full max-w-sm fade-in">
-        <div class="modern-card rounded-2xl shadow-xl p-8">
+    <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-black/20 backdrop-blur-sm">
+        <div class="w-full max-w-md modern-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white/95 backdrop-blur-lg border border-white/20">
             <div class="flex justify-center items-center mb-4">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>

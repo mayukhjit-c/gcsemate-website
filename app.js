@@ -3302,9 +3302,9 @@ async function handleLogin() {
         
         // Enterprise reCAPTCHA token acquisition
         try {
-            if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
-                await grecaptcha.ready();
-                const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
+            if (window.grecaptcha && typeof window.grecaptcha.ready === 'function' && RECAPTCHA_SITE_KEY) {
+                await window.grecaptcha.ready();
+                const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                 try {
                     const verifyRes = await fetch('/api/recaptcha-verify', {
                         method: 'POST',
@@ -3327,7 +3327,10 @@ async function handleLogin() {
                 }
             }
         } catch (e) {
-            console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
+            // Only log if it's a real error, not just missing grecaptcha
+            if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
+                console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
+            }
         }
         
         const persistence = rememberMe 
@@ -6468,7 +6471,19 @@ function renderError(container, message) {
 
 function showAuthPage(showLogin = true) {
     document.getElementById('landing-page').classList.add('hidden');
-    document.getElementById('login-page').classList.remove('hidden');
+    const loginPage = document.getElementById('login-page');
+    loginPage.classList.remove('hidden');
+    
+    // Add click handler to close on backdrop click
+    const backdropClickHandler = (e) => {
+        if (e.target === loginPage) {
+            loginPage.classList.add('hidden');
+            document.getElementById('landing-page').classList.remove('hidden');
+            loginPage.removeEventListener('click', backdropClickHandler);
+        }
+    };
+    loginPage.addEventListener('click', backdropClickHandler);
+    
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const formTitle = document.getElementById('form-title');
@@ -7012,14 +7027,18 @@ function renderItems() {
                 itemElement.addEventListener('click', () => showPreview(file));
             }
             
-            if (!isFolder) {
-                const actions = document.createElement('div');
-                actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
+            // Add star button for both files and folders
+            const actions = document.createElement('div');
+            actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
+            if (isFolder) {
+                actions.innerHTML = `
+                    <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+            } else {
                 actions.innerHTML = `
                     <button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
                     <a href="${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
-                itemElement.appendChild(actions);
             }
+            itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
             container.appendChild(itemElement);
             // animate in, staggered
@@ -7057,7 +7076,10 @@ function renderItems() {
             }
             const actions = document.createElement('div');
             actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
-            if (!isFolder) {
+            // Add star button for both files and folders
+            if (isFolder) {
+                actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+            } else {
                 actions.innerHTML += `<button onclick='handleToggleStar("${file.id}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                 actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${file.name}', 'download', '${path[path.length-1]?.name || 'Unknown'}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
