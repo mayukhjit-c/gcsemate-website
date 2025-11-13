@@ -3367,11 +3367,16 @@ function renderUserManagementPanel(allUsers) {
     }).length;
     
     // Update statistics display
-    document.getElementById('total-users-count').textContent = totalUsers;
-    document.getElementById('free-users-count').textContent = freeUsers;
-    document.getElementById('paid-users-count').textContent = paidUsers;
-    document.getElementById('admin-users-count').textContent = adminUsers;
-    document.getElementById('active-today-count').textContent = activeToday;
+    const totalUsersEl = document.getElementById('total-users-count');
+    if (totalUsersEl) totalUsersEl.textContent = totalUsers;
+    const freeUsersEl = document.getElementById('free-users-count');
+    if (freeUsersEl) freeUsersEl.textContent = freeUsers;
+    const paidUsersEl = document.getElementById('paid-users-count');
+    if (paidUsersEl) paidUsersEl.textContent = paidUsers;
+    const adminUsersEl = document.getElementById('admin-users-count');
+    if (adminUsersEl) adminUsersEl.textContent = adminUsers;
+    const activeTodayEl = document.getElementById('active-today-count');
+    if (activeTodayEl) activeTodayEl.textContent = activeToday;
     
     let list = Object.values(allUsers);
     // Apply filters
@@ -4840,21 +4845,25 @@ function updateActivityStats(activities) {
     
     // Count files opened today
     const filesOpened = todayActivities.filter(a => a.activityType === 'file_open').length;
-    document.getElementById('files-opened-today').textContent = filesOpened;
+    const filesOpenedEl = document.getElementById('files-opened-today');
+    if (filesOpenedEl) filesOpenedEl.textContent = filesOpened;
     
     // Count subjects studied today
     const subjectsStudied = new Set(todayActivities.filter(a => a.activityType === 'subject_start').map(a => a.subject)).size;
-    document.getElementById('subjects-studied-today').textContent = subjectsStudied;
+    const subjectsStudiedEl = document.getElementById('subjects-studied-today');
+    if (subjectsStudiedEl) subjectsStudiedEl.textContent = subjectsStudied;
     
     // Calculate average study time
     const studyTimes = todayActivities.filter(a => a.timeSpent).map(a => a.timeSpent);
     const avgStudyTime = studyTimes.length > 0 ? Math.round(studyTimes.reduce((a, b) => a + b, 0) / studyTimes.length / 1000 / 60) : 0;
-    document.getElementById('avg-study-time').textContent = `${avgStudyTime}m`;
+    const avgStudyTimeEl = document.getElementById('avg-study-time');
+    if (avgStudyTimeEl) avgStudyTimeEl.textContent = `${avgStudyTime}m`;
 }
 
 // Update session statistics
 function updateSessionStats(sessions) {
-    document.getElementById('active-sessions-count').textContent = sessions.length;
+    const activeSessionsEl = document.getElementById('active-sessions-count');
+    if (activeSessionsEl) activeSessionsEl.textContent = sessions.length;
 }
 
 // Update user activity table
@@ -5413,22 +5422,32 @@ async function updateAnalytics() {
         const adminUsers = Object.values(allUsers).filter(user => user.role === 'admin').length;
         
         // Update basic counts
-        document.getElementById('total-users-count').textContent = totalUsers;
-        document.getElementById('free-users-count').textContent = freeUsers;
-        document.getElementById('paid-users-count').textContent = paidUsers;
-        document.getElementById('admin-users-count').textContent = adminUsers;
-        document.getElementById('active-today-count').textContent = activeToday;
+        const totalUsersEl = document.getElementById('total-users-count');
+        if (totalUsersEl) totalUsersEl.textContent = totalUsers;
+        const freeUsersEl = document.getElementById('free-users-count');
+        if (freeUsersEl) freeUsersEl.textContent = freeUsers;
+        const paidUsersEl = document.getElementById('paid-users-count');
+        if (paidUsersEl) paidUsersEl.textContent = paidUsers;
+        const adminUsersEl = document.getElementById('admin-users-count');
+        if (adminUsersEl) adminUsersEl.textContent = adminUsers;
+        const activeTodayEl = document.getElementById('active-today-count');
+        if (activeTodayEl) activeTodayEl.textContent = activeToday;
         
         // Update enhanced analytics
         const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0.0';
         const monthlyRevenue = paidUsers * 0.20; // 20p per user per month (excluding VAT)
         const growthPercentage = await calculateGrowthPercentage();
         
-        document.getElementById('free-conversion-rate').textContent = conversionRate + '%';
-        document.getElementById('monthly-revenue').textContent = '£' + monthlyRevenue;
-        document.getElementById('growth-percentage').textContent = growthPercentage;
-        document.getElementById('active-week-count').textContent = activeWeek;
-        document.getElementById('new-month-count').textContent = newMonth;
+        const conversionRateEl = document.getElementById('free-conversion-rate');
+        if (conversionRateEl) conversionRateEl.textContent = conversionRate + '%';
+        const monthlyRevenueEl = document.getElementById('monthly-revenue');
+        if (monthlyRevenueEl) monthlyRevenueEl.textContent = '£' + monthlyRevenue;
+        const growthPercentageEl = document.getElementById('growth-percentage');
+        if (growthPercentageEl) growthPercentageEl.textContent = growthPercentage;
+        const activeWeekEl = document.getElementById('active-week-count');
+        if (activeWeekEl) activeWeekEl.textContent = activeWeek;
+        const newMonthEl = document.getElementById('new-month-count');
+        if (newMonthEl) newMonthEl.textContent = newMonth;
         
         // Update server time
         updateServerTime();
