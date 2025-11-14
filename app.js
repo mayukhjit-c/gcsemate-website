@@ -2408,12 +2408,12 @@ const subjectSpecifications = {
         }
     },
     english: {
-        'AQA': {
+        'AQA Language': {
             url: 'https://filestore.aqa.org.uk/resources/english/specifications/AQA-8700-SP-2015.PDF',
             label: 'AQA GCSE English Language',
             tier: ''
         },
-        'Edexcel': {
+        'Edexcel Language': {
             url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/english-language/2015/specification-and-sample-assessments/GCSE_English_Language_Specification.pdf',
             label: 'Edexcel GCSE English Language',
             tier: ''
@@ -2421,21 +2421,21 @@ const subjectSpecifications = {
     },
     history: {
         'Edexcel': {
-            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/history/2016/specification-and-sample-assessments/GCSE_History_Specification.pdf',
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/History/2016/specification-and-sample-assessments/gcse-9-1-history-specification.pdf',
             label: 'Edexcel GCSE History',
             tier: ''
         }
     },
     geography: {
         'OCR': {
-            url: 'https://www.ocr.org.uk/Images/207306-specification-accredited-gcse-geography-b-j384.pdf',
+            url: 'https://www.ocr.org.uk/Images/207307-specification-taught-before-september-2025-with-final-assessments-summer-2026.pdf',
             label: 'OCR GCSE Geography B (Exams ending 2026)',
             tier: ''
         }
     },
     computing: {
         'OCR': {
-            url: 'https://www.ocr.org.uk/Images/234975-specification-accredited-gcse-computer-science-j277.pdf',
+            url: 'https://www.ocr.org.uk/Images/558027-specification-gcse-computer-science-j277.pdf',
             label: 'OCR GCSE Computer Science',
             tier: ''
         }
@@ -2449,14 +2449,14 @@ const subjectSpecifications = {
     },
     music: {
         'Edexcel': {
-            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/music/2016/specification-and-sample-assessments/GCSE_Music_Specification.pdf',
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/Music/2016/specification/Pearson_Edexcel_GCSE_9_to_1_in_Music_Specification_issue4.pdf',
             label: 'Edexcel GCSE Music',
             tier: ''
         }
     },
     'philosophy and ethics': {
         'Eduqas': {
-            url: 'https://www.eduqas.co.uk/qualifications/religious-studies/gcse/eduqas-gcse-religious-studies-spec-from-2016.pdf',
+            url: 'https://www.eduqas.co.uk/media/w42hvhgp/eduqas-gcse-rs-spec-full-from-2016-e-1109.pdf',
             label: 'Eduqas GCSE Religious Studies (Philosophy & Ethics)',
             tier: ''
         }
@@ -2483,8 +2483,8 @@ const subjectIconMap = {
     music: `<i class="fas fa-music text-4xl text-purple-600 mb-3"></i>`,
     // Computing: laptop
     computing: `<i class="fas fa-laptop text-4xl text-blue-600 mb-3"></i>`,
-    // Philosophy and Ethics: balanced scales outline
-    "philosophy and ethics": `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-10 w-10 mb-3 text-amber-600\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 3v3\"/><path d=\"M7 6h10\"/><path d=\"M6 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M18 10l-3 5a3 3 0 006 0l-3-5z\"/><path d=\"M12 9v9\"/><path d=\"M7 20h10\"/></svg>`
+    // Philosophy and Ethics: balance scale icon
+    "philosophy and ethics": `<i class="fas fa-balance-scale text-4xl text-amber-600 mb-3"></i>`
 };
 // =================================================================================
 // CORE INITIALIZATION & AUTHENTICATION
@@ -6728,7 +6728,16 @@ async function renderDashboard() {
                 specEntries.forEach(([board, spec]) => {
                     const specButton = document.createElement('button');
                     specButton.className = 'w-full mt-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5 flex-shrink-0';
-                    specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i> <span>View Spec${spec.tier ? ` (${spec.tier})` : ''}</span>`;
+                    // For English, show Language/Literature clearly in button text
+                    let buttonText = 'View Spec';
+                    if (board.includes('Language')) {
+                        buttonText = 'View Spec (Language)';
+                    } else if (board.includes('Literature')) {
+                        buttonText = 'View Spec (Literature)';
+                    } else if (spec.tier) {
+                        buttonText = `View Spec (${spec.tier})`;
+                    }
+                    specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i> <span>${buttonText}</span>`;
                     specButton.setAttribute('data-tooltip', spec.label);
                     specButton.onclick = (e) => {
                         e.stopPropagation(); // Prevent card click
