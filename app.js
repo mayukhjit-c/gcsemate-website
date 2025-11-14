@@ -819,105 +819,210 @@ window.getSystemHealth = () => {
     };
 };
 
-// System Health Modal
+// System Health Modal - Enhanced with error copying and better UI
 function showSystemHealthModal() {
     if (currentUser?.role !== 'admin') return;
     
     const healthData = getSystemHealth();
+    const hasErrors = healthData.tests.failedTests.length > 0 || healthData.errors.totalErrors > 0;
+    const allErrors = [
+        ...healthData.tests.failedTests.map(t => `[TEST FAILED] ${t.name}: ${t.message}${t.details ? ` - ${t.details}` : ''}`),
+        ...Object.entries(healthData.errors.errorTypes).map(([type, count]) => `[ERROR] ${type}: ${count} occurrence(s)`)
+    ];
+    const errorsText = allErrors.join('\n');
+    
+    // Auto-copy errors to clipboard if any exist
+    if (hasErrors && errorsText) {
+        navigator.clipboard.writeText(errorsText).then(() => {
+            showToast('Errors automatically copied to clipboard', 'info');
+        }).catch(() => {
+            // Fallback if clipboard API fails
+        });
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
-        <div class="bg-white rounded-xl p-8 max-w-4xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">System Health Dashboard</h2>
-                <button onclick="this.closest('.fixed').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+        <div class="bg-white rounded-xl p-6 max-w-6xl mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-6 flex-shrink-0">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-heartbeat ${hasErrors ? 'text-red-600' : 'text-green-600'}"></i>
+                        System Health Dashboard
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">Comprehensive system diagnostics and monitoring</p>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Health Status -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Health Status</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span>Overall Status:</span>
-                            <span class="font-semibold ${healthData.health.isHealthy ? 'text-green-600' : 'text-red-600'}">
-                                ${healthData.health.isHealthy ? 'Healthy' : 'Issues'}
-                            </span>
+            <div class="overflow-y-auto flex-1 pr-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <!-- Health Status -->
+                    <div class="bg-gradient-to-br ${hasErrors ? 'from-red-50 to-red-100' : 'from-green-50 to-green-100'} p-5 rounded-xl border-2 ${hasErrors ? 'border-red-200' : 'border-green-200'}">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Health Status</h3>
+                            <i class="fas ${hasErrors ? 'fa-exclamation-triangle text-red-600' : 'fa-check-circle text-green-600'} text-2xl"></i>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Last Check:</span>
-                            <span class="text-sm text-gray-600">${healthData.health.lastCheck ? new Date(healthData.health.lastCheck).toLocaleTimeString() : 'Never'}</span>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Overall Status:</span>
+                                <span class="px-3 py-1 text-xs font-bold rounded-full ${hasErrors ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}">
+                                    ${hasErrors ? 'Issues Detected' : 'All Systems Healthy'}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Last Check:</span>
+                                <span class="text-sm font-mono text-gray-600">${healthData.health.lastCheck ? new Date(healthData.health.lastCheck).toLocaleString() : 'Never'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Results -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Test Results</h3>
+                            <i class="fas fa-vial text-gray-400"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Tests Passed:</span>
+                                <span class="font-bold text-lg ${healthData.tests.passed === healthData.tests.total ? 'text-green-600' : 'text-orange-600'}">${healthData.tests.passed}/${healthData.tests.total}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Success Rate:</span>
+                                <span class="font-semibold ${healthData.tests.successRate >= 90 ? 'text-green-600' : healthData.tests.successRate >= 70 ? 'text-orange-600' : 'text-red-600'}">${healthData.tests.successRate}%</span>
+                            </div>
+                            ${healthData.tests.failedTests.length > 0 ? `
+                                <div class="mt-3 pt-3 border-t border-gray-300">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-red-600">Failed Tests:</span>
+                                        <button onclick="copyErrorsToClipboard()" class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors flex items-center gap-1">
+                                            <i class="fas fa-copy text-xs"></i> Copy
+                                        </button>
+                                    </div>
+                                    <div class="max-h-32 overflow-y-auto space-y-1">
+                                        ${healthData.tests.failedTests.map((test, idx) => `
+                                            <div class="text-xs bg-red-50 p-2 rounded border border-red-200">
+                                                <div class="font-semibold text-red-800">${test.name}</div>
+                                                <div class="text-red-600 mt-1">${escapeHTML(test.message)}</div>
+                                                ${test.details ? `<div class="text-red-500 text-xs mt-1 font-mono">${escapeHTML(test.details)}</div>` : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Error Summary -->
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Error Summary</h3>
+                            <i class="fas fa-exclamation-circle text-gray-400"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Total Errors:</span>
+                                <span class="px-3 py-1 text-sm font-bold rounded-full ${healthData.errors.totalErrors < 5 ? 'bg-green-100 text-green-800' : healthData.errors.totalErrors < 20 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}">${healthData.errors.totalErrors}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">Error Types:</span>
+                                <span class="text-sm font-semibold text-gray-800">${Object.keys(healthData.errors.errorTypes).length}</span>
+                            </div>
+                            ${Object.keys(healthData.errors.errorTypes).length > 0 ? `
+                                <div class="mt-3 pt-3 border-t border-gray-300">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-gray-700">Error Breakdown:</span>
+                                        <button onclick="copyErrorBreakdownToClipboard()" class="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center gap-1">
+                                            <i class="fas fa-copy text-xs"></i> Copy
+                                        </button>
+                                    </div>
+                                    <div class="max-h-32 overflow-y-auto space-y-1">
+                                        ${Object.entries(healthData.errors.errorTypes).map(([type, count]) => `
+                                            <div class="flex justify-between items-center text-xs bg-gray-100 p-2 rounded">
+                                                <span class="font-medium text-gray-800">${escapeHTML(type)}</span>
+                                                <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">${count}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
                 
-                <!-- Test Results -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Test Results</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span>Tests Passed:</span>
-                            <span class="font-semibold text-green-600">${healthData.tests.passed}/${healthData.tests.total}</span>
+                ${hasErrors ? `
+                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-5 mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-red-800 flex items-center gap-2">
+                                <i class="fas fa-bug"></i>
+                                All Errors (Full Details)
+                            </h3>
+                            <button onclick="copyAllErrorsToClipboard()" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                <i class="fas fa-copy"></i> Copy All Errors
+                            </button>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Success Rate:</span>
-                            <span class="font-semibold">${healthData.tests.successRate}%</span>
+                        <div class="bg-white rounded-lg p-4 max-h-64 overflow-y-auto border border-red-200">
+                            <pre class="text-xs font-mono text-gray-800 whitespace-pre-wrap">${escapeHTML(errorsText)}</pre>
                         </div>
-                        ${healthData.tests.failedTests.length > 0 ? `
-                            <div class="mt-2">
-                                <span class="text-sm text-red-600">Failed Tests:</span>
-                                <ul class="text-xs text-gray-600 mt-1">
-                                    ${healthData.tests.failedTests.map(test => `<li>• ${test.name}: ${test.message}</li>`).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
                     </div>
-                </div>
-                
-                <!-- Error Summary -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Error Summary</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span>Total Errors:</span>
-                            <span class="font-semibold ${healthData.errors.totalErrors < 5 ? 'text-green-600' : 'text-red-600'}">${healthData.errors.totalErrors}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Error Types:</span>
-                            <span class="text-sm text-gray-600">${Object.keys(healthData.errors.errorTypes).length}</span>
-                        </div>
-                        ${Object.keys(healthData.errors.errorTypes).length > 0 ? `
-                            <div class="mt-2">
-                                <span class="text-sm text-gray-600">Error Breakdown:</span>
-                                <ul class="text-xs text-gray-600 mt-1">
-                                    ${Object.entries(healthData.errors.errorTypes).map(([type, count]) => `<li>• ${type}: ${count}</li>`).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
+                ` : ''}
             </div>
             
-            <div class="mt-6 flex gap-3 justify-center">
-                <button onclick="websiteValidator.runAllTests(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                    Run Tests
+            <div class="mt-6 flex gap-3 justify-center flex-shrink-0 pt-4 border-t border-gray-200">
+                <button onclick="websiteValidator.runAllTests(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i class="fas fa-vial"></i> Run Tests
                 </button>
-                <button onclick="healthMonitor.runHealthChecks(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
-                    Check Health
+                <button onclick="checkSystemHealth(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i class="fas fa-stethoscope"></i> Full Diagnostics
                 </button>
-                <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                <button onclick="viewSystemLogs()" class="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i class="fas fa-list-alt"></i> View Logs
+                </button>
+                <button onclick="this.closest('.fixed').remove()" class="px-5 py-2.5 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
                     Close
                 </button>
             </div>
         </div>
     `;
     
+    // Store errors text for copy functions
+    window.currentHealthErrors = errorsText;
+    window.currentHealthData = healthData;
+    
     document.body.appendChild(modal);
 }
+
+// Copy error functions
+window.copyErrorsToClipboard = function() {
+    const failedTests = window.currentHealthData?.tests?.failedTests || [];
+    const errorsText = failedTests.map(t => `[TEST FAILED] ${t.name}: ${t.message}${t.details ? ` - ${t.details}` : ''}`).join('\n');
+    if (errorsText) {
+        navigator.clipboard.writeText(errorsText).then(() => {
+            showToast('Failed tests copied to clipboard', 'success');
+        });
+    }
+};
+
+window.copyErrorBreakdownToClipboard = function() {
+    const errorTypes = window.currentHealthData?.errors?.errorTypes || {};
+    const errorsText = Object.entries(errorTypes).map(([type, count]) => `[ERROR] ${type}: ${count} occurrence(s)`).join('\n');
+    if (errorsText) {
+        navigator.clipboard.writeText(errorsText).then(() => {
+            showToast('Error breakdown copied to clipboard', 'success');
+        });
+    }
+};
+
+window.copyAllErrorsToClipboard = function() {
+    if (window.currentHealthErrors) {
+        navigator.clipboard.writeText(window.currentHealthErrors).then(() => {
+            showToast('All errors copied to clipboard', 'success');
+        });
+    }
+};
 
 // Enhanced performance utilities
 // Enhanced debounce with immediate option
@@ -6207,43 +6312,263 @@ async function viewSystemLogs() {
     if (currentUser.role !== 'admin') return;
     
     try {
-        const logsSnapshot = await db.collection('systemLogs').orderBy('timestamp', 'desc').limit(50).get();
+        const logsSnapshot = await db.collection('systemLogs').orderBy('timestamp', 'desc').limit(100).get();
         const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        const modal = document.getElementById('confirmation-modal');
-        modal.style.display = 'flex';
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
+        modal.id = 'system-logs-modal';
+        
+        const levelColors = {
+            'ERROR': 'bg-red-100 text-red-800 border-red-300',
+            'WARN': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+            'INFO': 'bg-blue-100 text-blue-800 border-blue-300',
+            'DEBUG': 'bg-gray-100 text-gray-800 border-gray-300'
+        };
+        
+        const levelIcons = {
+            'ERROR': 'fa-exclamation-circle',
+            'WARN': 'fa-exclamation-triangle',
+            'INFO': 'fa-info-circle',
+            'DEBUG': 'fa-bug'
+        };
+        
         modal.innerHTML = `
-            <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
-                <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800">System Logs</h3>
-                    <button onclick="document.getElementById('confirmation-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none">×</button>
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 flex flex-col max-h-[90vh]">
+                <div class="p-5 border-b border-gray-200 flex justify-between items-center flex-shrink-0 bg-gradient-to-r from-gray-50 to-white">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-list-alt text-blue-600"></i>
+                            System Logs
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">${logs.length} log entries loaded</p>
+                    </div>
+                    <button onclick="document.getElementById('system-logs-modal').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
                 </div>
-                <div class="p-6 overflow-y-auto">
-                    <div class="space-y-2">
-                        ${logs.map(log => `
-                            <div class="bg-gray-50 p-3 rounded-lg text-sm">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <span class="font-semibold">${log.level || 'INFO'}</span>
-                                        <span class="text-gray-600 ml-2">${log.message || 'No message'}</span>
-                                    </div>
-                                    <span class="text-gray-500 text-xs">${log.timestamp ? formatDateUK(log.timestamp.toDate ? log.timestamp.toDate() : log.timestamp) : 'Unknown'}</span>
-                                </div>
-                                ${log.details ? `<div class="mt-1 text-gray-600 text-xs">${log.details}</div>` : ''}
-                            </div>
-                        `).join('')}
+                
+                <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center gap-3 flex-shrink-0">
+                    <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                        <i class="fas fa-filter text-gray-400"></i>
+                        <select id="log-level-filter" class="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Levels</option>
+                            <option value="ERROR">Errors Only</option>
+                            <option value="WARN">Warnings</option>
+                            <option value="INFO">Info</option>
+                            <option value="DEBUG">Debug</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                        <i class="fas fa-search text-gray-400"></i>
+                        <input type="text" id="log-search-input" placeholder="Search logs..." class="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportSystemLogs()" class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button onclick="copyAllLogsToClipboard()" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-copy"></i> Copy All
+                        </button>
+                        <button onclick="clearSystemLogs()" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
                     </div>
                 </div>
-                <div class="p-4 border-t border-gray-200/50 flex justify-end">
-                    <button onclick="document.getElementById('confirmation-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Close</button>
+                
+                <div id="logs-container" class="p-5 overflow-y-auto flex-1">
+                    <div class="space-y-3">
+                        ${logs.length === 0 ? `
+                            <div class="text-center py-12">
+                                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                                <p class="text-gray-600">No system logs found</p>
+                            </div>
+                        ` : logs.map(log => {
+                            const level = (log.level || 'INFO').toUpperCase();
+                            const colorClass = levelColors[level] || levelColors['INFO'];
+                            const icon = levelIcons[level] || levelIcons['INFO'];
+                            const timestamp = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp)) : null;
+                            const detailsStr = log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : String(log.details)) : '';
+                            
+                            return `
+                                <div class="log-entry bg-white border-l-4 ${colorClass.split(' ')[2]} rounded-lg shadow-sm hover:shadow-md transition-all" data-level="${level}" data-log-id="${log.id}">
+                                    <div class="p-4">
+                                        <div class="flex items-start justify-between gap-3 mb-2">
+                                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                                <i class="fas ${icon} text-lg"></i>
+                                                <span class="px-2 py-1 text-xs font-bold rounded-full ${colorClass}">${level}</span>
+                                                <span class="text-sm font-semibold text-gray-800 truncate">${escapeHTML(log.message || 'No message')}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 flex-shrink-0">
+                                                ${timestamp ? `<span class="text-xs text-gray-500 font-mono whitespace-nowrap">${timestamp.toLocaleString()}</span>` : ''}
+                                                <button onclick="dismissLog('${log.id}')" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" data-tooltip="Dismiss" aria-label="Dismiss log">
+                                                    <i class="fas fa-times text-xs"></i>
+                                                </button>
+                                                ${detailsStr ? `
+                                                    <button onclick="copyLogDetails('${log.id}')" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" data-tooltip="Copy details" aria-label="Copy log details">
+                                                        <i class="fas fa-copy text-xs"></i>
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                        ${detailsStr ? `
+                                            <div class="mt-2 pt-2 border-t border-gray-200">
+                                                <details class="group">
+                                                    <summary class="cursor-pointer text-xs text-gray-600 hover:text-gray-800 flex items-center gap-1">
+                                                        <i class="fas fa-chevron-right group-open:rotate-90 transition-transform text-xs"></i>
+                                                        <span>View Details</span>
+                                                    </summary>
+                                                    <pre class="mt-2 text-xs font-mono bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto whitespace-pre-wrap">${escapeHTML(detailsStr)}</pre>
+                                                </details>
+                                            </div>
+                                        ` : ''}
+                                        ${log.userId ? `
+                                            <div class="mt-2 text-xs text-gray-500">
+                                                <i class="fas fa-user"></i> User ID: ${log.userId}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0 bg-gray-50">
+                    <div class="text-sm text-gray-600">
+                        Showing <span id="logs-count">${logs.length}</span> of ${logs.length} logs
+                    </div>
+                    <button onclick="document.getElementById('system-logs-modal').remove()" class="px-5 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                        Close
+                    </button>
                 </div>
             </div>
         `;
+        
+        // Store logs for filtering and export
+        window.currentSystemLogs = logs;
+        
+        document.body.appendChild(modal);
+        initializeTooltips();
+        
+        // Setup filter and search
+        const levelFilter = document.getElementById('log-level-filter');
+        const searchInput = document.getElementById('log-search-input');
+        
+        const filterLogs = () => {
+            const level = levelFilter.value;
+            const search = searchInput.value.toLowerCase();
+            const entries = modal.querySelectorAll('.log-entry');
+            let visibleCount = 0;
+            
+            entries.forEach(entry => {
+                const entryLevel = entry.dataset.level;
+                const entryText = entry.textContent.toLowerCase();
+                const matchesLevel = level === 'all' || entryLevel === level;
+                const matchesSearch = !search || entryText.includes(search);
+                
+                if (matchesLevel && matchesSearch) {
+                    entry.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    entry.classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('logs-count').textContent = visibleCount;
+        };
+        
+        levelFilter.addEventListener('change', filterLogs);
+        searchInput.addEventListener('input', debounce(filterLogs, 300));
+        
     } catch (error) {
         console.error('Error fetching logs:', error);
         showToast('Failed to fetch system logs', 'error');
     }
 }
+
+// Helper functions for system logs
+window.dismissLog = async function(logId) {
+    const entry = document.querySelector(`[data-log-id="${logId}"]`);
+    if (entry) {
+        entry.style.transition = 'opacity 0.3s, transform 0.3s';
+        entry.style.opacity = '0';
+        entry.style.transform = 'translateX(-20px)';
+        setTimeout(() => entry.remove(), 300);
+        
+        const countEl = document.getElementById('logs-count');
+        if (countEl) {
+            const current = parseInt(countEl.textContent) || 0;
+            countEl.textContent = Math.max(0, current - 1);
+        }
+    }
+};
+
+window.copyLogDetails = function(logId) {
+    const log = window.currentSystemLogs?.find(l => l.id === logId);
+    if (log) {
+        const details = log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : String(log.details)) : '';
+        const text = `[${log.level || 'INFO'}] ${log.message || 'No message'}\n${details}`;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Log details copied to clipboard', 'success');
+        });
+    }
+};
+
+window.copyAllLogsToClipboard = function() {
+    const logs = window.currentSystemLogs || [];
+    const text = logs.map(log => {
+        const details = log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : String(log.details)) : '';
+        const timestamp = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate().toLocaleString() : new Date(log.timestamp).toLocaleString()) : 'Unknown';
+        return `[${timestamp}] [${log.level || 'INFO'}] ${log.message || 'No message'}${details ? '\n' + details : ''}`;
+    }).join('\n\n');
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('All logs copied to clipboard', 'success');
+    });
+};
+
+window.exportSystemLogs = function() {
+    const logs = window.currentSystemLogs || [];
+    const csv = [
+        ['Timestamp', 'Level', 'Message', 'Details', 'User ID'].join(','),
+        ...logs.map(log => {
+            const timestamp = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate().toISOString() : new Date(log.timestamp).toISOString()) : '';
+            const details = log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details) : String(log.details)).replace(/"/g, '""') : '';
+            return `"${timestamp}","${log.level || 'INFO'}","${(log.message || '').replace(/"/g, '""')}","${details}","${log.userId || ''}"`;
+        })
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Logs exported successfully', 'success');
+};
+
+window.clearSystemLogs = async function() {
+    if (!confirm('Are you sure you want to clear all system logs? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        showToast('Clearing system logs...', 'info');
+        const logsSnapshot = await db.collection('systemLogs').limit(500).get();
+        const batch = db.batch();
+        logsSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        showToast('System logs cleared successfully', 'success');
+        viewSystemLogs(); // Refresh the view
+    } catch (error) {
+        console.error('Error clearing logs:', error);
+        showToast('Failed to clear system logs', 'error');
+    }
+};
 
 async function getSettingsData() {
     try {
