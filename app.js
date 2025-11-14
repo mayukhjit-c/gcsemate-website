@@ -56,6 +56,7 @@ let animationFrameId = null;
 let debounceTimers = new Map();
 let throttleTimers = new Map();
 let serverTimeInterval = null;
+let connectionCheckInterval = null;
 
 // Comprehensive Error Handling System
 class ErrorHandler {
@@ -1583,6 +1584,42 @@ function monitorConnectionStatus() {
     db.enableNetwork().catch(() => {
         updateConnectionStatus('disconnected');
     });
+    
+    // Periodic connection check every 15 seconds
+    if (connectionCheckInterval) {
+        clearInterval(connectionCheckInterval);
+    }
+    connectionCheckInterval = setInterval(async () => {
+        try {
+            // Check if navigator says we're online
+            if (!navigator.onLine) {
+                updateConnectionStatus('disconnected');
+                return;
+            }
+            
+            // Try a lightweight Firebase operation to verify connection
+            await db.collection('settings').doc('maintenance').get();
+            updateConnectionStatus('connected');
+            realtimeTracker.failedRequests = 0;
+        } catch (error) {
+            // If Firebase operation fails, we're likely disconnected
+            updateConnectionStatus('disconnected');
+        }
+    }, 15000); // Check every 15 seconds
+    
+    // Initial check
+    setTimeout(async () => {
+        try {
+            if (navigator.onLine) {
+                await db.collection('settings').doc('maintenance').get();
+                updateConnectionStatus('connected');
+            } else {
+                updateConnectionStatus('disconnected');
+            }
+        } catch (error) {
+            updateConnectionStatus('disconnected');
+        }
+    }, 1000);
 }
 
 // Update connection status UI
@@ -5132,8 +5169,9 @@ async function applyMaintenanceTemplate() {
     }
     
     let etaTimestamp = null;
+    let etaDateTime = null;
     if (etaDate.value && etaTime.value) {
-        const etaDateTime = new Date(`${etaDate.value}T${etaTime.value}`);
+        etaDateTime = new Date(`${etaDate.value}T${etaTime.value}`);
         if (!isNaN(etaDateTime.getTime())) {
             etaTimestamp = firebase.firestore.Timestamp.fromDate(etaDateTime);
         }
@@ -5153,22 +5191,47 @@ async function applyMaintenanceTemplate() {
         
         await db.collection('settings').doc('maintenance').set(maintenanceData, { merge: true });
         
-        // Update UI
+        // Update UI elements
+        const statusEl = document.getElementById('maintenance-status');
+        const buttonEl = document.getElementById('toggle-maintenance-btn');
         const messageEl = document.getElementById('maintenance-message');
-        if (messageEl) messageEl.textContent = message;
-        
         const etaEl = document.getElementById('maintenance-eta');
-        if (etaEl && etaTimestamp) {
-            etaEl.textContent = formatDateUK(etaDateTime);
-        } else if (etaEl) {
-            etaEl.textContent = '-';
+        
+        // Update status badge
+        if (statusEl) {
+            statusEl.textContent = 'Enabled';
+            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
         }
         
+        // Update button
+        if (buttonEl) {
+            buttonEl.textContent = 'Disable Maintenance';
+            buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
+        }
+        
+        // Update message
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        
+        // Update ETA
+        if (etaEl) {
+            if (etaTimestamp && etaDateTime) {
+                etaEl.textContent = formatDateUK(etaDateTime);
+            } else {
+                etaEl.textContent = '-';
+            }
+        }
+        
+        // Update online status
+        updateOnlineStatus(true);
+        
+        // Close modal
         document.getElementById('maintenance-template-modal').classList.add('hidden');
         showToast('Maintenance mode activated with template', 'success');
     } catch (error) {
         logError(error, 'Apply Maintenance Template');
-        showToast('Failed to apply maintenance template', 'error');
+        showToast(`Failed to apply maintenance template: ${error.message}`, 'error');
     }
 }
 
@@ -7593,6 +7656,11 @@ function renderCalendar(userEvents, globalEvents) {
             const newYear = parseInt(yearSelect.value, 10);
             currentDate.setFullYear(newYear);
             renderCalendar(calendarUserEvents, calendarGlobalEvents);
+            // Scroll calendar page to top to prevent footer covering
+            const calendarPage = document.getElementById('calendar-page');
+            if (calendarPage) {
+                calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
     } else if (yearSelect) {
         yearSelect.value = String(year);
@@ -7720,9 +7788,27 @@ function renderCalendar(userEvents, globalEvents) {
 
 // New: Support multiple view modes for calendar
 const calendarViewSelect = document.getElementById('calendar-view-mode');
-if (calendarViewSelect) calendarViewSelect.addEventListener('change', () => renderCalendar(calendarUserEvents, calendarGlobalEvents));
+if (calendarViewSelect) {
+    calendarViewSelect.addEventListener('change', () => {
+        renderCalendar(calendarUserEvents, calendarGlobalEvents);
+        // Scroll calendar page to top to prevent footer covering
+        const calendarPage = document.getElementById('calendar-page');
+        if (calendarPage) {
+            calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+}
 const calendarFilterSelect = document.getElementById('calendar-category-filter');
-if (calendarFilterSelect) calendarFilterSelect.addEventListener('change', () => renderCalendar(calendarUserEvents, calendarGlobalEvents));
+if (calendarFilterSelect) {
+    calendarFilterSelect.addEventListener('change', () => {
+        renderCalendar(calendarUserEvents, calendarGlobalEvents);
+        // Scroll calendar page to top to prevent footer covering
+        const calendarPage = document.getElementById('calendar-page');
+        if (calendarPage) {
+            calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+}
 function renderCalendarAgenda() {
     const view = document.getElementById('calendar-view-mode')?.value || 'month';
     const grid = document.getElementById('calendar-grid');
@@ -8961,6 +9047,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar(calendarUserEvents, calendarGlobalEvents);
             updateCountdownBanner(); // Update countdown when month changes
+            // Scroll calendar page to top to prevent footer covering
+            const calendarPage = document.getElementById('calendar-page');
+            if (calendarPage) {
+                calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
     }
     if (nextMonthBtn) {
@@ -8968,6 +9059,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
             renderCalendar(calendarUserEvents, calendarGlobalEvents);
             updateCountdownBanner(); // Update countdown when month changes
+            // Scroll calendar page to top to prevent footer covering
+            const calendarPage = document.getElementById('calendar-page');
+            if (calendarPage) {
+                calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
     }
     // Setup file browser controls
@@ -9446,8 +9542,8 @@ function sanitizeHTML(html) {
     const temp = document.createElement('div');
     temp.innerHTML = html;
     
-    // Remove script tags and event handlers
-    const scripts = temp.querySelectorAll('script, *[onclick], *[onerror], *[onload]');
+    // Remove script tags
+    const scripts = temp.querySelectorAll('script');
     scripts.forEach(el => el.remove());
     
     // Remove style tags with event handlers
@@ -9456,11 +9552,23 @@ function sanitizeHTML(html) {
         Array.from(el.attributes).forEach(attr => {
             if (attr.name.startsWith('on')) {
                 el.remove();
+                return;
             }
         });
     });
     
-    // Remove dangerous attributes
+    // Remove elements with event handlers (onclick, onerror, onload, etc.)
+    const elementsWithHandlers = temp.querySelectorAll('*[onclick], *[onerror], *[onload], *[onmouseover], *[onmouseout], *[onfocus], *[onblur]');
+    elementsWithHandlers.forEach(el => {
+        // Remove event handler attributes instead of removing the element
+        Array.from(el.attributes).forEach(attr => {
+            if (attr.name.startsWith('on')) {
+                el.removeAttribute(attr.name);
+            }
+        });
+    });
+    
+    // Remove dangerous attributes from all elements
     const allElements = temp.querySelectorAll('*');
     allElements.forEach(el => {
         // Remove all event handler attributes
@@ -9835,6 +9943,7 @@ window.addEventListener('beforeunload', () => {
     // Clean up observers and timers
     if (lazyLoadObserver) lazyLoadObserver.disconnect();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (connectionCheckInterval) clearInterval(connectionCheckInterval);
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
