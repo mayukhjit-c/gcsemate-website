@@ -8114,7 +8114,7 @@ function renderItems() {
                 const safeFileId = escapeJS(file.id);
                 actions.innerHTML = `
                     <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
-                    <a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                    <a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
@@ -8164,7 +8164,7 @@ function renderItems() {
                 const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 actions.innerHTML += `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
-                actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(mainInfo);
             itemElement.appendChild(actions);
@@ -11271,7 +11271,7 @@ function showPreview(file) {
 }
 
 // Controlled download function with rate limiting and security
-function downloadFile(fileId, fileName, downloadUrl) {
+function downloadFile(fileId, fileName, downloadUrl, subject = null) {
     try {
         // Check rate limit
         if (!canDownload()) {
@@ -11283,8 +11283,9 @@ function downloadFile(fileId, fileName, downloadUrl) {
             return;
         }
         
-        // Track file download
-        trackFileOpen(fileName, 'download', currentSubject);
+        // Track file download - use provided subject or fall back to currentSubject
+        const trackingSubject = subject || currentSubject;
+        trackFileOpen(fileName, 'download', trackingSubject);
         
         // Record download for rate limiting
         recordDownload();
@@ -11320,12 +11321,12 @@ function downloadFile(fileId, fileName, downloadUrl) {
 }
 
 // Wrapper function for direct anchor tag downloads (for inline download links)
-window.handleSecureDownload = function(downloadUrl, fileName, event) {
+window.handleSecureDownload = function(downloadUrl, fileName, subject, event) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    downloadFile(null, fileName, downloadUrl);
+    downloadFile(null, fileName, downloadUrl, subject);
 };
 
 // Error pages rendering helpers
