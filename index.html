@@ -861,13 +861,20 @@
                             <div class="space-y-4">
                                 <div class="border-2 border-gray-300 rounded-lg bg-white/50">
                                     <div id="blog-editor-toolbar" class="flex flex-wrap items-center gap-2 p-2 border-b-2 border-gray-300 bg-gray-50/80 rounded-t-lg">
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('bold')" title="Bold" data-command="bold">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="formatText('undo')" title="Undo (Ctrl+Z)">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-gray-100 transition-colors" onclick="formatText('redo')" title="Redo (Ctrl+Y)">
+                                            <i class="fas fa-redo"></i>
+                                        </button>
+                                        <div class="w-px h-6 bg-gray-300"></div>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('bold')" title="Bold (Ctrl+B)" data-command="bold">
                                             <i class="fas fa-bold"></i>
                                         </button>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('italic')" title="Italic" data-command="italic">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('italic')" title="Italic (Ctrl+I)" data-command="italic">
                                             <i class="fas fa-italic"></i>
                                         </button>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('underline')" title="Underline" data-command="underline">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('underline')" title="Underline (Ctrl+U)" data-command="underline">
                                             <i class="fas fa-underline"></i>
                                         </button>
                                         <div class="w-px h-6 bg-gray-300"></div>
@@ -875,17 +882,37 @@
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('formatBlock', 'h2')" title="Heading 2" data-command="formatBlock" data-value="h2">H2</button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('formatBlock', 'h3')" title="Heading 3" data-command="formatBlock" data-value="h3">H3</button>
                                         <div class="w-px h-6 bg-gray-300"></div>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('insertUnorderedList')" title="Bullet List" data-command="insertUnorderedList">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('insertUnorderedList')" title="Bullet List (Ctrl+Shift+L)" data-command="insertUnorderedList">
                                             <i class="fas fa-list-ul"></i>
                                         </button>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('insertOrderedList')" title="Numbered List" data-command="insertOrderedList">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('insertOrderedList')" title="Numbered List (Ctrl+Shift+7)" data-command="insertOrderedList">
                                             <i class="fas fa-list-ol"></i>
                                         </button>
                                         <div class="w-px h-6 bg-gray-300"></div>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="insertLink()" title="Insert Link" data-command="createLink">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('justifyLeft')" title="Align Left (Ctrl+L)" data-command="justifyLeft">
+                                            <i class="fas fa-align-left"></i>
+                                        </button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('justifyCenter')" title="Align Center (Ctrl+E)" data-command="justifyCenter">
+                                            <i class="fas fa-align-center"></i>
+                                        </button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('justifyRight')" title="Align Right (Ctrl+R)" data-command="justifyRight">
+                                            <i class="fas fa-align-right"></i>
+                                        </button>
+                                        <div class="w-px h-6 bg-gray-300"></div>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="insertLink()" title="Insert Link (Ctrl+K)" data-command="createLink">
                                             <i class="fas fa-link"></i>
                                         </button>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('removeFormat')" title="Remove Formatting" data-command="removeFormat">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-400 transition-colors" onclick="formatText('backColor', '#fff3a3')" title="Highlight (Ctrl+Shift+H)">
+                                            <i class="fas fa-highlighter"></i>
+                                        </button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('formatBlock', 'blockquote')" title="Quote block">
+                                            <i class="fas fa-quote-left"></i>
+                                        </button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('insertHorizontalRule')" title="Insert Divider">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <div class="w-px h-6 bg-gray-300"></div>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('removeFormat')" title="Clear Formatting (Ctrl+\\)" data-command="removeFormat">
                                             <i class="fas fa-remove-format"></i>
                                         </button>
                                     </div>
@@ -949,10 +976,10 @@
                         <h2 class="text-3xl font-bold text-gray-800">Useful Links & Resources</h2>
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1 sm:flex-initial">
-                                <input id="links-search-input" type="search" placeholder="Search links..." class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border-gray-300/50 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" aria-label="Search links">
+                                <input id="links-search-input" type="search" placeholder="Search links..." class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" aria-label="Search links">
                                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             </div>
-                            <select id="links-filter-type" class="px-3 py-2 rounded-lg border-gray-300/50 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <select id="links-filter-type" class="px-3 py-2 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                 <option value="all">All Types</option>
                                 <option value="link">Links</option>
                                 <option value="youtube_video">Videos</option>
@@ -970,12 +997,12 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                <input id="link-title" type="text" placeholder="e.g., 'BBC Bitesize Physics'" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link" aria-describedby="link-title-error">
+                                <input id="link-title" type="text" placeholder="e.g., 'BBC Bitesize Physics'" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the title for the link" aria-describedby="link-title-error">
                                 <div id="link-title-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                                <input id="link-url" type="url" placeholder="Standard link or YouTube video/playlist URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL" aria-describedby="link-url-error">
+                                <input id="link-url" type="url" placeholder="Standard link or YouTube video/playlist URL" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter the full URL" aria-describedby="link-url-error">
                                 <div id="link-url-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                             </div>
                             <div class="flex gap-3">
@@ -1816,7 +1843,7 @@
             </div>
             <div class="flex gap-3 justify-end">
                 <button onclick="document.getElementById('maintenance-template-modal').classList.add('hidden')" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                <button onclick="applyMaintenanceTemplate()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Apply Template</button>
+                <button id="maintenance-template-apply-btn" onclick="applyMaintenanceTemplate()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Apply Template</button>
             </div>
         </div>
     </div>

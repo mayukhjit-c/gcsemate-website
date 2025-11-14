@@ -5261,6 +5261,12 @@ async function applyMaintenanceTemplate() {
     const messageTextarea = document.getElementById('maintenance-template-message');
     const etaDate = document.getElementById('maintenance-eta-date');
     const etaTime = document.getElementById('maintenance-eta-time');
+    const applyBtn = document.getElementById('maintenance-template-apply-btn');
+
+    if (!templateSelect || !messageTextarea || !etaDate || !etaTime) {
+        showToast('Maintenance template controls are unavailable. Please refresh the page.', 'error');
+        return;
+    }
     
     if (!templateSelect.value && !messageTextarea.value.trim()) {
         showToast('Please select a template or enter a message', 'error');
@@ -5272,29 +5278,55 @@ async function applyMaintenanceTemplate() {
         showToast('Message cannot be empty', 'error');
         return;
     }
+
+    if ((etaDate.value && !etaTime.value) || (!etaDate.value && etaTime.value)) {
+        showToast('Please provide both an ETA date and time or leave both blank.', 'error');
+        return;
+    }
     
     let etaTimestamp = null;
     let etaDateTime = null;
     if (etaDate.value && etaTime.value) {
-        etaDateTime = new Date(`${etaDate.value}T${etaTime.value}`);
-        if (!isNaN(etaDateTime.getTime())) {
-            etaTimestamp = firebase.firestore.Timestamp.fromDate(etaDateTime);
+        etaDateTime = new Date(`${etaDate.value}T${etaTime.value}:00`);
+        if (isNaN(etaDateTime.getTime())) {
+            showToast('Please provide a valid ETA.', 'error');
+            return;
         }
+        etaTimestamp = firebase.firestore.Timestamp.fromDate(etaDateTime);
     }
+
+    const setApplyButtonState = (isLoading) => {
+        if (!applyBtn) return;
+        if (isLoading) {
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Applying...';
+            applyBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        } else {
+            applyBtn.disabled = false;
+            applyBtn.textContent = 'Apply Template';
+            applyBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+    };
     
     try {
+        setApplyButtonState(true);
+        const maintenanceRef = db.collection('settings').doc('maintenance');
+        const existingDoc = await maintenanceRef.get();
+
         const maintenanceData = {
             enabled: true,
-            message: message,
+            message,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         };
         
         if (etaTimestamp) {
             maintenanceData.eta = etaTimestamp;
+        } else if (existingDoc.exists && existingDoc.data().eta) {
+            maintenanceData.eta = firebase.firestore.FieldValue.delete();
         }
         
-        await db.collection('settings').doc('maintenance').set(maintenanceData, { merge: true });
+        await maintenanceRef.set(maintenanceData, { merge: true });
         
         // Update UI elements
         const statusEl = document.getElementById('maintenance-status');
@@ -5302,24 +5334,20 @@ async function applyMaintenanceTemplate() {
         const messageEl = document.getElementById('maintenance-message');
         const etaEl = document.getElementById('maintenance-eta');
         
-        // Update status badge
         if (statusEl) {
             statusEl.textContent = 'Enabled';
             statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
         }
         
-        // Update button
         if (buttonEl) {
             buttonEl.textContent = 'Disable Maintenance';
             buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
         }
         
-        // Update message
         if (messageEl) {
             messageEl.textContent = message;
         }
         
-        // Update ETA
         if (etaEl) {
             if (etaTimestamp && etaDateTime) {
                 etaEl.textContent = formatDateUK(etaDateTime);
@@ -5328,15 +5356,17 @@ async function applyMaintenanceTemplate() {
             }
         }
         
-        // Update online status
         updateOnlineStatus(true);
+        initializeMaintenanceStatus();
         
-        // Close modal
-        document.getElementById('maintenance-template-modal').classList.add('hidden');
+        const modal = document.getElementById('maintenance-template-modal');
+        if (modal) modal.classList.add('hidden');
         showToast('Maintenance mode activated with template', 'success');
     } catch (error) {
         logError(error, 'Apply Maintenance Template');
-        showToast(`Failed to apply maintenance template: ${error.message}`, 'error');
+        showToast(`Failed to apply maintenance template: ${error.message || 'Unknown error'}`, 'error');
+    } finally {
+        setApplyButtonState(false);
     }
 }
 
@@ -6401,11 +6431,11 @@ async function viewSystemLogs() {
                                             </div>
                                             <div class="flex items-center gap-2 flex-shrink-0">
                                                 ${timestamp ? `<span class="text-xs text-gray-500 font-mono whitespace-nowrap">${timestamp.toLocaleString()}</span>` : ''}
-                                                <button onclick="dismissLog('${log.id}')" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" data-tooltip="Dismiss" aria-label="Dismiss log">
+                                                <button type="button" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors log-action-btn" data-tooltip="Dismiss" aria-label="Dismiss log" data-log-action="dismiss" data-log-id="${escapeHTML(log.id || '')}">
                                                     <i class="fas fa-times text-xs"></i>
                                                 </button>
                                                 ${detailsStr ? `
-                                                    <button onclick="copyLogDetails('${log.id}')" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" data-tooltip="Copy details" aria-label="Copy log details">
+                                                    <button type="button" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors log-action-btn" data-tooltip="Copy details" aria-label="Copy log details" data-log-action="copy" data-log-id="${escapeHTML(log.id || '')}">
                                                         <i class="fas fa-copy text-xs"></i>
                                                     </button>
                                                 ` : ''}
@@ -6424,7 +6454,7 @@ async function viewSystemLogs() {
                                         ` : ''}
                                         ${log.userId ? `
                                             <div class="mt-2 text-xs text-gray-500">
-                                                <i class="fas fa-user"></i> User ID: ${log.userId}
+                                                <i class="fas fa-user"></i> User ID: ${escapeHTML(log.userId)}
                                             </div>
                                         ` : ''}
                                     </div>
@@ -6450,6 +6480,22 @@ async function viewSystemLogs() {
         
         document.body.appendChild(modal);
         initializeTooltips();
+
+        // Secure event delegation for log action buttons
+        modal.addEventListener('click', (event) => {
+            const actionButton = event.target.closest('[data-log-action]');
+            if (!actionButton || !modal.contains(actionButton)) return;
+
+            const action = actionButton.dataset.logAction;
+            const logId = actionButton.dataset.logId;
+            if (!logId) return;
+
+            if (action === 'dismiss') {
+                dismissLog(logId);
+            } else if (action === 'copy') {
+                copyLogDetails(logId);
+            }
+        });
         
         // Setup filter and search
         const levelFilter = document.getElementById('log-level-filter');
@@ -6910,7 +6956,10 @@ function showPage(pageId) {
 
     // Setup paste handler when blog page is shown
     if (pageId === 'blog-page') {
-        setTimeout(() => setupBlogPasteHandler(), 100);
+        setTimeout(() => {
+            setupBlogPasteHandler();
+            setupBlogEditorEnhancements();
+        }, 100);
     }
     
     // Re-render useful links when page is shown (to ensure search/filter work)
@@ -7666,17 +7715,94 @@ function getVideoEmbed(url) {
         const data = parseYoutubeUrl(url);
         if (data && data.type) {
             const sep = data.embedUrl.includes('?') ? '&' : '?';
-            const finalUrl = `${data.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
-            return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden">
-                <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
+            // Build embed URL with safe parameters (removed problematic params that cause Error 153)
+            const finalUrl = `${data.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1`;
+            const watchUrl = escapeHTML(data.watchUrl || url);
+            const uniqueId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${uniqueId}">
+                <iframe 
+                    id="iframe-${uniqueId}"
+                    src="${finalUrl}" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen
+                    class="w-full h-full"
+                    loading="lazy"
+                    onerror="handleVideoEmbedError('${uniqueId}', '${watchUrl}')"
+                    onload="handleVideoEmbedLoad('${uniqueId}')">
+                </iframe>
                 <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
-                <div class="video-brand-controls"><button onclick=\"handleVideoWrapperFullscreen(this)\" class=\"px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors\" aria-label=\"Fullscreen\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3\"/></svg></button></div>
+                <div class="video-brand-controls">
+                    <button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen">
+                        <i class="fas fa-expand text-sm"></i>
+                    </button>
+                </div>
+                <div id="video-fallback-${uniqueId}" class="video-embed-fallback hidden">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold text-white">We couldn’t load this video.</p>
+                    <a href="${watchUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors" data-watch-link>
+                        <i class="fab fa-youtube"></i> Watch on YouTube
+                    </a>
+                </div>
             </div>`;
         }
         // Fallback generic embed
-        return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden"><iframe src="${url}" frameborder="0" class="w-full h-full"></iframe><div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div><div class="video-brand-controls"><button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3"/></svg></button></div></div>`;
+        const safeUrl = escapeHTML(url);
+        const fallbackId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${fallbackId}">
+            <iframe 
+                id="iframe-${fallbackId}"
+                src="${safeUrl}" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen
+                class="w-full h-full"
+                loading="lazy"
+                onerror="handleVideoEmbedError('${fallbackId}', '${safeUrl}')"
+                onload="handleVideoEmbedLoad('${fallbackId}')">
+            </iframe>
+            <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
+            <div class="video-brand-controls">
+                <button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen">
+                    <i class="fas fa-expand text-sm"></i>
+                </button>
+            </div>
+            <div id="video-fallback-${fallbackId}" class="video-embed-fallback hidden">
+                <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl mb-2"></i>
+                <p class="text-sm font-semibold text-white">We couldn’t load this embed.</p>
+                <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors" data-watch-link>
+                    <i class="fas fa-external-link-alt"></i> Open in new tab
+                </a>
+            </div>
+        </div>`;
     } catch { return ''; }
 }
+
+window.handleVideoEmbedError = function(containerId, watchUrl) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const iframe = document.getElementById(`iframe-${containerId}`);
+    if (iframe) iframe.classList.add('hidden');
+    
+    const fallback = document.getElementById(`video-fallback-${containerId}`);
+    if (fallback) {
+        fallback.classList.remove('hidden');
+        const link = fallback.querySelector('[data-watch-link]');
+        if (link && watchUrl) {
+            link.href = watchUrl;
+        }
+    }
+};
+
+window.handleVideoEmbedLoad = function(containerId) {
+    setTimeout(() => {
+        const iframe = document.getElementById(`iframe-${containerId}`);
+        const fallback = document.getElementById(`video-fallback-${containerId}`);
+        if (iframe) iframe.classList.remove('hidden');
+        if (fallback) fallback.classList.add('hidden');
+    }, 150);
+};
 
 // Minimal Markdown renderer for headings, bold, italics, links, lists, code blocks
 function renderMarkdown(md) {
@@ -7817,17 +7943,27 @@ function showPlaylistViewer(playlist) {
                 <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
             </div>
             <div class="flex-1 p-4 overflow-hidden">
-                <div class="relative w-full" style="padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                <div class="relative w-full" style="padding-bottom: 56.25%; height: 0; overflow: hidden;" id="playlist-embed-${playlistId}">
                     <iframe 
-                        src="https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&modestbranding=1&rel=0" 
+                        id="playlist-iframe-${playlistId}"
+                        src="https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1" 
                         title="YouTube video player" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                         allowfullscreen
                         loading="lazy"
                         class="absolute top-0 left-0 w-full h-full"
-                        style="border: none;">
+                        style="border: none;"
+                        onerror="handlePlaylistEmbedError('${playlistId}', '${escapeHTML(playlist.url || '')}')"
+                        onload="handlePlaylistEmbedLoad('${playlistId}')">
                     </iframe>
+                    <div id="playlist-fallback-${playlistId}" class="video-embed-fallback hidden">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl mb-2"></i>
+                        <p class="text-sm font-semibold text-white">We couldn’t load this playlist.</p>
+                        <a href="${escapeHTML(playlist.url || '')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors">
+                            <i class="fab fa-youtube"></i> Watch on YouTube
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -7835,6 +7971,27 @@ function showPlaylistViewer(playlist) {
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
 }
+
+// Handle playlist embed errors
+window.handlePlaylistEmbedError = function(playlistId, watchUrl) {
+    const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
+    if (iframe) iframe.classList.add('hidden');
+    const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
+    if (fallback) {
+        fallback.classList.remove('hidden');
+        const link = fallback.querySelector('a');
+        if (link && watchUrl) link.href = watchUrl;
+    }
+};
+
+// Handle successful playlist load
+window.handlePlaylistEmbedLoad = function(playlistId) {
+    const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
+    const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
+    if (iframe) iframe.classList.remove('hidden');
+    if (fallback) fallback.classList.add('hidden');
+};
+
 // =================================================================================
 // USEFUL LINKS LOGIC (SHARED PARSER)
 // =================================================================================
@@ -7845,15 +8002,33 @@ function parseYoutubeUrl(url) {
         if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
             const playlistId = urlObj.searchParams.get('list');
             if (playlistId) {
-                return { type: 'youtube_playlist', id: playlistId, embedUrl: `https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&origin=${window.location.origin}` };
+                // Clean playlist ID (remove any extra characters)
+                const cleanPlaylistId = playlistId.split('&')[0].split('?')[0];
+                return { 
+                    type: 'youtube_playlist', 
+                    id: cleanPlaylistId, 
+                    embedUrl: `https://www.youtube.com/embed/videoseries?list=${cleanPlaylistId}`,
+                    watchUrl: `https://www.youtube.com/playlist?list=${cleanPlaylistId}`
+                };
             }
             let videoId = urlObj.searchParams.get('v');
-            if (!videoId && urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.slice(1);
+            if (!videoId && urlObj.hostname === 'youtu.be') {
+                videoId = urlObj.pathname.slice(1).split('?')[0].split('&')[0];
+            }
             if (videoId) {
-                return { type: 'youtube_video', id: videoId, embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}` };
+                // Clean video ID
+                const cleanVideoId = videoId.split('&')[0].split('?')[0];
+                return { 
+                    type: 'youtube_video', 
+                    id: cleanVideoId, 
+                    embedUrl: `https://www.youtube.com/embed/${cleanVideoId}`,
+                    watchUrl: `https://www.youtube.com/watch?v=${cleanVideoId}`
+                };
             }
         }
-    } catch (e) { console.error("Could not parse URL", e); }
+    } catch (e) { 
+        console.error("Could not parse YouTube URL", e); 
+    }
     return null;
 }
 async function handleAddLink() {
@@ -8017,8 +8192,21 @@ function createVideoCard(id, link) {
     const card = document.createElement('div');
     card.className = 'bg-white/70 backdrop-blur-lg rounded-xl shadow-md border border-white/30 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]';
     
-    const sep = (link.embedUrl || '').includes('?') ? '&' : '?';
-    const finalUrl = `${link.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
+    // Parse YouTube URL to get proper embed URL
+    const youtubeData = parseYoutubeUrl(link.url);
+    let embedUrl = link.embedUrl || '';
+    let watchUrl = link.url;
+    
+    if (youtubeData) {
+        embedUrl = youtubeData.embedUrl;
+        watchUrl = youtubeData.watchUrl || link.url;
+    }
+    
+    // Build safe embed URL
+    const sep = embedUrl.includes('?') ? '&' : '?';
+    const finalUrl = `${embedUrl}${sep}modestbranding=1&rel=0&playsinline=1`;
+    const uniqueId = `video-card-${id}-${Date.now()}`;
+    
     const removeBtn = currentUser.role === 'admin' ? 
         `<button onclick="handleRemoveLink('${id}')" class="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white text-red-600 hover:text-red-700 p-2 rounded-full shadow-md transition-all hover:scale-110" data-tooltip="Remove link" aria-label="Remove link">
             <i class="fas fa-trash text-sm"></i>
@@ -8030,13 +8218,35 @@ function createVideoCard(id, link) {
     card.innerHTML = `
         <div class="relative">
             ${removeBtn}
-            <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-t-xl overflow-hidden video-brand-wrapper">
-                <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
+            <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-t-xl overflow-hidden video-brand-wrapper relative" id="${uniqueId}">
+                <iframe 
+                    id="iframe-${uniqueId}"
+                    src="${finalUrl}" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen
+                    class="w-full h-full"
+                    loading="lazy"
+                    title="${escapeHTML(link.title)}"
+                    onerror="handleVideoEmbedError('${uniqueId}', '${escapeHTML(watchUrl)}')"
+                    onload="handleVideoEmbedLoad('${uniqueId}')">
+                </iframe>
                 <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
                 <div class="video-brand-controls">
                     <button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen">
                         <i class="fas fa-expand text-sm"></i>
                     </button>
+                </div>
+                <div id="video-fallback-${uniqueId}" class="hidden absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center p-4 rounded-lg z-20">
+                    <div class="text-center text-white">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-4 text-yellow-400"></i>
+                        <p class="text-lg font-semibold mb-2">Video cannot be embedded</p>
+                        <p class="text-sm text-gray-300 mb-4">Click below to watch on YouTube</p>
+                        <a href="${escapeHTML(watchUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors shadow-lg">
+                            <i class="fab fa-youtube text-xl"></i>
+                            Watch on YouTube
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -8044,9 +8254,15 @@ function createVideoCard(id, link) {
             <div class="flex items-start justify-between gap-2 mb-2">
                 <h4 class="font-bold text-lg text-gray-800 flex-1">${escapeHTML(link.title)}</h4>
             </div>
-            <div class="flex items-center gap-2 text-sm text-gray-500">
-                <i class="fas ${typeIcon} text-red-600"></i>
-                <span>${typeLabel}</span>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <i class="fas ${typeIcon} text-red-600"></i>
+                    <span>${typeLabel}</span>
+                </div>
+                <a href="${escapeHTML(watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1" data-tooltip="Open in YouTube">
+                    <i class="fab fa-youtube"></i>
+                    <span>Open</span>
+                </a>
             </div>
         </div>
     `;
@@ -8552,7 +8768,11 @@ window.formatText = function(command, value = null) {
     if (!editor) return;
     
     editor.focus();
-    document.execCommand(command, false, value);
+    try {
+        document.execCommand(command, false, value);
+    } catch (err) {
+        console.warn('Editor command failed', command, err);
+    }
     updateToolbarState();
 };
 
@@ -8567,14 +8787,16 @@ function updateToolbarState() {
     const toolbar = document.getElementById('blog-editor-toolbar');
     if (!toolbar) return;
     
-    const commands = ['bold', 'italic', 'underline'];
-    commands.forEach(cmd => {
+    const toggleCommands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
+    toggleCommands.forEach(cmd => {
         const btn = toolbar.querySelector(`[data-command="${cmd}"]`);
-        if (btn) {
-            const isActive = document.queryCommandState(cmd);
-            btn.classList.toggle('bg-blue-100', isActive);
-            btn.classList.toggle('border-blue-500', isActive);
-        }
+        if (!btn) return;
+        let isActive = false;
+        try {
+            isActive = document.queryCommandState(cmd);
+        } catch (_) {}
+        btn.classList.toggle('bg-blue-100', isActive);
+        btn.classList.toggle('border-blue-500', isActive);
     });
 }
 
@@ -8583,31 +8805,201 @@ document.addEventListener('selectionchange', updateToolbarState);
 document.addEventListener('mouseup', updateToolbarState);
 document.addEventListener('keyup', updateToolbarState);
 
-// Handle paste events to preserve formatting in blog editor
+// Handle paste events to preserve formatting in blog editor (now supports images)
 function setupBlogPasteHandler() {
     const blogEditor = document.getElementById('blog-post-content');
     if (blogEditor && !blogEditor.dataset.pasteHandlerSetup) {
         blogEditor.dataset.pasteHandlerSetup = 'true';
-        blogEditor.addEventListener('paste', (e) => {
+        blogEditor.addEventListener('paste', async (e) => {
+            const clipboard = e.clipboardData || window.clipboardData;
+            if (!clipboard) return;
+
+            const items = clipboard.items ? Array.from(clipboard.items) : [];
+            const imageItems = items.filter(item => item.type && item.type.startsWith('image/'));
+
+            if (imageItems.length > 0) {
+                e.preventDefault();
+                for (const item of imageItems) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        await insertBlogImageFromFile(file, 'paste');
+                    }
+                }
+                return;
+            }
+
+            const htmlData = clipboard.getData && clipboard.getData('text/html');
+            const textData = clipboard.getData && clipboard.getData('text/plain');
             e.preventDefault();
-            const paste = (e.clipboardData || window.clipboardData).getData('text/html');
-            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            
-            // If HTML is available, use it (preserves formatting)
-            if (paste) {
-                // Sanitize the pasted HTML
-                const sanitized = sanitizeHTML(paste);
+
+            if (htmlData) {
+                const sanitized = sanitizeHTML(htmlData);
                 document.execCommand('insertHTML', false, sanitized);
-            } else if (text) {
-                // Fallback to plain text
-                document.execCommand('insertText', false, text);
+            } else if (textData) {
+                document.execCommand('insertText', false, textData);
             }
         });
     }
 }
 
+const BLOG_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB limit for pasted/dropped images
+
+function setupBlogEditorEnhancements() {
+    const editor = document.getElementById('blog-post-content');
+    if (!editor) return;
+
+    if (!editor.dataset.shortcutsSetup) {
+        editor.dataset.shortcutsSetup = 'true';
+        editor.addEventListener('keydown', handleBlogEditorKeydown);
+    }
+
+    if (!editor.dataset.dropHandlerSetup) {
+        editor.dataset.dropHandlerSetup = 'true';
+        editor.addEventListener('dragover', (e) => {
+            if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+                e.preventDefault();
+                editor.classList.add('blog-editor-drop-target');
+            }
+        });
+        editor.addEventListener('dragleave', () => editor.classList.remove('blog-editor-drop-target'));
+        editor.addEventListener('drop', (e) => {
+            editor.classList.remove('blog-editor-drop-target');
+            if (!e.dataTransfer) return;
+            const droppedFiles = Array.from(e.dataTransfer.files || []);
+            if (!droppedFiles.length) return;
+            e.preventDefault();
+            const imageFiles = droppedFiles.filter(isBlogImageFile);
+            if (!imageFiles.length) {
+                showToast('Only image files can be dropped into the editor.', 'error');
+                return;
+            }
+            imageFiles.forEach(file => insertBlogImageFromFile(file, 'drop'));
+        });
+    }
+}
+
+async function insertBlogImageFromFile(file, source = 'upload') {
+    const editor = document.getElementById('blog-post-content');
+    if (!editor || !file) return;
+
+    if (!isBlogImageFile(file)) {
+        showToast('Only image files can be added to blog posts.', 'error');
+        return;
+    }
+
+    if (file.size > BLOG_IMAGE_MAX_SIZE) {
+        showToast('Images must be smaller than 5MB.', 'error');
+        return;
+    }
+
+    const placeholderId = `blog-image-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    document.execCommand('insertHTML', false, `<span id="${placeholderId}" class="blog-image-placeholder">Uploading image...</span>`);
+
+    try {
+        const downloadURL = await uploadBlogImageToStorage(file, source);
+        const placeholder = document.getElementById(placeholderId);
+        const altText = escapeHTML(file.name || 'Embedded image');
+        const imageHTML = `<img src="${downloadURL}" alt="${altText}" class="blog-inline-image" loading="lazy" decoding="async">`;
+        if (placeholder) {
+            placeholder.outerHTML = imageHTML;
+        } else {
+            document.execCommand('insertHTML', false, imageHTML);
+        }
+        showToast('Image added to post', 'success');
+    } catch (error) {
+        logError(error, 'Blog Image Upload');
+        const placeholder = document.getElementById(placeholderId);
+        if (placeholder) placeholder.remove();
+        showToast('Could not upload pasted image. Please try again.', 'error');
+    }
+}
+
+async function uploadBlogImageToStorage(file, source = 'upload') {
+    const storageRef = firebase.storage().ref();
+    const userId = (currentUser && currentUser.uid) ? currentUser.uid : 'guest';
+    const extension = file.type && file.type.includes('/') ? `.${file.type.split('/')[1]}` : '';
+    const safeName = (file.name || `${source}-image`).replace(/[^\w.-]/g, '').substring(0, 40) || `${source}-image`;
+    const path = `blogUploads/${userId}/${Date.now()}-${safeName}${extension}`;
+    const snapshot = await storageRef.child(path).put(file, { contentType: file.type || 'image/png' });
+    return await snapshot.ref.getDownloadURL();
+}
+
+function isBlogImageFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.startsWith('image/')) return true;
+    const name = file.name || '';
+    return /\.(png|jpe?g|gif|bmp|webp|heic)$/i.test(name);
+}
+
+function handleBlogEditorKeydown(event) {
+    const isMac = navigator.platform ? /Mac|iPad|iPhone/i.test(navigator.platform) : false;
+    const modifierPressed = isMac ? event.metaKey : event.ctrlKey;
+    if (!modifierPressed) return;
+
+    const key = event.key.toLowerCase();
+    const shift = event.shiftKey;
+
+    const handledCommands = ['b', 'i', 'u', 'k', 'l', 'o', '7', '8', 'z', 'y', 'e', 'r', 'h'];
+    if (!handledCommands.includes(key) && !(key === 'l' && shift)) return;
+
+    switch (true) {
+        case key === 'b':
+            event.preventDefault();
+            window.formatText('bold');
+            break;
+        case key === 'i':
+            event.preventDefault();
+            window.formatText('italic');
+            break;
+        case key === 'u':
+            event.preventDefault();
+            window.formatText('underline');
+            break;
+        case key === 'k':
+            event.preventDefault();
+            window.insertLink();
+            break;
+        case key === 'l' && shift:
+            event.preventDefault();
+            window.formatText('insertUnorderedList');
+            break;
+        case (key === 'o' && shift) || (key === '7' && shift) || (key === '8' && shift):
+            event.preventDefault();
+            window.formatText('insertOrderedList');
+            break;
+        case key === 'z':
+            event.preventDefault();
+            document.execCommand(shift ? 'redo' : 'undo');
+            break;
+        case key === 'y':
+            event.preventDefault();
+            document.execCommand('redo');
+            break;
+        case key === 'e':
+            event.preventDefault();
+            window.formatText('justifyCenter');
+            break;
+        case key === 'r':
+            event.preventDefault();
+            window.formatText('justifyRight');
+            break;
+        case key === 'l' && !shift:
+            event.preventDefault();
+            window.formatText('justifyLeft');
+            break;
+        case key === 'h' && shift:
+            event.preventDefault();
+            window.formatText('backColor', '#fff3a3');
+            break;
+        default:
+            break;
+    }
+    updateToolbarState();
+}
+
 // Setup paste handler when DOM is ready and when blog page is shown
 document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
+document.addEventListener('DOMContentLoaded', setupBlogEditorEnhancements);
 
 document.addEventListener('input', (e) => {
     if (e.target && e.target.id === 'blog-post-image') {
@@ -10463,3 +10855,4 @@ window.addEventListener('beforeunload', () => {
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
+
