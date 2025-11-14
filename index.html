@@ -899,6 +899,9 @@
                                             <i class="fas fa-align-right"></i>
                                         </button>
                                         <div class="w-px h-6 bg-gray-300"></div>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-colors" onclick="openImagePicker()" title="Insert Image (Ctrl+Shift+I)">
+                                            <i class="fas fa-image"></i>
+                                        </button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="insertLink()" title="Insert Link (Ctrl+K)" data-command="createLink">
                                             <i class="fas fa-link"></i>
                                         </button>
@@ -915,8 +918,13 @@
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="formatText('removeFormat')" title="Clear Formatting (Ctrl+\\)" data-command="removeFormat">
                                             <i class="fas fa-remove-format"></i>
                                         </button>
+                                        <div class="w-px h-6 bg-gray-300"></div>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-purple-50 hover:border-purple-400 transition-colors" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts (Ctrl+?)">
+                                            <i class="fas fa-keyboard"></i>
+                                        </button>
                                     </div>
-                                    <div id="blog-post-content" contenteditable="true" placeholder="Start writing your post here..." class="w-full p-4 min-h-[400px] rounded-b-lg focus:outline-none prose prose-sm max-w-none" style="border: none;"></div>
+                                    <div id="blog-post-content" contenteditable="true" placeholder="Start writing your post here..." class="w-full p-4 min-h-[400px] rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 prose prose-sm max-w-none bg-white/80 transition-all" style="border: none;"></div>
+                                    <input type="file" id="hidden-image-input" accept="image/*" class="hidden" onchange="handleImageFileSelect(event)">
                                 </div>
                             </div>
                             <div id="blog-image-preview" class="mt-2 hidden"><img alt="Post image preview" class="max-h-48 rounded border" onerror="this.parentElement.classList.add('hidden');"></div>
@@ -1812,6 +1820,152 @@
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
     <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 max-w-md text-center fade-in"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293c.63.63 1.707.63 2.337 0l2.293-2.293M12 21l2.293-2.293c.63-.63 1.707-.63 2.337 0l2.293 2.293M3 12h18M12 3l2.293 2.293c.63.63.184 1.707-.707 1.707H10.414c-.891 0-1.337-1.077-.707-1.707L12 3z" /></svg><h2 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h2><p id="upgrade-modal-message" class="text-gray-600 mb-6">To access this feature, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just 20p/month (excluding VAT).</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><button onclick="document.getElementById('upgrade-modal').style.display='none'" class="w-full px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button><button onclick="showPage('features-page'); document.getElementById('upgrade-modal').style.display='none';" class="w-full px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Upgrade Now</button></div></div>
+    </div>
+    <div id="profile-picture-crop-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10003]">
+        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Crop & Edit Profile Picture</h3>
+                <button onclick="closeProfilePictureCropModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="relative bg-gray-100 rounded-lg overflow-hidden" style="min-height: 400px;">
+                    <canvas id="profile-crop-canvas" class="max-w-full h-auto mx-auto block"></canvas>
+                    <div id="profile-crop-overlay" class="absolute inset-0 pointer-events-none">
+                        <div id="profile-crop-box" class="absolute border-2 border-blue-500 bg-blue-500/10 cursor-move">
+                            <div class="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="nw"></div>
+                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="ne"></div>
+                            <div class="absolute -bottom-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="sw"></div>
+                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="se"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Zoom</label>
+                        <input type="range" id="profile-zoom-slider" min="0.5" max="3" step="0.1" value="1" class="w-full">
+                        <div class="text-xs text-gray-500 mt-1 text-center"><span id="profile-zoom-value">100%</span></div>
+                    </div>
+                    <div class="flex items-end">
+                        <p class="text-sm text-gray-600">Profile pictures are automatically compressed to save storage. Drag to reposition, use handles to resize.</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2 border-t border-gray-200">
+                    <button onclick="closeProfilePictureCropModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button onclick="applyProfilePictureCrop()" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                        <i class="fas fa-check mr-2"></i>Apply & Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="image-crop-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10002]">
+        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Crop & Edit Image</h3>
+                <button onclick="closeImageCropModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="relative bg-gray-100 rounded-lg overflow-hidden" style="min-height: 400px;">
+                    <canvas id="crop-canvas" class="max-w-full h-auto mx-auto block"></canvas>
+                    <div id="crop-overlay" class="absolute inset-0 pointer-events-none">
+                        <div id="crop-box" class="absolute border-2 border-blue-500 bg-blue-500/10 cursor-move">
+                            <div class="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="nw"></div>
+                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="ne"></div>
+                            <div class="absolute -bottom-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="sw"></div>
+                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="se"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Aspect Ratio</label>
+                        <select id="crop-aspect-ratio" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="free">Free</option>
+                            <option value="1:1">Square (1:1)</option>
+                            <option value="16:9">Widescreen (16:9)</option>
+                            <option value="4:3">Standard (4:3)</option>
+                            <option value="3:2">Photo (3:2)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Width</label>
+                        <select id="crop-max-width" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="1920">1920px (Full)</option>
+                            <option value="1200">1200px (Large)</option>
+                            <option value="800" selected>800px (Medium)</option>
+                            <option value="600">600px (Small)</option>
+                            <option value="400">400px (Thumbnail)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quality</label>
+                        <select id="crop-quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="0.95">High (95%)</option>
+                            <option value="0.85" selected>Medium (85%)</option>
+                            <option value="0.75">Low (75%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                        <select id="crop-format" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="jpeg" selected>JPEG</option>
+                            <option value="png">PNG</option>
+                            <option value="webp">WebP</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2 border-t border-gray-200">
+                    <button onclick="closeImageCropModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button onclick="resetCrop()" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors">Reset</button>
+                    <button onclick="applyCropAndUpload()" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                        <i class="fas fa-check mr-2"></i>Apply & Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="keyboard-shortcuts-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10001]">
+        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Keyboard Shortcuts</h3>
+                <button onclick="document.getElementById('keyboard-shortcuts-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 mb-2">Text Formatting</h4>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Bold</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+B</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Italic</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+I</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Underline</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+U</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Insert Link</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+K</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Highlight</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Shift+H</kbd></div>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 mb-2">Lists & Alignment</h4>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Bullet List</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Shift+L</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Numbered List</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Shift+7</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Align Left</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+L</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Align Center</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+E</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Align Right</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+R</kbd></div>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 mb-2">Editing</h4>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Undo</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Z</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Redo</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Y</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Clear Formatting</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+\\</kbd></div>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 mb-2">Actions</h4>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Insert Image</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+Shift+I</kbd></div>
+                    <div class="flex justify-between items-center py-1"><span class="text-gray-600">Show Shortcuts</span><kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+?</kbd></div>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="maintenance-template-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10001]">
         <div class="bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">

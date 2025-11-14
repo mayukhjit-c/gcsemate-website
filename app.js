@@ -4058,12 +4058,7 @@ async function uploadProfilePicture(file) {
         return;
     }
     
-    // Check if user has permission (paid users and admins only)
-    if (currentUser.tier !== 'paid' && currentUser.role !== 'admin') {
-        showUpgradeModal('Profile pictures are available for Pro users only. Upgrade to Pro to upload and customize your profile picture.');
-        return;
-    }
-    
+    // Profile pictures are now available to all users
     // Validate file using Validator
     const validation = Validator.file(file, {
         maxSize: 5 * 1024 * 1024, // 5MB
@@ -4075,62 +4070,330 @@ async function uploadProfilePicture(file) {
         return;
     }
     
+    // Open profile picture crop modal
+    openProfilePictureCropModal(file);
+}
+
+// Profile picture crop modal with zoom functionality
+let profileCropState = {
+    image: null,
+    canvas: null,
+    ctx: null,
+    cropBox: { x: 0, y: 0, width: 0, height: 0 },
+    isDragging: false,
+    dragHandle: null,
+    startX: 0,
+    startY: 0,
+    originalFile: null,
+    zoom: 1,
+    panX: 0,
+    panY: 0
+};
+
+window.openProfilePictureCropModal = function(file) {
+    profileCropState.originalFile = file;
+    const modal = document.getElementById('profile-picture-crop-modal');
+    const canvas = document.getElementById('profile-crop-canvas');
+    const cropBox = document.getElementById('profile-crop-box');
+    
+    if (!modal || !canvas || !cropBox) return;
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    const img = new Image();
+    img.onload = () => {
+        const maxWidth = 600;
+        const maxHeight = 600;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        profileCropState.image = img;
+        profileCropState.canvas = canvas;
+        profileCropState.ctx = ctx;
+        profileCropState.zoom = 1;
+        profileCropState.panX = 0;
+        profileCropState.panY = 0;
+        
+        // Initialize crop box (square, 80% of smaller dimension)
+        const size = Math.min(width, height) * 0.8;
+        profileCropState.cropBox = {
+            x: (width - size) / 2,
+            y: (height - size) / 2,
+            width: size,
+            height: size
+        };
+        
+        updateProfileCropBox();
+        setupProfileCropInteractions();
+    };
+    
+    const reader = new FileReader();
+    reader.onload = (e) => img.src = e.target.result;
+    reader.readAsDataURL(file);
+};
+
+function updateProfileCropBox() {
+    const cropBox = document.getElementById('profile-crop-box');
+    if (!cropBox || !profileCropState.canvas) return;
+    
+    const { x, y, width, height } = profileCropState.cropBox;
+    const canvas = profileCropState.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
+    const container = cropBox.parentElement;
+    
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+    
+    const containerRect = container.getBoundingClientRect();
+    const canvasOffsetX = canvasRect.left - containerRect.left;
+    const canvasOffsetY = canvasRect.top - containerRect.top;
+    
+    cropBox.style.left = `${canvasOffsetX + x * scaleX}px`;
+    cropBox.style.top = `${canvasOffsetY + y * scaleY}px`;
+    cropBox.style.width = `${width * scaleX}px`;
+    cropBox.style.height = `${height * scaleY}px`;
+}
+
+function setupProfileCropInteractions() {
+    const cropBox = document.getElementById('profile-crop-box');
+    const overlay = document.getElementById('profile-crop-overlay');
+    if (!cropBox || !overlay) return;
+    
+    overlay.style.pointerEvents = 'auto';
+    
+    // Make crop box draggable
+    cropBox.addEventListener('mousedown', (e) => {
+        if (e.target.closest('[data-handle]')) return;
+        profileCropState.isDragging = true;
+        profileCropState.dragHandle = 'move';
+        profileCropState.startX = e.clientX;
+        profileCropState.startY = e.clientY;
+        e.preventDefault();
+    });
+    
+    // Handle resize handles
+    cropBox.querySelectorAll('[data-handle]').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            profileCropState.isDragging = true;
+            profileCropState.dragHandle = handle.dataset.handle;
+            profileCropState.startX = e.clientX;
+            profileCropState.startY = e.clientY;
+        });
+    });
+    
+    // Zoom controls
+    const zoomSlider = document.getElementById('profile-zoom-slider');
+    const zoomValue = document.getElementById('profile-zoom-value');
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', (e) => {
+            profileCropState.zoom = parseFloat(e.target.value);
+            if (zoomValue) {
+                zoomValue.textContent = `${Math.round(profileCropState.zoom * 100)}%`;
+            }
+            redrawProfileCanvas();
+        });
+    }
+    
+    let mouseMoveHandler = (e) => {
+        if (!profileCropState.isDragging) return;
+        
+        const canvas = profileCropState.canvas;
+        const canvasRect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / canvasRect.width;
+        const scaleY = canvas.height / canvasRect.height;
+        
+        if (profileCropState.dragHandle === 'move') {
+            const deltaX = (e.clientX - profileCropState.startX) * scaleX;
+            const deltaY = (e.clientY - profileCropState.startY) * scaleY;
+            profileCropState.cropBox.x = Math.max(0, Math.min(canvas.width - profileCropState.cropBox.width, profileCropState.cropBox.x + deltaX));
+            profileCropState.cropBox.y = Math.max(0, Math.min(canvas.height - profileCropState.cropBox.height, profileCropState.cropBox.y + deltaY));
+            profileCropState.startX = e.clientX;
+            profileCropState.startY = e.clientY;
+        } else {
+            // Handle resize (keep square)
+            const deltaX = (e.clientX - profileCropState.startX) * scaleX;
+            const deltaY = (e.clientY - profileCropState.startY) * scaleY;
+            const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY)) * (deltaX > 0 ? 1 : -1);
+            const handle = profileCropState.dragHandle;
+            
+            if (handle.includes('e') || handle.includes('se')) {
+                const newSize = Math.max(50, Math.min(canvas.width - profileCropState.cropBox.x, profileCropState.cropBox.width + delta));
+                profileCropState.cropBox.width = newSize;
+                profileCropState.cropBox.height = newSize;
+            }
+            if (handle.includes('w') || handle.includes('sw')) {
+                const newSize = Math.max(50, Math.min(profileCropState.cropBox.x, profileCropState.cropBox.width - delta));
+                profileCropState.cropBox.x = profileCropState.cropBox.x + profileCropState.cropBox.width - newSize;
+                profileCropState.cropBox.width = newSize;
+                profileCropState.cropBox.height = newSize;
+            }
+            if (handle.includes('n') || handle.includes('ne')) {
+                const newSize = Math.max(50, Math.min(profileCropState.cropBox.y, profileCropState.cropBox.height - delta));
+                profileCropState.cropBox.y = profileCropState.cropBox.y + profileCropState.cropBox.height - newSize;
+                profileCropState.cropBox.height = newSize;
+                profileCropState.cropBox.width = newSize;
+            }
+            if (handle.includes('s')) {
+                const newSize = Math.max(50, Math.min(canvas.height - profileCropState.cropBox.y, profileCropState.cropBox.height + delta));
+                profileCropState.cropBox.height = newSize;
+                profileCropState.cropBox.width = newSize;
+            }
+            
+            profileCropState.startX = e.clientX;
+            profileCropState.startY = e.clientY;
+        }
+        
+        updateProfileCropBox();
+    };
+    
+    document.addEventListener('mousemove', mouseMoveHandler);
+    profileCropState.mouseMoveHandler = mouseMoveHandler;
+    
+    let mouseUpHandler = () => {
+        profileCropState.isDragging = false;
+        profileCropState.dragHandle = null;
+    };
+    
+    document.addEventListener('mouseup', mouseUpHandler);
+    profileCropState.mouseUpHandler = mouseUpHandler;
+}
+
+function redrawProfileCanvas() {
+    if (!profileCropState.canvas || !profileCropState.image) return;
+    const ctx = profileCropState.ctx;
+    ctx.clearRect(0, 0, profileCropState.canvas.width, profileCropState.canvas.height);
+    ctx.save();
+    ctx.translate(profileCropState.panX, profileCropState.panY);
+    ctx.scale(profileCropState.zoom, profileCropState.zoom);
+    ctx.drawImage(profileCropState.image, 0, 0);
+    ctx.restore();
+}
+
+window.applyProfilePictureCrop = async function() {
+    if (!profileCropState.canvas || !profileCropState.originalFile) return;
+    
+    const { x, y, width, height } = profileCropState.cropBox;
+    
+    // Create cropped canvas (square 400x400)
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = 400;
+    croppedCanvas.height = 400;
+    const croppedCtx = croppedCanvas.getContext('2d');
+    croppedCtx.drawImage(
+        profileCropState.canvas,
+        x, y, width, height,
+        0, 0, 400, 400
+    );
+    
+    // Convert to blob with aggressive compression
+    const blob = await new Promise(resolve => {
+        croppedCanvas.toBlob(resolve, 'image/jpeg', PROFILE_PICTURE_COMPRESSION.quality);
+    });
+    
+    const croppedFile = new File([blob], profileCropState.originalFile.name, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+    });
+    
+    // Further compress
+    const compressedFile = await compressImage(croppedFile, { profilePicture: true });
+    
+    closeProfilePictureCropModal();
+    
+    // Upload the cropped and compressed file
     return safeExecuteAsync(async () => {
         showToast('Uploading profile picture...', 'info');
         
-        // Create a unique filename
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `profile_${currentUser.uid}_${Date.now()}.${fileExtension}`;
-        
-        // Upload to Firebase Storage
-        const storageRef = storage.ref(`profile-pictures/${fileName}`);
-        const uploadTask = storageRef.put(file);
-        
-        // Monitor upload progress
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log('Upload progress:', progress + '%');
-            },
-            (error) => {
-                logError(error, 'Profile Picture Upload');
-                showToast('Failed to upload profile picture', 'error');
-            },
-            async () => {
-                try {
-                    // Get download URL
-                    const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                    
-                    // Update user document with profile picture URL
-                    await db.collection('users').doc(currentUser.uid).update({
-                        profilePictureURL: downloadURL,
-                        profilePictureUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Update current user object
-                    currentUser.profilePictureURL = downloadURL;
-                    
-                    // Update UI
-                    updateProfilePictureInUI(downloadURL);
-                    
-                    // Log activity
-                    await logUserActivity('profile_picture_upload', {
-                        fileName: fileName,
-                        fileSize: file.size,
-                        fileType: file.type
-                    });
-                    
-                    showToast('Profile picture uploaded successfully!', 'success');
-                    
-                } catch (error) {
-                    logError(error, 'Profile Picture Update');
-                    showToast('Failed to save profile picture', 'error');
-                }
+        try {
+            const formData = new FormData();
+            formData.append('file', compressedFile);
+            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+            formData.append('folder', `profilePictures/${currentUser.uid}`);
+            formData.append('tags', `profile,user-${currentUser.uid}`);
+            formData.append('transformation', 'f_auto,q_auto:low,w_400,h_400,c_fill');
+            
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+                { method: 'POST', body: formData }
+            );
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || `Upload failed: ${response.statusText}`);
             }
-        );
-        
+            
+            const data = await response.json();
+            const downloadURL = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                profilePictureURL: downloadURL,
+                profilePictureUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            currentUser.profilePictureURL = downloadURL;
+            updateProfilePictureInUI(downloadURL);
+            
+            await logUserActivity('profile_picture_upload', {
+                fileName: profileCropState.originalFile.name,
+                fileSize: profileCropState.originalFile.size,
+                compressedSize: compressedFile.size,
+                fileType: profileCropState.originalFile.type
+            });
+            
+            showToast('Profile picture uploaded successfully!', 'success');
+        } catch (error) {
+            logError(error, 'Profile Picture Upload');
+            showToast('Failed to upload profile picture', 'error');
+            throw error;
+        }
     }, 'Profile Picture Upload');
-}
+};
+
+window.closeProfilePictureCropModal = function() {
+    const modal = document.getElementById('profile-picture-crop-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+    
+    if (profileCropState.mouseMoveHandler) {
+        document.removeEventListener('mousemove', profileCropState.mouseMoveHandler);
+    }
+    if (profileCropState.mouseUpHandler) {
+        document.removeEventListener('mouseup', profileCropState.mouseUpHandler);
+    }
+    
+    profileCropState = {
+        image: null,
+        canvas: null,
+        ctx: null,
+        cropBox: { x: 0, y: 0, width: 0, height: 0 },
+        isDragging: false,
+        dragHandle: null,
+        startX: 0,
+        startY: 0,
+        originalFile: null,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        mouseMoveHandler: null,
+        mouseUpHandler: null
+    };
+};
 
 function updateProfilePictureInUI(imageURL) {
     // Update profile picture in header
@@ -4656,6 +4919,11 @@ async function checkSystemHealth() {
         if (CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.cloudName !== 'your-cloud-name') {
             // Test Cloudinary connectivity by checking if cloud name is accessible
             const testResponse = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/image/upload/v1/test`);
+            
+            if (!testResponse.ok) {
+                throw new Error(`Cloudinary endpoint returned ${testResponse.status}: ${testResponse.statusText}`);
+            }
+            
             diagnosticResults.tests.push({
                 name: 'Image Storage Service',
                 status: 'pass',
@@ -4675,11 +4943,11 @@ async function checkSystemHealth() {
     } catch (error) {
         diagnosticResults.tests.push({
             name: 'Image Storage Service',
-            status: 'warning',
+            status: 'fail',
             message: 'Cloudinary connectivity check failed',
-            details: error.message
+            details: error.message || 'Unable to connect to Cloudinary service'
         });
-        diagnosticResults.warnings++;
+        diagnosticResults.criticalIssues++;
     }
     
     // Test 4: User Collection Access
@@ -8746,16 +9014,32 @@ async function handleSaveBlogPost() {
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
         return;
     }
+    // Extract Cloudinary image public IDs from content for cleanup tracking
+    const imagePublicIds = extractCloudinaryImageIds(content);
+    
     const postData = {
         title,
         content,
         image: image || null,
         authorId: currentUser.uid,
         authorName: currentUser.displayName,
+        imagePublicIds: imagePublicIds, // Store for cleanup when post is deleted
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     try {
         if (postId) { // Update existing post
+            // Get old post to find images that were removed
+            const oldPost = await db.collection('blogPosts').doc(postId).get();
+            if (oldPost.exists) {
+                const oldData = oldPost.data();
+                const oldImageIds = oldData.imagePublicIds || [];
+                // Find images that were removed
+                const removedImageIds = oldImageIds.filter(id => !imagePublicIds.includes(id));
+                // Delete removed images from Cloudinary
+                for (const publicId of removedImageIds) {
+                    await deleteCloudinaryImage(publicId);
+                }
+            }
             await db.collection('blogPosts').doc(postId).update(postData);
         } else { // Create new post
             postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -8886,7 +9170,111 @@ function setupBlogEditorEnhancements() {
             imageFiles.forEach(file => insertBlogImageFromFile(file, 'drop'));
         });
     }
+    
+    // Add image resize functionality
+    if (!editor.dataset.imageResizeSetup) {
+        editor.dataset.imageResizeSetup = 'true';
+        editor.addEventListener('click', (e) => {
+            const img = e.target.closest('img.blog-inline-image');
+            if (img) {
+                e.preventDefault();
+                showImageResizeControls(img);
+            } else {
+                hideImageResizeControls();
+            }
+        });
+    }
 }
+
+// Image resize functionality for blog editor
+let currentResizingImage = null;
+let resizeControls = null;
+
+function showImageResizeControls(img) {
+    hideImageResizeControls(); // Remove any existing controls
+    
+    currentResizingImage = img;
+    
+    // Create resize controls
+    const controls = document.createElement('div');
+    controls.className = 'image-resize-controls';
+    controls.innerHTML = `
+        <div class="bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center gap-3 text-sm">
+            <span>Resize:</span>
+            <button onclick="resizeImage(25)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">25%</button>
+            <button onclick="resizeImage(50)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">50%</button>
+            <button onclick="resizeImage(75)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">75%</button>
+            <button onclick="resizeImage(100)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">100%</button>
+            <button onclick="resizeImage(150)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">150%</button>
+            <button onclick="resizeImage(200)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">200%</button>
+            <div class="w-px h-4 bg-white/30"></div>
+            <button onclick="removeImage()" class="px-2 py-1 bg-red-500 rounded hover:bg-red-600">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    // Position controls above the image
+    const rect = img.getBoundingClientRect();
+    const editor = document.getElementById('blog-post-content');
+    const editorRect = editor.getBoundingClientRect();
+    
+    controls.style.position = 'absolute';
+    controls.style.top = `${rect.top - editorRect.top - 50}px`;
+    controls.style.left = `${rect.left - editorRect.left}px`;
+    controls.style.zIndex = '1000';
+    
+    editor.style.position = 'relative';
+    editor.appendChild(controls);
+    resizeControls = controls;
+}
+
+function hideImageResizeControls() {
+    if (resizeControls) {
+        resizeControls.remove();
+        resizeControls = null;
+    }
+    currentResizingImage = null;
+}
+
+window.resizeImage = function(percentage) {
+    if (!currentResizingImage) return;
+    
+    // Get original dimensions from data attributes or current dimensions
+    let originalWidth = parseInt(currentResizingImage.dataset.originalWidth) || currentResizingImage.naturalWidth || currentResizingImage.width;
+    let originalHeight = parseInt(currentResizingImage.dataset.originalHeight) || currentResizingImage.naturalHeight || currentResizingImage.height;
+    
+    // Store original if not stored
+    if (!currentResizingImage.dataset.originalWidth) {
+        currentResizingImage.dataset.originalWidth = originalWidth;
+        currentResizingImage.dataset.originalHeight = originalHeight;
+    }
+    
+    // Calculate new dimensions
+    const newWidth = Math.round(originalWidth * (percentage / 100));
+    const newHeight = Math.round(originalHeight * (percentage / 100));
+    
+    // Apply new size (maintain aspect ratio)
+    currentResizingImage.style.width = `${newWidth}px`;
+    currentResizingImage.style.height = 'auto';
+    currentResizingImage.style.maxWidth = '100%';
+    
+    hideImageResizeControls();
+    showToast(`Image resized to ${percentage}%`, 'success');
+};
+
+window.removeImage = function() {
+    if (!currentResizingImage) return;
+    
+    const publicId = currentResizingImage.getAttribute('data-public-id');
+    if (publicId) {
+        deleteCloudinaryImage(publicId);
+    }
+    
+    currentResizingImage.remove();
+    hideImageResizeControls();
+    showToast('Image removed', 'success');
+};
 
 async function insertBlogImageFromFile(file, source = 'upload') {
     const editor = document.getElementById('blog-post-content');
@@ -8906,10 +9294,13 @@ async function insertBlogImageFromFile(file, source = 'upload') {
     document.execCommand('insertHTML', false, `<span id="${placeholderId}" class="blog-image-placeholder">Uploading image...</span>`);
 
     try {
-        const downloadURL = await uploadBlogImageToStorage(file, source);
+        const uploadResult = await uploadBlogImageToStorage(file, source);
+        const downloadURL = uploadResult.url || uploadResult; // Support both new format and legacy
         const placeholder = document.getElementById(placeholderId);
         const altText = escapeHTML(file.name || 'Embedded image');
-        const imageHTML = `<img src="${downloadURL}" alt="${altText}" class="blog-inline-image" loading="lazy" decoding="async">`;
+        // Store public_id as data attribute for cleanup tracking
+        const publicId = uploadResult.publicId ? ` data-public-id="${escapeHTML(uploadResult.publicId)}"` : '';
+        const imageHTML = `<img src="${downloadURL}" alt="${altText}" class="blog-inline-image" loading="lazy" decoding="async" style="cursor: pointer; max-width: 100%; height: auto;"${publicId}>`;
         if (placeholder) {
             placeholder.outerHTML = imageHTML;
         } else {
@@ -8950,12 +9341,223 @@ const CLOUDINARY_CONFIG = {
     apiKey: '' // Leave empty for unsigned uploads
 };
 
+// Image compression settings - Aggressive compression to save storage
+const IMAGE_COMPRESSION = {
+    maxWidth: 1200, // Max width in pixels (reduced from 1920)
+    maxHeight: 1200, // Max height in pixels (reduced from 1920)
+    quality: 0.65, // JPEG quality (0.65 = 65%, aggressive compression)
+    maxSize: 200 * 1024 // Target max size in bytes (200KB, reduced from 500KB)
+};
+
+// Profile picture compression settings - Even more aggressive
+const PROFILE_PICTURE_COMPRESSION = {
+    maxWidth: 400, // Profile pictures are smaller
+    maxHeight: 400,
+    quality: 0.6, // Lower quality for profile pictures
+    maxSize: 50 * 1024 // 50KB max for profile pictures
+};
+
+// Compress image before upload to save storage - Aggressive compression
+async function compressImage(file, options = {}) {
+    const compression = options.profilePicture ? PROFILE_PICTURE_COMPRESSION : IMAGE_COMPRESSION;
+    
+    return new Promise((resolve, reject) => {
+        // Skip compression for very small images
+        if (file.size < 50 * 1024) { // Less than 50KB
+            resolve(file);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // Calculate new dimensions maintaining aspect ratio
+                if (width > compression.maxWidth || height > compression.maxHeight) {
+                    const ratio = Math.min(
+                        compression.maxWidth / width,
+                        compression.maxHeight / height
+                    );
+                    width = Math.floor(width * ratio);
+                    height = Math.floor(height * ratio);
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to blob with aggressive compression
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Failed to compress image'));
+                        return;
+                    }
+                    
+                    // Keep compressing until we hit target size or quality is too low
+                    if (blob.size > compression.maxSize && compression.quality > 0.3) {
+                        // Recursively compress with lower quality
+                        const lowerQuality = Math.max(0.3, compression.quality - 0.1);
+                        canvas.toBlob((smallerBlob) => {
+                            if (smallerBlob && smallerBlob.size < blob.size) {
+                                const compressedFile = new File([smallerBlob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                const compressedFile = new File([blob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            }
+                        }, 'image/jpeg', lowerQuality);
+                    } else {
+                        // Use compressed version if it's smaller, otherwise use original
+                        if (blob.size < file.size) {
+                            const compressedFile = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(compressedFile);
+                        } else {
+                            resolve(file);
+                        }
+                    }
+                }, 'image/jpeg', compression.quality);
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Failed to read image file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+// Extract Cloudinary public IDs from blog post content
+function extractCloudinaryImageIds(htmlContent) {
+    if (!htmlContent) return [];
+    const imageIds = [];
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlContent;
+    const images = temp.querySelectorAll('img[src*="cloudinary.com"], img[data-public-id]');
+    images.forEach(img => {
+        // First check data attribute (most reliable)
+        const publicIdAttr = img.getAttribute('data-public-id');
+        if (publicIdAttr) {
+            imageIds.push(publicIdAttr);
+            return;
+        }
+        
+        // Fallback: extract from URL
+        const src = img.src || img.getAttribute('src');
+        if (src && src.includes('cloudinary.com')) {
+            // Extract public_id from Cloudinary URL
+            // Format: https://res.cloudinary.com/{cloud}/image/upload/{transformations}/{folder}/{public_id}
+            // Our uploads are in: blogUploads/{userId}/{timestamp}-{filename}
+            // Handle various URL formats with transformations
+            try {
+                const url = new URL(src);
+                const pathParts = url.pathname.split('/');
+                const uploadIndex = pathParts.indexOf('upload');
+                if (uploadIndex >= 0 && uploadIndex < pathParts.length - 1) {
+                    // Get everything after 'upload', skip version if present
+                    let startIdx = uploadIndex + 1;
+                    if (pathParts[startIdx] && pathParts[startIdx].match(/^v\d+$/)) {
+                        startIdx++; // Skip version
+                    }
+                    // Skip transformations (they don't contain dots)
+                    while (startIdx < pathParts.length - 1 && !pathParts[startIdx].includes('.')) {
+                        startIdx++;
+                    }
+                    // The last part should be the filename
+                    const filename = pathParts[pathParts.length - 1];
+                    if (filename && filename.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        // Reconstruct public_id with folder path
+                        const publicIdParts = pathParts.slice(startIdx);
+                        const publicId = publicIdParts.join('/').replace(/\.(jpg|jpeg|png|gif|webp)$/i, '');
+                        if (publicId) {
+                            imageIds.push(publicId);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Fallback regex pattern
+                const match = src.match(/\/upload\/(?:v\d+\/)?(?:[^\/]+\/)*([^\/]+)\.(jpg|jpeg|png|gif|webp)/i);
+                if (match && match[1]) {
+                    imageIds.push(match[1]);
+                }
+            }
+        }
+    });
+    // Remove duplicates
+    return [...new Set(imageIds)];
+}
+
+// Delete image from Cloudinary
+// Note: Cloudinary deletion requires API secret for security, which shouldn't be in client code
+// This function stores deletion requests in Firestore for processing
+async function deleteCloudinaryImage(publicId) {
+    if (!publicId || !CLOUDINARY_CONFIG.cloudName) return false;
+    
+    try {
+        // Store deletion request in Firestore for admin processing or Cloud Function
+        // Admins can process these or set up a Cloud Function to auto-delete
+        await db.collection('cloudinaryDeletions').add({
+            publicId: publicId,
+            cloudName: CLOUDINARY_CONFIG.cloudName,
+            requestedBy: currentUser.uid,
+            requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending'
+        });
+        
+        console.log('Image deletion queued:', publicId);
+        return true;
+    } catch (error) {
+        console.error('Error queueing Cloudinary image deletion:', error);
+        // Fallback: Try direct deletion if we have API credentials (for admin)
+        // This would require API secret in environment or server-side function
+        return false;
+    }
+}
+
+// Admin function to process pending Cloudinary deletions
+// Requires Cloudinary API secret (should be in server-side function or admin panel)
+async function processCloudinaryDeletions() {
+    if (currentUser.role !== 'admin') return;
+    
+    try {
+        const pendingDeletions = await db.collection('cloudinaryDeletions')
+            .where('status', '==', 'pending')
+            .limit(10)
+            .get();
+        
+        if (pendingDeletions.empty) {
+            showToast('No pending deletions', 'info');
+            return;
+        }
+        
+        // Note: Actual deletion requires Cloudinary API secret
+        // This should be done via Cloud Function or admin panel with API secret
+        showToast(`${pendingDeletions.size} deletions queued. Set up Cloud Function for automatic processing.`, 'info');
+    } catch (error) {
+        console.error('Error processing deletions:', error);
+        showToast('Error processing deletions', 'error');
+    }
+}
+
 async function uploadBlogImageToStorage(file, source = 'upload') {
     if (!currentUser || !currentUser.uid) {
         throw new Error('You must be signed in to upload images');
     }
     
-    // Validate file size (5MB limit)
+    // Validate file size (5MB limit before compression)
     if (file.size > 5 * 1024 * 1024) {
         throw new Error('Image must be smaller than 5MB');
     }
@@ -8966,18 +9568,31 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
     }
     
     try {
+        // Compress image before upload to save storage
+        const compressedFile = await compressImage(file);
+        const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+        if (compressionRatio > 0) {
+            console.log(`Image compressed: ${compressionRatio}% size reduction`);
+        }
+        
         // Create FormData for Cloudinary upload
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', compressedFile);
         formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
         formData.append('folder', `blogUploads/${currentUser.uid}`); // Organize by user
         formData.append('tags', `blog,${source},user-${currentUser.uid}`); // Add tags for organization
+        
+        // Add optimization transformations
+        formData.append('transformation', 'f_auto,q_auto:good'); // Auto format and quality
+        formData.append('eager', 'f_auto,q_auto:low,w_800'); // Generate optimized version
         
         // Optional: Add context/metadata
         formData.append('context', JSON.stringify({
             uploadedBy: currentUser.uid,
             source: source,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
+            originalSize: file.size,
+            compressedSize: compressedFile.size
         }));
         
         // Upload to Cloudinary
@@ -8996,8 +9611,16 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
         
         const data = await response.json();
         
-        // Return the secure URL (HTTPS)
-        return data.secure_url;
+        // Use optimized URL with transformations for better compression
+        // Format: https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto:good/{public_id}
+        const optimizedUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:good/');
+        
+        // Return optimized URL and public_id for cleanup tracking
+        return {
+            url: optimizedUrl,
+            publicId: data.public_id,
+            originalUrl: data.secure_url
+        };
         
     } catch (error) {
         console.error('Cloudinary upload error:', error);
@@ -9022,13 +9645,351 @@ function isBlogImageFile(file) {
     return /\.(png|jpe?g|gif|bmp|webp|heic)$/i.test(name);
 }
 
+// Image Cropping Functionality
+let cropState = {
+    image: null,
+    canvas: null,
+    ctx: null,
+    cropBox: { x: 0, y: 0, width: 0, height: 0 },
+    isDragging: false,
+    dragHandle: null,
+    startX: 0,
+    startY: 0,
+    originalFile: null
+};
+
+window.openImagePicker = function() {
+    const input = document.getElementById('hidden-image-input');
+    if (input) input.click();
+};
+
+window.handleImageFileSelect = function(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!isBlogImageFile(file)) {
+        showToast('Only image files are allowed', 'error');
+        return;
+    }
+    
+    if (file.size > BLOG_IMAGE_MAX_SIZE) {
+        showToast('Images must be smaller than 5MB', 'error');
+        return;
+    }
+    
+    openImageCropModal(file);
+    event.target.value = ''; // Reset input
+};
+
+window.openImageCropModal = function(file) {
+    cropState.originalFile = file;
+    const modal = document.getElementById('image-crop-modal');
+    const canvas = document.getElementById('crop-canvas');
+    const cropBox = document.getElementById('crop-box');
+    
+    if (!modal || !canvas || !cropBox) return;
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    const img = new Image();
+    img.onload = () => {
+        const maxWidth = 800;
+        const maxHeight = 600;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        cropState.image = img;
+        cropState.canvas = canvas;
+        cropState.ctx = ctx;
+        
+        // Initialize crop box (80% of image)
+        const cropWidth = width * 0.8;
+        const cropHeight = height * 0.8;
+        cropState.cropBox = {
+            x: (width - cropWidth) / 2,
+            y: (height - cropHeight) / 2,
+            width: cropWidth,
+            height: cropHeight
+        };
+        
+        updateCropBox();
+        setupCropInteractions();
+    };
+    
+    const reader = new FileReader();
+    reader.onload = (e) => img.src = e.target.result;
+    reader.readAsDataURL(file);
+};
+
+function updateCropBox() {
+    const cropBox = document.getElementById('crop-box');
+    if (!cropBox || !cropState.canvas) return;
+    
+    const { x, y, width, height } = cropState.cropBox;
+    const canvas = cropState.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
+    const container = cropBox.parentElement;
+    
+    // Calculate scale based on actual displayed canvas size
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+    
+    // Position relative to canvas position in container
+    const containerRect = container.getBoundingClientRect();
+    const canvasOffsetX = canvasRect.left - containerRect.left;
+    const canvasOffsetY = canvasRect.top - containerRect.top;
+    
+    cropBox.style.left = `${canvasOffsetX + x * scaleX}px`;
+    cropBox.style.top = `${canvasOffsetY + y * scaleY}px`;
+    cropBox.style.width = `${width * scaleX}px`;
+    cropBox.style.height = `${height * scaleY}px`;
+}
+
+function setupCropInteractions() {
+    const cropBox = document.getElementById('crop-box');
+    const overlay = document.getElementById('crop-overlay');
+    if (!cropBox || !overlay) return;
+    
+    overlay.style.pointerEvents = 'auto';
+    
+    // Make crop box draggable
+    cropBox.addEventListener('mousedown', (e) => {
+        if (e.target.closest('[data-handle]')) return;
+        cropState.isDragging = true;
+        cropState.dragHandle = 'move';
+        cropState.startX = e.clientX;
+        cropState.startY = e.clientY;
+        e.preventDefault();
+    });
+    
+    // Handle resize handles
+    cropBox.querySelectorAll('[data-handle]').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            cropState.isDragging = true;
+            cropState.dragHandle = handle.dataset.handle;
+            cropState.startX = e.clientX;
+            cropState.startY = e.clientY;
+        });
+    });
+    
+    let mouseMoveHandler = (e) => {
+        if (!cropState.isDragging) return;
+        
+        const canvas = cropState.canvas;
+        const canvasRect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / canvasRect.width;
+        const scaleY = canvas.height / canvasRect.height;
+        
+        if (cropState.dragHandle === 'move') {
+            const deltaX = (e.clientX - cropState.startX) * scaleX;
+            const deltaY = (e.clientY - cropState.startY) * scaleY;
+            cropState.cropBox.x = Math.max(0, Math.min(canvas.width - cropState.cropBox.width, cropState.cropBox.x + deltaX));
+            cropState.cropBox.y = Math.max(0, Math.min(canvas.height - cropState.cropBox.height, cropState.cropBox.y + deltaY));
+            cropState.startX = e.clientX;
+            cropState.startY = e.clientY;
+        } else {
+            // Handle resize
+            const deltaX = (e.clientX - cropState.startX) * scaleX;
+            const deltaY = (e.clientY - cropState.startY) * scaleY;
+            const handle = cropState.dragHandle;
+            
+            if (handle.includes('e')) {
+                cropState.cropBox.width = Math.max(50, Math.min(canvas.width - cropState.cropBox.x, cropState.cropBox.width + deltaX));
+            }
+            if (handle.includes('w')) {
+                const newWidth = Math.max(50, Math.min(cropState.cropBox.x, cropState.cropBox.width - deltaX));
+                cropState.cropBox.x = cropState.cropBox.x + cropState.cropBox.width - newWidth;
+                cropState.cropBox.width = newWidth;
+            }
+            if (handle.includes('s')) {
+                cropState.cropBox.height = Math.max(50, Math.min(canvas.height - cropState.cropBox.y, cropState.cropBox.height + deltaY));
+            }
+            if (handle.includes('n')) {
+                const newHeight = Math.max(50, Math.min(cropState.cropBox.y, cropState.cropBox.height - deltaY));
+                cropState.cropBox.y = cropState.cropBox.y + cropState.cropBox.height - newHeight;
+                cropState.cropBox.height = newHeight;
+            }
+            
+            cropState.startX = e.clientX;
+            cropState.startY = e.clientY;
+        }
+        
+        applyAspectRatio();
+        updateCropBox();
+    };
+    
+    document.addEventListener('mousemove', mouseMoveHandler);
+    
+    let mouseUpHandler = () => {
+        cropState.isDragging = false;
+        cropState.dragHandle = null;
+    };
+    
+    document.addEventListener('mouseup', mouseUpHandler);
+    
+    // Store handlers for cleanup
+    cropState.mouseMoveHandler = mouseMoveHandler;
+    cropState.mouseUpHandler = mouseUpHandler;
+    
+    // Aspect ratio selector
+    document.getElementById('crop-aspect-ratio')?.addEventListener('change', applyAspectRatio);
+}
+
+function applyAspectRatio() {
+    const aspectSelect = document.getElementById('crop-aspect-ratio');
+    if (!aspectSelect || aspectSelect.value === 'free') return;
+    
+    const [w, h] = aspectSelect.value.split(':').map(Number);
+    const ratio = w / h;
+    
+    const currentRatio = cropState.cropBox.width / cropState.cropBox.height;
+    if (Math.abs(currentRatio - ratio) > 0.01) {
+        if (currentRatio > ratio) {
+            cropState.cropBox.height = cropState.cropBox.width / ratio;
+        } else {
+            cropState.cropBox.width = cropState.cropBox.height * ratio;
+        }
+        
+        // Keep within bounds
+        const canvas = cropState.canvas;
+        if (cropState.cropBox.x + cropState.cropBox.width > canvas.width) {
+            cropState.cropBox.x = canvas.width - cropState.cropBox.width;
+        }
+        if (cropState.cropBox.y + cropState.cropBox.height > canvas.height) {
+            cropState.cropBox.y = canvas.height - cropState.cropBox.height;
+        }
+    }
+}
+
+window.resetCrop = function() {
+    if (!cropState.canvas) return;
+    const width = cropState.canvas.width;
+    const height = cropState.canvas.height;
+    cropState.cropBox = {
+        x: width * 0.1,
+        y: height * 0.1,
+        width: width * 0.8,
+        height: height * 0.8
+    };
+    document.getElementById('crop-aspect-ratio').value = 'free';
+    updateCropBox();
+};
+
+window.applyCropAndUpload = async function() {
+    if (!cropState.canvas || !cropState.originalFile) return;
+    
+    const { x, y, width, height } = cropState.cropBox;
+    const maxWidth = parseInt(document.getElementById('crop-max-width').value);
+    const quality = parseFloat(document.getElementById('crop-quality').value);
+    const format = document.getElementById('crop-format').value;
+    
+    // Create cropped canvas
+    const croppedCanvas = document.createElement('canvas');
+    let outputWidth = width;
+    let outputHeight = height;
+    
+    if (outputWidth > maxWidth) {
+        const ratio = maxWidth / outputWidth;
+        outputWidth = maxWidth;
+        outputHeight = outputHeight * ratio;
+    }
+    
+    croppedCanvas.width = outputWidth;
+    croppedCanvas.height = outputHeight;
+    const croppedCtx = croppedCanvas.getContext('2d');
+    croppedCtx.drawImage(
+        cropState.canvas,
+        x, y, width, height,
+        0, 0, outputWidth, outputHeight
+    );
+    
+    // Convert to blob
+    const blob = await new Promise(resolve => {
+        croppedCanvas.toBlob(resolve, `image/${format}`, quality);
+    });
+    
+    const croppedFile = new File([blob], cropState.originalFile.name, {
+        type: `image/${format}`,
+        lastModified: Date.now()
+    });
+    
+    closeImageCropModal();
+    await insertBlogImageFromFile(croppedFile, 'crop');
+};
+
+window.closeImageCropModal = function() {
+    const modal = document.getElementById('image-crop-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+    
+    // Clean up event listeners
+    if (cropState.mouseMoveHandler) {
+        document.removeEventListener('mousemove', cropState.mouseMoveHandler);
+    }
+    if (cropState.mouseUpHandler) {
+        document.removeEventListener('mouseup', cropState.mouseUpHandler);
+    }
+    
+    cropState = {
+        image: null,
+        canvas: null,
+        ctx: null,
+        cropBox: { x: 0, y: 0, width: 0, height: 0 },
+        isDragging: false,
+        dragHandle: null,
+        startX: 0,
+        startY: 0,
+        originalFile: null,
+        mouseMoveHandler: null,
+        mouseUpHandler: null
+    };
+};
+
+window.showKeyboardShortcuts = function() {
+    const modal = document.getElementById('keyboard-shortcuts-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+};
+
 function handleBlogEditorKeydown(event) {
     const isMac = navigator.platform ? /Mac|iPad|iPhone/i.test(navigator.platform) : false;
     const modifierPressed = isMac ? event.metaKey : event.ctrlKey;
-    if (!modifierPressed) return;
-
-    const key = event.key.toLowerCase();
     const shift = event.shiftKey;
+    const key = event.key.toLowerCase();
+
+    // Handle Ctrl+? or Cmd+? for shortcuts
+    if (modifierPressed && key === '?') {
+        event.preventDefault();
+        showKeyboardShortcuts();
+        return;
+    }
+    
+    // Handle Ctrl+Shift+I or Cmd+Shift+I for insert image
+    if (modifierPressed && shift && key === 'i') {
+        event.preventDefault();
+        openImagePicker();
+        return;
+    }
+    
+    if (!modifierPressed) return;
 
     const handledCommands = ['b', 'i', 'u', 'k', 'l', 'o', '7', '8', 'z', 'y', 'e', 'r', 'h'];
     if (!handledCommands.includes(key) && !(key === 'l' && shift)) return;
@@ -9134,6 +10095,23 @@ async function deleteBlogPost(postId) {
     if (currentUser.role !== 'admin') return;
     showConfirmationModal('Are you sure you want to delete this blog post? This cannot be undone.', async () => {
         try {
+            // Get post data to extract image public IDs before deletion
+            const postDoc = await db.collection('blogPosts').doc(postId).get();
+            if (postDoc.exists) {
+                const postData = postDoc.data();
+                const imagePublicIds = postData.imagePublicIds || [];
+                
+                // Also extract from content as fallback
+                const contentImageIds = extractCloudinaryImageIds(postData.content || '');
+                const allImageIds = [...new Set([...imagePublicIds, ...contentImageIds])];
+                
+                // Delete all images from Cloudinary
+                for (const publicId of allImageIds) {
+                    await deleteCloudinaryImage(publicId);
+                }
+            }
+            
+            // Delete the blog post
             await db.collection('blogPosts').doc(postId).delete();
             showToast('Blog post deleted.', 'success');
         } catch (error) {
