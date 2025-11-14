@@ -6563,10 +6563,6 @@ function showPage(pageId) {
         mobileMenu.classList.add('hidden');
     }
     
-    // Initialize exam timetable if page is shown
-    if (pageId === 'exam-timetable-page') {
-        initializeExamTimetable();
-    }
 }
 function showAnnouncement(message) {
     const announcementBanner = document.getElementById('site-announcement-banner');
@@ -7666,13 +7662,28 @@ function renderCalendar(userEvents, globalEvents) {
             visibleEvents.forEach(event => {
                 const eventDot = document.createElement('div');
                 eventDot.className = 'text-xs px-1.5 py-0.5 rounded truncate text-white font-medium';
+                
+                // Determine color based on event type
+                const isGlobal = globalEventsForDay.includes(event);
+                const category = (event.category || '').toLowerCase();
+                
                 if (event.color && /^#([0-9a-f]{3}){1,2}$/i.test(event.color)) {
+                    // Use custom color if set
                     eventDot.style.backgroundColor = event.color;
-                } else if (userEventsForDay.includes(event)) {
+                } else if (isGlobal) {
+                    // Blue for global events
                     eventDot.className += ' bg-blue-500';
+                } else if (category === 'exam' || category.includes('exam')) {
+                    // Red for exam events
+                    eventDot.className += ' bg-red-500';
+                } else if (category === 'homework' || category === 'hw' || category.includes('homework')) {
+                    // Purple for homework events
+                    eventDot.className += ' bg-purple-500';
                 } else {
-                    eventDot.className += ' bg-green-500';
+                    // Default to blue for user events
+                    eventDot.className += ' bg-blue-500';
                 }
+                
                 eventDot.textContent = event.title || 'Event';
                 eventDot.setAttribute('data-tooltip', `${event.title || 'Event'}${event.description ? ': ' + event.description : ''}`);
                 eventsContainer.appendChild(eventDot);
@@ -7723,16 +7734,33 @@ function renderCalendarAgenda() {
         for (let i=0;i<rangeDays;i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
             const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            const events = [...(calendarGlobalEvents[key]||[]), ...(calendarUserEvents[key]||[])];
+            const globalEvents = (calendarGlobalEvents[key]||[]).map(e => ({ ...e, isGlobal: true }));
+            const userEvents = (calendarUserEvents[key]||[]).map(e => ({ ...e, isGlobal: false }));
+            const events = [...globalEvents, ...userEvents];
             events.forEach(e => items.push({ date: new Date(d), ...e }));
         }
         items.sort((a,b)=> a.date - b.date);
-        agenda.innerHTML = items.length ? items.map(e => `
+        agenda.innerHTML = items.length ? items.map(e => {
+            // Determine color based on event type
+            let eventColor = e.color;
+            if (!eventColor || !/^#([0-9a-f]{3}){1,2}$/i.test(eventColor)) {
+                const category = (e.category || '').toLowerCase();
+                if (e.isGlobal) {
+                    eventColor = '#3B82F6'; // Blue for global
+                } else if (category === 'exam' || category.includes('exam')) {
+                    eventColor = '#EF4444'; // Red for exam
+                } else if (category === 'homework' || category === 'hw' || category.includes('homework')) {
+                    eventColor = '#A855F7'; // Purple for homework
+                } else {
+                    eventColor = '#3B82F6'; // Default blue
+                }
+            }
+            return `
             <div class="flex items-start gap-3 py-2 border-b border-gray-100" draggable="true" ondragstart="onAgendaDragStart(event, '${e.id||''}', '${e.date.toISOString()}')" ondrop="onAgendaDrop(event, '${e.id||''}')" ondragover="event.preventDefault()">
                 <div class="w-28 text-sm text-gray-600">${e.date.toLocaleDateString('en-GB')}</div>
                 <div class="flex-1">
                     <div class="font-semibold text-gray-800 flex items-center gap-2">
-                        <span class="inline-block w-2.5 h-2.5 rounded" style="background:${e.color||'#9CA3AF'}"></span>
+                        <span class="inline-block w-2.5 h-2.5 rounded" style="background:${eventColor}"></span>
                         <span>${e.title||'Event'}</span>
                         ${e.category ? `<span class=\"text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700\">${e.category}</span>` : ''}
                     </div>
@@ -7743,7 +7771,8 @@ function renderCalendarAgenda() {
                     ${e.enableCountdown ? '<span class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">Countdown</span>' : ''}
                 </div>
             </div>
-        `).join('') : '<div class="text-center text-gray-500 py-6">No events</div>';
+        `;
+        }).join('') : '<div class="text-center text-gray-500 py-6">No events</div>';
     } else {
         agenda.classList.add('hidden');
         grid.classList.remove('hidden');
@@ -8309,7 +8338,6 @@ const pageTitles = {
     'file-browser-page': 'Files - GCSEMate',
     'account-settings-page': 'Account - GCSEMate',
     'about-page': 'About - GCSEMate',
-    'gcsemategpt-page': 'AI Tutor - GCSEMate',
     'features-page': 'Features & Pricing - GCSEMate',
     'help-page': 'Help/FAQ - GCSEMate',
     'checkout-page': 'Upgrade - GCSEMate'
@@ -9393,6 +9421,14 @@ function escapeJS(str) {
         .replace(/\t/g, '\\t');
 }
 
+// Security helper: Escape HTML to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Security helper: Sanitize HTML content to prevent XSS
 // Allows safe formatting tags from contentEditable but removes script tags and dangerous attributes
 function sanitizeHTML(html) {
@@ -9402,8 +9438,18 @@ function sanitizeHTML(html) {
     temp.innerHTML = html;
     
     // Remove script tags and event handlers
-    const scripts = temp.querySelectorAll('script, style[on*], *[onclick], *[onerror], *[onload]');
+    const scripts = temp.querySelectorAll('script, *[onclick], *[onerror], *[onload]');
     scripts.forEach(el => el.remove());
+    
+    // Remove style tags with event handlers
+    const styleTags = temp.querySelectorAll('style');
+    styleTags.forEach(el => {
+        Array.from(el.attributes).forEach(attr => {
+            if (attr.name.startsWith('on')) {
+                el.remove();
+            }
+        });
+    });
     
     // Remove dangerous attributes
     const allElements = temp.querySelectorAll('*');
@@ -9783,333 +9829,3 @@ window.addEventListener('beforeunload', () => {
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
-
-// Exam Timetable Integration
-let examTimetableState = {
-    visibleSubjects: new Set(),
-    originalExams: [],
-    exams: []
-};
-
-const MUSIC_DATE = "2026-06-05"; // TODO: update to official date
-
-const examTimetableData = [
-    { id: 'german-listening', subject: "German", component: "Paper 2: Listening and understanding (Higher Tier)", date: "2026-05-07", session: "Afternoon", duration: "1h 05m", bg: "#17C9C7" },
-    { id: 'english-lit-1', subject: "English Literature", component: "Paper 1: Shakespeare and Post-1914 Literature", date: "2026-05-11", session: "Morning", duration: "1h 45m", bg: "#E91E63", textColor: "#111" },
-    { id: 'biology-1', subject: "Biology", component: "Paper 1 Higher", date: "2026-05-12", session: "Afternoon", duration: "1h 45m", bg: "#1B8F41", textColor: "#fff" },
-    { id: 'geography-1', subject: "Geography", component: "J384/01 Our natural world", date: "2026-05-13", session: "Morning", duration: "1h 15m", bg: "#B7E062" },
-    { id: 'computing-1', subject: "Computing", component: "J277/01 Computer systems", date: "2026-05-13", session: "Afternoon", duration: "1h 30m", bg: "#C7B8DE" },
-    { id: 'maths-1', subject: "Mathematics", component: "Paper 1 (Non-Calculator) (Higher Tier)", date: "2026-05-14", session: "Morning", duration: "1h 30m", bg: "#1E4FB8", textColor: "#fff" },
-    { id: 'german-reading', subject: "German", component: "Paper 3: Reading and understanding (Higher Tier)", date: "2026-05-14", session: "Afternoon", duration: "1h 00m", bg: "#0FC4C4" },
-    { id: 'history-1', subject: "History", component: "Paper 1: Thematic study and historic environment", date: "2026-05-15", session: "Morning", duration: "1h 20m", bg: "#1FD2DC" },
-    { id: 'chemistry-1', subject: "Chemistry", component: "Paper 1 Higher", date: "2026-05-18", session: "Morning", duration: "1h 45m", bg: "#F5C33C" },
-    { id: 'english-lit-2', subject: "English Literature", component: "Paper 2: 19th Century Novel & Poetry since 1789", date: "2026-05-19", session: "Morning", duration: "2h 15m", bg: "#F01B84", textColor: "#111" },
-    { id: 'computing-2', subject: "Computing", component: "J277/02 Computational thinking, algorithms and programming", date: "2026-05-19", session: "Afternoon", duration: "1h 30m", bg: "#B6C5DB" },
-    { id: 'english-lang-1', subject: "English Language", component: "Paper 1", date: "2026-05-21", session: "Morning", duration: "1h 45m", bg: "#E01177", textColor: "#111" },
-    { id: 'german-writing', subject: "German", component: "Paper 4: Writing (Higher Tier)", date: "2026-06-01", session: "Afternoon", duration: "1h 20m", bg: "#0BA7A7" },
-    { id: 'music-1', subject: "Music", component: "Component 3: Appraising", date: MUSIC_DATE, session: "Afternoon", duration: "1h 45m", bg: "#2D348A", textColor: "#fff" },
-    { id: 'physics-1', subject: "Physics", component: "Paper 1 Higher", date: "2026-06-02", session: "Morning", duration: "1h 45m", bg: "#0E3A60", textColor: "#fff" },
-    { id: 'maths-2', subject: "Mathematics", component: "Paper 2 (Calculator) (Higher Tier)", date: "2026-06-03", session: "Morning", duration: "1h 30m", bg: "#1E4FB8", textColor: "#fff" },
-    { id: 'history-2', subject: "History", component: "Paper 2: Period study & British depth study", date: "2026-06-04", session: "Morning", duration: "1h 50m", bg: "#25C0C0" },
-    { id: 'english-lang-2', subject: "English Language", component: "Paper 2", date: "2026-06-05", session: "Morning", duration: "1h 45m", bg: "#E01177", textColor: "#111" },
-    { id: 'geography-2', subject: "Geography", component: "J384/02 People and society", date: "2026-06-03", session: "Afternoon", duration: "1h 30m", bg: "#AEDB58" },
-    { id: 'biology-2', subject: "Biology", component: "Paper 2 Higher", date: "2026-06-08", session: "Morning", duration: "1h 45m", bg: "#147A36", textColor: "#fff" },
-    { id: 'further-maths-1', subject: "Further Maths", component: "Level 2 Certificate in Further Mathematics Paper 1", date: "2026-06-08", session: "Afternoon", duration: "1h 45m", bg: "#7E57C2", textColor: "#fff" },
-    { id: 'history-3', subject: "History", component: "Paper 3: Modern depth study", date: "2026-06-09", session: "Afternoon", duration: "1h 30m", bg: "#1DD4C9" },
-    { id: 'maths-3', subject: "Mathematics", component: "Paper 3 (Calculator) (Higher Tier)", date: "2026-06-10", session: "Morning", duration: "1h 30m", bg: "#1E4FB8", textColor: "#fff" },
-    { id: 'geography-3', subject: "Geography", component: "J384/03 Geographical exploration", date: "2026-06-11", session: "Morning", duration: "1h 30m", bg: "#A9D64D" },
-    { id: 'chemistry-2', subject: "Chemistry", component: "Paper 2 Higher", date: "2026-06-12", session: "Morning", duration: "1h 45m", bg: "#FFA646" },
-    { id: 'physics-2', subject: "Physics", component: "Paper 2 Higher", date: "2026-06-15", session: "Morning", duration: "1h 45m", bg: "#0E3A60", textColor: "#fff" },
-    { id: 'further-maths-2', subject: "Further Maths", component: "Level 2 Certificate in Further Mathematics Paper 2", date: "2026-06-15", session: "Afternoon", duration: "1h 45m", bg: "#7E57C2", textColor: "#fff" }
-];
-
-function initializeExamTimetable() {
-    const container = document.getElementById('exam-timetable-container');
-    if (!container || container.innerHTML.trim() !== '') return; // Already initialized
-    
-    examTimetableState.exams = examTimetableData.map(exam => ({...exam}));
-    examTimetableState.originalExams = examTimetableData.map(exam => ({...exam}));
-    
-    const uniqueSubjects = [...new Set(examTimetableData.map(e => e.subject))];
-    uniqueSubjects.forEach(subject => examTimetableState.visibleSubjects.add(subject));
-    
-    renderExamTimetable();
-}
-
-function longDate(iso) {
-    const d = new Date(iso + "T00:00:00");
-    return d.toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long" });
-}
-
-window.updateExamDate = function(examId, newDate) {
-    const exam = examTimetableState.exams.find(e => e.id === examId);
-    if (exam) {
-        exam.date = newDate;
-        const tableCard = document.querySelector('#exam-timetable-container .card');
-        if (tableCard) {
-            tableCard.classList.add('updating');
-            setTimeout(() => {
-                tableCard.classList.remove('updating');
-                renderExamTimetable();
-            }, 200);
-        }
-    }
-};
-
-window.toggleSubject = function(subject) {
-    if (examTimetableState.visibleSubjects.has(subject)) {
-        examTimetableState.visibleSubjects.delete(subject);
-    } else {
-        examTimetableState.visibleSubjects.add(subject);
-    }
-    renderExamTimetable();
-};
-
-window.toggleAllSubjects = function() {
-    const uniqueSubjects = [...new Set(examTimetableData.map(e => e.subject))];
-    const toggleBtn = document.getElementById('toggleText');
-    if (examTimetableState.visibleSubjects.size === uniqueSubjects.length) {
-        examTimetableState.visibleSubjects.clear();
-        if (toggleBtn) toggleBtn.textContent = 'Show All';
-    } else {
-        uniqueSubjects.forEach(subject => examTimetableState.visibleSubjects.add(subject));
-        if (toggleBtn) toggleBtn.textContent = 'Hide All';
-    }
-    renderExamTimetable();
-};
-
-window.resetDates = function() {
-    examTimetableState.exams.forEach((exam, index) => {
-        exam.date = examTimetableState.originalExams[index].date;
-    });
-    const tableCard = document.querySelector('#exam-timetable-container .card');
-    if (tableCard) {
-        tableCard.classList.add('updating');
-        setTimeout(() => {
-            tableCard.classList.remove('updating');
-            renderExamTimetable();
-        }, 200);
-    }
-};
-
-function renderSubjectFilters() {
-    const container = document.getElementById('subjectFilters');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const uniqueSubjects = [...new Set(examTimetableData.map(e => e.subject))];
-    uniqueSubjects.forEach(subject => {
-        const count = examTimetableData.filter(e => e.subject === subject).length;
-        const isVisible = examTimetableState.visibleSubjects.has(subject);
-        
-        const toggle = document.createElement('div');
-        toggle.className = 'subject-toggle';
-        toggle.onclick = () => window.toggleSubject(subject);
-        
-        toggle.innerHTML = `
-            <div class="subject-checkbox ${isVisible ? 'checked' : ''}"></div>
-            <div class="subject-label">${escapeHTML(subject)}</div>
-            <div class="subject-count">${count}</div>
-        `;
-        
-        container.appendChild(toggle);
-    });
-}
-
-function renderRows() {
-    const host = document.getElementById("rows");
-    if (!host) return;
-    
-    const filteredExams = examTimetableState.exams
-        .filter(ex => examTimetableState.visibleSubjects.has(ex.subject))
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    const existingRows = Array.from(host.children);
-    
-    existingRows.forEach(row => {
-        const examId = row.dataset.examId;
-        const shouldShow = filteredExams.some(ex => ex.id === examId);
-        
-        if (!shouldShow) {
-            row.classList.add('hidden');
-            setTimeout(() => {
-                if (row.classList.contains('hidden')) {
-                    row.remove();
-                }
-            }, 400);
-        }
-    });
-    
-    filteredExams.forEach((ex) => {
-        let row = host.querySelector(`[data-exam-id="${ex.id}"]`);
-        
-        if (!row) {
-            row = document.createElement("div");
-            row.dataset.examId = ex.id;
-            host.appendChild(row);
-        }
-        
-        const safeId = escapeJS(ex.id);
-        const safeDate = escapeJS(ex.date);
-        
-        row.className = "row colored" + (ex.textColor === "#fff" ? " dark-text" : "");
-        row.style.background = ex.bg;
-        row.style.color = ex.textColor || "#111";
-        row.classList.remove('hidden');
-        
-        row.innerHTML = `
-            <div class="cell subject">${escapeHTML(ex.subject)}</div>
-            <div class="cell paper">${escapeHTML(ex.component)}</div>
-            <div class="cell date">
-                <input type="date" class="date-input" value="${safeDate}" 
-                       onchange="updateExamDate('${safeId}', this.value)"
-                       title="Click to change date">
-            </div>
-            <div class="cell time">${escapeHTML(ex.session)}</div>
-            <div class="cell duration">${escapeHTML(ex.duration)}</div>
-        `;
-    });
-    
-    const visibleCountEl = document.getElementById('visibleCount');
-    const totalCountEl = document.getElementById('totalCount');
-    if (visibleCountEl) visibleCountEl.textContent = filteredExams.length;
-    if (totalCountEl) totalCountEl.textContent = examTimetableData.length;
-}
-
-function buildCalendar(gridEl, y, m, counts) {
-    if (!gridEl) return;
-    const dow = ["Mo","Tu","We","Th","Fr","Sa","Su"];
-    
-    if (gridEl.children.length === 0) {
-        for(const d of dow){
-            const h = document.createElement("div");
-            h.className = "dow";
-            h.textContent = d;
-            gridEl.appendChild(h);
-        }
-        
-        const first = new Date(y, m, 1);
-        let offset = first.getDay();
-        offset = (offset === 0) ? 6 : offset-1;
-        const daysInMonth = new Date(y, m+1, 0).getDate();
-        
-        for(let i=0;i<offset;i++){
-            const e = document.createElement("div"); 
-            e.className="day empty"; 
-            e.textContent="";
-            gridEl.appendChild(e);
-        }
-        
-        for(let day=1; day<=daysInMonth; day++){
-            const dEl = document.createElement("div");
-            dEl.className = "day";
-            dEl.textContent = day;
-            dEl.dataset.day = day;
-            gridEl.appendChild(dEl);
-        }
-    }
-    
-    const dayElements = gridEl.querySelectorAll('.day[data-day]');
-    dayElements.forEach(dEl => {
-        const day = parseInt(dEl.dataset.day);
-        const key = `${y}-${String(m+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-        const n = counts[key] || 0;
-        
-        dEl.classList.remove('single', 'multi', 'empty');
-        
-        if (n > 1) {
-            dEl.classList.add('multi');
-        } else if (n === 1) {
-            dEl.classList.add('single');
-        } else {
-            dEl.classList.add('empty');
-        }
-    });
-}
-
-function countByDate(data) {
-    const map = {};
-    const visibleExams = data.filter(ex => examTimetableState.visibleSubjects.has(ex.subject));
-    for(const ex of visibleExams){
-        map[ex.date] = (map[ex.date] || 0) + 1;
-    }
-    return map;
-}
-
-function renderExamTimetable() {
-    const container = document.getElementById('exam-timetable-container');
-    if (!container) return;
-    
-    const uniqueSubjects = [...new Set(examTimetableData.map(e => e.subject))];
-    
-    container.innerHTML = `
-        <div class="page-title">
-            <h1>Exam Timetable</h1>
-            <div class="sub">May–June 2026 • Interactive Edition</div>
-        </div>
-        <div class="controls">
-            <button class="btn" onclick="toggleAllSubjects()">
-                <span id="toggleText">Hide All</span>
-            </button>
-            <button class="btn" onclick="resetDates()">Reset Dates</button>
-            <div class="stats">
-                <span id="visibleCount">0</span> of <span id="totalCount">0</span> exams visible
-            </div>
-        </div>
-        <div class="layout">
-            <div class="card" id="tableCard">
-                <table class="timetable" aria-label="Exam Timetable">
-                    <colgroup>
-                        <col><col><col><col><col>
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Paper/Component</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Duration</th>
-                        </tr>
-                    </thead>
-                </table>
-                <div id="rows"></div>
-            </div>
-            <div class="aside">
-                <div class="filter-card card">
-                    <h3>Filter Subjects</h3>
-                    <div class="subject-filters" id="subjectFilters"></div>
-                </div>
-                <div class="key card">
-                    <h3>Key</h3>
-                    <div class="legend">
-                        <div class="leg-item"><span class="swatch multi"></span> More than 1 Exam</div>
-                        <div class="leg-item"><span class="swatch one"></span> 1 Exam Only</div>
-                    </div>
-                </div>
-                <div class="cal card" id="cal-may">
-                    <div class="title">May 2026</div>
-                    <div class="grid" data-month="4" data-year="2026"></div>
-                </div>
-                <div class="cal card" id="cal-jun">
-                    <div class="title">June 2026</div>
-                    <div class="grid" data-month="5" data-year="2026"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    renderSubjectFilters();
-    renderRows();
-    
-    const counts = countByDate(examTimetableState.exams);
-    const mayGrid = container.querySelector('#cal-may .grid');
-    const junGrid = container.querySelector('#cal-jun .grid');
-    if (mayGrid) buildCalendar(mayGrid, 2026, 4, counts);
-    if (junGrid) buildCalendar(junGrid, 2026, 5, counts);
-    
-    const toggleBtn = document.getElementById('toggleText');
-    if (toggleBtn) {
-        toggleBtn.textContent = examTimetableState.visibleSubjects.size === uniqueSubjects.length ? 'Hide All' : 'Show All';
-    }
-}
-    
