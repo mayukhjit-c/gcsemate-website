@@ -10446,55 +10446,57 @@ function escapeHTML(str) {
 // Allows safe formatting tags from contentEditable but removes script tags and dangerous attributes
 function sanitizeHTML(html) {
     if (!html) return '';
-    // Create a temporary container
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-    
-    // Remove script tags
-    const scripts = temp.querySelectorAll('script');
-    scripts.forEach(el => el.remove());
-    
-    // Remove style tags with event handlers
-    const styleTags = temp.querySelectorAll('style');
-    styleTags.forEach(el => {
-        Array.from(el.attributes).forEach(attr => {
-            if (attr.name.startsWith('on')) {
-                el.remove();
-                return;
-            }
-        });
-    });
-    
-    // Remove elements with event handlers (onclick, onerror, onload, etc.)
-    const elementsWithHandlers = temp.querySelectorAll('*[onclick], *[onerror], *[onload], *[onmouseover], *[onmouseout], *[onfocus], *[onblur]');
-    elementsWithHandlers.forEach(el => {
-        // Remove event handler attributes instead of removing the element
-        Array.from(el.attributes).forEach(attr => {
-            if (attr.name.startsWith('on')) {
-                el.removeAttribute(attr.name);
-            }
-        });
-    });
-    
-    // Remove dangerous attributes from all elements
-    const allElements = temp.querySelectorAll('*');
-    allElements.forEach(el => {
-        // Remove all event handler attributes
-        Array.from(el.attributes).forEach(attr => {
-            if (attr.name.startsWith('on')) {
-                el.removeAttribute(attr.name);
-            }
-            // Remove javascript: and data: URLs
-            if (attr.name === 'href' || attr.name === 'src') {
-                const value = attr.value.toLowerCase();
-                if (value.startsWith('javascript:') || value.startsWith('data:')) {
-                    el.removeAttribute(attr.name);
+    try {
+        // Create a temporary container
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        
+        // Remove script tags
+        const scripts = temp.querySelectorAll('script');
+        scripts.forEach(el => el.remove());
+        
+        // Remove style tags with event handlers (check attributes manually)
+        const styleTags = temp.querySelectorAll('style');
+        styleTags.forEach(el => {
+            let hasEventHandler = false;
+            Array.from(el.attributes).forEach(attr => {
+                if (attr.name.startsWith('on')) {
+                    hasEventHandler = true;
                 }
+            });
+            if (hasEventHandler) {
+                el.remove();
             }
         });
-    });
-    
-    return temp.innerHTML;
+        
+        // Remove dangerous attributes from all elements (iterate through all elements)
+        const allElements = temp.querySelectorAll('*');
+        allElements.forEach(el => {
+            // Remove all event handler attributes
+            const attrsToRemove = [];
+            Array.from(el.attributes).forEach(attr => {
+                if (attr.name.startsWith('on')) {
+                    attrsToRemove.push(attr.name);
+                }
+                // Remove javascript: and data: URLs
+                if (attr.name === 'href' || attr.name === 'src') {
+                    const value = attr.value.toLowerCase();
+                    if (value.startsWith('javascript:') || value.startsWith('data:')) {
+                        attrsToRemove.push(attr.name);
+                    }
+                }
+            });
+            attrsToRemove.forEach(attrName => el.removeAttribute(attrName));
+        });
+        
+        return temp.innerHTML;
+    } catch (error) {
+        console.error('Error sanitizing HTML:', error);
+        // Fallback: strip all HTML tags and return plain text
+        const div = document.createElement('div');
+        div.textContent = html;
+        return div.innerHTML;
+    }
 }
 
 // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
