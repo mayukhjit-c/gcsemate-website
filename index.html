@@ -1850,7 +1850,7 @@
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <!-- Firebase Storage removed - using Cloudinary for free image hosting (25GB free tier) -->
     <script>
       // Your web app's Firebase configuration
       const firebaseConfig = {
@@ -1872,7 +1872,7 @@
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
-      const storage = firebase.storage();
+      // Storage removed - using Cloudinary for free image hosting
     </script>
         <!-- External JavaScript -->
     <script src="app.js"></script>

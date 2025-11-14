@@ -1,0 +1,58 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Blog image uploads - authenticated users can upload to their own folder
+    match /blogUploads/{userId}/{fileName} {
+      // Users can upload to their own folder
+      allow write: if isSignedIn() && request.auth.uid == userId &&
+        request.resource.size < 5 * 1024 * 1024 && // 5MB limit
+        request.resource.contentType.matches('image/.*');
+      
+      // Anyone signed in can read blog images (for displaying in posts)
+      allow read: if isSignedIn();
+      
+      // Admins can delete any blog image
+      allow delete: if isAdmin();
+    }
+    
+    // User profile pictures
+    match /profilePictures/{userId}/{fileName} {
+      allow write: if isSignedIn() && request.auth.uid == userId &&
+        request.resource.size < 2 * 1024 * 1024 && // 2MB limit
+        request.resource.contentType.matches('image/.*');
+      allow read: if isSignedIn();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // User file uploads (for file browser)
+    match /userFiles/{userId}/{allPaths=**} {
+      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+      
+      // Admins can read/delete any user's files for support
+      allow read, delete: if isAdmin();
+    }
+    
+    // Backups (admin only)
+    match /backups/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

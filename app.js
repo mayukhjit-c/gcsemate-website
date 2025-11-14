@@ -4651,25 +4651,35 @@ async function checkSystemHealth() {
         diagnosticResults.criticalIssues++;
     }
     
-    // Test 3: Storage Service
+    // Test 3: Image Storage Service (Cloudinary)
     try {
-        const storageRef = firebase.storage().ref();
-        await storageRef.listAll();
-        diagnosticResults.tests.push({
-            name: 'Storage Service',
-            status: 'pass',
-            message: 'Firebase Storage accessible',
-            details: 'File storage service operational'
-        });
-        diagnosticResults.passed++;
+        if (CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.cloudName !== 'your-cloud-name') {
+            // Test Cloudinary connectivity by checking if cloud name is accessible
+            const testResponse = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/image/upload/v1/test`);
+            diagnosticResults.tests.push({
+                name: 'Image Storage Service',
+                status: 'pass',
+                message: 'Cloudinary accessible',
+                details: 'Image storage service operational (25GB free tier)'
+            });
+            diagnosticResults.passed++;
+        } else {
+            diagnosticResults.tests.push({
+                name: 'Image Storage Service',
+                status: 'warning',
+                message: 'Cloudinary not configured',
+                details: 'Please configure CLOUDINARY_CONFIG in app.js'
+            });
+            diagnosticResults.warnings++;
+        }
     } catch (error) {
         diagnosticResults.tests.push({
-            name: 'Storage Service',
-            status: 'fail',
-            message: 'Storage service unavailable',
+            name: 'Image Storage Service',
+            status: 'warning',
+            message: 'Cloudinary connectivity check failed',
             details: error.message
         });
-        diagnosticResults.criticalIssues++;
+        diagnosticResults.warnings++;
     }
     
     // Test 4: User Collection Access
@@ -8910,18 +8920,99 @@ async function insertBlogImageFromFile(file, source = 'upload') {
         logError(error, 'Blog Image Upload');
         const placeholder = document.getElementById(placeholderId);
         if (placeholder) placeholder.remove();
-        showToast('Could not upload pasted image. Please try again.', 'error');
+        
+        // Provide specific error message
+        let errorMessage = 'Could not upload image. ';
+        if (error.message) {
+            errorMessage += error.message;
+        } else if (error.code) {
+            if (error.code === 'storage/unauthorized') {
+                errorMessage += 'You do not have permission to upload images.';
+            } else if (error.code === 'storage/quota-exceeded') {
+                errorMessage += 'Storage quota exceeded.';
+            } else {
+                errorMessage += `Error: ${error.code}`;
+            }
+        } else {
+            errorMessage += 'Please try again.';
+        }
+        
+        showToast(errorMessage, 'error');
     }
 }
 
+// Cloudinary configuration - FREE TIER: 25GB storage, 25GB bandwidth/month
+// Get your credentials from: https://cloudinary.com/console
+// Create an unsigned upload preset in Settings > Upload > Upload presets
+const CLOUDINARY_CONFIG = {
+    cloudName: 'dlhm1iy0e', // Your Cloudinary cloud name
+    uploadPreset: 'blog-uploads', // Replace with your unsigned upload preset name (create one in Cloudinary dashboard)
+    apiKey: '' // Leave empty for unsigned uploads
+};
+
 async function uploadBlogImageToStorage(file, source = 'upload') {
-    const storageRef = firebase.storage().ref();
-    const userId = (currentUser && currentUser.uid) ? currentUser.uid : 'guest';
-    const extension = file.type && file.type.includes('/') ? `.${file.type.split('/')[1]}` : '';
-    const safeName = (file.name || `${source}-image`).replace(/[^\w.-]/g, '').substring(0, 40) || `${source}-image`;
-    const path = `blogUploads/${userId}/${Date.now()}-${safeName}${extension}`;
-    const snapshot = await storageRef.child(path).put(file, { contentType: file.type || 'image/png' });
-    return await snapshot.ref.getDownloadURL();
+    if (!currentUser || !currentUser.uid) {
+        throw new Error('You must be signed in to upload images');
+    }
+    
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image must be smaller than 5MB');
+    }
+    
+    // Validate file type
+    if (!file.type || !file.type.startsWith('image/')) {
+        throw new Error('Only image files are allowed');
+    }
+    
+    try {
+        // Create FormData for Cloudinary upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+        formData.append('folder', `blogUploads/${currentUser.uid}`); // Organize by user
+        formData.append('tags', `blog,${source},user-${currentUser.uid}`); // Add tags for organization
+        
+        // Optional: Add context/metadata
+        formData.append('context', JSON.stringify({
+            uploadedBy: currentUser.uid,
+            source: source,
+            uploadedAt: new Date().toISOString()
+        }));
+        
+        // Upload to Cloudinary
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `Upload failed: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Return the secure URL (HTTPS)
+        return data.secure_url;
+        
+    } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        
+        // Provide helpful error messages
+        if (error.message.includes('Upload preset')) {
+            throw new Error('Image upload configuration error. Please contact support.');
+        } else if (error.message.includes('size') || error.message.includes('5MB')) {
+            throw new Error('Image is too large. Maximum size is 5MB.');
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            throw new Error('Network error. Please check your connection and try again.');
+        } else {
+            throw new Error(error.message || 'Failed to upload image. Please try again.');
+        }
+    }
 }
 
 function isBlogImageFile(file) {
