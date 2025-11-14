@@ -6583,6 +6583,16 @@ function showPage(pageId) {
     const newPage = document.getElementById(pageId);
     if (!newPage) return;
 
+    // Setup paste handler when blog page is shown
+    if (pageId === 'blog-page') {
+        setTimeout(() => setupBlogPasteHandler(), 100);
+    }
+    
+    // Re-render useful links when page is shown (to ensure search/filter work)
+    if (pageId === 'useful-links-page' && Object.keys(allUsefulLinks).length > 0) {
+        setTimeout(() => filterAndRenderLinks(), 100);
+    }
+
     if (current && current !== newPage) {
         // Modern iOS-like leave
         current.classList.add('page-leave-modern');
@@ -7596,36 +7606,190 @@ async function handleRemoveLink(id) {
         }
     });
 }
+let allUsefulLinks = {};
+let linksSearchDebounce = null;
+
 function renderUsefulLinks(usefulLinks) {
+    allUsefulLinks = usefulLinks;
+    filterAndRenderLinks();
+}
+
+function filterAndRenderLinks() {
     const linksContainer = document.getElementById('links-container');
+    const emptyState = document.getElementById('links-empty-state');
+    const searchInput = document.getElementById('links-search-input');
+    const filterSelect = document.getElementById('links-filter-type');
+    
+    if (!linksContainer) return;
+    
+    const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+    const filterType = filterSelect?.value || 'all';
+    
     linksContainer.innerHTML = '';
-    if (Object.keys(usefulLinks).length === 0) {
-        linksContainer.innerHTML = `<div class="text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Links Yet</h3></div>`;
+    
+    // Filter links
+    const filteredLinks = Object.entries(allUsefulLinks).filter(([id, link]) => {
+        const matchesSearch = !searchTerm || 
+            link.title.toLowerCase().includes(searchTerm) ||
+            (link.url && link.url.toLowerCase().includes(searchTerm));
+        const matchesFilter = filterType === 'all' || 
+            link.type === filterType ||
+            (filterType === 'link' && link.type !== 'youtube_video' && link.type !== 'youtube_playlist');
+        return matchesSearch && matchesFilter;
+    });
+    
+    if (filteredLinks.length === 0) {
+        linksContainer.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
         return;
     }
     
-    Object.entries(usefulLinks).forEach(([id, link]) => {
-        const linkElement = document.createElement('div');
-        linkElement.className = 'p-4 rounded-lg bg-gray-100/50';
-        let contentHTML = '';
-        const removeBtn = currentUser.role === 'admin' ? `<button onclick="handleRemoveLink('${id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors" data-tooltip="Remove link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
-        if (link.type === 'youtube_video' || link.type === 'youtube_playlist') {
-            const sep = (link.embedUrl || '').includes('?') ? '&' : '?';
-            const finalUrl = `${link.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
-            contentHTML = `<div class="flex justify-between items-start mb-3"><span class="font-bold text-lg text-gray-800">${link.title}</span>${removeBtn}</div>
-                <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md video-brand-wrapper">
-                    <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
-                    <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
-                    <div class="video-brand-controls"><button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3m8-16h3a2 2 0 012 2v3m0 8v3a2 2 0 01-2 2h-3"/></svg></button></div>
-                </div>`;
-        } else {
-            contentHTML = `<div class="flex items-center justify-between"><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="flex items-center min-w-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="font-semibold text-gray-800 truncate" data-tooltip="${link.url}">${link.title}</span></a>${removeBtn}</div>`;
-        }
-        linkElement.innerHTML = contentHTML;
-        linksContainer.appendChild(linkElement);
-    });
+    linksContainer.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+    
+    // Group by type
+    const videos = filteredLinks.filter(([id, link]) => link.type === 'youtube_video' || link.type === 'youtube_playlist');
+    const regularLinks = filteredLinks.filter(([id, link]) => link.type !== 'youtube_video' && link.type !== 'youtube_playlist');
+    
+    // Render videos section
+    if (videos.length > 0) {
+        const videosSection = document.createElement('div');
+        videosSection.className = 'mb-8';
+        videosSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-video text-red-600"></i> Videos & Playlists</h3>`;
+        const videosGrid = document.createElement('div');
+        videosGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
+        
+        videos.forEach(([id, link]) => {
+            const card = createVideoCard(id, link);
+            videosGrid.appendChild(card);
+        });
+        
+        videosSection.appendChild(videosGrid);
+        linksContainer.appendChild(videosSection);
+    }
+    
+    // Render regular links section
+    if (regularLinks.length > 0) {
+        const linksSection = document.createElement('div');
+        linksSection.className = videos.length > 0 ? 'mt-8' : '';
+        linksSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-link text-blue-600"></i> Links & Resources</h3>`;
+        const linksGrid = document.createElement('div');
+        linksGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+        
+        regularLinks.forEach(([id, link]) => {
+            const card = createLinkCard(id, link);
+            linksGrid.appendChild(card);
+        });
+        
+        linksSection.appendChild(linksGrid);
+        linksContainer.appendChild(linksSection);
+    }
+    
     initializeTooltips();
 }
+
+function createVideoCard(id, link) {
+    const card = document.createElement('div');
+    card.className = 'bg-white/70 backdrop-blur-lg rounded-xl shadow-md border border-white/30 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]';
+    
+    const sep = (link.embedUrl || '').includes('?') ? '&' : '?';
+    const finalUrl = `${link.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&color=white&fs=0`;
+    const removeBtn = currentUser.role === 'admin' ? 
+        `<button onclick="handleRemoveLink('${id}')" class="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white text-red-600 hover:text-red-700 p-2 rounded-full shadow-md transition-all hover:scale-110" data-tooltip="Remove link" aria-label="Remove link">
+            <i class="fas fa-trash text-sm"></i>
+        </button>` : '';
+    
+    const typeIcon = link.type === 'youtube_playlist' ? 'fa-list' : 'fa-play-circle';
+    const typeLabel = link.type === 'youtube_playlist' ? 'Playlist' : 'Video';
+    
+    card.innerHTML = `
+        <div class="relative">
+            ${removeBtn}
+            <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-t-xl overflow-hidden video-brand-wrapper">
+                <iframe src="${finalUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" class="w-full h-full"></iframe>
+                <div class="video-brand-watermark"><img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto opacity-80"></div>
+                <div class="video-brand-controls">
+                    <button onclick="handleVideoWrapperFullscreen(this)" class="px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white border border-white/20 transition-colors" aria-label="Fullscreen">
+                        <i class="fas fa-expand text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <h4 class="font-bold text-lg text-gray-800 flex-1">${escapeHTML(link.title)}</h4>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+                <i class="fas ${typeIcon} text-red-600"></i>
+                <span>${typeLabel}</span>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+function createLinkCard(id, link) {
+    const card = document.createElement('div');
+    card.className = 'bg-white/70 backdrop-blur-lg rounded-xl shadow-md border border-white/30 p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group';
+    
+    const removeBtn = currentUser.role === 'admin' ? 
+        `<button onclick="handleRemoveLink('${id}')" class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-all" data-tooltip="Remove link" aria-label="Remove link">
+            <i class="fas fa-trash text-sm"></i>
+        </button>` : '';
+    
+    // Extract domain for display
+    let domain = '';
+    try {
+        const urlObj = new URL(link.url);
+        domain = urlObj.hostname.replace('www.', '');
+    } catch (e) {
+        domain = link.url;
+    }
+    
+    card.innerHTML = `
+        <div class="relative">
+            ${removeBtn}
+            <a href="${escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer" class="block">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white shadow-md group-hover:shadow-lg transition-shadow">
+                        <i class="fas fa-external-link-alt text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors truncate">${escapeHTML(link.title)}</h4>
+                        <p class="text-sm text-gray-500 truncate" data-tooltip="${escapeHTML(link.url)}">${escapeHTML(domain)}</p>
+                    </div>
+                    <div class="flex-shrink-0 text-gray-400 group-hover:text-blue-600 transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Setup search and filter handlers
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('links-search-input');
+    const filterSelect = document.getElementById('links-filter-type');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            if (linksSearchDebounce) clearTimeout(linksSearchDebounce);
+            linksSearchDebounce = setTimeout(() => {
+                filterAndRenderLinks();
+            }, 300);
+        });
+    }
+    
+    if (filterSelect) {
+        filterSelect.addEventListener('change', () => {
+            filterAndRenderLinks();
+        });
+    }
+});
 // =================================================================================
 // CALENDAR LOGIC
 // =================================================================================
@@ -7642,10 +7806,11 @@ function renderCalendar(userEvents, globalEvents) {
     const month = currentDate.getMonth();
     const year = currentDate.getFullYear();
     monthYearHeader.textContent = `${currentDate.toLocaleString('en-GB', { month: 'long', timeZone: UK_TZ })} ${year}`;
-    // Populate year dropdown around current year
+    // Populate year dropdown with wider range
     if (yearSelect && yearSelect.childElementCount === 0) {
         const base = new Date().getFullYear();
-        for (let y = base - 2; y <= base + 3; y++) {
+        // Include years from 2020 to 10 years in the future
+        for (let y = 2020; y <= base + 10; y++) {
             const opt = document.createElement('option');
             opt.value = String(y);
             opt.textContent = String(y);
@@ -8092,6 +8257,32 @@ function updateToolbarState() {
 document.addEventListener('selectionchange', updateToolbarState);
 document.addEventListener('mouseup', updateToolbarState);
 document.addEventListener('keyup', updateToolbarState);
+
+// Handle paste events to preserve formatting in blog editor
+function setupBlogPasteHandler() {
+    const blogEditor = document.getElementById('blog-post-content');
+    if (blogEditor && !blogEditor.dataset.pasteHandlerSetup) {
+        blogEditor.dataset.pasteHandlerSetup = 'true';
+        blogEditor.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text/html');
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            
+            // If HTML is available, use it (preserves formatting)
+            if (paste) {
+                // Sanitize the pasted HTML
+                const sanitized = sanitizeHTML(paste);
+                document.execCommand('insertHTML', false, sanitized);
+            } else if (text) {
+                // Fallback to plain text
+                document.execCommand('insertText', false, text);
+            }
+        });
+    }
+}
+
+// Setup paste handler when DOM is ready and when blog page is shown
+document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
 
 document.addEventListener('input', (e) => {
     if (e.target && e.target.id === 'blog-post-image') {
