@@ -630,6 +630,7 @@ opacity: 1;
         .nav-link.active {
 color: rgb(var(--accent-600));
 font-weight: 700;
+outline: none !important;
         }
         
         .nav-link.active::before {
@@ -645,8 +646,7 @@ border: none !important;
         /* Note: The ::before for underline animation is defined above */
         /* Ensure proper focus states */
         .nav-link:focus { 
-outline: 2px solid rgb(var(--accent-400));
-outline-offset: 2px;
+outline: none !important;
         }
         
         .nav-link:hover {
@@ -656,6 +656,7 @@ border: none !important;
         
         .nav-link.active {
 border: none !important;
+outline: none !important;
         }
         /* Prose styles for text content pages */
         .prose { max-width: 65ch; }
@@ -1537,6 +1538,11 @@ nav {
 #mobile-menu .nav-link:active {
     transform: scale(0.98);
     background-color: rgba(59, 130, 246, 0.1);
+    outline: none !important;
+}
+
+#mobile-menu .nav-link.active {
+    outline: none !important;
 }
 
 /* Better file browser on mobile */
@@ -1699,6 +1705,43 @@ nav a {
     position: absolute;
     z-index: 1000;
     animation: fadeIn 0.2s ease-out;
+}
+
+/* Blog link styling */
+.blog-content .blog-link,
+.blog-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 2px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.blog-content .blog-link:hover,
+.blog-link:hover {
+    color: #1d4ed8;
+    border-bottom-color: #2563eb;
+    background-color: rgba(59, 130, 246, 0.1);
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 4px;
+    transform: translateY(-1px);
+}
+
+.blog-content .blog-link:visited,
+.blog-link:visited {
+    color: #7c3aed;
+    border-bottom-color: #7c3aed;
+}
+
+.blog-content .blog-link i,
+.blog-link i {
+    opacity: 0.7;
+    font-size: 0.75em;
 }
 
 .blog-image-placeholder {

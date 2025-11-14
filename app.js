@@ -17,6 +17,67 @@ let allBlogPosts = [];
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
+
+// Download rate limiting - 3 files per minute
+const DOWNLOAD_RATE_LIMIT = {
+    maxDownloads: 3,
+    timeWindow: 60 * 1000, // 1 minute in milliseconds
+    storageKey: 'gcsemate_downloads'
+};
+
+function getDownloadHistory() {
+    try {
+        const stored = localStorage.getItem(DOWNLOAD_RATE_LIMIT.storageKey);
+        if (!stored) return [];
+        const history = JSON.parse(stored);
+        // Filter out old entries (older than 1 minute)
+        const now = Date.now();
+        return history.filter(timestamp => (now - timestamp) < DOWNLOAD_RATE_LIMIT.timeWindow);
+    } catch (error) {
+        console.error('Error reading download history:', error);
+        return [];
+    }
+}
+
+function recordDownload() {
+    try {
+        const history = getDownloadHistory();
+        history.push(Date.now());
+        localStorage.setItem(DOWNLOAD_RATE_LIMIT.storageKey, JSON.stringify(history));
+    } catch (error) {
+        console.error('Error recording download:', error);
+    }
+}
+
+function canDownload() {
+    const history = getDownloadHistory();
+    return history.length < DOWNLOAD_RATE_LIMIT.maxDownloads;
+}
+
+function getTimeUntilNextDownload() {
+    const history = getDownloadHistory();
+    if (history.length < DOWNLOAD_RATE_LIMIT.maxDownloads) return 0;
+    
+    // Find the oldest download in the current window
+    const oldest = Math.min(...history);
+    const elapsed = Date.now() - oldest;
+    const remaining = DOWNLOAD_RATE_LIMIT.timeWindow - elapsed;
+    return Math.ceil(remaining / 1000); // Return seconds
+}
+
+function formatFilenameWithWatermark(originalName) {
+    if (!originalName) return 'download - Downloaded from GCSEMate.com';
+    
+    // Extract file extension
+    const lastDot = originalName.lastIndexOf('.');
+    if (lastDot === -1) {
+        return `${originalName} - Downloaded from GCSEMate.com`;
+    }
+    
+    const nameWithoutExt = originalName.substring(0, lastDot);
+    const extension = originalName.substring(lastDot);
+    return `${nameWithoutExt} - Downloaded from GCSEMate.com${extension}`;
+}
 // Admin list filters
 let userFilterTier = 'all'; // all|free|paid
 let userFilterRole = 'all'; // all|user|admin
@@ -2224,7 +2285,7 @@ function exportDiagnosticData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gcsemate-diagnostics-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = formatFilenameWithWatermark(`gcsemate-diagnostics-${new Date().toISOString().split('T')[0]}.json`);
     a.click();
     URL.revokeObjectURL(url);
 }
@@ -2676,8 +2737,220 @@ function showAppLoading() {
 }
 
 // Fallback: ensure hide after window load
+// Security features to prevent unauthorized copying and distribution
+function initializeSecurityFeatures() {
+    // Disable right-click context menu (except in blog editor and admin areas)
+    document.addEventListener('contextmenu', (e) => {
+        const target = e.target;
+        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
+        const isAdminPanel = target.closest('#admin-panel');
+        const isCodeEditor = target.closest('code') || target.closest('pre');
+        
+        // Allow right-click in specific areas
+        if (isBlogEditor || isAdminPanel || isCodeEditor) {
+            return; // Allow default behavior
+        }
+        
+        e.preventDefault();
+        showToast('Right-click is disabled to protect content', 'info');
+        return false;
+    });
+    
+    // Disable common keyboard shortcuts for copying
+    document.addEventListener('keydown', (e) => {
+        const target = e.target;
+        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
+        const isAdminPanel = target.closest('#admin-panel');
+        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        
+        // Allow shortcuts in blog editor and admin areas
+        if (isBlogEditor || isAdminPanel) {
+            return; // Allow default behavior
+        }
+        
+        // Block Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, Ctrl+Shift+I, F12
+        const ctrl = e.ctrlKey || e.metaKey;
+        const shift = e.shiftKey;
+        
+        if (ctrl && (e.key === 'c' || e.key === 'C')) {
+            if (!isInput) {
+                // Allow copying small amounts of text (for normal use)
+                const selection = window.getSelection();
+                if (selection && selection.toString().length > 500) {
+                    e.preventDefault();
+                    showToast('Bulk copying is restricted to protect content', 'info');
+                    return false;
+                }
+            }
+        }
+        
+        if (ctrl && (e.key === 'a' || e.key === 'A')) {
+            if (!isInput) {
+                // Allow select all in specific contexts
+                const target = e.target;
+                if (!target.closest('.file-browser-page') && !target.closest('.blog-content')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        }
+        
+        if (ctrl && (e.key === 's' || e.key === 'S')) {
+            e.preventDefault();
+            showToast('Saving is disabled', 'info');
+            return false;
+        }
+        
+        if (ctrl && (e.key === 'p' || e.key === 'P')) {
+            e.preventDefault();
+            showToast('Printing is disabled to protect content', 'info');
+            return false;
+        }
+        
+        if (ctrl && shift && (e.key === 'I' || e.key === 'i')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        if (e.key === 'F12' || (ctrl && shift && (e.key === 'J' || e.key === 'j'))) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Block Print Screen (partially - can't fully block but can detect)
+        if (e.key === 'PrintScreen') {
+            showToast('Screenshots are logged for security purposes', 'warning');
+        }
+    });
+    
+    // Disable text selection (make it harder, not impossible)
+    document.addEventListener('selectstart', (e) => {
+        const target = e.target;
+        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
+        const isAdminPanel = target.closest('#admin-panel');
+        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+        
+        // Allow selection in specific areas
+        if (isBlogEditor || isAdminPanel || isInput) {
+            return; // Allow default behavior
+        }
+        
+        // Allow selection for navigation and UI elements
+        if (target.closest('nav') || target.closest('button') || target.closest('a')) {
+            return;
+        }
+        
+        // Make bulk selection harder but not impossible (users can still select with effort)
+        // This is a deterrent, not a complete block
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 500) {
+            e.preventDefault();
+            showToast('Bulk text selection is restricted to protect content', 'info');
+            return false;
+        }
+    });
+    
+    // Add visible watermark to content areas
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Watermark overlay for content protection */
+        .page::after {
+            content: 'GCSEMate.com';
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            user-select: none;
+        }
+        
+        /* Make bulk text selection harder (but allow normal selection) */
+        .page:not(#blog-page):not(#admin-panel-page) p,
+        .page:not(#blog-page):not(#admin-panel-page) div:not(.blog-content):not(input):not(textarea):not(button):not(a):not(nav) {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* Always allow selection in specific areas */
+        #blog-post-content,
+        #blog-editor-toolbar,
+        #admin-panel,
+        .blog-content,
+        input,
+        textarea,
+        button,
+        a,
+        nav,
+        code,
+        pre {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* Disable drag and drop of images */
+        img:not(.blog-inline-image) {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+            pointer-events: auto;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Track suspicious activity
+    let suspiciousActivityCount = 0;
+    const trackSuspiciousActivity = (action) => {
+        suspiciousActivityCount++;
+        if (suspiciousActivityCount > 10) {
+            console.warn('Multiple suspicious activities detected:', action);
+            // Could log to Firestore for admin review
+            if (currentUser) {
+                logUserActivity('suspicious_activity', {
+                    action: action,
+                    count: suspiciousActivityCount,
+                    timestamp: new Date().toISOString()
+                }).catch(() => {}); // Don't block on logging errors
+            }
+        }
+    };
+    
+    // Detect developer tools (basic detection)
+    let devtools = { open: false };
+    const detectDevTools = () => {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        if (widthThreshold || heightThreshold) {
+            if (!devtools.open) {
+                devtools.open = true;
+                trackSuspiciousActivity('devtools_opened');
+            }
+        } else {
+            devtools.open = false;
+        }
+    };
+    setInterval(detectDevTools, 1000);
+    
+    // Detect iframe embedding (unauthorized embedding)
+    if (window.self !== window.top) {
+        trackSuspiciousActivity('iframe_embedding');
+        // Could redirect or show warning
+    }
+}
+
 // Early slide-in on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize security features
+    initializeSecurityFeatures();
+    
     // Initialize form validations
     initializeFormValidations();
     
@@ -4171,41 +4444,64 @@ function setupProfileCropInteractions() {
     const overlay = document.getElementById('profile-crop-overlay');
     if (!cropBox || !overlay) return;
     
+    // Clean up existing listeners before adding new ones
+    if (profileCropState.cropBoxMouseDownHandler) {
+        cropBox.removeEventListener('mousedown', profileCropState.cropBoxMouseDownHandler);
+    }
+    if (profileCropState.handleMouseDownHandlers) {
+        profileCropState.handleMouseDownHandlers.forEach(({ handle, handler }) => {
+            handle.removeEventListener('mousedown', handler);
+        });
+    }
+    if (profileCropState.zoomInputHandler) {
+        const zoomSlider = document.getElementById('profile-zoom-slider');
+        if (zoomSlider) {
+            zoomSlider.removeEventListener('input', profileCropState.zoomInputHandler);
+        }
+    }
+    
     overlay.style.pointerEvents = 'auto';
     
     // Make crop box draggable
-    cropBox.addEventListener('mousedown', (e) => {
+    const cropBoxMouseDownHandler = (e) => {
         if (e.target.closest('[data-handle]')) return;
         profileCropState.isDragging = true;
         profileCropState.dragHandle = 'move';
         profileCropState.startX = e.clientX;
         profileCropState.startY = e.clientY;
         e.preventDefault();
-    });
+    };
+    cropBox.addEventListener('mousedown', cropBoxMouseDownHandler);
+    profileCropState.cropBoxMouseDownHandler = cropBoxMouseDownHandler;
     
     // Handle resize handles
+    profileCropState.handleMouseDownHandlers = [];
     cropBox.querySelectorAll('[data-handle]').forEach(handle => {
-        handle.addEventListener('mousedown', (e) => {
+        const handleMouseDownHandler = (e) => {
             e.stopPropagation();
             e.preventDefault();
             profileCropState.isDragging = true;
             profileCropState.dragHandle = handle.dataset.handle;
             profileCropState.startX = e.clientX;
             profileCropState.startY = e.clientY;
-        });
+        };
+        handle.addEventListener('mousedown', handleMouseDownHandler);
+        profileCropState.handleMouseDownHandlers.push({ handle, handler: handleMouseDownHandler });
     });
     
     // Zoom controls
     const zoomSlider = document.getElementById('profile-zoom-slider');
     const zoomValue = document.getElementById('profile-zoom-value');
     if (zoomSlider) {
-        zoomSlider.addEventListener('input', (e) => {
+        const zoomInputHandler = (e) => {
             profileCropState.zoom = parseFloat(e.target.value);
             if (zoomValue) {
                 zoomValue.textContent = `${Math.round(profileCropState.zoom * 100)}%`;
             }
             redrawProfileCanvas();
-        });
+        };
+        zoomSlider.addEventListener('input', zoomInputHandler);
+        profileCropState.zoomInputHandler = zoomInputHandler;
     }
     
     let mouseMoveHandler = (e) => {
@@ -4370,11 +4666,28 @@ window.closeProfilePictureCropModal = function() {
         modal.style.display = 'none';
     }
     
+    // Clean up all event listeners
     if (profileCropState.mouseMoveHandler) {
         document.removeEventListener('mousemove', profileCropState.mouseMoveHandler);
     }
     if (profileCropState.mouseUpHandler) {
         document.removeEventListener('mouseup', profileCropState.mouseUpHandler);
+    }
+    
+    const cropBox = document.getElementById('profile-crop-box');
+    if (cropBox && profileCropState.cropBoxMouseDownHandler) {
+        cropBox.removeEventListener('mousedown', profileCropState.cropBoxMouseDownHandler);
+    }
+    
+    if (profileCropState.handleMouseDownHandlers) {
+        profileCropState.handleMouseDownHandlers.forEach(({ handle, handler }) => {
+            handle.removeEventListener('mousedown', handler);
+        });
+    }
+    
+    const zoomSlider = document.getElementById('profile-zoom-slider');
+    if (zoomSlider && profileCropState.zoomInputHandler) {
+        zoomSlider.removeEventListener('input', profileCropState.zoomInputHandler);
     }
     
     profileCropState = {
@@ -4391,7 +4704,10 @@ window.closeProfilePictureCropModal = function() {
         panX: 0,
         panY: 0,
         mouseMoveHandler: null,
-        mouseUpHandler: null
+        mouseUpHandler: null,
+        cropBoxMouseDownHandler: null,
+        handleMouseDownHandlers: null,
+        zoomInputHandler: null
     };
 };
 
@@ -4403,6 +4719,25 @@ function updateProfilePictureInUI(imageURL) {
         profilePic.onerror = function() {
             this.src = ''; // Fallback to default avatar
         };
+        // Add click handler to change profile picture
+        if (!profilePic.dataset.clickHandlerAdded) {
+            profilePic.style.cursor = 'pointer';
+            profilePic.addEventListener('click', () => {
+                if (currentUser) {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            uploadProfilePicture(file);
+                        }
+                    };
+                    input.click();
+                }
+            });
+            profilePic.dataset.clickHandlerAdded = 'true';
+        }
     }
     
     // Update profile picture in account settings
@@ -4421,11 +4756,7 @@ function showProfilePictureUploadModal() {
         return;
     }
     
-    // Check if user has permission (paid users and admins only)
-    if (currentUser.tier !== 'paid' && currentUser.role !== 'admin') {
-        showUpgradeModal('Profile pictures are available for Pro users only. Upgrade to Pro to upload and customize your profile picture.');
-        return;
-    }
+    // Profile pictures are now available to all users
     
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
@@ -4768,7 +5099,7 @@ function exportUserData() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `gcsemate-users-${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', formatFilenameWithWatermark(`gcsemate-users-${new Date().toISOString().split('T')[0]}.csv`));
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -6546,7 +6877,7 @@ async function exportAllData() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `gcsemate-export-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = formatFilenameWithWatermark(`gcsemate-export-${new Date().toISOString().split('T')[0]}.json`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -6867,7 +7198,7 @@ window.exportSystemLogs = function() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `system-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = formatFilenameWithWatermark(`system-logs-${new Date().toISOString().split('T')[0]}.csv`);
     a.click();
     URL.revokeObjectURL(url);
     showToast('Logs exported successfully', 'success');
@@ -7776,7 +8107,7 @@ function renderItems() {
                 const safeFileId = escapeJS(file.id);
                 actions.innerHTML = `
                     <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
-                    <a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                    <a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}'); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
@@ -7826,7 +8157,7 @@ function renderItems() {
                 const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 actions.innerHTML += `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
-                actions.innerHTML += `<a href="${downloadLink}" download target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}'); trackFileOpen('${safeFileName}', 'download', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
             }
             itemElement.appendChild(mainInfo);
             itemElement.appendChild(actions);
@@ -9845,8 +10176,16 @@ function setupCropInteractions() {
     cropState.mouseMoveHandler = mouseMoveHandler;
     cropState.mouseUpHandler = mouseUpHandler;
     
-    // Aspect ratio selector
-    document.getElementById('crop-aspect-ratio')?.addEventListener('change', applyAspectRatio);
+    // Aspect ratio selector - clean up existing listener first
+    const aspectRatioSelect = document.getElementById('crop-aspect-ratio');
+    if (aspectRatioSelect) {
+        if (cropState.aspectRatioChangeHandler) {
+            aspectRatioSelect.removeEventListener('change', cropState.aspectRatioChangeHandler);
+        }
+        const aspectRatioChangeHandler = applyAspectRatio;
+        aspectRatioSelect.addEventListener('change', aspectRatioChangeHandler);
+        cropState.aspectRatioChangeHandler = aspectRatioChangeHandler;
+    }
 }
 
 function applyAspectRatio() {
@@ -9946,6 +10285,11 @@ window.closeImageCropModal = function() {
         document.removeEventListener('mouseup', cropState.mouseUpHandler);
     }
     
+    const aspectRatioSelect = document.getElementById('crop-aspect-ratio');
+    if (aspectRatioSelect && cropState.aspectRatioChangeHandler) {
+        aspectRatioSelect.removeEventListener('change', cropState.aspectRatioChangeHandler);
+    }
+    
     cropState = {
         image: null,
         canvas: null,
@@ -9957,7 +10301,8 @@ window.closeImageCropModal = function() {
         startY: 0,
         originalFile: null,
         mouseMoveHandler: null,
-        mouseUpHandler: null
+        mouseUpHandler: null,
+        aspectRatioChangeHandler: null
     };
 };
 
@@ -10147,7 +10492,7 @@ function showBlogPostViewer(postId) {
                 ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
                 <div class="p-8 prose prose-lg max-w-none">
                     <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
-                    <div class="blog-content">${sanitizeHTML(post.content)}</div>
+                    <div class="blog-content">${formatBlogLinks(sanitizeHTML(post.content))}</div>
                     <div class="mt-6 flex items-center gap-2">
                         <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
                     </div>
@@ -10918,11 +11263,27 @@ function showPreview(file) {
     }
 }
 
-// Controlled download function - only downloads when explicitly requested
+// Controlled download function with rate limiting and security
 function downloadFile(fileId, fileName, downloadUrl) {
     try {
+        // Check rate limit
+        if (!canDownload()) {
+            const secondsRemaining = getTimeUntilNextDownload();
+            const minutes = Math.floor(secondsRemaining / 60);
+            const seconds = secondsRemaining % 60;
+            const timeMsg = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+            showToast(`Download limit reached. Please wait ${timeMsg} before downloading more files.`, 'error');
+            return;
+        }
+        
         // Track file download
         trackFileOpen(fileName, 'download', currentSubject);
+        
+        // Record download for rate limiting
+        recordDownload();
+        
+        // Format filename with watermark
+        const watermarkedFileName = formatFilenameWithWatermark(fileName);
         
         // Show download feedback
         showToast(`Downloading ${fileName}...`, 'info');
@@ -10930,7 +11291,7 @@ function downloadFile(fileId, fileName, downloadUrl) {
         // Create a temporary link and trigger download
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = fileName || 'download';
+        link.download = watermarkedFileName;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         
@@ -10939,9 +11300,10 @@ function downloadFile(fileId, fileName, downloadUrl) {
         link.click();
         document.body.removeChild(link);
         
-        // Show success message after a brief delay
+        // Show success message with remaining downloads
         setTimeout(() => {
-            showToast(`${fileName} download started`, 'success');
+            const remaining = DOWNLOAD_RATE_LIMIT.maxDownloads - getDownloadHistory().length;
+            showToast(`${watermarkedFileName} download started. ${remaining} download${remaining !== 1 ? 's' : ''} remaining this minute.`, 'success');
         }, 500);
         
     } catch (error) {
@@ -10949,6 +11311,15 @@ function downloadFile(fileId, fileName, downloadUrl) {
         showToast('Download failed. Please try again.', 'error');
     }
 }
+
+// Wrapper function for direct anchor tag downloads (for inline download links)
+window.handleSecureDownload = function(downloadUrl, fileName, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    downloadFile(null, fileName, downloadUrl);
+};
 
 // Error pages rendering helpers
 function showErrorPage(title, message) {
@@ -11513,6 +11884,34 @@ function escapeHTML(str) {
 
 // Security helper: Sanitize HTML content to prevent XSS
 // Allows safe formatting tags from contentEditable but removes script tags and dangerous attributes
+// Format hyperlinks in blog content with nice clickable UI
+function formatBlogLinks(html) {
+    if (!html) return '';
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    
+    // Find all links and style them
+    const links = temp.querySelectorAll('a[href]');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.startsWith('javascript:') && !href.startsWith('#')) {
+            // Add classes for styling
+            link.className = 'blog-link';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Add icon if not already present
+            if (!link.querySelector('i')) {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-external-link-alt ml-1 text-xs';
+                link.appendChild(icon);
+            }
+        }
+    });
+    
+    return temp.innerHTML;
+}
+
 function sanitizeHTML(html) {
     if (!html) return '';
     try {
