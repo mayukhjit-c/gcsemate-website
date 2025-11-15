@@ -446,6 +446,7 @@ async function callOpenRouterAPI(apiKey, messages) {
 export async function onRequest(context) {
   const { request, env } = context;
 
+  // Handle CORS preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
   }
@@ -461,12 +462,23 @@ export async function onRequest(context) {
     const SERPER_API_KEY = env.SERPER_API_KEY; // Web search API key (optional)
     const FIREBASE_PROJECT_ID = env.FIREBASE_PROJECT_ID;
     
-    if (!GROQ_API_KEY && !OPENROUTER_API_KEY) {
-      return json({ error: 'No API keys configured' }, 500);
-    }
-
+    // Check for required environment variables
     if (!FIREBASE_PROJECT_ID) {
-      return json({ error: 'Firebase project ID not configured' }, 500);
+      console.error('FIREBASE_PROJECT_ID not configured');
+      return json({ 
+        error: 'Server configuration error', 
+        message: 'Firebase project ID not configured. Please contact support.',
+        code: 'CONFIG_ERROR'
+      }, 500);
+    }
+    
+    if (!GROQ_API_KEY && !OPENROUTER_API_KEY) {
+      console.error('No AI API keys configured');
+      return json({ 
+        error: 'Server configuration error', 
+        message: 'AI service not configured. Please contact support.',
+        code: 'CONFIG_ERROR'
+      }, 500);
     }
 
     // Parse request body
@@ -688,10 +700,14 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('AI Tutor function error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Return more informative error for debugging
     return json({ 
       error: 'Internal server error', 
       message: 'An unexpected error occurred. Please try again later.',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      code: 'INTERNAL_ERROR'
     }, 500);
   }
 }
