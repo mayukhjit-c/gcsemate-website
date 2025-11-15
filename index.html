@@ -390,17 +390,28 @@
                 transform: translateX(100%);
             }
         }
+        @keyframes loading-progress {
+            0%, 100% {
+                width: 30%;
+                opacity: 0.7;
+            }
+            50% {
+                width: 70%;
+                opacity: 1;
+            }
+        }
     </style>
     <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
     <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white">
-        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mb-6 animate-logo" loading="eager" decoding="async" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';" onload="this.style.opacity='1'; this.style.transform='translateY(0)';" style="opacity:0; transform: translateY(8px); transition: opacity .2s ease-out, transform .2s ease-out;">
-        <div class="w-[300px] max-w-[80vw] progress-bar">
-            <div class="bar bar1"></div>
-            <div class="bar bar2"></div>
+        <div class="flex flex-col items-center">
+            <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 sm:h-14 w-auto mb-4" loading="eager" decoding="async" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';" style="max-width: 140px; width: auto; height: auto; object-fit: contain; display: block;">
+            <div class="w-[250px] max-w-[80vw] h-1 bg-gray-200 rounded-full overflow-hidden mt-2">
+                <div class="h-full bg-blue-600 rounded-full" style="width: 60%; animation: loading-progress 1.5s ease-in-out infinite;"></div>
+            </div>
+            <p class="mt-3 text-sm text-gray-500">Loading GCSEMate…</p>
         </div>
-        <p class="mt-4 text-sm text-gray-500">Loading GCSEMate…</p>
     </div>
     <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
     <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>

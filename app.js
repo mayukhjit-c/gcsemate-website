@@ -1788,24 +1788,61 @@ function monitorConnectionStatus() {
     }, 1000);
 }
 
-// Update connection status UI
+// Update connection status UI (respects maintenance mode)
 function updateConnectionStatus(status) {
     realtimeTracker.connectionStatus = status;
-    const statusElements = document.querySelectorAll('.online-status');
-    
-    statusElements.forEach(element => {
-        if (status === 'connected') {
-            element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
-        } else {
-            element.className = 'w-2 h-2 bg-red-500 rounded-full';
-        }
-    });
+    // Delegate to updateOnlineStatus which handles maintenance mode properly
+    refreshOnlineStatus();
+}
 
-    // Update status text
-    const statusTextElements = document.querySelectorAll('.online-text');
-    statusTextElements.forEach(element => {
-        element.textContent = status === 'connected' ? 'Online' : 'Offline';
-    });
+// Refresh online status - checks both maintenance mode and connection status
+async function refreshOnlineStatus() {
+    try {
+        const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
+        const maintenanceEnabled = maintenanceDoc.exists ? !!maintenanceDoc.data()?.enabled : false;
+        
+        const statusElements = document.querySelectorAll('.online-status');
+        const statusTextElements = document.querySelectorAll('.online-text');
+        
+        // Maintenance mode takes priority - if enabled, always show offline (red)
+        if (maintenanceEnabled) {
+            statusElements.forEach(element => {
+                element.className = 'w-2 h-2 bg-red-500 rounded-full animate-pulse';
+            });
+            statusTextElements.forEach(element => {
+                element.textContent = 'Offline';
+            });
+        } else {
+            // Check actual connection status when not in maintenance
+            const isConnected = realtimeTracker.connectionStatus === 'connected';
+            statusElements.forEach(element => {
+                if (isConnected) {
+                    element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
+                } else {
+                    element.className = 'w-2 h-2 bg-red-500 rounded-full';
+                }
+            });
+            statusTextElements.forEach(element => {
+                element.textContent = isConnected ? 'Online' : 'Offline';
+            });
+        }
+    } catch (err) {
+        // Fallback if maintenance check fails - use connection status
+        const statusElements = document.querySelectorAll('.online-status');
+        const statusTextElements = document.querySelectorAll('.online-text');
+        const isConnected = realtimeTracker.connectionStatus === 'connected';
+        
+        statusElements.forEach(element => {
+            if (isConnected) {
+                element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
+            } else {
+                element.className = 'w-2 h-2 bg-red-500 rounded-full';
+            }
+        });
+        statusTextElements.forEach(element => {
+            element.textContent = isConnected ? 'Online' : 'Offline';
+        });
+    }
 }
 
 // Track page visibility changes
@@ -2989,6 +3026,8 @@ function initializeAppState() {
             
             // Update online/offline status based on maintenance mode
             updateOnlineStatus(enabled);
+            // Also refresh status to ensure it's updated immediately
+            refreshOnlineStatus();
             
             if (enabled && currentUser?.role !== 'admin') {
                 showMaintenancePage(message);
@@ -3104,8 +3143,12 @@ function cleanAIResponse(text) {
     // Remove common emoji-like symbols
     text = text.replace(/[✅❌⚠️⭐🌟💡📝📚🎓💯🔥💪👍👎]/g, '');
     
-    // Clean up any double spaces or hyphens that might result
-    text = text.replace(/\s+/g, ' ').replace(/\s-\s/g, ' - ').trim();
+    // Normalize line breaks - ensure proper spacing
+    // Replace multiple consecutive newlines with double newline (for paragraph breaks)
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    // Clean up any double spaces (but preserve intentional spacing)
+    text = text.replace(/[ \t]+/g, ' ').replace(/\s-\s/g, ' - ').trim();
     
     return text;
 }
@@ -3645,12 +3688,24 @@ function parseMarkdown(text) {
             inOrderedList = false;
         }
         
+        // Handle line breaks (// at end of line or standalone)
+        if (trimmedLine === '//' || trimmedLine.endsWith('//')) {
+            // Remove // from end if present
+            const lineWithoutBreak = trimmedLine === '//' ? '' : trimmedLine.replace(/\/\/$/, '').trim();
+            if (lineWithoutBreak) {
+                html += '<p class="mb-2.5 leading-relaxed">' + processInlineMarkdown(lineWithoutBreak) + '</p>';
+            }
+            // Add spacing div for line break (more visible spacing)
+            html += '<div class="h-4"></div>';
+            continue;
+        }
+        
         // Process inline markdown for regular lines
         if (trimmedLine) {
             html += '<p class="mb-2.5 leading-relaxed">' + processInlineMarkdown(line) + '</p>';
         } else {
-            // Empty line - add spacing
-            html += '<br>';
+            // Empty line - add spacing div for proper line breaks (more visible)
+            html += '<div class="h-4"></div>';
         }
     }
     
@@ -3671,6 +3726,9 @@ function parseMarkdown(text) {
     // Remove leading/trailing empty paragraphs and fix spacing
     html = html.replace(/^<p class="mb-2.5 leading-relaxed"><\/p>/, '');
     html = html.replace(/<p class="mb-2.5 leading-relaxed"><\/p>$/, '');
+    
+    // Remove excessive consecutive spacing divs (more than 2 in a row)
+    html = html.replace(/(<div class="h-4"><\/div>\s*){3,}/g, '<div class="h-4"></div><div class="h-4"></div>');
     
     // Fix last paragraph margin
     const lastParagraphMatch = html.match(/(<p class="mb-2.5 leading-relaxed">.*?<\/p>)(?![\s\S]*<p)/);
@@ -4213,20 +4271,8 @@ function setupRealtimeListeners() {
 
 // Update online/offline status based on maintenance mode
 function updateOnlineStatus(maintenanceEnabled) {
-    const onlineStatusElements = document.querySelectorAll('.online-status');
-    const onlineTextElements = document.querySelectorAll('.online-text');
-    
-    onlineStatusElements.forEach(element => {
-        if (maintenanceEnabled) {
-            element.className = 'w-2 h-2 bg-red-400 rounded-full animate-pulse';
-        } else {
-            element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
-        }
-    });
-    
-    onlineTextElements.forEach(element => {
-        element.textContent = maintenanceEnabled ? 'Offline' : 'Online';
-    });
+    // Use the unified refresh function
+    refreshOnlineStatus();
 }
 
 // Check maintenance mode on app initialization
