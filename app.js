@@ -2524,7 +2524,7 @@ function stopServerTimeUpdates() {
 // --- CONFIGURATION ---
 const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
 const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
-const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
 const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
 
 // Subject summaries and descriptions
@@ -2545,9 +2545,13 @@ const subjectSummaries = {
         summary: 'Master algebra, geometry, statistics, and problem-solving. Build essential mathematical skills for exams and beyond.',
         description: 'GCSE Mathematics includes algebra, geometry, trigonometry, statistics, probability, and calculus foundations. Students develop problem-solving skills and mathematical reasoning.'
     },
-    english: {
-        summary: 'Develop reading, writing, and analytical skills. Study literature, language, and creative writing techniques.',
-        description: 'GCSE English covers literature analysis, creative writing, language study, and communication skills. Students explore texts, develop critical thinking, and improve written expression.'
+    'english language (aqa)': {
+        summary: 'Develop reading, writing, and language analysis skills. Study creative writing, language techniques, and communication.',
+        description: 'AQA GCSE English Language focuses on reading comprehension, creative writing, language analysis, and communication skills. Students develop written expression and analytical abilities.'
+    },
+    'english literature (edexcel)': {
+        summary: 'Study classic and modern literature. Analyze poetry, prose, and drama from different time periods and cultures.',
+        description: 'Edexcel GCSE English Literature covers poetry, prose, and drama analysis. Students study texts from the literary heritage and contemporary works, developing critical thinking and analytical skills.'
     },
     history: {
         summary: 'Explore past events, societies, and historical analysis. Study key periods, conflicts, and social changes.',
@@ -2610,15 +2614,17 @@ const subjectSpecifications = {
             tier: 'Further'
         }
     },
-    english: {
-        'AQA Language': {
+    'english language (aqa)': {
+        'AQA': {
             url: 'https://filestore.aqa.org.uk/resources/english/specifications/AQA-8700-SP-2015.PDF',
             label: 'AQA GCSE English Language',
             tier: ''
-        },
-        'Edexcel Language': {
-            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/english-language/2015/specification-and-sample-assessments/GCSE_English_Language_Specification.pdf',
-            label: 'Edexcel GCSE English Language',
+        }
+    },
+    'english literature (edexcel)': {
+        'Edexcel': {
+            url: 'https://qualifications.pearson.com/content/dam/pdf/GCSE/English%20Literature/2015/specification-and-sample-assesment/9781446914359_GCSE_2015_L12_Englit.pdf',
+            label: 'Edexcel GCSE English Literature',
             tier: ''
         }
     },
@@ -2674,8 +2680,10 @@ const subjectIconMap = {
     chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
     // Geography: globe
     geography: `<i class="fas fa-globe text-4xl text-emerald-600 mb-3"></i>`,
-    // English: book lines
-    english: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
+    // English Language (AQA): book lines
+    'english language (aqa)': `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
+    // English Literature (Edexcel): open book
+    'english literature (edexcel)': `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h8v20H6V2zm2 2v16h4V4H8z"/><path d="M4 4h16v2H4z"/><path d="M4 18h16v2H4z"/></svg>`,
     // Maths: calculator
     maths: `<i class="fas fa-calculator text-4xl text-indigo-600 mb-3"></i>`,
     // History: outlined clock face with hands
@@ -3234,6 +3242,15 @@ function updateAITutorNavVisibility() {
     }
 }
 
+let lastUserMessage = null;
+let lastLoadingId = null;
+let aiTutorInitialized = false;
+let aiTutorEventHandlers = {
+    inputResize: null,
+    keydown: null,
+    submit: null
+};
+
 function initializeAITutor() {
     const chatForm = document.getElementById('ai-chat-form');
     const chatInput = document.getElementById('ai-chat-input');
@@ -3244,115 +3261,247 @@ function initializeAITutor() {
     
     if (!chatForm || !chatInput || !sendButton || !chatMessages) return;
     
-    // Auto-resize textarea
-    chatInput.addEventListener('input', function() {
+    // Remove existing listeners if already initialized (prevent duplicate listeners)
+    if (aiTutorInitialized) {
+        try {
+            if (aiTutorEventHandlers.inputResize && chatInput) {
+                chatInput.removeEventListener('input', aiTutorEventHandlers.inputResize);
+            }
+            if (aiTutorEventHandlers.keydown && chatInput) {
+                chatInput.removeEventListener('keydown', aiTutorEventHandlers.keydown);
+            }
+            if (aiTutorEventHandlers.submit && chatForm) {
+                chatForm.removeEventListener('submit', aiTutorEventHandlers.submit);
+            }
+        } catch (e) {
+            // If elements were removed from DOM, ignore errors
+            console.warn('Error removing AI Tutor listeners:', e);
+        }
+    }
+    
+    // Create named functions for event handlers so we can remove them later
+    aiTutorEventHandlers.inputResize = function() {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         sendButton.disabled = !this.value.trim();
-    });
+    };
     
-    // Enable/disable send button based on input
-    chatInput.addEventListener('input', function() {
-        sendButton.disabled = !this.value.trim();
-    });
-    
-    // Handle form submission
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const message = chatInput.value.trim();
-        if (!message) return;
-        
-        // Check if user is paid or admin
-        if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
-            showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
-            showPage('features-page');
-            return;
+    aiTutorEventHandlers.keydown = function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendButton.disabled && this.value.trim()) {
+                chatForm.dispatchEvent(new Event('submit'));
+            }
         }
-        
-        // Disable input and button
-        chatInput.disabled = true;
-        sendButton.disabled = true;
-        errorMessage.classList.add('hidden');
-        errorMessage.textContent = '';
-        
-        // Add user message to chat
+    };
+    
+    aiTutorEventHandlers.submit = async function(e) {
+        e.preventDefault();
+        await sendAIMessage();
+    };
+    
+    // Add event listeners
+    chatInput.addEventListener('input', aiTutorEventHandlers.inputResize);
+    chatInput.addEventListener('keydown', aiTutorEventHandlers.keydown);
+    chatForm.addEventListener('submit', aiTutorEventHandlers.submit);
+    
+    aiTutorInitialized = true;
+}
+
+async function sendAIMessage(retryMessage = null) {
+    const chatForm = document.getElementById('ai-chat-form');
+    const chatInput = document.getElementById('ai-chat-input');
+    const sendButton = document.getElementById('ai-send-button');
+    const chatMessages = document.getElementById('ai-chat-messages');
+    const errorMessage = document.getElementById('ai-error-message');
+    const tokenUsageEl = document.getElementById('ai-token-usage');
+    
+    const message = retryMessage || chatInput.value.trim();
+    if (!message) return;
+    
+    // Check if user is paid or admin
+    if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
+        showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
+        showPage('features-page');
+        return;
+    }
+    
+    // Store message for retry
+    lastUserMessage = message;
+    
+    // Disable input and button
+    chatInput.disabled = true;
+    sendButton.disabled = true;
+    errorMessage.classList.add('hidden');
+    errorMessage.textContent = '';
+    
+    // Add user message to chat (only if not retrying)
+    if (!retryMessage) {
         addChatMessage('user', message);
         chatInput.value = '';
         chatInput.style.height = 'auto';
-        
-        // Show loading indicator
-        const loadingId = addChatMessage('assistant', 'Thinking...', true);
-        
-        try {
-            const response = await fetch('/api/ai-tutor', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: message,
-                    userId: currentUser.uid,
-                    conversationHistory: aiConversationHistory
-                })
-            });
-            
-            const data = await response.json();
-            
-            // Remove loading message
-            const loadingEl = document.getElementById(loadingId);
-            if (loadingEl) loadingEl.remove();
-            
-            if (!response.ok) {
-                throw new Error(data.message || data.error || 'Failed to get AI response');
-            }
-            
-            // Add AI response
-            addChatMessage('assistant', data.response);
-            
-            // Update conversation history
-            aiConversationHistory.push(
-                { role: 'user', content: message },
-                { role: 'assistant', content: data.response }
-            );
-            
-            // Keep only last 10 messages for context
-            if (aiConversationHistory.length > 20) {
-                aiConversationHistory = aiConversationHistory.slice(-20);
-            }
-            
-            // Update token usage
-            aiTokenUsage = data.totalTokensUsed || 0;
-            if (tokenUsageEl) {
-                tokenUsageEl.textContent = `Tokens: ${aiTokenUsage.toLocaleString()} / 64,000`;
-                if (aiTokenUsage >= 64000) {
-                    tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
-                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
-                } else if (aiTokenUsage >= 50000) {
-                    tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
-                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
-                }
-            }
-            
-        } catch (error) {
-            // Remove loading message
-            const loadingEl = document.getElementById(loadingId);
-            if (loadingEl) loadingEl.remove();
-            
-            // Show error
-            errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
-            errorMessage.classList.remove('hidden');
-            showToast('Failed to get AI response. Please try again.', 'error');
-        } finally {
-            // Re-enable input and button
-            chatInput.disabled = false;
-            sendButton.disabled = !chatInput.value.trim();
-            chatInput.focus();
+    } else {
+        // Remove previous error message if retrying
+        const lastMsg = chatMessages.lastElementChild;
+        if (lastMsg && lastMsg.querySelector('.ai-error-container')) {
+            lastMsg.remove();
         }
-    });
+    }
+    
+    // Show loading indicator with animation
+    lastLoadingId = addChatMessage('assistant', '', true);
+    
+    try {
+        const response = await fetch('/api/ai-tutor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                userId: currentUser.uid,
+                conversationHistory: aiConversationHistory
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Remove loading message
+        const loadingEl = document.getElementById(lastLoadingId);
+        if (loadingEl) loadingEl.remove();
+        lastLoadingId = null;
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Failed to get AI response');
+        }
+        
+        // Add AI response with formatting
+        addChatMessage('assistant', data.response, false, true);
+        
+        // Update conversation history
+        aiConversationHistory.push(
+            { role: 'user', content: message },
+            { role: 'assistant', content: data.response }
+        );
+        
+        // Keep only last 10 messages for context
+        if (aiConversationHistory.length > 20) {
+            aiConversationHistory = aiConversationHistory.slice(-20);
+        }
+        
+        // Update token usage
+        aiTokenUsage = data.totalTokensUsed || 0;
+        if (tokenUsageEl) {
+            tokenUsageEl.textContent = `Tokens: ${aiTokenUsage.toLocaleString()} / 64,000`;
+            if (aiTokenUsage >= 64000) {
+                tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
+                tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
+            } else if (aiTokenUsage >= 50000) {
+                tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
+                tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
+            }
+        }
+        
+    } catch (error) {
+        // Remove loading message
+        if (lastLoadingId) {
+            const loadingEl = document.getElementById(lastLoadingId);
+            if (loadingEl) loadingEl.remove();
+            lastLoadingId = null;
+        }
+        
+        // Show error with retry option
+        addChatMessage('assistant', '', false, false, error.message || 'Failed to send message. Please try again.');
+        
+        // Show error
+        errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
+        errorMessage.classList.remove('hidden');
+        showToast('Failed to get AI response. Please try again.', 'error');
+    } finally {
+        // Re-enable input and button
+        chatInput.disabled = false;
+        sendButton.disabled = !chatInput.value.trim();
+        if (!retryMessage) chatInput.focus();
+    }
 }
 
-function addChatMessage(role, content, isLoading = false) {
+// Simple markdown parser for basic formatting
+function parseMarkdown(text) {
+    if (!text) return '';
+    // Escape HTML first
+    let html = escapeHtml(text);
+    
+    // Code blocks first (before other processing)
+    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">$1</code></pre>');
+    
+    // Inline code: `code` (but not inside code blocks)
+    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800">$1</code>');
+    
+    // Bold: **text** (but not inside code)
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
+    
+    // Italic: *text* (but not bold markers)
+    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="italic">$1</em>');
+    
+    // Headers
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">$1</h2>');
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900">$1</h1>');
+    
+    // Lists - process line by line
+    const lines = html.split('\n');
+    let inList = false;
+    let listItems = [];
+    const processedLines = [];
+    
+    lines.forEach((line, index) => {
+        const listMatch = line.match(/^(\*|\-|\+)\s+(.+)$/);
+        if (listMatch) {
+            if (!inList) {
+                inList = true;
+                listItems = [];
+            }
+            listItems.push(`<li class="ml-4 mb-1">${listMatch[2]}</li>`);
+        } else {
+            if (inList) {
+                processedLines.push(`<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`);
+                listItems = [];
+                inList = false;
+            }
+            processedLines.push(line);
+        }
+    });
+    if (inList && listItems.length > 0) {
+        processedLines.push(`<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`);
+    }
+    html = processedLines.join('\n');
+    
+    // Line breaks (but preserve them in code blocks)
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+}
+
+// Render LaTeX in a container
+function renderLatex(container) {
+    if (typeof renderMathInElement === 'function') {
+        try {
+            renderMathInElement(container, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        } catch (e) {
+            console.error('LaTeX rendering error:', e);
+        }
+    }
+}
+
+function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null) {
     const chatMessages = document.getElementById('ai-chat-messages');
     if (!chatMessages) return;
     
@@ -3361,20 +3510,129 @@ function addChatMessage(role, content, isLoading = false) {
     
     const messageEl = document.createElement('div');
     messageEl.id = messageId;
-    messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
-    messageEl.innerHTML = `
-        <div class="w-8 h-8 rounded-full ${isUser ? 'bg-gray-600' : 'bg-blue-600'} flex items-center justify-center flex-shrink-0">
-            ${isUser ? '<i class="fas fa-user text-white text-sm"></i>' : '<i class="fas fa-robot text-white text-sm"></i>'}
-        </div>
-        <div class="flex-1 ${isUser ? 'bg-gray-100' : 'bg-blue-50'} rounded-lg p-4 border ${isUser ? 'border-gray-200' : 'border-blue-100'}">
-            ${isLoading ? '<div class="flex items-center gap-2"><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div></div>' : `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(content)}</p>`}
-        </div>
-    `;
+    messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-fade-in`;
+    messageEl.style.opacity = '0';
+    messageEl.style.transform = 'translateY(10px)';
+    messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    
+    if (errorText) {
+        // Error message with retry button
+        messageEl.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+            </div>
+            <div class="flex-1 bg-red-50 rounded-lg p-4 border border-red-200 shadow-sm ai-error-container">
+                <p class="text-red-800 mb-3">${escapeHtml(errorText)}</p>
+                <button class="ai-retry-btn px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold flex items-center gap-2">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </div>
+        `;
+    } else if (isLoading) {
+        // Loading animation
+        messageEl.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
+                <i class="fas fa-robot text-white text-sm"></i>
+            </div>
+            <div class="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                    <span class="ml-2 text-sm text-gray-600">Thinking...</span>
+                </div>
+            </div>
+        `;
+    } else {
+        // Regular message with formatting
+        const formattedContent = isAIResponse ? parseMarkdown(content) : escapeHtml(content);
+        const actionButtons = isAIResponse ? `
+            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-blue-200">
+                <button onclick="copyAIMessage('${messageId}')" class="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors flex items-center gap-1.5" title="Copy response">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="ai-retry-btn px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5" title="Retry last message">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </div>
+        ` : '';
+        
+        messageEl.innerHTML = `
+            <div class="w-8 h-8 rounded-full ${isUser ? 'bg-gray-600' : 'bg-blue-600'} flex items-center justify-center flex-shrink-0 shadow-sm">
+                ${isUser ? '<i class="fas fa-user text-white text-sm"></i>' : '<i class="fas fa-robot text-white text-sm"></i>'}
+            </div>
+            <div class="flex-1 ${isUser ? 'bg-gray-100' : 'bg-blue-50'} rounded-lg p-4 border ${isUser ? 'border-gray-200' : 'border-blue-100'} shadow-sm">
+                <div class="ai-message-content text-gray-800 prose prose-sm max-w-none">
+                    ${formattedContent}
+                </div>
+                ${actionButtons}
+            </div>
+        `;
+    }
     
     chatMessages.appendChild(messageEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Add retry button handlers
+    messageEl.querySelectorAll('.ai-retry-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            sendAIMessage(lastUserMessage);
+        });
+    });
+    
+    // Animate in
+    setTimeout(() => {
+        messageEl.style.opacity = '1';
+        messageEl.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Render LaTeX if it's an AI response
+    if (isAIResponse && typeof renderMathInElement === 'function') {
+        setTimeout(() => {
+            const contentEl = messageEl.querySelector('.ai-message-content');
+            if (contentEl) {
+                renderLatex(contentEl);
+            }
+        }, 100);
+    }
+    
+    // Scroll to bottom
+    setTimeout(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 50);
     
     return messageId;
+}
+
+function copyAIMessage(messageId) {
+    const messageEl = document.getElementById(messageId);
+    if (!messageEl) return;
+    
+    const contentEl = messageEl.querySelector('.ai-message-content');
+    if (!contentEl) return;
+    
+    // Get text content (without HTML)
+    const text = contentEl.innerText || contentEl.textContent;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Response copied to clipboard!', 'success');
+        // Visual feedback
+        const copyBtn = messageEl.querySelector('button[onclick*="copyAIMessage"]');
+        if (copyBtn) {
+            const originalHTML = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.classList.add('bg-green-100', 'text-green-700');
+            copyBtn.classList.remove('bg-blue-100', 'text-blue-700');
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.remove('bg-green-100', 'text-green-700');
+                copyBtn.classList.add('bg-blue-100', 'text-blue-700');
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        showToast('Failed to copy. Please try again.', 'error');
+    });
 }
 
 function showWhatsNewBanner(message, onDismiss) {
@@ -4088,8 +4346,6 @@ function renderUserManagementPanel(allUsers) {
     if (freeUsersEl) freeUsersEl.textContent = freeUsers;
     const paidUsersEl = document.getElementById('paid-users-count');
     if (paidUsersEl) paidUsersEl.textContent = paidUsers;
-    const adminUsersEl = document.getElementById('admin-users-count');
-    if (adminUsersEl) adminUsersEl.textContent = adminUsers;
     const activeTodayEl = document.getElementById('active-today-count');
     if (activeTodayEl) activeTodayEl.textContent = activeToday;
     
@@ -6855,20 +7111,15 @@ async function updateAnalytics() {
         if (freeUsersEl) freeUsersEl.textContent = freeUsers;
         const paidUsersEl = document.getElementById('paid-users-count');
         if (paidUsersEl) paidUsersEl.textContent = paidUsers;
-        const adminUsersEl = document.getElementById('admin-users-count');
-        if (adminUsersEl) adminUsersEl.textContent = adminUsers;
         const activeTodayEl = document.getElementById('active-today-count');
         if (activeTodayEl) activeTodayEl.textContent = activeToday;
         
         // Update enhanced analytics
         const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0.0';
-        const monthlyRevenue = paidUsers * 0.20; // 20p per user per month (excluding VAT)
         const growthPercentage = await calculateGrowthPercentage();
         
         const conversionRateEl = document.getElementById('free-conversion-rate');
         if (conversionRateEl) conversionRateEl.textContent = conversionRate + '%';
-        const monthlyRevenueEl = document.getElementById('monthly-revenue');
-        if (monthlyRevenueEl) monthlyRevenueEl.textContent = '£' + monthlyRevenue;
         const growthPercentageEl = document.getElementById('growth-percentage');
         if (growthPercentageEl) growthPercentageEl.textContent = growthPercentage;
         const activeWeekEl = document.getElementById('active-week-count');
@@ -7956,12 +8207,12 @@ async function renderDashboard() {
         const examBoardBySubject = {
             // AQA
             biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
+            'english language (aqa)': 'AQA',
             // Edexcel
             music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
+            'english literature (edexcel)': 'Edexcel',
             // OCR
             computing: 'OCR', geography: 'OCR',
-            // Both
-            english: 'AQA & Edexcel',
             // Eduqas
             'philosophy and ethics': 'Eduqas'
         };

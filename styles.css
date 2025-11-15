@@ -192,6 +192,19 @@ animation: skeleton-loading 1.5s infinite;
 border-radius: 4px;
         }
         
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out;
+        }
         @keyframes skeleton-loading {
 0% { background-position: 200% 0; }
 100% { background-position: -200% 0; }
