@@ -3062,6 +3062,7 @@ function initializeAppState() {
 let aiConversationHistory = [];
 let aiRequestCount = 0;
 let aiMaxRequests = 50;
+let aiNameConfirmed = false; // Track if user has confirmed their name
 
 function updateAITutorNavVisibility() {
     const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
@@ -3227,9 +3228,12 @@ async function sendAIMessage(retryMessage = null) {
                     tier: currentUser.tier,
                     role: currentUser.role,
                     aiMaxRequestsDaily: currentUser.aiMaxRequestsDaily,
-                    aiAccessBlocked: currentUser.aiAccessBlocked
+                    aiAccessBlocked: currentUser.aiAccessBlocked,
+                    displayName: currentUser.displayName,
+                    name: currentUser.displayName
                 },
-                currentRequestCount: aiRequestCount
+                currentRequestCount: aiRequestCount,
+                nameConfirmed: aiNameConfirmed
             })
         });
         
@@ -3244,38 +3248,70 @@ async function sendAIMessage(retryMessage = null) {
             throw new Error(data.message || data.error || 'Failed to get AI response');
         }
         
+        // Check if this is the name greeting (first interaction, name not confirmed)
+        const isNameGreeting = aiConversationHistory.length === 0 && !aiNameConfirmed && data.isNameGreeting;
+        
         // Add AI response with formatting
         addChatMessage('assistant', data.response, false, true);
         
-        // Update conversation history
-        aiConversationHistory.push(
-            { role: 'user', content: message },
-            { role: 'assistant', content: data.response }
-        );
-        
-        // Keep only last 10 messages for context
-        if (aiConversationHistory.length > 20) {
-            aiConversationHistory = aiConversationHistory.slice(-20);
+        // If this is the name greeting, don't count as request and handle name confirmation
+        if (isNameGreeting) {
+            // User hasn't confirmed name yet - this doesn't count as a request
+            // Don't add to conversation history yet, don't increment request count
+            // The user's next message will confirm/correct the name
+            return; // Exit early, don't increment request count
         }
         
-        // Update request count
-        aiRequestCount = data.requestsUsed || 0;
-        aiMaxRequests = data.maxRequests || 50;
+        // Check if user confirmed/corrected their name in this message
+        if (!aiNameConfirmed) {
+            const nameConfirmationPattern = /(yes|yeah|yep|sure|ok|okay|correct|that's right|that's fine|that works|sounds good)/i;
+            const nameCorrectionPattern = /(call me|my name is|i'm|i am|please call me|you can call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i;
+            
+            if (nameConfirmationPattern.test(message)) {
+                aiNameConfirmed = true;
+            } else if (nameCorrectionPattern.test(message)) {
+                aiNameConfirmed = true;
+                // Extract the new name if provided
+                const nameMatch = message.match(nameCorrectionPattern);
+                if (nameMatch && nameMatch[2]) {
+                    // Could store the preferred name if needed
+                }
+            }
+        }
         
-        // Write request count to Firestore if server says to increment
-        const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
-        if (data.shouldIncrement && !isAdmin) {
-            const today = new Date().toISOString().split('T')[0];
-            const docId = `${currentUser.uid}_${today}`;
-            try {
-                await db.collection('aiTutorRequests').doc(docId).set({
-                    userId: currentUser.uid,
-                    date: today,
-                    count: aiRequestCount,
-                    lastRequestAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (error) {
-                console.error('Error writing request count:', error);
+        // Update conversation history (only after name is confirmed or if already confirmed)
+        if (aiNameConfirmed) {
+            aiConversationHistory.push(
+                { role: 'user', content: message },
+                { role: 'assistant', content: data.response }
+            );
+            
+            // Keep only last 10 messages for context
+            if (aiConversationHistory.length > 20) {
+                aiConversationHistory = aiConversationHistory.slice(-20);
+            }
+        }
+        
+        // Update request count (only if name is confirmed)
+        if (aiNameConfirmed && data.shouldIncrement !== false) {
+            aiRequestCount = data.requestsUsed || 0;
+            aiMaxRequests = data.maxRequests || 50;
+            
+            // Write request count to Firestore if server says to increment
+            const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+            if (data.shouldIncrement && !isAdmin) {
+                const today = new Date().toISOString().split('T')[0];
+                const docId = `${currentUser.uid}_${today}`;
+                try {
+                    await db.collection('aiTutorRequests').doc(docId).set({
+                        userId: currentUser.uid,
+                        date: today,
+                        count: aiRequestCount,
+                        lastRequestAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } catch (error) {
+                    console.error('Error writing request count:', error);
+                }
             }
         }
         
@@ -3432,7 +3468,22 @@ function parseMarkdown(text) {
     return html;
 }
 
-// Helper function to process inline markdown (bold, italic, code)
+// Sanitize URL to prevent XSS
+function sanitizeUrlForDisplay(url) {
+    if (!url || typeof url !== 'string') return '';
+    try {
+        const urlObj = new URL(url);
+        // Only allow http and https
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return '';
+        }
+        return url;
+    } catch (e) {
+        return '';
+    }
+}
+
+// Helper function to process inline markdown (bold, italic, code, links)
 function processInlineMarkdown(text) {
     // Use placeholders to protect HTML tags from being escaped
     const placeholders = [];
@@ -3446,7 +3497,19 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 2: Process bold: **text** (non-greedy to handle multiple instances)
+    // Step 2: Process links: [text](url) - must be before bold/italic
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+        const sanitizedUrl = sanitizeUrlForDisplay(url);
+        if (!sanitizedUrl) {
+            return escapeHtml(linkText); // If URL is invalid, just show text
+        }
+        const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
+        placeholders[placeholderIndex] = `<a href="${escapeHtml(sanitizedUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">${escapeHtml(linkText)}</a>`;
+        placeholderIndex++;
+        return placeholder;
+    });
+    
+    // Step 3: Process bold: **text** (non-greedy to handle multiple instances)
     text = text.replace(/\*\*([^*]+?)\*\*/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
         placeholders[placeholderIndex] = `<strong class="font-bold">${escapeHtml(content)}</strong>`;
@@ -3454,7 +3517,7 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 3: Process italic: *text* (but not if it's part of **)
+    // Step 4: Process italic: *text* (but not if it's part of **)
     text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
         placeholders[placeholderIndex] = `<em class="italic">${escapeHtml(content)}</em>`;
@@ -3462,10 +3525,10 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 4: Escape remaining HTML in text
+    // Step 5: Escape remaining HTML in text
     text = escapeHtml(text);
     
-    // Step 5: Restore placeholders (which contain already-escaped content)
+    // Step 6: Restore placeholders (which contain already-escaped content)
     placeholders.forEach((html, index) => {
         text = text.replace(`__PLACEHOLDER_${index}__`, html);
     });
@@ -8063,6 +8126,15 @@ function showPage(pageId) {
             if (chatMessages && chatMessages.children.length === 1) {
                 // Only welcome message, conversation is fresh
                 aiConversationHistory = [];
+                // Reset name confirmation when starting fresh
+                aiNameConfirmed = false;
+                
+                // Show name greeting immediately (doesn't count as request)
+                const welcomeMsg = chatMessages.querySelector('.bg-blue-50 p');
+                if (welcomeMsg && currentUser) {
+                    const userName = currentUser.displayName || 'there';
+                    welcomeMsg.textContent = `Hello! I'm GCSEMate AI, your intelligent tutoring assistant. I see your name is ${userName}. Is it okay if I call you ${userName}? If you'd prefer a different name, just let me know what you'd like me to call you!`;
+                }
             }
             
             // Load current request count
