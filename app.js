@@ -5845,12 +5845,12 @@ async function openEditUserModal(userId) {
         const modal = document.getElementById('edit-user-modal');
         modal.style.display = 'flex';
         modal.innerHTML = `
-            <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
-                 <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+            <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
+                 <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
                      <h3 class="text-lg font-semibold text-gray-800">Edit User: ${user.displayName}</h3>
                      <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                  </div>
-                 <div class="p-6 space-y-4 overflow-y-auto">
+                 <div class="p-6 space-y-4 overflow-y-auto flex-1">
                      <form id="edit-user-form" onsubmit="event.preventDefault(); handleUpdateUser('${user.id}')">
                          <div>
                              <label for="edit-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
@@ -5908,9 +5908,27 @@ async function openEditUserModal(userId) {
                              <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
                          </div>
                      </form>
+                     
+                     <!-- Exam Results Section -->
+                     <div class="mt-6 pt-6 border-t border-gray-200">
+                         <h4 class="text-lg font-semibold text-gray-800 mb-4">Exam Results</h4>
+                         <p class="text-sm text-gray-500 mb-4">View this user's GCSE exam grades across their assigned subjects.</p>
+                         <div id="edit-user-exam-results-container" class="space-y-4">
+                             <div id="edit-user-exam-results-loading" class="text-center py-8">
+                                 <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                 <p class="text-gray-600">Loading exam results...</p>
+                             </div>
+                             <div id="edit-user-exam-results-content" class="hidden">
+                                 <!-- Exam results will be rendered here -->
+                             </div>
+                         </div>
+                     </div>
                  </div>
             </div>
         `;
+        
+        // Load exam results for this user
+        loadExamResults(user.id);
         const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
         const userSubjects = user.allowedSubjects || [];
         SUBJECTS.forEach(subject => {
@@ -13598,13 +13616,26 @@ function getGradeColorClass(grade) {
 }
 
 // Load exam results from Firebase
-async function loadExamResults() {
-    if (!currentUser || !currentUser.uid) return;
+async function loadExamResults(targetUserId = null) {
+    // If targetUserId is provided, it means an admin is viewing another user's results
+    const viewingUserId = targetUserId || (currentUser ? currentUser.uid : null);
+    if (!viewingUserId) return;
     
     // Check if admin or user
     const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
-    const loadingEl = isAdmin ? document.getElementById('admin-exam-results-loading') : document.getElementById('exam-results-loading');
-    const contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
+    const isViewingOtherUser = targetUserId && targetUserId !== currentUser.uid;
+    
+    // Determine which elements to use
+    let loadingEl, contentEl;
+    if (isViewingOtherUser) {
+        // Admin viewing another user - use edit modal elements
+        loadingEl = document.getElementById('edit-user-exam-results-loading');
+        contentEl = document.getElementById('edit-user-exam-results-content');
+    } else {
+        // User viewing own results or admin viewing own results
+        loadingEl = isAdmin ? document.getElementById('admin-exam-results-loading') : document.getElementById('exam-results-loading');
+        contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
+    }
     
     if (!loadingEl || !contentEl) return;
     
@@ -13612,13 +13643,32 @@ async function loadExamResults() {
         loadingEl.classList.remove('hidden');
         contentEl.classList.add('hidden');
         
+        // Get the user's data to determine allowed subjects
+        let userData = currentUser;
+        if (isViewingOtherUser) {
+            const userDoc = await db.collection('users').doc(targetUserId).get();
+            if (userDoc.exists) {
+                userData = { uid: userDoc.id, ...userDoc.data() };
+            } else {
+                contentEl.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                        <p>User not found.</p>
+                    </div>
+                `;
+                loadingEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+                return;
+            }
+        }
+        
         // Get user's allowed subjects
-        const userAllowedSubjects = currentUser.allowedSubjects || [];
+        const userAllowedSubjects = userData.allowedSubjects || [];
         const allSubjects = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
         
         // For free users, show all subjects; for paid users, show only allowed subjects
         const subjectsToShow = userAllowedSubjects.length > 0 ? 
-            allSubjects.filter(subj => userAllowedSubjects.includes(subj)) : 
+            allSubjects.filter(subj => userAllowedSubjects.includes(subj.toLowerCase())) : 
             allSubjects;
         
         if (subjectsToShow.length === 0) {
@@ -13638,7 +13688,7 @@ async function loadExamResults() {
         const loadPromises = subjectsToShow.map(async (subject) => {
             const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
             try {
-                const doc = await db.collection('userExamResults').doc(currentUser.uid)
+                const doc = await db.collection('userExamResults').doc(viewingUserId)
                     .collection('subjects').doc(subjectKey).get();
                 
                 if (doc.exists) {
@@ -13654,8 +13704,8 @@ async function loadExamResults() {
         
         await Promise.all(loadPromises);
         
-        // Render exam results table
-        renderExamResultsTable(subjectsToShow, examResultsData);
+        // Render exam results table (pass isViewingOtherUser flag to make it read-only for admins viewing other users)
+        renderExamResultsTable(subjectsToShow, examResultsData, isViewingOtherUser);
         
         loadingEl.classList.add('hidden');
         contentEl.classList.remove('hidden');
@@ -13671,10 +13721,17 @@ async function loadExamResults() {
 }
 
 // Render exam results table
-function renderExamResultsTable(subjects, examResultsData) {
-    // Check if admin or user
+function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
+    // Check if admin or user, and determine which content element to use
     const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
-    const contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
+    let contentEl;
+    if (readOnly) {
+        // Admin viewing another user's results in edit modal
+        contentEl = document.getElementById('edit-user-exam-results-content');
+    } else {
+        // User viewing own results or admin viewing own results
+        contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
+    }
     if (!contentEl) return;
     
     // Find the maximum number of exams across all subjects
@@ -13697,10 +13754,10 @@ function renderExamResultsTable(subjects, examResultsData) {
                         <i class="fas fa-table"></i>
                         Exam Results
                     </h5>
-                    <button onclick="addExamColumn()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2">
+                    ${!readOnly ? `<button onclick="addExamColumn()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2">
                         <i class="fas fa-plus"></i>
                         Add Exam
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -13727,10 +13784,11 @@ function renderExamResultsTable(subjects, examResultsData) {
                                                id="exam-date-${i}" 
                                                value="${examDate}" 
                                                class="text-xs px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               ${readOnly ? 'disabled' : ''}
                                                onchange="updateExamDate(${i}, this.value)">
-                                        <button onclick="removeExamColumn(${i})" class="text-red-500 hover:text-red-700 text-xs" title="Remove exam">
+                                        ${!readOnly ? `<button onclick="removeExamColumn(${i})" class="text-red-500 hover:text-red-700 text-xs" title="Remove exam">
                                             <i class="fas fa-times"></i>
-                                        </button>
+                                        </button>` : ''}
                                     </div>
                                 </th>
                             `;
@@ -13758,9 +13816,9 @@ function renderExamResultsTable(subjects, examResultsData) {
                                                        value="${escapeHtml(exam.grade || '')}" 
                                                        placeholder="Grade"
                                                        maxlength="1"
-                                                       class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor}"
-                                                       oninput="updateGradeColor(this, '${subject}', ${i})"
-                                                       onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace'">
+                                                       ${readOnly ? 'disabled readonly' : ''}
+                                                       class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor} ${readOnly ? 'bg-gray-100 cursor-not-allowed' : ''}"
+                                                       ${!readOnly ? `oninput="updateGradeColor(this, '${subject}', ${i})" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace'"` : ''}>
                                             </td>
                                         `;
                                     }).join('')}
@@ -13777,10 +13835,10 @@ function renderExamResultsTable(subjects, examResultsData) {
                     <p class="mb-1"><span class="inline-block w-4 h-4 bg-amber-600 rounded mr-2"></span> Grades 7-5</p>
                     <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> Grades 4-1</p>
                 </div>
-                <button onclick="saveExamResults()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                ${!readOnly ? `<button onclick="saveExamResults()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
                     <i class="fas fa-save"></i>
                     Save Results
-                </button>
+                </button>` : '<p class="text-sm text-gray-500 italic">View-only mode (Admin viewing user results)</p>'}
             </div>
         </div>
     `;

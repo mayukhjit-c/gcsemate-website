@@ -142,8 +142,8 @@ service cloud.firestore {
     match /userExamResults/{uid} {
       allow read, write: if false; // disallow direct doc ops at root
       match /subjects/{subjectId} {
-        // Allow read if user owns the data
-        allow read: if isSignedIn() && request.auth.uid == uid;
+        // Allow read if user owns the data OR if admin is reading
+        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
         
         // Allow create/update with validation
         allow create: if isSignedIn() && request.auth.uid == uid &&
