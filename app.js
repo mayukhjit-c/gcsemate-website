@@ -3836,6 +3836,88 @@ function copyAIMessage(messageId) {
     });
 }
 
+// Clear chat history function
+function clearAIChatHistory() {
+    if (!confirm('Are you sure you want to clear the chat history? This cannot be undone.')) {
+        return;
+    }
+    
+    const chatMessages = document.getElementById('ai-chat-messages');
+    if (!chatMessages) return;
+    
+    // Keep only the welcome message
+    const welcomeMessage = chatMessages.querySelector('.bg-blue-50');
+    chatMessages.innerHTML = '';
+    if (welcomeMessage) {
+        chatMessages.appendChild(welcomeMessage);
+    } else {
+        // Recreate welcome message if it doesn't exist
+        chatMessages.innerHTML = `
+            <div class="flex items-start gap-3 animate-fade-in">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm">
+                    <div class="ai-message-content text-gray-800 prose prose-sm max-w-none" style="padding: 0; margin: 0;">
+                        <p class="mb-0 leading-relaxed">Hello! I'm GCSEMate AI, your intelligent tutoring assistant. I'm here to help you with GCSE academic topics and questions about GCSEMate. How can I assist you today?</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Reset conversation state
+    aiConversationHistory = [];
+    aiNameConfirmed = false;
+    isFirstAIResponse = true;
+    lastAIMessageId = null;
+    lastUserMessage = null;
+    
+    // Stop any ongoing request
+    if (currentAIRequest) {
+        currentAIRequest.abort();
+        currentAIRequest = null;
+    }
+    
+    // Remove any loading messages
+    if (lastLoadingId) {
+        const loadingEl = document.getElementById(lastLoadingId);
+        if (loadingEl) loadingEl.remove();
+        lastLoadingId = null;
+    }
+    
+    // Reset buttons
+    const sendButton = document.getElementById('ai-send-button');
+    const stopButton = document.getElementById('ai-stop-button');
+    if (sendButton) sendButton.classList.remove('hidden');
+    if (stopButton) stopButton.classList.add('hidden');
+    
+    showToast('Chat history cleared', 'success');
+}
+
+// Stop AI request function
+function stopAIRequest() {
+    if (currentAIRequest) {
+        currentAIRequest.abort();
+        currentAIRequest = null;
+        
+        // Remove loading message
+        if (lastLoadingId) {
+            const loadingEl = document.getElementById(lastLoadingId);
+            if (loadingEl) loadingEl.remove();
+            lastLoadingId = null;
+        }
+        
+        // Reset buttons
+        const sendButton = document.getElementById('ai-send-button');
+        const stopButton = document.getElementById('ai-stop-button');
+        if (sendButton) sendButton.classList.remove('hidden');
+        if (stopButton) stopButton.classList.add('hidden');
+        
+        showToast('Request stopped', 'info');
+    }
+}
+
 function showWhatsNewBanner(message, onDismiss) {
     const bannerId = 'whats-new-banner';
     let banner = document.getElementById(bannerId);
