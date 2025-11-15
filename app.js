@@ -3270,58 +3270,152 @@ async function sendAIMessage(retryMessage = null) {
 // Simple markdown parser for basic formatting
 function parseMarkdown(text) {
     if (!text) return '';
-    // Escape HTML first
-    let html = escapeHtml(text);
     
-    // Code blocks first (before other processing)
-    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">$1</code></pre>');
+    // Process markdown patterns FIRST (before escaping HTML)
+    // This allows us to match markdown syntax like **bold** correctly
     
-    // Inline code: `code` (but not inside code blocks)
-    html = html.replace(/`([^`\n]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800">$1</code>');
-    
-    // Bold: **text** (but not inside code)
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
-    
-    // Italic: *text* (but not bold markers)
-    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="italic">$1</em>');
-    
-    // Headers
-    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
-    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">$1</h2>');
-    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900">$1</h1>');
-    
-    // Lists - process line by line
-    const lines = html.split('\n');
+    // Split into lines for processing
+    const lines = text.split('\n');
+    let html = '';
+    let inCodeBlock = false;
+    let codeBlockContent = '';
     let inList = false;
     let listItems = [];
-    const processedLines = [];
     
-    lines.forEach((line, index) => {
-        const listMatch = line.match(/^(\*|\-|\+)\s+(.+)$/);
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Handle code blocks (```code```)
+        if (line.trim().startsWith('```')) {
+            if (inCodeBlock) {
+                // End code block
+                html += `<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
+                codeBlockContent = '';
+                inCodeBlock = false;
+            } else {
+                // Start code block
+                inCodeBlock = true;
+                const lang = line.trim().substring(3).trim();
+                if (lang) {
+                    // Language specified, but we'll just use it as a class
+                    codeBlockContent = '';
+                }
+            }
+            continue;
+        }
+        
+        if (inCodeBlock) {
+            codeBlockContent += line + '\n';
+            continue;
+        }
+        
+        // Process headers (must be at start of line)
+        if (line.match(/^###\s+(.+)$/)) {
+            if (inList) {
+                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
+                listItems = [];
+                inList = false;
+            }
+            html += `<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^###\s+/, ''))}</h3>`;
+            continue;
+        }
+        if (line.match(/^##\s+(.+)$/)) {
+            if (inList) {
+                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
+                listItems = [];
+                inList = false;
+            }
+            html += `<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^##\s+/, ''))}</h2>`;
+            continue;
+        }
+        if (line.match(/^#\s+(.+)$/)) {
+            if (inList) {
+                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
+                listItems = [];
+                inList = false;
+            }
+            html += `<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^#\s+/, ''))}</h1>`;
+            continue;
+        }
+        
+        // Handle lists
+        const listMatch = line.match(/^[\*\-\+]\s+(.+)$/);
         if (listMatch) {
             if (!inList) {
                 inList = true;
                 listItems = [];
             }
-            listItems.push(`<li class="ml-4 mb-1">${listMatch[2]}</li>`);
+            // Process markdown in list item
+            let itemText = listMatch[1];
+            itemText = processInlineMarkdown(itemText);
+            listItems.push(`<li class="ml-4 mb-1">${itemText}</li>`);
+            continue;
         } else {
             if (inList) {
-                processedLines.push(`<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`);
+                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
                 listItems = [];
                 inList = false;
             }
-            processedLines.push(line);
         }
-    });
-    if (inList && listItems.length > 0) {
-        processedLines.push(`<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`);
+        
+        // Process inline markdown for regular lines
+        if (line.trim()) {
+            html += processInlineMarkdown(line) + '<br>';
+        } else {
+            html += '<br>';
+        }
     }
-    html = processedLines.join('\n');
     
-    // Line breaks (but preserve them in code blocks)
-    html = html.replace(/\n/g, '<br>');
+    // Close any open code block or list
+    if (inCodeBlock) {
+        html += `<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
+    }
+    if (inList) {
+        html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
+    }
     
     return html;
+}
+
+// Helper function to process inline markdown (bold, italic, code)
+function processInlineMarkdown(text) {
+    // Use placeholders to protect HTML tags from being escaped
+    const placeholders = [];
+    let placeholderIndex = 0;
+    
+    // Step 1: Protect inline code first
+    text = text.replace(/`([^`]+)`/g, (match, code) => {
+        const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
+        placeholders[placeholderIndex] = `<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800">${escapeHtml(code)}</code>`;
+        placeholderIndex++;
+        return placeholder;
+    });
+    
+    // Step 2: Process bold: **text** (non-greedy to handle multiple instances)
+    text = text.replace(/\*\*([^*]+?)\*\*/g, (match, content) => {
+        const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
+        placeholders[placeholderIndex] = `<strong class="font-bold">${escapeHtml(content)}</strong>`;
+        placeholderIndex++;
+        return placeholder;
+    });
+    
+    // Step 3: Process italic: *text* (but not if it's part of **)
+    text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, (match, content) => {
+        const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
+        placeholders[placeholderIndex] = `<em class="italic">${escapeHtml(content)}</em>`;
+        placeholderIndex++;
+        return placeholder;
+    });
+    
+    // Step 4: Escape remaining HTML in text
+    text = escapeHtml(text);
+    
+    // Step 5: Restore placeholders (which contain already-escaped content)
+    placeholders.forEach((html, index) => {
+        text = text.replace(`__PLACEHOLDER_${index}__`, html);
+    });
+    
+    return text;
 }
 
 // Render LaTeX in a container
@@ -8627,6 +8721,7 @@ function renderVideosPage(playlists) {
         const card = document.createElement('div');
         card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
         card.onclick = () => handlePlaylistClick(playlist);
+        const playlistUrl = playlist.url || '';
         card.innerHTML = `
             <div class="flex-grow flex flex-col justify-center items-center text-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -8635,11 +8730,14 @@ function renderVideosPage(playlists) {
                 </svg>
                 <h3 class="font-bold text-gray-800 leading-tight">${playlist.title}</h3>
             </div>
-             <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center text-xs text-gray-500 font-semibold">
-                 <span>YOUTUBE PLAYLIST</span>
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
-                 </svg>
+             <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
+                 <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
+                 ${playlistUrl ? `
+                 <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
+                     <i class="fas fa-external-link-alt"></i>
+                     <span>Open</span>
+                 </button>
+                 ` : ''}
             </div>
             ${currentUser.role === 'admin' ? `
             <div class="absolute top-2 right-2 flex gap-1">

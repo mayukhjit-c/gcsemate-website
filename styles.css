@@ -950,9 +950,15 @@ border: none !important;
         }
         /* Remove conflicting pseudo-elements but keep our enhanced ones */
         /* Note: The ::before for underline animation is defined above */
-        /* Ensure proper focus states */
+        /* Ensure proper focus states - remove blue outline, keep only color for active */
         .nav-link:focus { 
 outline: none !important;
+box-shadow: none !important;
+        }
+        
+        .nav-link:focus-visible {
+outline: none !important;
+box-shadow: none !important;
         }
         
         .nav-link:hover {
@@ -963,6 +969,7 @@ border: none !important;
         .nav-link.active {
 border: none !important;
 outline: none !important;
+box-shadow: none !important;
         }
         /* Prose styles for text content pages */
         .prose { max-width: 65ch; }
