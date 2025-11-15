@@ -2680,10 +2680,10 @@ const subjectIconMap = {
     chemistry: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-cyan-600" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6v2l-1 1v4.6l4.8 7.2A3 3 0 0115.5 22h-7a3 3 0 01-3.3-4.2L10 10.6V6l-1-1V3z"/><path d="M8.5 14h7l1.6 2.4a1 1 0 01-.8 1.6h-8.6a1 1 0 01-.8-1.6L8.5 14z"/></svg>`,
     // Geography: globe
     geography: `<i class="fas fa-globe text-4xl text-emerald-600 mb-3"></i>`,
-    // English Language (AQA): book lines
-    'english language (aqa)': `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v2H4z"/><path d="M4 8h10v2H4z"/><path d="M4 12h16v2H4z"/><path d="M4 16h10v2H4z"/></svg>`,
-    // English Literature (Edexcel): open book
-    'english literature (edexcel)': `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-purple-600" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h8v20H6V2zm2 2v16h4V4H8z"/><path d="M4 4h16v2H4z"/><path d="M4 18h16v2H4z"/></svg>`,
+    // English Language (AQA): FontAwesome book icon
+    'english language (aqa)': `<i class="fas fa-book text-4xl text-blue-600 mb-3"></i>`,
+    // English Literature (Edexcel): FontAwesome book-open icon
+    'english literature (edexcel)': `<i class="fas fa-book-open text-4xl text-purple-600 mb-3"></i>`,
     // Maths: calculator
     maths: `<i class="fas fa-calculator text-4xl text-indigo-600 mb-3"></i>`,
     // History: outlined clock face with hands
@@ -3060,7 +3060,8 @@ function initializeAppState() {
 
 // AI Tutor functionality
 let aiConversationHistory = [];
-let aiTokenUsage = 0;
+let aiRequestCount = 0;
+let aiMaxRequests = 50;
 
 function updateAITutorNavVisibility() {
     const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
@@ -3168,6 +3169,18 @@ async function sendAIMessage(retryMessage = null) {
         return;
     }
     
+    // Get user's allowed subjects
+    const userAllowedSubjects = currentUser.allowedSubjects;
+    let subjectsToSend = [];
+    
+    if (userAllowedSubjects === null || userAllowedSubjects === undefined) {
+        // Free users - assume all subjects
+        subjectsToSend = SUBJECTS;
+    } else {
+        // Paid users - only their allowed subjects
+        subjectsToSend = SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
+    }
+    
     // Store message for retry
     lastUserMessage = message;
     
@@ -3194,15 +3207,29 @@ async function sendAIMessage(retryMessage = null) {
     lastLoadingId = addChatMessage('assistant', '', true);
     
     try {
+        // Get Firebase Auth token for server-side verification
+        const idToken = await firebase.auth().currentUser.getIdToken();
+        
         const response = await fetch('/api/ai-tutor', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
             },
             body: JSON.stringify({
                 message: message,
                 userId: currentUser.uid,
-                conversationHistory: aiConversationHistory
+                conversationHistory: aiConversationHistory,
+                userSubjects: subjectsToSend,
+                subjectSummaries: subjectSummaries,
+                subjectSpecifications: subjectSpecifications,
+                userData: {
+                    tier: currentUser.tier,
+                    role: currentUser.role,
+                    aiMaxRequestsDaily: currentUser.aiMaxRequestsDaily,
+                    aiAccessBlocked: currentUser.aiAccessBlocked
+                },
+                currentRequestCount: aiRequestCount
             })
         });
         
@@ -3231,16 +3258,44 @@ async function sendAIMessage(retryMessage = null) {
             aiConversationHistory = aiConversationHistory.slice(-20);
         }
         
-        // Update token usage
-        aiTokenUsage = data.totalTokensUsed || 0;
+        // Update request count
+        aiRequestCount = data.requestsUsed || 0;
+        aiMaxRequests = data.maxRequests || 50;
+        
+        // Write request count to Firestore if server says to increment
+        const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+        if (data.shouldIncrement && !isAdmin) {
+            const today = new Date().toISOString().split('T')[0];
+            const docId = `${currentUser.uid}_${today}`;
+            try {
+                await db.collection('aiTutorRequests').doc(docId).set({
+                    userId: currentUser.uid,
+                    date: today,
+                    count: aiRequestCount,
+                    lastRequestAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (error) {
+                console.error('Error writing request count:', error);
+            }
+        }
+        
         if (tokenUsageEl) {
-            tokenUsageEl.textContent = `Tokens: ${aiTokenUsage.toLocaleString()} / 64,000`;
-            if (aiTokenUsage >= 64000) {
-                tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
-                tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
-            } else if (aiTokenUsage >= 50000) {
-                tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
-                tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
+            if (data.requestsRemaining === -1) {
+                tokenUsageEl.textContent = `Requests: Unlimited (Admin)`;
+                tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
+                tokenUsageEl.classList.add('bg-green-50', 'border-green-200');
+            } else {
+                tokenUsageEl.textContent = `Requests: ${aiRequestCount} / ${aiMaxRequests}`;
+                if (data.requestsRemaining === 0) {
+                    tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
+                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-yellow-50', 'border-yellow-200');
+                } else if (data.requestsRemaining <= 10) {
+                    tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
+                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-red-50', 'border-red-200');
+                } else {
+                    tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
+                    tokenUsageEl.classList.add('bg-blue-50', 'border-blue-200');
+                }
             }
         }
         
@@ -5321,6 +5376,20 @@ async function openEditUserModal(userId) {
                              <label class="block text-sm font-medium text-gray-700">Allowed Subjects</label>
                              <div id="edit-subject-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-sm border-t pt-2"></div>
                          </div>
+                         <div class="border-t pt-4 mt-4">
+                             <h4 class="text-sm font-semibold text-gray-700 mb-3">AI Tutor Settings</h4>
+                             <div>
+                                 <label for="edit-ai-max-requests" class="block text-sm font-medium text-gray-700">Max Daily AI Requests</label>
+                                 <input id="edit-ai-max-requests" type="number" min="0" max="200" value="${user.aiMaxRequestsDaily || 50}" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                 <p class="text-xs text-gray-500 mt-1">Default: 50. Set to 0 to block AI access. Admins have unlimited.</p>
+                             </div>
+                             <div class="mt-3">
+                                 <label class="flex items-center space-x-2 cursor-pointer">
+                                     <input type="checkbox" id="edit-ai-access-blocked" ${user.aiAccessBlocked === true ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                     <span class="text-sm text-gray-700">Block AI Tutor Access</span>
+                                 </label>
+                             </div>
+                         </div>
                          <div class="flex justify-end gap-3 pt-4">
                              <button type="button" onclick="document.getElementById('edit-user-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
                              <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
@@ -5374,12 +5443,16 @@ async function handleUpdateUser(userId) {
         const newTier = document.getElementById('edit-tier').value;
         const newRole = document.getElementById('edit-role').value;
         const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
+        const aiMaxRequests = parseInt(document.getElementById('edit-ai-max-requests').value) || 50;
+        const aiAccessBlocked = document.getElementById('edit-ai-access-blocked').checked;
         
         const updateData = {
             displayName: newDisplayName,
             tier: newTier,
             role: newRole,
-            allowedSubjects: newSubjects.length > 0 ? newSubjects : null
+            allowedSubjects: newSubjects.length > 0 ? newSubjects : null,
+            aiMaxRequestsDaily: aiMaxRequests,
+            aiAccessBlocked: aiAccessBlocked
         };
         
         // Handle subscription expiry
@@ -7983,13 +8056,50 @@ function showPage(pageId) {
             showPage('features-page');
             return;
         }
-        setTimeout(() => {
+        setTimeout(async () => {
             initializeAITutor();
             // Reset conversation if needed
             const chatMessages = document.getElementById('ai-chat-messages');
             if (chatMessages && chatMessages.children.length === 1) {
                 // Only welcome message, conversation is fresh
                 aiConversationHistory = [];
+            }
+            
+            // Load current request count
+            const tokenUsageEl = document.getElementById('ai-token-usage');
+            if (tokenUsageEl && currentUser) {
+                const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+                if (isAdmin) {
+                    tokenUsageEl.textContent = `Requests: Unlimited (Admin)`;
+                    tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
+                    tokenUsageEl.classList.add('bg-green-50', 'border-green-200');
+                } else {
+                    try {
+                        const today = new Date().toISOString().split('T')[0];
+                        const docId = `${currentUser.uid}_${today}`;
+                        const requestDoc = await db.collection('aiTutorRequests').doc(docId).get();
+                        const currentCount = requestDoc.exists ? (requestDoc.data().count || 0) : 0;
+                        const maxRequests = currentUser.aiMaxRequestsDaily || 50;
+                        aiRequestCount = currentCount;
+                        aiMaxRequests = maxRequests;
+                        
+                        tokenUsageEl.textContent = `Requests: ${currentCount} / ${maxRequests}`;
+                        const remaining = maxRequests - currentCount;
+                        if (remaining === 0) {
+                            tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
+                            tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-yellow-50', 'border-yellow-200');
+                        } else if (remaining <= 10) {
+                            tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
+                            tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-red-50', 'border-red-200');
+                        } else {
+                            tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
+                            tokenUsageEl.classList.add('bg-blue-50', 'border-blue-200');
+                        }
+                    } catch (error) {
+                        console.error('Error loading request count:', error);
+                        tokenUsageEl.textContent = `Requests: 0 / ${currentUser.aiMaxRequestsDaily || 50}`;
+                    }
+                }
             }
         }, 100);
     }
@@ -8200,12 +8310,19 @@ async function renderDashboard() {
                 badgeWrap.innerHTML = badge;
                 wrapper.appendChild(badgeWrap.firstChild);
             }
-            // Add summary text
+            // Add summary text with arrow
+            const summaryContainer = document.createElement('div');
+            summaryContainer.className = 'text-xs text-gray-600 mt-2 px-2 text-center w-full flex items-center justify-center gap-1';
             const summary = document.createElement('p');
-            summary.className = 'text-xs text-gray-600 mt-2 px-2 text-center leading-relaxed line-clamp-2';
+            summary.className = 'leading-relaxed overflow-hidden text-ellipsis whitespace-nowrap';
+            summary.style.maxWidth = 'calc(100% - 20px)';
             summary.textContent = subjectData.summary;
             summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
-            wrapper.appendChild(summary);
+            const arrowIcon = document.createElement('i');
+            arrowIcon.className = 'fas fa-chevron-right text-xs text-gray-400 flex-shrink-0';
+            summaryContainer.appendChild(summary);
+            summaryContainer.appendChild(arrowIcon);
+            wrapper.appendChild(summaryContainer);
             
             // Add "View Specification" button(s)
             const specContainer = document.createElement('div');
@@ -8230,7 +8347,7 @@ async function renderDashboard() {
                     specButton.setAttribute('data-tooltip', spec.label);
                     specButton.onclick = (e) => {
                         e.stopPropagation(); // Prevent card click
-                        window.open(spec.url, '_blank', 'noopener,noreferrer');
+                        showSpecificationModal(spec.url, spec.label);
                     };
                     specContainer.appendChild(specButton);
                 });
@@ -8252,8 +8369,23 @@ async function renderDashboard() {
                     // Track subject selection
                     trackSubjectChange(subject);
                     
-                    path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
-                    handleNavigation(subjectId);
+                    // Handle English subjects - auto-open correct folder
+                    let targetFolderId = subjectId;
+                    if (subject.toLowerCase() === 'english language (aqa)') {
+                        // Find "AQA GCSE Language" folder within English folder
+                        const englishFolderId = subjectId;
+                        // We'll navigate to English folder first, then look for the subfolder
+                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
+                        handleNavigation(englishFolderId, 'AQA GCSE Language');
+                    } else if (subject.toLowerCase() === 'english literature (edexcel)') {
+                        // Find "Edexcel GCSE Language" folder within English folder
+                        const englishFolderId = subjectId;
+                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
+                        handleNavigation(englishFolderId, 'Edexcel GCSE Language');
+                    } else {
+                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
+                        handleNavigation(subjectId);
+                    }
                     showPage('file-browser-page');
                 });
             } else {
@@ -8267,10 +8399,10 @@ async function renderDashboard() {
         showToast(`Subjects failed to load: ${err.message}`, 'error');
     }
 }
-async function handleNavigation(folderId) {
-    await fetchAndRenderFiles(folderId);
+async function handleNavigation(folderId, targetSubfolderName = null) {
+    await fetchAndRenderFiles(folderId, targetSubfolderName);
 }
-async function fetchAndRenderFiles(folderId) {
+async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
     const fileListContainer = document.getElementById('file-list');
     fileListContainer.setAttribute('aria-busy','true');
     // Full-screen smooth overlay
@@ -8311,6 +8443,21 @@ async function fetchAndRenderFiles(folderId) {
         }
         if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
         currentFolderFiles = data.files;
+        
+        // If targetSubfolderName is specified, find and navigate to it
+        if (targetSubfolderName && data.files) {
+            const targetFolder = data.files.find(file => 
+                file.mimeType === 'application/vnd.google-apps.folder' && 
+                file.name === targetSubfolderName
+            );
+            if (targetFolder) {
+                // Update path and navigate to subfolder
+                path.push({ name: targetFolder.name, id: targetFolder.id });
+                await fetchAndRenderFiles(targetFolder.id);
+                return;
+            }
+        }
+        
         renderItems();
     } catch (err) {
         renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
@@ -9201,7 +9348,7 @@ function filterAndRenderLinks() {
     if (videos.length > 0) {
         const videosSection = document.createElement('div');
         videosSection.className = 'mb-8';
-        videosSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-video text-red-600"></i> Videos & Playlists</h3>`;
+        videosSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-video text-red-600 flex items-center"></i> Videos & Playlists</h3>`;
         const videosGrid = document.createElement('div');
         videosGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
         
@@ -9218,7 +9365,7 @@ function filterAndRenderLinks() {
     if (regularLinks.length > 0) {
         const linksSection = document.createElement('div');
         linksSection.className = videos.length > 0 ? 'mt-8' : '';
-        linksSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-link text-blue-600"></i> Links & Resources</h3>`;
+        linksSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-link text-blue-600 flex items-center"></i> Links & Resources</h3>`;
         const linksGrid = document.createElement('div');
         linksGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
         
@@ -11245,6 +11392,58 @@ function initializeFaqAccordion() {
         ans.style.paddingBottom = '0px';
     });
 }
+function showSpecificationModal(pdfUrl, title) {
+    // Create or get modal container
+    let modal = document.getElementById('specification-pdf-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'specification-pdf-modal';
+        modal.className = 'fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4';
+        modal.style.display = 'none';
+        document.body.appendChild(modal);
+    }
+    
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col fade-in">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-file-pdf text-red-600"></i>
+                    <span>${escapeHtml(title)}</span>
+                </h3>
+                <div class="flex items-center gap-2">
+                    <a href="${pdfUrl}" download class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-semibold" target="_blank">
+                        <i class="fas fa-download"></i>
+                        <span>Download</span>
+                    </a>
+                    <button onclick="document.getElementById('specification-pdf-modal').style.display='none'" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-hidden p-4">
+                <iframe src="${pdfUrl}" class="w-full h-full border-0 rounded-lg" style="min-height: 70vh;"></iframe>
+            </div>
+        </div>
+    `;
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape' && modal.style.display !== 'none') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
 function showConfirmationModal(message, onConfirm, options = {}) {
     const { okText = 'OK', cancelText = 'Cancel', showCancel = true } = options;
     const modal = document.getElementById('confirmation-modal');

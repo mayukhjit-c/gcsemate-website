@@ -271,6 +271,28 @@ service cloud.firestore {
         request.resource.data.requestedAt != null;
       allow update, delete: if isAdmin();
     }
+
+    // AI Tutor Request Tracking
+    match /aiTutorRequests/{requestId} {
+      // Users can read their own request counts
+      allow read: if isSignedIn() && requestId.matches(request.auth.uid + '_.*');
+      // Users can write their own request counts (server validates, client writes)
+      allow create, update: if isSignedIn() && 
+        requestId.matches(request.auth.uid + '_.*') &&
+        request.resource.data.keys().hasOnly(['userId','date','count','lastRequestAt']) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.count is int &&
+        request.resource.data.count >= 0 &&
+        request.resource.data.count <= 200; // Max safety limit
+    }
+
+    // AI Tutor Global Stats (provider usage tracking)
+    match /aiTutorGlobalStats/{statId} {
+      // Only admins can read global stats
+      allow read: if isAdmin();
+      // Admins can write global stats
+      allow write: if isAdmin();
+    }
   }
 }
 
