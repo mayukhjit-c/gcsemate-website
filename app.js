@@ -3062,6 +3062,20 @@ function initializeAppState() {
 let aiConversationHistory = [];
 let aiRequestCount = 0;
 let aiMaxRequests = 50;
+let aiNameConfirmed = false; // Track if user has confirmed their name
+let isFirstAIResponse = true; // Track if this is the first AI response (for initialization message)
+let lastAIMessageId = null; // Track last AI message ID for retry replacement
+let currentAIRequest = null; // Track current fetch request for stop functionality
+let loadingTips = [
+    "Analyzing your question...",
+    "Searching through GCSE materials...",
+    "Formulating the best explanation...",
+    "Checking exam board specifications...",
+    "Preparing a detailed response...",
+    "Reviewing relevant topics...",
+    "Crafting a clear answer..."
+];
+let currentTipIndex = 0;
 
 function updateAITutorNavVisibility() {
     const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
@@ -3148,6 +3162,36 @@ function initializeAITutor() {
     chatInput.addEventListener('keydown', aiTutorEventHandlers.keydown);
     chatForm.addEventListener('submit', aiTutorEventHandlers.submit);
     
+    // Character count tracking
+    chatInput.addEventListener('input', () => {
+        const charCount = chatInput.value.length;
+        const charCountEl = document.getElementById('ai-char-count');
+        if (charCountEl) {
+            charCountEl.textContent = `${charCount.toLocaleString()} / 10,000`;
+            if (charCount > 9000) {
+                charCountEl.classList.add('text-red-600', 'font-semibold');
+                charCountEl.classList.remove('text-gray-500');
+            } else if (charCount > 7500) {
+                charCountEl.classList.add('text-yellow-600');
+                charCountEl.classList.remove('text-gray-500', 'text-red-600', 'font-semibold');
+            } else {
+                charCountEl.classList.remove('text-red-600', 'text-yellow-600', 'font-semibold');
+                charCountEl.classList.add('text-gray-500');
+            }
+        }
+    });
+    
+    // Clear chat button
+    const clearChatBtn = document.getElementById('ai-clear-chat-btn');
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', clearAIChatHistory);
+    }
+    
+    // Stop button
+    if (stopButton) {
+        stopButton.addEventListener('click', stopAIRequest);
+    }
+    
     aiTutorInitialized = true;
 }
 
@@ -3155,9 +3199,14 @@ async function sendAIMessage(retryMessage = null) {
     const chatForm = document.getElementById('ai-chat-form');
     const chatInput = document.getElementById('ai-chat-input');
     const sendButton = document.getElementById('ai-send-button');
+    const stopButton = document.getElementById('ai-stop-button');
     const chatMessages = document.getElementById('ai-chat-messages');
     const errorMessage = document.getElementById('ai-error-message');
     const tokenUsageEl = document.getElementById('ai-token-usage');
+    
+    // Create abort controller for stop functionality
+    const abortController = new AbortController();
+    currentAIRequest = abortController;
     
     const message = retryMessage || chatInput.value.trim();
     if (!message) return;
@@ -3203,12 +3252,16 @@ async function sendAIMessage(retryMessage = null) {
         }
     }
     
-    // Show loading indicator with animation
-    lastLoadingId = addChatMessage('assistant', '', true);
+    // Show loading indicator with animation (pass isFirstAIResponse flag)
+    lastLoadingId = addChatMessage('assistant', '', true, false, null, null, isFirstAIResponse);
     
     try {
         // Get Firebase Auth token for server-side verification
         const idToken = await firebase.auth().currentUser.getIdToken();
+        
+        // Show stop button, hide send button
+        sendButton.classList.add('hidden');
+        stopButton.classList.remove('hidden');
         
         const response = await fetch('/api/ai-tutor', {
             method: 'POST',
@@ -3216,6 +3269,7 @@ async function sendAIMessage(retryMessage = null) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${idToken}`
             },
+            signal: abortController.signal,
             body: JSON.stringify({
                 message: message,
                 userId: currentUser.uid,
@@ -3240,12 +3294,18 @@ async function sendAIMessage(retryMessage = null) {
         if (loadingEl) loadingEl.remove();
         lastLoadingId = null;
         
+        // Hide stop button, show send button
+        stopButton.classList.add('hidden');
+        sendButton.classList.remove('hidden');
+        currentAIRequest = null;
+        
         if (!response.ok) {
             throw new Error(data.message || data.error || 'Failed to get AI response');
         }
         
         // Add AI response with formatting
-        addChatMessage('assistant', data.response, false, true);
+        const aiMessageId = addChatMessage('assistant', data.response, false, true);
+        lastAIMessageId = aiMessageId; // Track for retry replacement
         
         // Update conversation history
         aiConversationHistory.push(
@@ -3305,6 +3365,17 @@ async function sendAIMessage(retryMessage = null) {
             const loadingEl = document.getElementById(lastLoadingId);
             if (loadingEl) loadingEl.remove();
             lastLoadingId = null;
+        }
+        
+        // Hide stop button, show send button
+        stopButton.classList.add('hidden');
+        sendButton.classList.remove('hidden');
+        currentAIRequest = null;
+        
+        // Check if it was aborted
+        if (error.name === 'AbortError') {
+            showToast('Request cancelled', 'info');
+            return;
         }
         
         // Show error with retry option (pass the message that failed)
@@ -3415,9 +3486,7 @@ function parseMarkdown(text) {
         
         // Process inline markdown for regular lines
         if (line.trim()) {
-            html += processInlineMarkdown(line) + '<br>';
-        } else {
-            html += '<br>';
+            html += '<p class="mb-2 leading-relaxed">' + processInlineMarkdown(line) + '</p>';
         }
     }
     
@@ -3429,10 +3498,35 @@ function parseMarkdown(text) {
         html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
     }
     
+    // Remove leading/trailing empty paragraphs and fix spacing
+    html = html.replace(/^<p class="mb-2 leading-relaxed"><\/p>/, '');
+    html = html.replace(/<p class="mb-2 leading-relaxed"><\/p>$/, '');
+    
+    // Fix last paragraph margin to remove extra spacing
+    const lastParagraphMatch = html.match(/(<p class="mb-2 leading-relaxed">.*?<\/p>)(?![\s\S]*<p)/);
+    if (lastParagraphMatch) {
+        html = html.replace(lastParagraphMatch[1], lastParagraphMatch[1].replace('mb-2', 'mb-0'));
+    }
+    
     return html;
 }
 
-// Helper function to process inline markdown (bold, italic, code)
+// Sanitize URL to prevent XSS
+function sanitizeUrlForDisplay(url) {
+    if (!url || typeof url !== 'string') return '';
+    try {
+        const urlObj = new URL(url);
+        // Only allow http and https
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return '';
+        }
+        return url;
+    } catch (e) {
+        return '';
+    }
+}
+
+// Helper function to process inline markdown (bold, italic, code, links)
 function processInlineMarkdown(text) {
     // Use placeholders to protect HTML tags from being escaped
     const placeholders = [];
@@ -3446,7 +3540,19 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 2: Process bold: **text** (non-greedy to handle multiple instances)
+    // Step 2: Process links: [text](url) - must be before bold/italic
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+        const sanitizedUrl = sanitizeUrlForDisplay(url);
+        if (!sanitizedUrl) {
+            return escapeHtml(linkText); // If URL is invalid, just show text
+        }
+        const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
+        placeholders[placeholderIndex] = `<a href="${escapeHtml(sanitizedUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium transition-colors">${escapeHtml(linkText)}</a>`;
+        placeholderIndex++;
+        return placeholder;
+    });
+    
+    // Step 3: Process bold: **text** (non-greedy to handle multiple instances)
     text = text.replace(/\*\*([^*]+?)\*\*/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
         placeholders[placeholderIndex] = `<strong class="font-bold">${escapeHtml(content)}</strong>`;
@@ -3454,7 +3560,7 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 3: Process italic: *text* (but not if it's part of **)
+    // Step 4: Process italic: *text* (but not if it's part of **)
     text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
         placeholders[placeholderIndex] = `<em class="italic">${escapeHtml(content)}</em>`;
@@ -3462,10 +3568,10 @@ function processInlineMarkdown(text) {
         return placeholder;
     });
     
-    // Step 4: Escape remaining HTML in text
+    // Step 5: Escape remaining HTML in text
     text = escapeHtml(text);
     
-    // Step 5: Restore placeholders (which contain already-escaped content)
+    // Step 6: Restore placeholders (which contain already-escaped content)
     placeholders.forEach((html, index) => {
         text = text.replace(`__PLACEHOLDER_${index}__`, html);
     });
@@ -3492,7 +3598,7 @@ function renderLatex(container) {
     }
 }
 
-function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null, retryMessage = null) {
+function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null, retryMessage = null, isFirstResponse = false) {
     const chatMessages = document.getElementById('ai-chat-messages');
     if (!chatMessages) return;
     
@@ -3508,6 +3614,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
     messageEl.style.opacity = '0';
     messageEl.style.transform = 'translateY(10px)';
     messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    messageEl.style.marginBottom = '0.75rem'; // Consistent spacing between messages
     
     if (errorText) {
         // Error message with retry button - store the message to retry in data attribute
@@ -3523,20 +3630,46 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             </div>
         `;
     } else if (isLoading) {
-        // Loading animation
+        // Loading animation with rotating tips
+        const loadingText = isFirstResponse 
+            ? 'Initializing AI Tutor... This may take a moment on first use.'
+            : loadingTips[currentTipIndex % loadingTips.length];
+        
         messageEl.innerHTML = `
             <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
                 <i class="fas fa-robot text-white text-sm"></i>
             </div>
             <div class="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-                    <span class="ml-2 text-sm text-gray-600">Thinking...</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex gap-1">
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-700 font-medium">${loadingText}</p>
+                        <div class="mt-1.5 h-1 bg-blue-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-600 rounded-full animate-pulse" style="width: 60%; animation: loading-bar 1.5s ease-in-out infinite;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
+        
+        // Rotate tips every 2 seconds
+        if (!isFirstResponse) {
+            const tipInterval = setInterval(() => {
+                if (document.getElementById(messageId)) {
+                    currentTipIndex++;
+                    const tipEl = messageEl.querySelector('p.text-sm');
+                    if (tipEl) {
+                        tipEl.textContent = loadingTips[currentTipIndex % loadingTips.length];
+                    }
+                } else {
+                    clearInterval(tipInterval);
+                }
+            }, 2000);
+        }
     } else {
         // Regular message with formatting
         const formattedContent = isAIResponse ? parseMarkdown(content) : escapeHtml(content);
@@ -3556,12 +3689,25 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
                 ${isUser ? '<i class="fas fa-user text-white text-sm"></i>' : '<i class="fas fa-robot text-white text-sm"></i>'}
             </div>
             <div class="flex-1 ${isUser ? 'bg-gray-100' : 'bg-blue-50'} rounded-lg p-4 border ${isUser ? 'border-gray-200' : 'border-blue-100'} shadow-sm">
-                <div class="ai-message-content text-gray-800 prose prose-sm max-w-none">
+                <div class="ai-message-content text-gray-800 prose prose-sm max-w-none" style="padding: 0; margin: 0;">
                     ${formattedContent}
                 </div>
                 ${actionButtons}
             </div>
         `;
+    }
+    
+    // Remove any extra spacing before appending
+    const lastMessage = chatMessages.lastElementChild;
+    if (lastMessage && !isUser && !isLoading && !errorText) {
+        // Remove extra margin from previous message if it's an AI response
+        const prevContent = lastMessage.querySelector('.ai-message-content');
+        if (prevContent) {
+            const lastP = prevContent.querySelector('p:last-child');
+            if (lastP) {
+                lastP.style.marginBottom = '0';
+            }
+        }
     }
     
     chatMessages.appendChild(messageEl);
@@ -3572,6 +3718,18 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             const storedMessage = btn.getAttribute('data-retry-message');
             const messageToRetry = storedMessage || lastUserMessage;
             if (messageToRetry) {
+                // If there's a last AI message, remove it before retrying
+                if (lastAIMessageId) {
+                    const lastAIMsg = document.getElementById(lastAIMessageId);
+                    if (lastAIMsg) {
+                        lastAIMsg.remove();
+                        // Also remove from conversation history
+                        if (aiConversationHistory.length >= 2) {
+                            aiConversationHistory = aiConversationHistory.slice(0, -2);
+                        }
+                    }
+                    lastAIMessageId = null;
+                }
                 sendAIMessage(messageToRetry);
             }
         });
@@ -3589,6 +3747,11 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             const contentEl = messageEl.querySelector('.ai-message-content');
             if (contentEl) {
                 renderLatex(contentEl);
+                // Ensure proper spacing for paragraphs - remove bottom margin from last paragraph
+                const paragraphs = contentEl.querySelectorAll('p');
+                if (paragraphs.length > 0) {
+                    paragraphs[paragraphs.length - 1].style.marginBottom = '0';
+                }
             }
         }, 100);
     }
@@ -3613,20 +3776,24 @@ function copyAIMessage(messageId) {
     
     // Copy to clipboard
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Response copied to clipboard!', 'success');
-        // Visual feedback
+        // Visual feedback with tooltip
         const copyBtn = messageEl.querySelector('button[onclick*="copyAIMessage"]');
         if (copyBtn) {
             const originalHTML = copyBtn.innerHTML;
+            const originalTitle = copyBtn.getAttribute('title') || '';
             copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.setAttribute('title', 'Copied to clipboard!');
             copyBtn.classList.add('bg-green-100', 'text-green-700');
-            copyBtn.classList.remove('bg-blue-100', 'text-blue-700');
+            copyBtn.classList.remove('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
+            copyBtn.classList.add('hover:bg-green-200');
             setTimeout(() => {
                 copyBtn.innerHTML = originalHTML;
-                copyBtn.classList.remove('bg-green-100', 'text-green-700');
-                copyBtn.classList.add('bg-blue-100', 'text-blue-700');
+                copyBtn.setAttribute('title', originalTitle || 'Copy response');
+                copyBtn.classList.remove('bg-green-100', 'text-green-700', 'hover:bg-green-200');
+                copyBtn.classList.add('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
             }, 2000);
         }
+        showToast('Response copied to clipboard!', 'success');
     }).catch(err => {
         console.error('Failed to copy:', err);
         showToast('Failed to copy. Please try again.', 'error');
