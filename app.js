@@ -5665,11 +5665,18 @@ function updateProfilePictureInUI(imageURL) {
         }
     }
     
-    // Update profile picture in account settings
+    // Update profile picture in account settings (both user and admin)
     const accountProfilePic = document.getElementById('account-profile-picture');
+    const adminAccountProfilePic = document.getElementById('admin-account-profile-picture');
     if (accountProfilePic) {
         accountProfilePic.src = imageURL;
         accountProfilePic.onerror = function() {
+            this.src = ''; // Fallback to default avatar
+        };
+    }
+    if (adminAccountProfilePic) {
+        adminAccountProfilePic.src = imageURL;
+        adminAccountProfilePic.onerror = function() {
             this.src = ''; // Fallback to default avatar
         };
     }
@@ -8230,13 +8237,15 @@ async function clearSystemCache() {
     }
 }
 async function handleUpdateUserSettings() {
-    const displayNameInput = document.getElementById('user-displayname');
-    const passwordInput = document.getElementById('user-password');
+    // Check if admin or user form
+    const isAdmin = document.getElementById('admin-user-displayname') !== null;
+    const displayNameInput = isAdmin ? document.getElementById('admin-user-displayname') : document.getElementById('user-displayname');
+    const passwordInput = isAdmin ? document.getElementById('admin-user-password') : document.getElementById('user-password');
     const displayName = displayNameInput.value.trim();
     const newPassword = passwordInput.value;
-    const messageEl = document.getElementById('user-settings-message');
-    const nameErrorEl = document.getElementById('user-displayname-error') || displayNameInput.nextElementSibling;
-    const passwordErrorEl = document.getElementById('user-password-error') || passwordInput.nextElementSibling;
+    const messageEl = isAdmin ? document.getElementById('admin-user-settings-message') : document.getElementById('user-settings-message');
+    const nameErrorEl = isAdmin ? document.getElementById('admin-user-displayname-error') : (document.getElementById('user-displayname-error') || displayNameInput.nextElementSibling);
+    const passwordErrorEl = isAdmin ? document.getElementById('admin-user-password-error') : (document.getElementById('user-password-error') || passwordInput.nextElementSibling);
     
     // Clear previous errors
     messageEl.textContent = '';
@@ -8288,6 +8297,18 @@ async function handleUpdateUserSettings() {
         displayNameInput.classList.remove('border-red-500', 'bg-red-50');
         passwordInput.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => messageEl.textContent = '', 3000);
+        
+        // If admin, also update admin profile picture display
+        if (isAdmin) {
+            const adminProfilePic = document.getElementById('admin-account-profile-picture');
+            const headerProfilePic = document.getElementById('profile-picture');
+            if (adminProfilePic && currentUser.profilePictureURL) {
+                adminProfilePic.src = currentUser.profilePictureURL;
+            }
+            if (headerProfilePic && currentUser.profilePictureURL) {
+                headerProfilePic.src = currentUser.profilePictureURL;
+            }
+        }
     } catch (error) {
         console.error("Error updating user settings:", error);
         const friendlyMessage = handleAPIError(error, 'updating settings');
@@ -8416,23 +8437,26 @@ function updateWelcomeMessage() {
     // Ensure truncation has a title tooltip for full name
     welcomeEl.title = `Welcome, ${name}!`;
     
-    // Update profile pictures
+    // Update profile pictures (header, user settings, admin settings)
     const profilePic = document.getElementById('profile-picture');
     const accountProfilePic = document.getElementById('account-profile-picture');
+    const adminAccountProfilePic = document.getElementById('admin-account-profile-picture');
     
     if (currentUser.profilePictureURL) {
         // Use uploaded profile picture
         if (profilePic) profilePic.src = currentUser.profilePictureURL;
         if (accountProfilePic) accountProfilePic.src = currentUser.profilePictureURL;
+        if (adminAccountProfilePic) adminAccountProfilePic.src = currentUser.profilePictureURL;
     } else {
         // Use generated avatar
         const avatarUrl = generatePfpUrl(currentUser.email);
         if (profilePic) profilePic.src = avatarUrl;
         if (accountProfilePic) accountProfilePic.src = avatarUrl;
+        if (adminAccountProfilePic) adminAccountProfilePic.src = avatarUrl;
     }
     
     // Set error handlers for profile pictures
-    [profilePic, accountProfilePic].forEach(img => {
+    [profilePic, accountProfilePic, adminAccountProfilePic].forEach(img => {
         if (img) {
             img.onerror = function() {
                 this.src = generatePfpUrl(currentUser.email);
@@ -8440,8 +8464,11 @@ function updateWelcomeMessage() {
         }
     });
     
+    // Update form fields (both user and admin)
     if (document.getElementById('user-displayname')) document.getElementById('user-displayname').value = currentUser.displayName;
     if (document.getElementById('user-email')) document.getElementById('user-email').value = currentUser.email;
+    if (document.getElementById('admin-user-displayname')) document.getElementById('admin-user-displayname').value = currentUser.displayName;
+    if (document.getElementById('admin-user-email')) document.getElementById('admin-user-email').value = currentUser.email;
 }
 function renderError(container, message) {
     if (container) {
@@ -12741,7 +12768,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Accent color picker handling
     const picker = document.getElementById('accent-picker');
+    const adminPicker = document.getElementById('admin-accent-picker');
     const resetBtn = document.getElementById('reset-accent');
+    const adminResetBtn = document.getElementById('admin-reset-accent');
     if (picker) {
         picker.addEventListener('input', () => {
             const rgb = hexToRgb(picker.value);
@@ -12767,6 +12796,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const def = { fifty:[239,246,255], hundred:[219,234,254], threeHundred:[147,197,253], fourHundred:[96,165,250], fiveHundred:[59,130,246], sixHundred:[37,99,235], sevenHundred:[29,78,216] };
             applyAccent(def);
             localStorage.removeItem('gcsemate_accent');
+            if (picker) picker.value = '#3b82f6';
+            if (adminPicker) adminPicker.value = '#3b82f6';
+        });
+    }
+    // Admin accent color picker handling
+    if (adminPicker) {
+        adminPicker.addEventListener('input', () => {
+            const rgb = hexToRgb(adminPicker.value);
+            if (!rgb) return;
+            const palette = generateAccentPalette(rgb);
+            applyAccent(palette);
+            localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            // Sync with user picker if it exists
+            if (picker) picker.value = adminPicker.value;
+        });
+        // Initialize admin picker value based on current accent if stored
+        try {
+            const saved = localStorage.getItem('gcsemate_accent');
+            if (saved) {
+                const p = JSON.parse(saved);
+                if (Array.isArray(p.fiveHundred)) {
+                    adminPicker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2,'0')).join('');
+                }
+            }
+        } catch {}
+    }
+    if (adminResetBtn) {
+        adminResetBtn.addEventListener('click', () => {
+            const def = { fifty:[239,246,255], hundred:[219,234,254], threeHundred:[147,197,253], fourHundred:[96,165,250], fiveHundred:[59,130,246], sixHundred:[37,99,235], sevenHundred:[29,78,216] };
+            applyAccent(def);
+            localStorage.removeItem('gcsemate_accent');
+            if (picker) picker.value = '#3b82f6';
+            if (adminPicker) adminPicker.value = '#3b82f6';
         });
     }
     // Setup modals
@@ -13501,8 +13563,10 @@ function getGradeColorClass(grade) {
 async function loadExamResults() {
     if (!currentUser || !currentUser.uid) return;
     
-    const loadingEl = document.getElementById('exam-results-loading');
-    const contentEl = document.getElementById('exam-results-content');
+    // Check if admin or user
+    const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+    const loadingEl = isAdmin ? document.getElementById('admin-exam-results-loading') : document.getElementById('exam-results-loading');
+    const contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
     
     if (!loadingEl || !contentEl) return;
     
@@ -13570,7 +13634,9 @@ async function loadExamResults() {
 
 // Render exam results table
 function renderExamResultsTable(subjects, examResultsData) {
-    const contentEl = document.getElementById('exam-results-content');
+    // Check if admin or user
+    const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+    const contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
     if (!contentEl) return;
     
     // Find the maximum number of exams across all subjects
