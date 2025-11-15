@@ -11857,6 +11857,98 @@ function initializeFaqAccordion() {
         ans.style.paddingBottom = '0px';
     });
 }
+// Get proxied PDF URL for Edexcel PDFs (bypasses CORS/X-Frame-Options)
+function getProxiedPdfUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    
+    // Check if URL is from Edexcel/Pearson (these often block iframe embedding)
+    if (url.includes('qualifications.pearson.com') || url.includes('pearson.com')) {
+        // Use free CORS proxy to bypass restrictions
+        // Using corsproxy.io as it handles binary data (PDFs) better
+        const encodedUrl = encodeURIComponent(url);
+        return `https://corsproxy.io/?${encodedUrl}`;
+    }
+    
+    // For other PDFs, return as-is
+    return url;
+}
+
+// Handle PDF load success
+function handlePdfLoad(originalUrl) {
+    const loadingEl = document.getElementById('pdf-loading');
+    const iframeEl = document.getElementById('pdf-iframe');
+    
+    if (!loadingEl || !iframeEl) return;
+    
+    // Hide loading, show iframe
+    loadingEl.classList.add('hidden');
+    iframeEl.classList.remove('hidden');
+    
+    // Check if iframe actually loaded (for CORS errors, iframe may load but be blank)
+    setTimeout(() => {
+        try {
+            // Try to access iframe content - if CORS blocks, this will throw
+            const iframeDoc = iframeEl.contentDocument || iframeEl.contentWindow?.document;
+            if (!iframeDoc || iframeDoc.body?.innerHTML?.trim() === '') {
+                // Iframe loaded but content is blocked, try alternative
+                handlePdfLoadError(originalUrl);
+            }
+        } catch (e) {
+            // CORS error - try alternative proxy
+            handlePdfLoadError(originalUrl);
+        }
+    }, 2000);
+}
+
+// Handle PDF load errors - try alternative proxy or show error
+function handlePdfLoadError(originalUrl) {
+    const loadingEl = document.getElementById('pdf-loading');
+    const iframeEl = document.getElementById('pdf-iframe');
+    
+    if (!loadingEl || !iframeEl) return;
+    
+    // Hide iframe, show loading again
+    iframeEl.classList.add('hidden');
+    loadingEl.classList.remove('hidden');
+    
+    // Try alternative proxy
+    if (originalUrl.includes('qualifications.pearson.com') || originalUrl.includes('pearson.com')) {
+        const encodedUrl = encodeURIComponent(originalUrl);
+        const altProxyUrl = `https://api.allorigins.win/raw?url=${encodedUrl}`;
+        
+        loadingEl.querySelector('p').textContent = 'Trying alternative method...';
+        iframeEl.src = altProxyUrl;
+        
+        // If that also fails, show download option
+        setTimeout(() => {
+            if (iframeEl.classList.contains('hidden')) {
+                loadingEl.innerHTML = `
+                    <div class="text-center p-8">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                        <p class="text-gray-700 mb-4">Unable to display PDF in browser.</p>
+                        <a href="${originalUrl}" download target="_blank" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 font-semibold">
+                            <i class="fas fa-download"></i>
+                            <span>Download PDF Instead</span>
+                        </a>
+                    </div>
+                `;
+            }
+        }, 5000);
+    } else {
+        // For non-Edexcel PDFs, just show download option
+        loadingEl.innerHTML = `
+            <div class="text-center p-8">
+                <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                <p class="text-gray-700 mb-4">Unable to display PDF in browser.</p>
+                <a href="${originalUrl}" download target="_blank" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 font-semibold">
+                    <i class="fas fa-download"></i>
+                    <span>Download PDF Instead</span>
+                </a>
+            </div>
+        `;
+    }
+}
+
 function showSpecificationModal(pdfUrl, title) {
     // Create or get modal container
     let modal = document.getElementById('specification-pdf-modal');
@@ -11867,6 +11959,9 @@ function showSpecificationModal(pdfUrl, title) {
         modal.style.display = 'none';
         document.body.appendChild(modal);
     }
+    
+    // Get proxied URL for iframe (bypasses CORS for Edexcel PDFs)
+    const proxiedUrl = getProxiedPdfUrl(pdfUrl);
     
     modal.style.display = 'flex';
     modal.innerHTML = `
@@ -11887,7 +11982,13 @@ function showSpecificationModal(pdfUrl, title) {
                 </div>
             </div>
             <div class="flex-1 overflow-hidden p-4">
-                <iframe src="${pdfUrl}" class="w-full h-full border-0 rounded-lg" style="min-height: 70vh;"></iframe>
+                <div id="pdf-loading" class="flex items-center justify-center h-full">
+                    <div class="text-center">
+                        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-gray-600">Loading PDF...</p>
+                    </div>
+                </div>
+                <iframe id="pdf-iframe" src="${proxiedUrl}" class="w-full h-full border-0 rounded-lg hidden" style="min-height: 70vh;" onload="handlePdfLoad('${pdfUrl}');"></iframe>
             </div>
         </div>
     `;

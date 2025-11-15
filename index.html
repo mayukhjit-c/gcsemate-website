@@ -316,7 +316,16 @@
             
             script.onload = function() {
                 // Mark Tailwind as loaded to show content
-                document.body.classList.add('tailwind-loaded');
+                if (document.body) {
+                    document.body.classList.add('tailwind-loaded');
+                } else {
+                    // If body doesn't exist yet, wait for DOMContentLoaded
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.body) {
+                            document.body.classList.add('tailwind-loaded');
+                        }
+                    });
+                }
                 
                 // Only apply override if script loads successfully
                 if (!warnOverrideActive) {
@@ -340,12 +349,30 @@
             
             // Fallback: Show content after timeout if Tailwind doesn't load
             setTimeout(() => {
-                document.body.classList.add('tailwind-loaded');
+                if (document.body) {
+                    document.body.classList.add('tailwind-loaded');
+                } else {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.body) {
+                            document.body.classList.add('tailwind-loaded');
+                        }
+                    });
+                }
             }, 3000);
             
             script.onerror = function() {
                 // If CDN fails to load, don't modify console.warn
                 console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
+                // Still show content even if CDN fails
+                if (document.body) {
+                    document.body.classList.add('tailwind-loaded');
+                } else {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.body) {
+                            document.body.classList.add('tailwind-loaded');
+                        }
+                    });
+                }
             };
             
             document.head.appendChild(script);
