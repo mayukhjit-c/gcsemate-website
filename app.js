@@ -8911,16 +8911,15 @@ async function renderDashboard() {
                     // Handle English subjects - auto-open correct folder
                     let targetFolderId = subjectId;
                     if (subject.toLowerCase() === 'english language (aqa)') {
-                        // Find "AQA GCSE Language" folder within English folder
+                        // Navigate to English folder first, then auto-open "AQA English Language" subfolder
                         const englishFolderId = subjectId;
-                        // We'll navigate to English folder first, then look for the subfolder
-                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
-                        handleNavigation(englishFolderId, 'AQA GCSE Language');
+                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: 'English', id: englishFolderId }];
+                        handleNavigation(englishFolderId, 'AQA English Language');
                     } else if (subject.toLowerCase() === 'english literature (edexcel)') {
-                        // Find "Edexcel GCSE Language" folder within English folder
+                        // Navigate to English folder first, then auto-open "Edexcel English Literature" subfolder
                         const englishFolderId = subjectId;
-                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
-                        handleNavigation(englishFolderId, 'Edexcel GCSE Language');
+                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: 'English', id: englishFolderId }];
+                        handleNavigation(englishFolderId, 'Edexcel English Literature');
                     } else {
                         path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
                         handleNavigation(subjectId);
@@ -13988,4 +13987,41 @@ function initializeExamResults() {
         loadExamResults();
     }
 }
+
+// Toggle footer visibility
+function toggleFooter() {
+    const footer = document.getElementById('page-footer');
+    const toggleBtn = document.getElementById('footer-toggle-btn');
+    const toggleText = document.getElementById('footer-toggle-text');
+    
+    if (!footer || !toggleBtn || !toggleText) return;
+    
+    const isHidden = footer.classList.contains('hidden');
+    
+    if (isHidden) {
+        footer.classList.remove('hidden');
+        toggleText.textContent = 'Hide Footer';
+        // Save preference to localStorage
+        localStorage.setItem('footerHidden', 'false');
+    } else {
+        footer.classList.add('hidden');
+        toggleText.textContent = 'Show Footer';
+        // Save preference to localStorage
+        localStorage.setItem('footerHidden', 'true');
+    }
+}
+
+// Restore footer visibility preference on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const footerHidden = localStorage.getItem('footerHidden');
+    const footer = document.getElementById('page-footer');
+    const toggleText = document.getElementById('footer-toggle-text');
+    
+    if (footerHidden === 'true' && footer) {
+        footer.classList.add('hidden');
+        if (toggleText) {
+            toggleText.textContent = 'Show Footer';
+        }
+    }
+});
 
