@@ -2747,140 +2747,14 @@ function showAppLoading() {
 // Fallback: ensure hide after window load
 // Security features to prevent unauthorized copying and distribution
 function initializeSecurityFeatures() {
-    // Disable right-click context menu (except in blog editor and admin areas)
-    document.addEventListener('contextmenu', (e) => {
-        const target = e.target;
-        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
-        const isAdminPanel = target.closest('#admin-panel');
-        const isCodeEditor = target.closest('code') || target.closest('pre');
-        
-        // Allow right-click in specific areas
-        if (isBlogEditor || isAdminPanel || isCodeEditor) {
-            return; // Allow default behavior
-        }
-        
-        e.preventDefault();
-        showToast('Right-click is disabled to protect content', 'info');
-        return false;
-    });
+    // Right-click context menu is enabled for all areas
+    // Users can right-click anywhere to access browser context menu and dev tools
     
-    // Disable common keyboard shortcuts for copying
-    document.addEventListener('keydown', (e) => {
-        const target = e.target;
-        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
-        const isAdminPanel = target.closest('#admin-panel');
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-        
-        // Allow shortcuts in blog editor and admin areas
-        if (isBlogEditor || isAdminPanel) {
-            return; // Allow default behavior
-        }
-        
-        // Block Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, Ctrl+Shift+I, F12
-        const ctrl = e.ctrlKey || e.metaKey;
-        const shift = e.shiftKey;
-        
-        if (ctrl && (e.key === 'c' || e.key === 'C')) {
-            if (!isInput) {
-                // Allow copying small amounts of text (for normal use)
-                const selection = window.getSelection();
-                if (selection && selection.toString().length > 500) {
-                    e.preventDefault();
-                    showToast('Bulk copying is restricted to protect content', 'info');
-                    return false;
-                }
-            }
-        }
-        
-        if (ctrl && (e.key === 'a' || e.key === 'A')) {
-            if (!isInput) {
-                // Allow select all in specific contexts
-                const target = e.target;
-                if (!target.closest('.file-browser-page') && !target.closest('.blog-content')) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
-        }
-        
-        if (ctrl && (e.key === 's' || e.key === 'S')) {
-            e.preventDefault();
-            showToast('Saving is disabled', 'info');
-            return false;
-        }
-        
-        if (ctrl && (e.key === 'p' || e.key === 'P')) {
-            e.preventDefault();
-            showToast('Printing is disabled to protect content', 'info');
-            return false;
-        }
-        
-        if (ctrl && shift && (e.key === 'I' || e.key === 'i')) {
-            e.preventDefault();
-            return false;
-        }
-        
-        if (e.key === 'F12' || (ctrl && shift && (e.key === 'J' || e.key === 'j'))) {
-            e.preventDefault();
-            return false;
-        }
-        
-        // Block Print Screen (partially - can't fully block but can detect)
-        if (e.key === 'PrintScreen') {
-            showToast('Screenshots are logged for security purposes', 'warning');
-        }
-    });
+    // All keyboard shortcuts are enabled
+    // Users can use Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, F12, Ctrl+Shift+I, etc. freely
     
-    // Disable text selection (make it harder, not impossible)
-    document.addEventListener('selectstart', (e) => {
-        const target = e.target;
-        // Ensure target is an Element (not a text node)
-        if (!target || typeof target.closest !== 'function') {
-            // If target is a text node, get its parent element
-            const element = target.nodeType === Node.TEXT_NODE ? target.parentElement : target;
-            if (!element || typeof element.closest !== 'function') {
-                return; // Can't process, allow default
-            }
-            // Use element instead of target
-            const isBlogEditor = element.closest('#blog-post-content') || element.closest('#blog-editor-toolbar');
-            const isAdminPanel = element.closest('#admin-panel');
-            const isInput = element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
-            
-            // Allow selection in specific areas
-            if (isBlogEditor || isAdminPanel || isInput) {
-                return; // Allow default behavior
-            }
-            
-            // Allow selection for navigation and UI elements
-            if (element.closest('nav') || element.closest('button') || element.closest('a')) {
-                return;
-            }
-        } else {
-            // Original logic for Element targets
-            const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
-            const isAdminPanel = target.closest('#admin-panel');
-            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-            
-            // Allow selection in specific areas
-            if (isBlogEditor || isAdminPanel || isInput) {
-                return; // Allow default behavior
-            }
-            
-            // Allow selection for navigation and UI elements
-            if (target.closest('nav') || target.closest('button') || target.closest('a')) {
-                return;
-            }
-        }
-        
-        // Make bulk selection harder but not impossible (users can still select with effort)
-        // This is a deterrent, not a complete block
-        const selection = window.getSelection();
-        if (selection && selection.toString().length > 500) {
-            e.preventDefault();
-            showToast('Bulk text selection is restricted to protect content', 'info');
-            return false;
-        }
-    });
+    // Text selection is enabled for all areas
+    // Users can freely select and copy text anywhere on the page
     
     // Add visible watermark to content areas
     const style = document.createElement('style');
@@ -2899,27 +2773,8 @@ function initializeSecurityFeatures() {
             user-select: none;
         }
         
-        /* Make bulk text selection harder (but allow normal selection) */
-        .page:not(#blog-page):not(#admin-panel-page) p,
-        .page:not(#blog-page):not(#admin-panel-page) div:not(.blog-content):not(input):not(textarea):not(button):not(a):not(nav) {
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-            user-select: text;
-        }
-        
-        /* Always allow selection in specific areas */
-        #blog-post-content,
-        #blog-editor-toolbar,
-        #admin-panel,
-        .blog-content,
-        input,
-        textarea,
-        button,
-        a,
-        nav,
-        code,
-        pre {
+        /* Enable text selection everywhere */
+        * {
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -2955,21 +2810,8 @@ function initializeSecurityFeatures() {
         }
     };
     
-    // Detect developer tools (basic detection)
-    let devtools = { open: false };
-    const detectDevTools = () => {
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
-        if (widthThreshold || heightThreshold) {
-            if (!devtools.open) {
-                devtools.open = true;
-                trackSuspiciousActivity('devtools_opened');
-            }
-        } else {
-            devtools.open = false;
-        }
-    };
-    setInterval(detectDevTools, 1000);
+    // Developer tools detection is disabled
+    // Users can freely use browser dev tools without restrictions
     
     // Detect iframe embedding (unauthorized embedding)
     if (window.self !== window.top) {
@@ -3410,8 +3252,8 @@ async function sendAIMessage(retryMessage = null) {
             lastLoadingId = null;
         }
         
-        // Show error with retry option
-        addChatMessage('assistant', '', false, false, error.message || 'Failed to send message. Please try again.');
+        // Show error with retry option (pass the message that failed)
+        addChatMessage('assistant', '', false, false, error.message || 'Failed to send message. Please try again.', message);
         
         // Show error
         errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
@@ -3501,12 +3343,15 @@ function renderLatex(container) {
     }
 }
 
-function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null) {
+function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null, retryMessage = null) {
     const chatMessages = document.getElementById('ai-chat-messages');
     if (!chatMessages) return;
     
     const messageId = 'ai-msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const isUser = role === 'user';
+    
+    // For retry buttons, use the provided retryMessage or fall back to lastUserMessage
+    const messageToRetry = retryMessage || lastUserMessage;
     
     const messageEl = document.createElement('div');
     messageEl.id = messageId;
@@ -3516,14 +3361,14 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
     messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     
     if (errorText) {
-        // Error message with retry button
+        // Error message with retry button - store the message to retry in data attribute
         messageEl.innerHTML = `
             <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 shadow-sm">
                 <i class="fas fa-exclamation-triangle text-white text-sm"></i>
             </div>
             <div class="flex-1 bg-red-50 rounded-lg p-4 border border-red-200 shadow-sm ai-error-container">
                 <p class="text-red-800 mb-3">${escapeHtml(errorText)}</p>
-                <button class="ai-retry-btn px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold flex items-center gap-2">
+                <button class="ai-retry-btn px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold flex items-center gap-2" data-retry-message="${escapeHtml(messageToRetry || '')}">
                     <i class="fas fa-redo"></i> Retry
                 </button>
             </div>
@@ -3551,7 +3396,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
                 <button onclick="copyAIMessage('${messageId}')" class="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors flex items-center gap-1.5" title="Copy response">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button class="ai-retry-btn px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5" title="Retry last message">
+                <button class="ai-retry-btn px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5" title="Retry last message" data-retry-message="${escapeHtml(messageToRetry || '')}">
                     <i class="fas fa-redo"></i> Retry
                 </button>
             </div>
@@ -3572,10 +3417,14 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
     
     chatMessages.appendChild(messageEl);
     
-    // Add retry button handlers
+    // Add retry button handlers - use the stored message from data attribute
     messageEl.querySelectorAll('.ai-retry-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            sendAIMessage(lastUserMessage);
+            const storedMessage = btn.getAttribute('data-retry-message');
+            const messageToRetry = storedMessage || lastUserMessage;
+            if (messageToRetry) {
+                sendAIMessage(messageToRetry);
+            }
         });
     });
     
@@ -8199,7 +8048,22 @@ async function renderDashboard() {
         
         subjectGrid.innerHTML = '';
         const userAllowedSubjects = currentUser.allowedSubjects;
-        let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
+        
+        // Handle migration from old "english" to new "English Language (AQA)" and "English Literature (Edexcel)"
+        // Check if user has old "english" access and grant access to both new English subjects
+        const hasOldEnglishAccess = userAllowedSubjects && userAllowedSubjects.includes('english');
+        const normalizedAllowedSubjects = userAllowedSubjects ? [...userAllowedSubjects] : [];
+        if (hasOldEnglishAccess) {
+            // Add new English subjects if not already present
+            if (!normalizedAllowedSubjects.includes('english language (aqa)')) {
+                normalizedAllowedSubjects.push('english language (aqa)');
+            }
+            if (!normalizedAllowedSubjects.includes('english literature (edexcel)')) {
+                normalizedAllowedSubjects.push('english literature (edexcel)');
+            }
+        }
+        
+        let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
         if (subjectsToShow.length === 0) {
             subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
             return;
