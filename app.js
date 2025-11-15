@@ -3077,6 +3077,39 @@ let loadingTips = [
 ];
 let currentTipIndex = 0;
 
+// Clean AI response to remove em dashes and emojis
+function cleanAIResponse(text) {
+    if (!text || typeof text !== 'string') return text;
+    
+    // Replace em dashes (—) and en dashes (–) with regular hyphens or colons
+    text = text.replace(/—/g, '-').replace(/–/g, '-');
+    
+    // Remove emojis and emoticons (common Unicode ranges)
+    // This covers most emoji ranges including:
+    // - Emoticons (😀-🙏)
+    // - Symbols & Pictographs (🌀-🗿)
+    // - Transport & Map Symbols (🚀-🛿)
+    // - Flags (🇦-🇿)
+    // - And other emoji ranges
+    text = text.replace(/[\u{1F300}-\u{1F9FF}]/gu, ''); // Miscellaneous Symbols and Pictographs
+    text = text.replace(/[\u{1F600}-\u{1F64F}]/gu, ''); // Emoticons
+    text = text.replace(/[\u{1F680}-\u{1F6FF}]/gu, ''); // Transport and Map Symbols
+    text = text.replace(/[\u{2600}-\u{26FF}]/gu, ''); // Miscellaneous Symbols
+    text = text.replace(/[\u{2700}-\u{27BF}]/gu, ''); // Dingbats
+    text = text.replace(/[\u{1F1E0}-\u{1F1FF}]/gu, ''); // Flags
+    text = text.replace(/[\u{1F900}-\u{1F9FF}]/gu, ''); // Supplemental Symbols and Pictographs
+    text = text.replace(/[\u{1FA00}-\u{1FA6F}]/gu, ''); // Chess Symbols
+    text = text.replace(/[\u{1FA70}-\u{1FAFF}]/gu, ''); // Symbols and Pictographs Extended-A
+    
+    // Remove common emoji-like symbols
+    text = text.replace(/[✅❌⚠️⭐🌟💡📝📚🎓💯🔥💪👍👎]/g, '');
+    
+    // Clean up any double spaces or hyphens that might result
+    text = text.replace(/\s+/g, ' ').replace(/\s-\s/g, ' - ').trim();
+    
+    return text;
+}
+
 function updateAITutorNavVisibility() {
     const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
     const desktopNav = document.getElementById('ai-tutor-nav');
@@ -3303,14 +3336,17 @@ async function sendAIMessage(retryMessage = null) {
             throw new Error(data.message || data.error || 'Failed to get AI response');
         }
         
+        // Filter out em dashes and emojis from response
+        const cleanedResponse = cleanAIResponse(data.response);
+        
         // Add AI response with formatting
-        const aiMessageId = addChatMessage('assistant', data.response, false, true);
+        const aiMessageId = addChatMessage('assistant', cleanedResponse, false, true);
         lastAIMessageId = aiMessageId; // Track for retry replacement
         
-        // Update conversation history
+        // Update conversation history (store cleaned response)
         aiConversationHistory.push(
             { role: 'user', content: message },
-            { role: 'assistant', content: data.response }
+            { role: 'assistant', content: cleanedResponse }
         );
         
         // Keep only last 10 messages for context
