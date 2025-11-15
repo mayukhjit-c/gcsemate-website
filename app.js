@@ -3195,24 +3195,31 @@ function initializeAITutor() {
     chatInput.addEventListener('keydown', aiTutorEventHandlers.keydown);
     chatForm.addEventListener('submit', aiTutorEventHandlers.submit);
     
-    // Character count tracking
-    chatInput.addEventListener('input', () => {
+    // Character count tracking - show when typing, hide when empty
+    const updateCharCount = () => {
         const charCount = chatInput.value.length;
         const charCountEl = document.getElementById('ai-char-count');
         if (charCountEl) {
-            charCountEl.textContent = `${charCount.toLocaleString()} / 10,000`;
-            if (charCount > 9000) {
-                charCountEl.classList.add('text-red-600', 'font-semibold');
-                charCountEl.classList.remove('text-gray-500');
-            } else if (charCount > 7500) {
-                charCountEl.classList.add('text-yellow-600');
-                charCountEl.classList.remove('text-gray-500', 'text-red-600', 'font-semibold');
+            if (charCount > 0) {
+                charCountEl.classList.remove('hidden');
+                charCountEl.textContent = `${charCount.toLocaleString()} / 10,000`;
+                if (charCount > 9000) {
+                    charCountEl.classList.add('text-red-600', 'font-semibold');
+                    charCountEl.classList.remove('text-gray-500');
+                } else if (charCount > 7500) {
+                    charCountEl.classList.add('text-yellow-600');
+                    charCountEl.classList.remove('text-gray-500', 'text-red-600', 'font-semibold');
+                } else {
+                    charCountEl.classList.remove('text-red-600', 'text-yellow-600', 'font-semibold');
+                    charCountEl.classList.add('text-gray-500');
+                }
             } else {
-                charCountEl.classList.remove('text-red-600', 'text-yellow-600', 'font-semibold');
-                charCountEl.classList.add('text-gray-500');
+                charCountEl.classList.add('hidden');
             }
         }
-    });
+    };
+    
+    chatInput.addEventListener('input', updateCharCount);
     
     // Clear chat button
     const clearChatBtn = document.getElementById('ai-clear-chat-btn');
@@ -3243,6 +3250,18 @@ async function sendAIMessage(retryMessage = null) {
     
     const message = retryMessage || chatInput.value.trim();
     if (!message) return;
+    
+    // Clear input and reset character count after getting message (before sending)
+    if (!retryMessage) {
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        const charCountEl = document.getElementById('ai-char-count');
+        if (charCountEl) {
+            charCountEl.textContent = '0 / 10,000';
+            charCountEl.classList.remove('text-red-600', 'text-yellow-600', 'font-semibold');
+            charCountEl.classList.add('text-gray-500', 'hidden');
+        }
+    }
     
     // Check if user is paid or admin
     if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
@@ -3429,39 +3448,53 @@ async function sendAIMessage(retryMessage = null) {
     }
 }
 
-// Simple markdown parser for basic formatting
+// Enhanced markdown parser for comprehensive formatting
 function parseMarkdown(text) {
     if (!text) return '';
-    
-    // Process markdown patterns FIRST (before escaping HTML)
-    // This allows us to match markdown syntax like **bold** correctly
     
     // Split into lines for processing
     const lines = text.split('\n');
     let html = '';
     let inCodeBlock = false;
     let codeBlockContent = '';
-    let inList = false;
-    let listItems = [];
+    let inUnorderedList = false;
+    let inOrderedList = false;
+    let unorderedItems = [];
+    let orderedItems = [];
+    let inBlockquote = false;
+    let blockquoteContent = [];
     
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        const trimmedLine = line.trim();
         
         // Handle code blocks (```code```)
-        if (line.trim().startsWith('```')) {
+        if (trimmedLine.startsWith('```')) {
+            // Close any open lists or blockquotes
+            if (inUnorderedList) {
+                html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+                unorderedItems = [];
+                inUnorderedList = false;
+            }
+            if (inOrderedList) {
+                html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+                orderedItems = [];
+                inOrderedList = false;
+            }
+            if (inBlockquote) {
+                html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                blockquoteContent = [];
+                inBlockquote = false;
+            }
+            
             if (inCodeBlock) {
                 // End code block
-                html += `<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
+                html += `<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-3 border border-gray-200"><code class="text-sm font-mono">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
                 codeBlockContent = '';
                 inCodeBlock = false;
             } else {
                 // Start code block
                 inCodeBlock = true;
-                const lang = line.trim().substring(3).trim();
-                if (lang) {
-                    // Language specified, but we'll just use it as a class
-                    codeBlockContent = '';
-                }
             }
             continue;
         }
@@ -3471,77 +3504,178 @@ function parseMarkdown(text) {
             continue;
         }
         
-        // Process headers (must be at start of line)
-        if (line.match(/^###\s+(.+)$/)) {
-            if (inList) {
-                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
-                listItems = [];
-                inList = false;
+        // Handle horizontal rules (---, ***, ___)
+        if (trimmedLine.match(/^[-*_]{3,}$/)) {
+            if (inUnorderedList) {
+                html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+                unorderedItems = [];
+                inUnorderedList = false;
             }
-            html += `<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^###\s+/, ''))}</h3>`;
-            continue;
-        }
-        if (line.match(/^##\s+(.+)$/)) {
-            if (inList) {
-                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
-                listItems = [];
-                inList = false;
+            if (inOrderedList) {
+                html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+                orderedItems = [];
+                inOrderedList = false;
             }
-            html += `<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^##\s+/, ''))}</h2>`;
-            continue;
-        }
-        if (line.match(/^#\s+(.+)$/)) {
-            if (inList) {
-                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
-                listItems = [];
-                inList = false;
+            if (inBlockquote) {
+                html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                blockquoteContent = [];
+                inBlockquote = false;
             }
-            html += `<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900">${escapeHtml(line.replace(/^#\s+/, ''))}</h1>`;
+            html += `<hr class="my-4 border-gray-300">`;
             continue;
         }
         
-        // Handle lists
-        const listMatch = line.match(/^[\*\-\+]\s+(.+)$/);
-        if (listMatch) {
-            if (!inList) {
-                inList = true;
-                listItems = [];
+        // Process headers (must be at start of line, allow for indentation)
+        const h1Match = line.match(/^#\s+(.+)$/);
+        const h2Match = line.match(/^##\s+(.+)$/);
+        const h3Match = line.match(/^###\s+(.+)$/);
+        
+        if (h1Match || h2Match || h3Match) {
+            // Close any open lists or blockquotes
+            if (inUnorderedList) {
+                html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+                unorderedItems = [];
+                inUnorderedList = false;
             }
-            // Process markdown in list item
-            let itemText = listMatch[1];
-            itemText = processInlineMarkdown(itemText);
-            listItems.push(`<li class="ml-4 mb-1">${itemText}</li>`);
+            if (inOrderedList) {
+                html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+                orderedItems = [];
+                inOrderedList = false;
+            }
+            if (inBlockquote) {
+                html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                blockquoteContent = [];
+                inBlockquote = false;
+            }
+            
+            if (h1Match) {
+                html += `<h1 class="text-2xl font-bold mt-6 mb-3 text-gray-900">${processInlineMarkdown(h1Match[1])}</h1>`;
+            } else if (h2Match) {
+                html += `<h2 class="text-xl font-bold mt-5 mb-2.5 text-gray-900">${processInlineMarkdown(h2Match[1])}</h2>`;
+            } else if (h3Match) {
+                html += `<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">${processInlineMarkdown(h3Match[1])}</h3>`;
+            }
+            continue;
+        }
+        
+        // Handle blockquotes (>)
+        if (trimmedLine.startsWith('>')) {
+            if (!inBlockquote) {
+                // Close any open lists
+                if (inUnorderedList) {
+                    html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+                    unorderedItems = [];
+                    inUnorderedList = false;
+                }
+                if (inOrderedList) {
+                    html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+                    orderedItems = [];
+                    inOrderedList = false;
+                }
+                inBlockquote = true;
+            }
+            const quoteText = trimmedLine.substring(1).trim();
+            if (quoteText) {
+                blockquoteContent.push(processInlineMarkdown(quoteText));
+            }
             continue;
         } else {
-            if (inList) {
-                html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
-                listItems = [];
-                inList = false;
+            if (inBlockquote) {
+                html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                blockquoteContent = [];
+                inBlockquote = false;
             }
+        }
+        
+        // Handle ordered lists (1., 2., etc.)
+        const orderedListMatch = line.match(/^(\d+)\.\s+(.+)$/);
+        if (orderedListMatch) {
+            if (!inOrderedList) {
+                // Close any open unordered list or blockquote
+                if (inUnorderedList) {
+                    html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+                    unorderedItems = [];
+                    inUnorderedList = false;
+                }
+                if (inBlockquote) {
+                    html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                    blockquoteContent = [];
+                    inBlockquote = false;
+                }
+                inOrderedList = true;
+            }
+            let itemText = orderedListMatch[2];
+            itemText = processInlineMarkdown(itemText);
+            orderedItems.push(`<li class="ml-4 mb-1.5">${itemText}</li>`);
+            continue;
+        }
+        
+        // Handle unordered lists (*, -, +)
+        const unorderedListMatch = line.match(/^[\*\-\+]\s+(.+)$/);
+        if (unorderedListMatch) {
+            if (!inUnorderedList) {
+                // Close any open ordered list or blockquote
+                if (inOrderedList) {
+                    html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+                    orderedItems = [];
+                    inOrderedList = false;
+                }
+                if (inBlockquote) {
+                    html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
+                    blockquoteContent = [];
+                    inBlockquote = false;
+                }
+                inUnorderedList = true;
+            }
+            let itemText = unorderedListMatch[1];
+            itemText = processInlineMarkdown(itemText);
+            unorderedItems.push(`<li class="ml-4 mb-1.5">${itemText}</li>`);
+            continue;
+        }
+        
+        // If we hit a non-list line, close any open lists
+        if (inUnorderedList) {
+            html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+            unorderedItems = [];
+            inUnorderedList = false;
+        }
+        if (inOrderedList) {
+            html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+            orderedItems = [];
+            inOrderedList = false;
         }
         
         // Process inline markdown for regular lines
-        if (line.trim()) {
-            html += '<p class="mb-2 leading-relaxed">' + processInlineMarkdown(line) + '</p>';
+        if (trimmedLine) {
+            html += '<p class="mb-2.5 leading-relaxed">' + processInlineMarkdown(line) + '</p>';
+        } else {
+            // Empty line - add spacing
+            html += '<br>';
         }
     }
     
-    // Close any open code block or list
+    // Close any open code block, lists, or blockquotes
     if (inCodeBlock) {
-        html += `<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2 border border-gray-200"><code class="text-sm">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
+        html += `<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-3 border border-gray-200"><code class="text-sm font-mono">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
     }
-    if (inList) {
-        html += `<ul class="list-disc ml-6 my-2 space-y-1">${listItems.join('')}</ul>`;
+    if (inUnorderedList) {
+        html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
+    }
+    if (inOrderedList) {
+        html += `<ol class="list-decimal ml-6 my-3 space-y-1.5">${orderedItems.join('')}</ol>`;
+    }
+    if (inBlockquote) {
+        html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
     }
     
     // Remove leading/trailing empty paragraphs and fix spacing
-    html = html.replace(/^<p class="mb-2 leading-relaxed"><\/p>/, '');
-    html = html.replace(/<p class="mb-2 leading-relaxed"><\/p>$/, '');
+    html = html.replace(/^<p class="mb-2.5 leading-relaxed"><\/p>/, '');
+    html = html.replace(/<p class="mb-2.5 leading-relaxed"><\/p>$/, '');
     
-    // Fix last paragraph margin to remove extra spacing
-    const lastParagraphMatch = html.match(/(<p class="mb-2 leading-relaxed">.*?<\/p>)(?![\s\S]*<p)/);
+    // Fix last paragraph margin
+    const lastParagraphMatch = html.match(/(<p class="mb-2.5 leading-relaxed">.*?<\/p>)(?![\s\S]*<p)/);
     if (lastParagraphMatch) {
-        html = html.replace(lastParagraphMatch[1], lastParagraphMatch[1].replace('mb-2', 'mb-0'));
+        html = html.replace(lastParagraphMatch[1], lastParagraphMatch[1].replace('mb-2.5', 'mb-0'));
     }
     
     return html;
@@ -3650,7 +3784,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
     messageEl.style.opacity = '0';
     messageEl.style.transform = 'translateY(10px)';
     messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-    messageEl.style.marginBottom = '0.75rem'; // Consistent spacing between messages
+    messageEl.style.marginBottom = isUser ? '1rem' : '1.25rem'; // Better spacing - more for AI responses
     
     if (errorText) {
         // Error message with retry button - store the message to retry in data attribute
