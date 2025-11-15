@@ -48,6 +48,9 @@ GCSEMate is a comprehensive GCSE revision platform designed to help students eff
   - Google Drive API (for file management)
   - Google reCAPTCHA Enterprise (for security)
   - YouTube API (for video playlists)
+  - Groq API (for AI Tutor - Llama 3.1 8B)
+- **Cloudflare Services**:
+  - Cloudflare Pages (hosting)
 
 ## File Structure
 
@@ -62,7 +65,10 @@ gcsemate-website/
 │       ├── drive-files.js      # Google Drive files API
 │       ├── drive-subjects.js   # Google Drive subjects API
 │       ├── proxy-drive.js      # Google Drive proxy
-│       └── recaptcha-verify.js # reCAPTCHA verification
+│       ├── recaptcha-verify.js # reCAPTCHA verification
+│       └── ai-tutor.js         # AI Tutor with Groq API integration
+├── docs/               # Documentation
+│   └── AI_TUTOR_SETUP.md      # AI Tutor setup guide with KV configuration
 └── README.md           # This file
 ```
 
@@ -96,9 +102,15 @@ gcsemate-website/
    - Set up reCAPTCHA Enterprise
    - Add your site key to `index.html`
 
-5. **Deploy to Cloudflare Pages**
+5. **Configure AI Tutor (Optional but Recommended)**
+   - Get a Groq API key from https://console.groq.com/
+   - See [AI Tutor Setup Guide](docs/AI_TUTOR_SETUP.md) for detailed instructions
+   - Add `GROQ_API_KEY` environment variable in Cloudflare Pages settings
+
+6. **Deploy to Cloudflare Pages**
    - Connect your GitHub repository to Cloudflare Pages
    - Set build output directory to root
+   - Configure environment variables (GROQ_API_KEY)
    - Deploy
 
 ## Usage

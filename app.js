@@ -2826,18 +2826,42 @@ function initializeSecurityFeatures() {
     // Disable text selection (make it harder, not impossible)
     document.addEventListener('selectstart', (e) => {
         const target = e.target;
-        const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
-        const isAdminPanel = target.closest('#admin-panel');
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-        
-        // Allow selection in specific areas
-        if (isBlogEditor || isAdminPanel || isInput) {
-            return; // Allow default behavior
-        }
-        
-        // Allow selection for navigation and UI elements
-        if (target.closest('nav') || target.closest('button') || target.closest('a')) {
-            return;
+        // Ensure target is an Element (not a text node)
+        if (!target || typeof target.closest !== 'function') {
+            // If target is a text node, get its parent element
+            const element = target.nodeType === Node.TEXT_NODE ? target.parentElement : target;
+            if (!element || typeof element.closest !== 'function') {
+                return; // Can't process, allow default
+            }
+            // Use element instead of target
+            const isBlogEditor = element.closest('#blog-post-content') || element.closest('#blog-editor-toolbar');
+            const isAdminPanel = element.closest('#admin-panel');
+            const isInput = element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
+            
+            // Allow selection in specific areas
+            if (isBlogEditor || isAdminPanel || isInput) {
+                return; // Allow default behavior
+            }
+            
+            // Allow selection for navigation and UI elements
+            if (element.closest('nav') || element.closest('button') || element.closest('a')) {
+                return;
+            }
+        } else {
+            // Original logic for Element targets
+            const isBlogEditor = target.closest('#blog-post-content') || target.closest('#blog-editor-toolbar');
+            const isAdminPanel = target.closest('#admin-panel');
+            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+            
+            // Allow selection in specific areas
+            if (isBlogEditor || isAdminPanel || isInput) {
+                return; // Allow default behavior
+            }
+            
+            // Allow selection for navigation and UI elements
+            if (target.closest('nav') || target.closest('button') || target.closest('a')) {
+                return;
+            }
         }
         
         // Make bulk selection harder but not impossible (users can still select with effort)
@@ -3062,6 +3086,8 @@ auth.onAuthStateChanged(async (user) => {
                         // Re-render admin/user panels accordingly
                         try { initializeAppState(); } catch(_){}
                     }
+                    // Update AI Tutor navigation visibility
+                    updateAITutorNavVisibility();
                 });
             } else {
                 logError("User authenticated but no profile found in Firestore.", "Auth");
@@ -3177,6 +3203,178 @@ function initializeAppState() {
         const saved = localStorage.getItem('gcsemate_accent');
         if (saved) applyAccent(JSON.parse(saved));
     } catch (e) {}
+    
+    // Update AI Tutor navigation visibility
+    updateAITutorNavVisibility();
+}
+
+// AI Tutor functionality
+let aiConversationHistory = [];
+let aiTokenUsage = 0;
+
+function updateAITutorNavVisibility() {
+    const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
+    const desktopNav = document.getElementById('ai-tutor-nav');
+    const mobileNav = document.getElementById('ai-tutor-nav-mobile');
+    
+    if (desktopNav) {
+        if (isPaidOrAdmin) {
+            desktopNav.classList.remove('hidden');
+        } else {
+            desktopNav.classList.add('hidden');
+        }
+    }
+    
+    if (mobileNav) {
+        if (isPaidOrAdmin) {
+            mobileNav.classList.remove('hidden');
+        } else {
+            mobileNav.classList.add('hidden');
+        }
+    }
+}
+
+function initializeAITutor() {
+    const chatForm = document.getElementById('ai-chat-form');
+    const chatInput = document.getElementById('ai-chat-input');
+    const sendButton = document.getElementById('ai-send-button');
+    const chatMessages = document.getElementById('ai-chat-messages');
+    const errorMessage = document.getElementById('ai-error-message');
+    const tokenUsageEl = document.getElementById('ai-token-usage');
+    
+    if (!chatForm || !chatInput || !sendButton || !chatMessages) return;
+    
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        sendButton.disabled = !this.value.trim();
+    });
+    
+    // Enable/disable send button based on input
+    chatInput.addEventListener('input', function() {
+        sendButton.disabled = !this.value.trim();
+    });
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        // Check if user is paid or admin
+        if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
+            showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
+            showPage('features-page');
+            return;
+        }
+        
+        // Disable input and button
+        chatInput.disabled = true;
+        sendButton.disabled = true;
+        errorMessage.classList.add('hidden');
+        errorMessage.textContent = '';
+        
+        // Add user message to chat
+        addChatMessage('user', message);
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        
+        // Show loading indicator
+        const loadingId = addChatMessage('assistant', 'Thinking...', true);
+        
+        try {
+            const response = await fetch('/api/ai-tutor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    userId: currentUser.uid,
+                    conversationHistory: aiConversationHistory
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Remove loading message
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            
+            if (!response.ok) {
+                throw new Error(data.message || data.error || 'Failed to get AI response');
+            }
+            
+            // Add AI response
+            addChatMessage('assistant', data.response);
+            
+            // Update conversation history
+            aiConversationHistory.push(
+                { role: 'user', content: message },
+                { role: 'assistant', content: data.response }
+            );
+            
+            // Keep only last 10 messages for context
+            if (aiConversationHistory.length > 20) {
+                aiConversationHistory = aiConversationHistory.slice(-20);
+            }
+            
+            // Update token usage
+            aiTokenUsage = data.totalTokensUsed || 0;
+            if (tokenUsageEl) {
+                tokenUsageEl.textContent = `Tokens: ${aiTokenUsage.toLocaleString()} / 64,000`;
+                if (aiTokenUsage >= 64000) {
+                    tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
+                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
+                } else if (aiTokenUsage >= 50000) {
+                    tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
+                    tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200');
+                }
+            }
+            
+        } catch (error) {
+            // Remove loading message
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            
+            // Show error
+            errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
+            errorMessage.classList.remove('hidden');
+            showToast('Failed to get AI response. Please try again.', 'error');
+        } finally {
+            // Re-enable input and button
+            chatInput.disabled = false;
+            sendButton.disabled = !chatInput.value.trim();
+            chatInput.focus();
+        }
+    });
+}
+
+function addChatMessage(role, content, isLoading = false) {
+    const chatMessages = document.getElementById('ai-chat-messages');
+    if (!chatMessages) return;
+    
+    const messageId = 'ai-msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const isUser = role === 'user';
+    
+    const messageEl = document.createElement('div');
+    messageEl.id = messageId;
+    messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+    messageEl.innerHTML = `
+        <div class="w-8 h-8 rounded-full ${isUser ? 'bg-gray-600' : 'bg-blue-600'} flex items-center justify-center flex-shrink-0">
+            ${isUser ? '<i class="fas fa-user text-white text-sm"></i>' : '<i class="fas fa-robot text-white text-sm"></i>'}
+        </div>
+        <div class="flex-1 ${isUser ? 'bg-gray-100' : 'bg-blue-50'} rounded-lg p-4 border ${isUser ? 'border-gray-200' : 'border-blue-100'}">
+            ${isLoading ? '<div class="flex items-center gap-2"><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div><div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div></div>' : `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(content)}</p>`}
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return messageId;
 }
 
 function showWhatsNewBanner(message, onDismiss) {
@@ -7582,6 +7780,25 @@ function showPage(pageId) {
     if (pageId === 'useful-links-page' && Object.keys(allUsefulLinks).length > 0) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
+    
+    // Initialize AI Tutor when page is shown
+    if (pageId === 'ai-tutor-page') {
+        // Check access
+        if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
+            showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
+            showPage('features-page');
+            return;
+        }
+        setTimeout(() => {
+            initializeAITutor();
+            // Reset conversation if needed
+            const chatMessages = document.getElementById('ai-chat-messages');
+            if (chatMessages && chatMessages.children.length === 1) {
+                // Only welcome message, conversation is fresh
+                aiConversationHistory = [];
+            }
+        }, 100);
+    }
 
     if (current && current !== newPage) {
         // Modern iOS-like leave
@@ -10764,7 +10981,8 @@ const pageTitles = {
     'about-page': 'About - GCSEMate',
     'features-page': 'Features & Pricing - GCSEMate',
     'help-page': 'Help/FAQ - GCSEMate',
-    'checkout-page': 'Upgrade - GCSEMate'
+    'checkout-page': 'Upgrade - GCSEMate',
+    'ai-tutor-page': 'AI Tutor - GCSEMate'
 };
 
 function initializeFaqAccordion() {
@@ -11557,8 +11775,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 u: 'useful-links-page', 
                 a: 'about-page', 
                 f: 'features-page', 
-                h: 'help-page', 
-                g: 'gcsemategpt-page' 
+                h: 'help-page',
+                t: 'ai-tutor-page' // AI Tutor (Pro only)
             };
             const target = map[k];
             if (target) {

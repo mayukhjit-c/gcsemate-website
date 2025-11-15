@@ -722,6 +722,10 @@
                     <i class="fas fa-bolt w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
                     Features
                 </a>
+                <a href="#" id="ai-tutor-nav" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center hidden" data-page="ai-tutor-page" data-tooltip="AI-powered tutoring assistance">
+                    <i class="fas fa-robot w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
+                    AI Tutor
+                </a>
                 <a href="#" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="help-page" data-tooltip="Get help and see FAQs">
                     <i class="fas fa-question-circle w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
                     Help
@@ -802,6 +806,13 @@
                     <div>
                         <div class="font-semibold">Features & Pricing</div>
                         <div class="text-sm text-gray-500">See what's included</div>
+                    </div>
+                </a>
+                <a href="#" id="ai-tutor-nav-mobile" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 hidden" data-page="ai-tutor-page" tabindex="0">
+                    <i class="fas fa-robot text-2xl mr-3"></i>
+                    <div>
+                        <div class="font-semibold">AI Tutor</div>
+                        <div class="text-sm text-gray-500">Get AI-powered help</div>
                     </div>
                 </a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">
@@ -1628,6 +1639,7 @@
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">v</span>: Go to Videos</li>
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">b</span>: Go to Blog</li>
                                         <li><span class="font-semibold">g</span> then <span class="font-semibold">c</span>: Go to Calendar</li>
+                                        <li><span class="font-semibold">g</span> then <span class="font-semibold">t</span>: Go to AI Tutor (Pro only)</li>
                                         
                                         <li><span class="font-semibold">Esc</span>: Close modals/tooltips</li>
                                     </ul>
@@ -1775,6 +1787,15 @@
                                 <p>Start by exploring each subject's file browser, star your most important documents, use the calendar for deadline tracking, and take advantage of keyboard shortcuts for faster navigation. Regular use builds familiarity and efficiency.</p>
                             </div>
                         </div>
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                            <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
+                                <h3 class="font-semibold text-lg text-gray-800">What is the AI Tutor?</h3>
+                                <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
+                                <p>The AI Tutor is an intelligent tutoring assistant available exclusively for Pro users. It can help you with GCSE academic topics across all subjects, answer questions about GCSEMate features, and provide personalized study guidance. The AI Tutor has a rate limit of 30 requests per minute and a daily token limit of 64,000 tokens. Simply navigate to the AI Tutor section from the main menu to start chatting.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="checkout-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-lg mx-auto text-center">
@@ -1790,6 +1811,41 @@
                             <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dece9e0e4e3cdeaeefee8e0ecf9e8a3eee2e0">[email&#160;protected]</a>
                         </p>
                         <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
+                    </div>
+                </div>
+                <div id="ai-tutor-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                            <i class="fas fa-robot text-blue-600"></i>
+                            AI Tutor
+                        </h2>
+                        <div class="text-sm text-gray-600">
+                            <span id="ai-token-usage" class="px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">Tokens: 0 / 64,000</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col bg-white/70 backdrop-blur-lg rounded-xl shadow-lg border border-white/30 overflow-hidden">
+                        <div id="ai-chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" style="max-height: calc(100vh - 280px);">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-robot text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1 bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                    <p class="text-gray-800">Hello! I'm GCSEMate AI, your intelligent tutoring assistant. I'm here to help you with GCSE academic topics and questions about GCSEMate. How can I assist you today?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 p-4 bg-gray-50/50">
+                            <form id="ai-chat-form" class="flex gap-2">
+                                <textarea id="ai-chat-input" rows="2" placeholder="Ask me anything about GCSE subjects or GCSEMate..." class="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" style="min-height: 48px; max-height: 120px;"></textarea>
+                                <button type="submit" id="ai-send-button" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                            <div id="ai-error-message" class="mt-2 text-sm text-red-600 hidden"></div>
+                            <div class="mt-2 text-xs text-gray-500 text-center">
+                                <span id="ai-rate-limit-info">Rate limit: 30 requests/minute</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
