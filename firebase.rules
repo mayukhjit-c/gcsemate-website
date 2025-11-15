@@ -140,9 +140,12 @@ service cloud.firestore {
 
     // USER EXAM RESULTS
     match /userExamResults/{uid} {
-      allow read, write: if false;
+      allow read, write: if false; // disallow direct doc ops at root
       match /subjects/{subjectId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read, write: if isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.keys().hasOnly(['exams', 'lastUpdated']) &&
+          request.resource.data.exams is list &&
+          request.resource.data.lastUpdated != null;
       }
     }
 

@@ -1049,7 +1049,7 @@
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1 sm:flex-initial">
                                 <input id="links-search-input" type="search" placeholder="Search links..." class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" aria-label="Search links">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex items-center"></i>
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             </div>
                             <select id="links-filter-type" class="px-3 py-2 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                 <option value="all">All Types</option>
@@ -1473,6 +1473,21 @@
                                 <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
                             </div>
                         </div>
+                        <!-- Exam Results Section -->
+                        <div class="mt-8 pt-6 border-t border-gray-200">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Exam Results</h4>
+                            <p class="text-sm text-gray-500 mb-4">Track your GCSE exam grades across multiple exams.</p>
+                            <div id="exam-results-container" class="space-y-4">
+                                <div id="exam-results-loading" class="text-center py-8">
+                                    <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                    <p class="text-gray-600">Loading exam results...</p>
+                                </div>
+                                <div id="exam-results-content" class="hidden">
+                                    <!-- Exam results will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
                               <div>
                                 <h4 class="text-lg font-semibold text-gray-800">Account Actions</h4>

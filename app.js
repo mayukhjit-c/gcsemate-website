@@ -8514,6 +8514,13 @@ function showPage(pageId) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
     
+    // Initialize exam results when account settings page is shown
+    if (pageId === 'account-settings-page') {
+        setTimeout(() => {
+            initializeExamResults();
+        }, 100);
+    }
+    
     // Initialize AI Tutor when page is shown
     if (pageId === 'ai-tutor-page') {
         // Check access
@@ -13463,4 +13470,403 @@ window.addEventListener('beforeunload', () => {
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
+
+// ==================== EXAM RESULTS FUNCTIONALITY ====================
+
+// Get grade color class based on grade value
+function getGradeColorClass(grade) {
+    if (!grade || grade === '' || isNaN(grade)) return 'bg-gray-100 text-gray-600';
+    
+    const numGrade = parseInt(grade);
+    
+    // Grades 8-9: Green (9 is darker)
+    if (numGrade === 9) return 'bg-green-700 text-white font-semibold';
+    if (numGrade === 8) return 'bg-green-500 text-white font-semibold';
+    
+    // Grades 7-6-5: Amber (lighter as grade gets lower)
+    if (numGrade === 7) return 'bg-amber-600 text-white font-semibold';
+    if (numGrade === 6) return 'bg-amber-500 text-white font-semibold';
+    if (numGrade === 5) return 'bg-amber-400 text-white font-semibold';
+    
+    // Grades 4-3-2-1: Red (darker as grade gets lower)
+    if (numGrade === 4) return 'bg-red-500 text-white font-semibold';
+    if (numGrade === 3) return 'bg-red-600 text-white font-semibold';
+    if (numGrade === 2) return 'bg-red-700 text-white font-semibold';
+    if (numGrade === 1) return 'bg-red-800 text-white font-semibold';
+    
+    return 'bg-gray-100 text-gray-600';
+}
+
+// Load exam results from Firebase
+async function loadExamResults() {
+    if (!currentUser || !currentUser.uid) return;
+    
+    const loadingEl = document.getElementById('exam-results-loading');
+    const contentEl = document.getElementById('exam-results-content');
+    
+    if (!loadingEl || !contentEl) return;
+    
+    try {
+        loadingEl.classList.remove('hidden');
+        contentEl.classList.add('hidden');
+        
+        // Get user's allowed subjects
+        const userAllowedSubjects = currentUser.allowedSubjects || [];
+        const allSubjects = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+        
+        // For free users, show all subjects; for paid users, show only allowed subjects
+        const subjectsToShow = userAllowedSubjects.length > 0 ? 
+            allSubjects.filter(subj => userAllowedSubjects.includes(subj)) : 
+            allSubjects;
+        
+        if (subjectsToShow.length === 0) {
+            contentEl.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-graduation-cap text-4xl mb-3"></i>
+                    <p>No subjects assigned. Please contact support to assign subjects.</p>
+                </div>
+            `;
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            return;
+        }
+        
+        // Load exam results for each subject
+        const examResultsData = {};
+        const loadPromises = subjectsToShow.map(async (subject) => {
+            const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+            try {
+                const doc = await db.collection('userExamResults').doc(currentUser.uid)
+                    .collection('subjects').doc(subjectKey).get();
+                
+                if (doc.exists) {
+                    examResultsData[subject] = doc.data();
+                } else {
+                    examResultsData[subject] = { exams: [], lastUpdated: null };
+                }
+            } catch (error) {
+                console.error(`Error loading exam results for ${subject}:`, error);
+                examResultsData[subject] = { exams: [], lastUpdated: null };
+            }
+        });
+        
+        await Promise.all(loadPromises);
+        
+        // Render exam results table
+        renderExamResultsTable(subjectsToShow, examResultsData);
+        
+        loadingEl.classList.add('hidden');
+        contentEl.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error loading exam results:', error);
+        loadingEl.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Error loading exam results. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+// Render exam results table
+function renderExamResultsTable(subjects, examResultsData) {
+    const contentEl = document.getElementById('exam-results-content');
+    if (!contentEl) return;
+    
+    // Find the maximum number of exams across all subjects
+    let maxExams = 0;
+    Object.values(examResultsData).forEach(data => {
+        if (data.exams && data.exams.length > maxExams) {
+            maxExams = data.exams.length;
+        }
+    });
+    
+    // Ensure at least 1 exam column
+    if (maxExams === 0) maxExams = 1;
+    
+    // Build table HTML
+    let tableHTML = `
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                <div class="flex items-center justify-between">
+                    <h5 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-table"></i>
+                        Exam Results
+                    </h5>
+                    <button onclick="addExamColumn()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        Add Exam
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10 border-r border-gray-200 min-w-[150px]">Subject</th>
+                            ${Array.from({ length: maxExams }, (_, i) => {
+                                // Get date from first subject that has this exam
+                                let examDate = '';
+                                for (const subject of subjects) {
+                                    const subjectData = examResultsData[subject];
+                                    if (subjectData?.exams?.[i]?.date) {
+                                        examDate = subjectData.exams[i].date;
+                                        break;
+                                    }
+                                }
+                                
+                                return `
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-200 min-w-[180px]">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <span>Exam ${i + 1}</span>
+                                        <input type="date" 
+                                               id="exam-date-${i}" 
+                                               value="${examDate}" 
+                                               class="text-xs px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               onchange="updateExamDate(${i}, this.value)">
+                                        <button onclick="removeExamColumn(${i})" class="text-red-500 hover:text-red-700 text-xs" title="Remove exam">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                            `;
+                            }).join('')}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        ${subjects.map((subject, subjectIdx) => {
+                            const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+                            const subjectData = examResultsData[subject] || { exams: [] };
+                            
+                            return `
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-4 py-3 font-semibold text-gray-800 sticky left-0 bg-white z-10 border-r border-gray-200">
+                                        ${escapeHtml(subject)}
+                                    </td>
+                                    ${Array.from({ length: maxExams }, (_, i) => {
+                                        const exam = subjectData.exams?.[i] || { grade: '', date: '' };
+                                        const gradeColor = getGradeColorClass(exam.grade);
+                                        
+                                        return `
+                                            <td class="px-4 py-3 text-center border-r border-gray-200">
+                                                <input type="text" 
+                                                       id="grade-${subjectIdx}-${i}" 
+                                                       value="${escapeHtml(exam.grade || '')}" 
+                                                       placeholder="Grade"
+                                                       maxlength="1"
+                                                       class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor}"
+                                                       oninput="updateGradeColor(this, '${subject}', ${i})"
+                                                       onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace'">
+                                            </td>
+                                        `;
+                                    }).join('')}
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-green-700 rounded mr-2"></span> Grade 9</p>
+                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-green-500 rounded mr-2"></span> Grade 8</p>
+                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-amber-600 rounded mr-2"></span> Grades 7-5</p>
+                    <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> Grades 4-1</p>
+                </div>
+                <button onclick="saveExamResults()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                    <i class="fas fa-save"></i>
+                    Save Results
+                </button>
+            </div>
+        </div>
+    `;
+    
+    contentEl.innerHTML = tableHTML;
+    
+    // Store current exam count for reference
+    window.currentExamCount = maxExams;
+    window.examResultsData = examResultsData;
+    window.examSubjects = subjects;
+}
+
+// Update grade color on input
+function updateGradeColor(input, subject, examIndex) {
+    const grade = input.value.trim();
+    const colorClass = getGradeColorClass(grade);
+    
+    // Remove all color classes
+    input.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400', 
+                           'bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800', 'bg-gray-100',
+                           'text-white', 'text-gray-600', 'font-semibold');
+    
+    // Add new color class
+    const classes = colorClass.split(' ');
+    classes.forEach(cls => input.classList.add(cls));
+}
+
+// Add new exam column
+function addExamColumn() {
+    const currentCount = window.currentExamCount || 1;
+    window.currentExamCount = currentCount + 1;
+    
+    // Reload the table with the new column
+    const subjects = window.examSubjects || [];
+    const examResultsData = window.examResultsData || {};
+    
+    // Add empty exam entries for all subjects
+    subjects.forEach(subject => {
+        if (!examResultsData[subject]) {
+            examResultsData[subject] = { exams: [], lastUpdated: null };
+        }
+        if (!examResultsData[subject].exams) {
+            examResultsData[subject].exams = [];
+        }
+        // Add empty exam if needed
+        while (examResultsData[subject].exams.length < window.currentExamCount) {
+            examResultsData[subject].exams.push({ grade: '', date: '' });
+        }
+    });
+    
+    renderExamResultsTable(subjects, examResultsData);
+}
+
+// Remove exam column
+function removeExamColumn(examIndex) {
+    if (!confirm(`Are you sure you want to remove Exam ${examIndex + 1}? All grades for this exam will be deleted.`)) {
+        return;
+    }
+    
+    const subjects = window.examSubjects || [];
+    const examResultsData = window.examResultsData || {};
+    
+    // Remove exam at index for all subjects
+    subjects.forEach(subject => {
+        if (examResultsData[subject] && examResultsData[subject].exams) {
+            examResultsData[subject].exams.splice(examIndex, 1);
+        }
+    });
+    
+    window.currentExamCount = Math.max(1, (window.currentExamCount || 1) - 1);
+    renderExamResultsTable(subjects, examResultsData);
+}
+
+// Update exam date
+function updateExamDate(examIndex, date) {
+    // Update date for all subjects in this exam
+    const subjects = window.examSubjects || [];
+    const examResultsData = window.examResultsData || {};
+    
+    subjects.forEach(subject => {
+        if (!examResultsData[subject]) {
+            examResultsData[subject] = { exams: [], lastUpdated: null };
+        }
+        if (!examResultsData[subject].exams) {
+            examResultsData[subject].exams = [];
+        }
+        while (examResultsData[subject].exams.length <= examIndex) {
+            examResultsData[subject].exams.push({ grade: '', date: '' });
+        }
+        examResultsData[subject].exams[examIndex].date = date;
+    });
+    
+    // Update all date inputs for this exam column
+    document.querySelectorAll(`input[id^="exam-date-${examIndex}"]`).forEach(input => {
+        if (input.id === `exam-date-${examIndex}`) {
+            input.value = date;
+        }
+    });
+}
+
+// Save exam results to Firebase
+async function saveExamResults() {
+    if (!currentUser || !currentUser.uid) {
+        showToast('You must be logged in to save exam results.', 'error');
+        return;
+    }
+    
+    const subjects = window.examSubjects || [];
+    const examCount = window.currentExamCount || 1;
+    
+    try {
+        const saveButton = event?.target || document.querySelector('button[onclick="saveExamResults()"]');
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        
+        const savePromises = subjects.map(async (subject) => {
+            const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+            const exams = [];
+            
+            // Collect grades for this subject
+            const subjectIndex = subjects.indexOf(subject);
+            for (let i = 0; i < examCount; i++) {
+                const gradeInput = document.getElementById(`grade-${subjectIndex}-${i}`);
+                const dateInput = document.getElementById(`exam-date-${i}`);
+                
+                const grade = gradeInput ? gradeInput.value.trim() : '';
+                const date = dateInput ? dateInput.value : '';
+                
+                if (grade || date) {
+                    exams.push({
+                        grade: grade || '',
+                        date: date || ''
+                    });
+                }
+            }
+            
+            // Save to Firebase
+            const subjectRef = db.collection('userExamResults').doc(currentUser.uid)
+                .collection('subjects').doc(subjectKey);
+            
+            if (exams.length > 0) {
+                await subjectRef.set({
+                    exams: exams,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                // Delete if no exams
+                await subjectRef.delete();
+            }
+        });
+        
+        await Promise.all(savePromises);
+        
+        // Update colors after save
+        subjects.forEach((subject, subjectIdx) => {
+            for (let i = 0; i < examCount; i++) {
+                const gradeInput = document.getElementById(`grade-${subjectIdx}-${i}`);
+                if (gradeInput) {
+                    updateGradeColor(gradeInput, subject, i);
+                }
+            }
+        });
+        
+        showToast('Exam results saved successfully!', 'success');
+        
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save"></i> Save Results';
+        }
+        
+        // Reload to ensure sync
+        await loadExamResults();
+    } catch (error) {
+        console.error('Error saving exam results:', error);
+        showToast('Error saving exam results. Please try again.', 'error');
+        
+        const saveButton = document.querySelector('button[onclick="saveExamResults()"]');
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save"></i> Save Results';
+        }
+    }
+}
+
+// Initialize exam results when account settings page is shown
+function initializeExamResults() {
+    if (currentUser && currentUser.uid) {
+        loadExamResults();
+    }
+}
 
