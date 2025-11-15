@@ -146,8 +146,12 @@ service cloud.firestore {
         allow read: if isSignedIn() && request.auth.uid == uid;
         
         // Allow create/update with validation
-        allow create, update: if isSignedIn() && request.auth.uid == uid &&
-          request.resource.data.keys().hasOnly(['exams', 'lastUpdated']) &&
+        allow create: if isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.keys().hasAll(['exams']) &&
+          request.resource.data.exams is list;
+        
+        allow update: if isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.keys().hasAll(['exams']) &&
           request.resource.data.exams is list;
         
         // Allow delete if user owns the data

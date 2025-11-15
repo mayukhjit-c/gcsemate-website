@@ -5540,12 +5540,33 @@ window.applyProfilePictureCrop = async function() {
         showToast('Uploading profile picture...', 'info');
         
         try {
+            // Validate Cloudinary config
+            if (!CLOUDINARY_CONFIG || !CLOUDINARY_CONFIG.cloudName || !CLOUDINARY_CONFIG.uploadPreset) {
+                throw new Error('Cloudinary configuration is missing. Please contact support.');
+            }
+            
+            // Validate file
+            if (!compressedFile || !(compressedFile instanceof File) && !(compressedFile instanceof Blob)) {
+                throw new Error('Invalid file. Please try again.');
+            }
+            
+            // Check file size (max 5MB)
+            if (compressedFile.size > 5 * 1024 * 1024) {
+                throw new Error('File is too large. Maximum size is 5MB.');
+            }
+            
+            // Check file type
+            if (!compressedFile.type || !compressedFile.type.startsWith('image/')) {
+                throw new Error('Invalid file type. Please upload an image file.');
+            }
+            
             const formData = new FormData();
             formData.append('file', compressedFile);
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
             formData.append('folder', `profilePictures/${currentUser.uid}`);
             formData.append('tags', `profile,user-${currentUser.uid}`);
-            formData.append('transformation', 'f_auto,q_auto:low,w_400,h_400,c_fill');
+            // Apply transformations via URL parameters (Cloudinary format: w_400,h_400,c_fill,q_auto:low,f_auto)
+            formData.append('eager', 'w_400,h_400,c_fill,q_auto:low,f_auto');
             
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -5553,12 +5574,30 @@ window.applyProfilePictureCrop = async function() {
             );
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `Upload failed: ${response.statusText}`);
+                let errorMessage = `Upload failed: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error?.message || errorData.message || errorMessage;
+                    console.error('Cloudinary upload error:', errorData);
+                } catch (e) {
+                    // If JSON parsing fails, use status text
+                    console.error('Failed to parse Cloudinary error response:', e);
+                }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();
-            const downloadURL = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
+            // Use eager transformation if available, otherwise apply transformation to URL
+            let downloadURL = data.secure_url;
+            if (data.eager && data.eager.length > 0) {
+                // Use the first eager transformation (optimized version)
+                downloadURL = data.eager[0].secure_url;
+            } else {
+                // Apply transformation to URL if not already applied
+                if (!downloadURL.includes('/f_auto,q_auto')) {
+                    downloadURL = downloadURL.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
+                }
+            }
             
             await db.collection('users').doc(currentUser.uid).update({
                 profilePictureURL: downloadURL,
@@ -13873,6 +13912,20 @@ async function saveExamResults() {
                 const grade = gradeInput ? gradeInput.value.trim() : '';
                 const date = dateInput ? dateInput.value : '';
                 
+                // Validate grade - must be 1-9 if provided
+                if (grade) {
+                    const numGrade = parseInt(grade);
+                    if (isNaN(numGrade) || numGrade < 1 || numGrade > 9) {
+                        showToast(`Invalid grade for ${subject}, Exam ${i + 1}. Grades must be between 1 and 9.`, 'error');
+                        if (saveButton) {
+                            saveButton.disabled = false;
+                            saveButton.innerHTML = '<i class="fas fa-save"></i> Save Results';
+                        }
+                        return; // Stop saving if invalid grade found
+                    }
+                }
+                
+                // Only include exam if it has a grade or date
                 if (grade || date) {
                     exams.push({
                         grade: grade || '',

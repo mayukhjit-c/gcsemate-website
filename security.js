@@ -14,7 +14,16 @@
         console.error('%cUNAUTHORIZED ACCESS DETECTED', 'color: red; font-size: 24px; font-weight: bold;');
         console.error('%cThis website is protected by copyright. Unauthorized copying or redistribution is illegal.', 'color: red; font-size: 16px;');
         console.error('%cCopyright © 2024 Mayukhjit Chakraborty. All rights reserved.', 'color: orange; font-size: 14px;');
-        document.body.innerHTML = '<div style="display:flex;height:100vh;align-items:center;justify-content:center;flex-direction:column;background:#f0f0f0"><h1 style="color:red;font-size:32px;margin-bottom:20px">Unauthorized Access</h1><p style="font-size:18px;color:#666">This application is protected by copyright.</p><p style="color:#999;margin-top:10px">Copyright © 2024 Mayukhjit Chakraborty</p></div>';
+        if (document.body) {
+            document.body.innerHTML = '<div style="display:flex;height:100vh;align-items:center;justify-content:center;flex-direction:column;background:#f0f0f0"><h1 style="color:red;font-size:32px;margin-bottom:20px">Unauthorized Access</h1><p style="font-size:18px;color:#666">This application is protected by copyright.</p><p style="color:#999;margin-top:10px">Copyright © 2024 Mayukhjit Chakraborty</p></div>';
+        } else {
+            // If body doesn't exist yet, wait for DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', function() {
+                if (document.body) {
+                    document.body.innerHTML = '<div style="display:flex;height:100vh;align-items:center;justify-content:center;flex-direction:column;background:#f0f0f0"><h1 style="color:red;font-size:32px;margin-bottom:20px">Unauthorized Access</h1><p style="font-size:18px;color:#666">This application is protected by copyright.</p><p style="color:#999;margin-top:10px">Copyright © 2024 Mayukhjit Chakraborty</p></div>';
+                }
+            });
+        }
         throw new Error('Unauthorized domain access');
     }
     
