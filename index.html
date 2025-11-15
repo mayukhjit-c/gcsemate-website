@@ -1942,13 +1942,22 @@
                     </div>
                 </div>
                 <div id="ai-tutor-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto flex flex-col h-full">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
                         <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
                             <i class="fas fa-robot text-blue-600"></i>
                             AI Tutor
                         </h2>
-                        <div class="text-sm text-gray-600">
-                            <span id="ai-token-usage" class="px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">Requests: 0 / 50</span>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <label for="ai-subject-selector" class="text-sm font-medium text-gray-700">Subject:</label>
+                                <select id="ai-subject-selector" class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="general">General AI Tutor</option>
+                                    <option value="english-literature-edexcel">English Literature (Edexcel)</option>
+                                </select>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <span id="ai-token-usage" class="px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">Requests: 0 / 50</span>
+                            </div>
                         </div>
                     </div>
                     

@@ -3379,7 +3379,8 @@ async function sendAIMessage(retryMessage = null) {
                     aiMaxRequestsDaily: currentUser.aiMaxRequestsDaily,
                     aiAccessBlocked: currentUser.aiAccessBlocked
                 },
-                currentRequestCount: aiRequestCount
+                currentRequestCount: aiRequestCount,
+                aiType: document.getElementById('ai-subject-selector')?.value || 'general'
             })
         });
         
@@ -8692,8 +8693,7 @@ function showAnnouncement(message) {
     if (message && message.trim() !== '') {
         announcementBanner.innerHTML = `<div class="bg-blue-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-between relative">
             <div class="flex items-center gap-3">
-                <span class="truncate">${message}</span>
-                ${progressText ? `<span class="text-blue-100 text-xs whitespace-nowrap">${progressText}</span>` : ''}
+                <span class="truncate">${escapeHtml(message)}</span>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="restoreLastAnnouncement()" class="text-xs underline decoration-white/50 hover:decoration-white/80">Restore</button>
