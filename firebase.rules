@@ -142,10 +142,16 @@ service cloud.firestore {
     match /userExamResults/{uid} {
       allow read, write: if false; // disallow direct doc ops at root
       match /subjects/{subjectId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid &&
+        // Allow read if user owns the data
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        
+        // Allow create/update with validation
+        allow create, update: if isSignedIn() && request.auth.uid == uid &&
           request.resource.data.keys().hasOnly(['exams', 'lastUpdated']) &&
-          request.resource.data.exams is list &&
-          request.resource.data.lastUpdated != null;
+          request.resource.data.exams is list;
+        
+        // Allow delete if user owns the data
+        allow delete: if isSignedIn() && request.auth.uid == uid;
       }
     }
 
