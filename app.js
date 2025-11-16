@@ -131,13 +131,47 @@ class ErrorHandler {
     setupGlobalErrorHandlers() {
         // Handle uncaught JavaScript errors
         window.addEventListener('error', (event) => {
-            // Suppress non-critical Cloudflare RUM 404 errors
-            if (event.filename && event.filename.includes('cdn-cgi/rum')) {
-                return; // Silently ignore Cloudflare RUM errors
+            // Suppress non-critical errors from ad blockers and analytics
+            const filename = event.filename || '';
+            const message = event.message || '';
+            
+            // Suppress ad blocker errors
+            if (filename.includes('pagead2.googlesyndication.com') || 
+                filename.includes('adsbygoogle') ||
+                filename.includes('googlesyndication')) {
+                return; // Silently ignore ad script errors
             }
-            // Suppress 404 errors for Cloudflare RUM endpoint
-            if (event.message && (event.message.includes('cdn-cgi/rum') || (event.message.includes('Failed to load resource') && event.message.includes('404')))) {
-                return; // Silently ignore
+            
+            // Suppress Cloudflare analytics errors
+            if (filename.includes('cdn-cgi/rum') || 
+                filename.includes('beacon.min.js') ||
+                filename.includes('zaraz') ||
+                filename.includes('cdn-cgi/zaraz')) {
+                return; // Silently ignore Cloudflare analytics errors
+            }
+            
+            // Suppress Chrome extension errors (not our code)
+            if (filename.includes('content.js') || 
+                filename.includes('extension://') ||
+                filename.includes('chrome-extension://')) {
+                return; // Silently ignore browser extension errors
+            }
+            
+            // Suppress ERR_BLOCKED_BY_CLIENT errors (ad blockers)
+            if (message.includes('ERR_BLOCKED_BY_CLIENT') || 
+                message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
+                return; // Silently ignore ad blocker blocks
+            }
+            
+            // Suppress 404 errors for analytics endpoints
+            if (message.includes('Failed to load resource') && 
+                (message.includes('404') || message.includes('ERR_BLOCKED_BY_CLIENT'))) {
+                if (filename.includes('cdn-cgi') || 
+                    filename.includes('pagead2') ||
+                    filename.includes('beacon') ||
+                    filename.includes('zaraz')) {
+                    return; // Silently ignore
+                }
             }
             
             this.handleError({
@@ -152,6 +186,28 @@ class ErrorHandler {
         
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
+            // Suppress non-critical promise rejections from ad blockers
+            const reason = event.reason;
+            if (reason && typeof reason === 'object') {
+                const reasonStr = JSON.stringify(reason).toLowerCase();
+                if (reasonStr.includes('pagead2') || 
+                    reasonStr.includes('adsbygoogle') ||
+                    reasonStr.includes('err_blocked_by_client') ||
+                    reasonStr.includes('cdn-cgi') ||
+                    reasonStr.includes('zaraz') ||
+                    reasonStr.includes('beacon')) {
+                    return; // Silently ignore ad blocker rejections
+                }
+            }
+            
+            const message = event.reason?.message || '';
+            if (message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                message.includes('pagead2') ||
+                message.includes('cdn-cgi') ||
+                message.includes('zaraz')) {
+                return; // Silently ignore
+            }
+            
             this.handleError({
                 type: 'Unhandled Promise Rejection',
                 message: event.reason?.message || 'Unknown promise rejection',
@@ -167,12 +223,75 @@ class ErrorHandler {
         // Override Firebase error handling
         const originalConsoleError = console.error;
         console.error = (...args) => {
-            // Suppress non-critical Cloudflare RUM 404 errors
+            // Suppress non-critical errors from ad blockers and analytics
             const firstArg = args[0];
+            
+            // Check if it's an object with error property (Cloudinary errors)
+            if (firstArg && typeof firstArg === 'object' && firstArg.error) {
+                const errorMessage = firstArg.error.message || '';
+                if (errorMessage.includes('Eager parameter') || 
+                    errorMessage.includes('Transformation parameter') ||
+                    errorMessage.includes('not allowed when using unsigned upload')) {
+                    // This error is already handled in the upload function, suppress console logging
+                    return; // Silently ignore - error is already shown to user via toast
+                }
+            }
+            
             if (firstArg && typeof firstArg === 'string') {
-                if (firstArg.includes('cdn-cgi/rum') || 
-                    (firstArg.includes('Failed to load resource') && firstArg.includes('404') && firstArg.includes('cdn-cgi'))) {
-                    return; // Silently ignore Cloudflare RUM 404 errors
+                const errorStr = firstArg.toLowerCase();
+                
+                // Suppress ad blocker errors
+                if (errorStr.includes('pagead2') || 
+                    errorStr.includes('adsbygoogle') ||
+                    errorStr.includes('googlesyndication') ||
+                    errorStr.includes('err_blocked_by_client')) {
+                    return; // Silently ignore ad blocker errors
+                }
+                
+                // Suppress Cloudflare analytics errors
+                if (errorStr.includes('cdn-cgi/rum') || 
+                    errorStr.includes('beacon.min.js') ||
+                    errorStr.includes('zaraz') ||
+                    errorStr.includes('cdn-cgi/zaraz')) {
+                    return; // Silently ignore Cloudflare analytics errors
+                }
+                
+                // Suppress Chrome extension errors
+                if (errorStr.includes('content.js') || 
+                    errorStr.includes('extension://') ||
+                    errorStr.includes('chrome-extension://') ||
+                    errorStr.includes('runtime.connect')) {
+                    return; // Silently ignore browser extension errors
+                }
+                
+                // Suppress Cloudinary eager parameter errors (already handled)
+                if (errorStr.includes('eager parameter') || 
+                    errorStr.includes('transformation parameter') ||
+                    errorStr.includes('not allowed when using unsigned upload')) {
+                    return; // Silently ignore - error is already shown to user
+                }
+                
+                // Suppress 404 errors for analytics endpoints
+                if (errorStr.includes('failed to load resource') && 
+                    (errorStr.includes('404') || errorStr.includes('err_blocked_by_client'))) {
+                    if (errorStr.includes('cdn-cgi') || 
+                        errorStr.includes('pagead2') ||
+                        errorStr.includes('beacon') ||
+                        errorStr.includes('zaraz')) {
+                        return; // Silently ignore
+                    }
+                }
+            }
+            
+            // Check all args for Cloudinary error patterns
+            for (const arg of args) {
+                if (arg && typeof arg === 'object') {
+                    const argStr = JSON.stringify(arg).toLowerCase();
+                    if (argStr.includes('eager parameter') || 
+                        argStr.includes('transformation parameter') ||
+                        argStr.includes('not allowed when using unsigned upload')) {
+                        return; // Silently ignore - error is already handled
+                    }
                 }
             }
             
@@ -3583,7 +3702,13 @@ async function sendAIMessage(retryMessage = null) {
                                      errorMessageText.includes('All AI services') ||
                                      errorMessageText.includes('unavailable or have reached their limits');
         
-        if (isServiceUnavailable && typeof puter !== 'undefined' && puter && puter.ai && puter.ai.chat) {
+        // Check if Puter.js is available (with error handling)
+        const isPuterAvailable = typeof puter !== 'undefined' && 
+                                  puter && 
+                                  puter.ai && 
+                                  typeof puter.ai.chat === 'function';
+        
+        if (isServiceUnavailable && isPuterAvailable) {
             // Try Puter.js as client-side fallback
             try {
                 // Build system prompt from conversation context
@@ -5767,11 +5892,14 @@ window.applyProfilePictureCrop = async function() {
                 try {
                     const errorData = await response.json();
                     errorMessage = errorData.error?.message || errorData.message || errorMessage;
-                    console.error('Cloudinary upload error:', errorData);
                     
                     // Provide specific error for transformation/eager parameter issues
                     if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
                         errorMessage = 'Image upload configuration error. Please contact support.';
+                        // Don't log this error to console - it's already handled
+                    } else {
+                        // Only log non-eager errors
+                        console.error('Cloudinary upload error:', errorData);
                     }
                 } catch (e) {
                     // If JSON parsing fails, use status text
@@ -11339,7 +11467,13 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
             
             // Provide specific error for transformation/eager parameter issues
             if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
+                // Don't log this to console - it's a configuration issue that's already handled
                 throw new Error('Image upload configuration error. Please contact support.');
+            }
+            
+            // Only log non-eager errors
+            if (!errorMessage.includes('Eager parameter') && !errorMessage.includes('Transformation parameter')) {
+                console.error('Cloudinary upload error:', errorData);
             }
             
             throw new Error(errorMessage);
