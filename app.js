@@ -5566,8 +5566,8 @@ window.applyProfilePictureCrop = async function() {
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
             formData.append('folder', `profilePictures/${currentUser.uid}`);
             formData.append('tags', `profile,user-${currentUser.uid}`);
-            // Apply transformations via URL parameters (Cloudinary format: w_400,h_400,c_fill,q_auto:low,f_auto)
-            formData.append('eager', 'w_400,h_400,c_fill,q_auto:low,f_auto');
+            // Note: Transformation parameters (eager, transformation) are NOT allowed with unsigned uploads
+            // Transformations should be applied via URL parameters when displaying images
             
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -5588,16 +5588,12 @@ window.applyProfilePictureCrop = async function() {
             }
             
             const data = await response.json();
-            // Use eager transformation if available, otherwise apply transformation to URL
+            // Apply transformations via URL parameters (required for unsigned uploads)
+            // Format: /upload/transformations/public_id
             let downloadURL = data.secure_url;
-            if (data.eager && data.eager.length > 0) {
-                // Use the first eager transformation (optimized version)
-                downloadURL = data.eager[0].secure_url;
-            } else {
-                // Apply transformation to URL if not already applied
-                if (!downloadURL.includes('/f_auto,q_auto')) {
-                    downloadURL = downloadURL.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
-                }
+            if (!downloadURL.includes('/f_auto,q_auto')) {
+                // Apply transformation: auto format, auto quality (low), width 400, height 400, fill crop
+                downloadURL = downloadURL.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
             }
             
             await db.collection('users').doc(currentUser.uid).update({
@@ -11116,9 +11112,8 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
         formData.append('folder', `blogUploads/${currentUser.uid}`); // Organize by user
         formData.append('tags', `blog,${source},user-${currentUser.uid}`); // Add tags for organization
         
-        // Add optimization transformations
-        formData.append('transformation', 'f_auto,q_auto:good'); // Auto format and quality
-        formData.append('eager', 'f_auto,q_auto:low,w_800'); // Generate optimized version
+        // Note: Transformation parameters (transformation, eager) are NOT allowed with unsigned uploads
+        // Transformations are applied via URL parameters when displaying images (see optimizedUrl below)
         
         // Optional: Add context/metadata
         formData.append('context', JSON.stringify({
