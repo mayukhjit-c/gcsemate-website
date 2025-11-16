@@ -9183,6 +9183,16 @@ async function renderDashboard() {
             }
         }
         
+        // Enable both English subjects if user has access to either
+        const hasEnglishLanguage = normalizedAllowedSubjects.includes('english language (aqa)');
+        const hasEnglishLiterature = normalizedAllowedSubjects.includes('english literature (edexcel)');
+        if (hasEnglishLanguage && !hasEnglishLiterature) {
+            normalizedAllowedSubjects.push('english literature (edexcel)');
+        }
+        if (hasEnglishLiterature && !hasEnglishLanguage) {
+            normalizedAllowedSubjects.push('english language (aqa)');
+        }
+        
         let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
         if (subjectsToShow.length === 0) {
             subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
@@ -9205,7 +9215,7 @@ async function renderDashboard() {
             const card = document.createElement('div');
             const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
             const board = examBoardBySubject[subject.toLowerCase()];
-            const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
+            const badge = board ? `<span class="mt-1.5 inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/70 border border-gray-300/50 text-gray-800">${board}</span>` : '';
             const name = subject && subject.trim() ? subject : 'Subject';
             const subjectData = subjectSummaries[subject.toLowerCase()] || { summary: 'Access revision materials and resources for this subject.', description: '' };
             
@@ -9213,11 +9223,11 @@ async function renderDashboard() {
             const wrapper = document.createElement('div');
             wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full h-full';
             const iconHost = document.createElement('div');
-            iconHost.className = 'flex items-center justify-center h-12 w-12 mb-1';
+            iconHost.className = 'flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 mb-2';
             iconHost.innerHTML = `${iconSvg}`;
             wrapper.appendChild(iconHost);
             const title = document.createElement('h3');
-            title.className = 'text-xl font-bold text-gray-800 mb-1';
+            title.className = 'text-lg sm:text-xl font-bold text-gray-900 mb-2 leading-tight';
             title.textContent = name;
             title.setAttribute('data-animate','fade-up');
             wrapper.appendChild(title);
@@ -9228,10 +9238,10 @@ async function renderDashboard() {
             }
             // Add summary text with arrow
             const summaryContainer = document.createElement('div');
-            summaryContainer.className = 'text-xs text-gray-600 mt-2 px-2 text-center w-full flex items-center justify-center gap-1';
+            summaryContainer.className = 'text-xs sm:text-sm text-gray-600 mt-2 px-3 text-center w-full flex items-center justify-center gap-1.5';
             const summary = document.createElement('p');
             summary.className = 'leading-relaxed overflow-hidden text-ellipsis whitespace-nowrap';
-            summary.style.maxWidth = 'calc(100% - 20px)';
+            summary.style.maxWidth = 'calc(100% - 24px)';
             summary.textContent = subjectData.summary;
             summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
             const arrowIcon = document.createElement('i');
@@ -9242,14 +9252,14 @@ async function renderDashboard() {
             
             // Add "View Specification" button(s)
             const specContainer = document.createElement('div');
-            specContainer.className = 'mt-3 w-full px-2 flex-shrink-0';
+            specContainer.className = 'mt-3 w-full px-3 flex-shrink-0';
             const specs = subjectSpecifications[subject.toLowerCase()];
             if (specs) {
                 // Limit to 2 buttons max to maintain consistent card height
                 const specEntries = Object.entries(specs).slice(0, 2);
                 specEntries.forEach(([board, spec]) => {
                     const specButton = document.createElement('button');
-                    specButton.className = 'w-full mt-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1.5 flex-shrink-0';
+                    specButton.className = 'w-full mt-2 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 flex-shrink-0 hover:shadow-sm';
                     // For English, show Language/Literature clearly in button text
                     let buttonText = 'View Spec';
                     if (board.includes('Language')) {
@@ -9273,7 +9283,7 @@ async function renderDashboard() {
             if (subjectId) {
                 // Set consistent height constraints to maintain grid alignment
                 // Max height accommodates cards with up to 2 specification buttons
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[200px] max-h-[280px] overflow-hidden';
+                card.className = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise min-h-[220px] max-h-[300px] overflow-hidden';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -9781,7 +9791,7 @@ function renderVideosPage(playlists) {
 
     playlists.forEach(playlist => {
         const card = document.createElement('div');
-        card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+        card.className = 'relative bg-white/70 border border-gray-200/60 backdrop-blur-lg rounded-xl shadow-lg p-5 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl';
         card.onclick = () => handlePlaylistClick(playlist);
         const playlistUrl = playlist.url || '';
         card.innerHTML = `
@@ -9790,13 +9800,13 @@ function renderVideosPage(playlists) {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 class="font-bold text-gray-800 leading-tight">${playlist.title}</h3>
+                <h3 class="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1">${playlist.title}</h3>
             </div>
-             <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
-                 <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
+             <div class="mt-4 pt-4 border-t border-gray-200/70 flex justify-between items-center">
+                 <span class="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wide">YouTube Playlist</span>
                  ${playlistUrl ? `
-                 <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
-                     <i class="fas fa-external-link-alt"></i>
+                 <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-2 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-1.5 hover:shadow-md" data-tooltip="Open playlist in new tab">
+                     <i class="fas fa-external-link-alt text-xs"></i>
                      <span>Open</span>
                  </button>
                  ` : ''}
@@ -10020,7 +10030,13 @@ function handlePlaylistClick(playlist) {
         document.getElementById('upgrade-modal').style.display = 'flex';
         return;
     }
-    showPlaylistViewer(playlist);
+    // Open playlist in new tab instead of embedding
+    const playlistUrl = playlist.url || '';
+    if (playlistUrl) {
+        window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+    } else {
+        showToast('Playlist URL not available', 'error');
+    }
 }
 function showPlaylistViewer(playlist) {
     const modal = document.getElementById('playlist-viewer-modal');
