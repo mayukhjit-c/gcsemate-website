@@ -792,10 +792,11 @@ Key Features (as of 2024-2025):
 - Study Tools: Flashcards, notes, and progress tracking
 - Admin Dashboard: For administrators - user management, content management, system health monitoring
 
-Pricing:
-- Most features are free
-- Pro plan available for additional features including AI Tutor access
-- The platform is designed to be accessible to all students
+       Pricing:
+       - Most features are free
+       - Pro plan: £1.20 for your first month, then £1.00/month after (excluding VAT)
+       - Pro plan includes additional features including AI Tutor access
+       - The platform is designed to be accessible to all students
 
 Technical Details:
 - Built with vanilla JavaScript, HTML, and CSS (no frameworks)

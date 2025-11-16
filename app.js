@@ -5062,9 +5062,9 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Expiring Soon!</h2>
                     <p id="renewal-message" class="text-gray-600 mb-4"></p>
                     <div class="bg-green-600 text-white p-4 rounded-lg mb-6">
-                        <p class="text-sm font-semibold mb-1">Special Renewal Offer</p>
+                        <p class="text-sm font-semibold mb-1">Renewal Pricing</p>
                         <p class="text-2xl font-bold">£1.00/month</p>
-                        <p class="text-xs opacity-90">Save 20p! (Regular price: £1.20/month)</p>
+                        <p class="text-xs opacity-90">Standard monthly rate (excluding VAT)</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
                         <button onclick="document.getElementById('subscription-renewal-modal').classList.add('hidden')" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button>
@@ -8918,7 +8918,7 @@ async function renderDashboard() {
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
-                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just 20p/month (excluding VAT).';
+                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features.';
                         document.getElementById('upgrade-modal').style.display = 'flex';
                         return;
                     }
@@ -9672,60 +9672,122 @@ function showPlaylistViewer(playlist) {
         try {
             const urlObj = new URL(playlist.url);
             playlistId = urlObj.searchParams.get('list');
+            // Also check for youtu.be format
+            if (!playlistId && urlObj.hostname.includes('youtu.be')) {
+                playlistId = urlObj.searchParams.get('list');
+            }
+            // Clean playlist ID (remove any extra parameters)
+            if (playlistId) {
+                playlistId = playlistId.split('&')[0].split('?')[0].trim();
+            }
         } catch (e) {
             console.error('Error parsing playlist URL:', e);
         }
     }
     
-    if (!playlistId) {
-        showToast('Invalid playlist URL. Please check the playlist link.', 'error');
-        return;
-    }
+    const playlistUrl = playlist.url || '';
+    const embedUrl = playlistId ? `https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}` : '';
     
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
                     <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
-                    <h3 class="text-lg font-semibold text-gray-800 truncate">${playlist.title}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">${escapeHTML(playlist.title || 'Playlist')}</h3>
                 </div>
-                <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    ${playlistUrl ? `
+                    <button onclick="window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer')" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span class="hidden sm:inline">Open</span>
+                    </button>
+                    ` : ''}
+                    <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                </div>
             </div>
-            <div class="flex-1 p-4 overflow-hidden">
-                <div class="relative w-full" style="padding-bottom: 56.25%; height: 0; overflow: hidden;" id="playlist-embed-${playlistId}">
+            <div class="flex-1 p-4 overflow-y-auto">
+                ${playlistId && embedUrl ? `
+                <div class="relative w-full mb-4" style="padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000;" id="playlist-embed-${playlistId}">
                     <iframe 
                         id="playlist-iframe-${playlistId}"
-                        src="https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1" 
+                        src="${embedUrl}" 
                         title="YouTube video player" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                         allowfullscreen
-                        loading="lazy"
                         class="absolute top-0 left-0 w-full h-full"
                         style="border: none;"
-                        onerror="handlePlaylistEmbedError('${playlistId}', '${escapeHTML(playlist.url || '')}')"
-                        onload="handlePlaylistEmbedLoad('${playlistId}')">
+                        loading="eager">
                     </iframe>
+                    <div id="playlist-loading-${playlistId}" class="absolute inset-0 flex items-center justify-center bg-gray-900">
+                        <div class="text-center text-white">
+                            <div class="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-sm">Loading playlist...</p>
+                        </div>
+                    </div>
                     <div id="playlist-fallback-${playlistId}" class="video-embed-fallback hidden">
                         <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl mb-2"></i>
-                        <p class="text-sm font-semibold text-white">We couldn’t load this playlist.</p>
-                        <a href="${escapeHTML(playlist.url || '')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors">
+                        <p class="text-sm font-semibold text-white mb-3">We couldn't load this playlist in the embed.</p>
+                        <p class="text-xs text-gray-300 mb-4">This might be due to privacy settings or embedding restrictions.</p>
+                        ${playlistUrl ? `
+                        <a href="${escapeHTML(playlistUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors">
                             <i class="fab fa-youtube"></i> Watch on YouTube
                         </a>
+                        ` : ''}
                     </div>
                 </div>
+                ` : `
+                <div class="text-center py-12">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                    <p class="text-gray-700 font-semibold mb-2">Invalid Playlist URL</p>
+                    <p class="text-gray-500 text-sm mb-4">We couldn't extract a valid playlist ID from the URL.</p>
+                    ${playlistUrl ? `
+                    <a href="${escapeHTML(playlistUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
+                        <i class="fab fa-youtube"></i> Open Playlist on YouTube
+                    </a>
+                    ` : ''}
+                </div>
+                `}
             </div>
         </div>
     `;
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    
+    // Handle iframe load
+    if (playlistId && embedUrl) {
+        const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
+        const loadingDiv = document.getElementById(`playlist-loading-${playlistId}`);
+        const fallbackDiv = document.getElementById(`playlist-fallback-${playlistId}`);
+        
+        if (iframe) {
+            // Set timeout to show fallback if iframe doesn't load
+            const loadTimeout = setTimeout(() => {
+                if (loadingDiv) loadingDiv.classList.add('hidden');
+                if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+            }, 10000); // 10 second timeout
+            
+            iframe.onload = function() {
+                clearTimeout(loadTimeout);
+                if (loadingDiv) loadingDiv.classList.add('hidden');
+                if (fallbackDiv) fallbackDiv.classList.add('hidden');
+            };
+            
+            iframe.onerror = function() {
+                clearTimeout(loadTimeout);
+                if (loadingDiv) loadingDiv.classList.add('hidden');
+                if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+            };
+        }
+    }
 }
 
-// Handle playlist embed errors
+// Handle playlist embed errors (kept for backward compatibility)
 window.handlePlaylistEmbedError = function(playlistId, watchUrl) {
     const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
-    if (iframe) iframe.classList.add('hidden');
+    const loadingDiv = document.getElementById(`playlist-loading-${playlistId}`);
     const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
+    if (loadingDiv) loadingDiv.classList.add('hidden');
     if (fallback) {
         fallback.classList.remove('hidden');
         const link = fallback.querySelector('a');
@@ -9733,11 +9795,12 @@ window.handlePlaylistEmbedError = function(playlistId, watchUrl) {
     }
 };
 
-// Handle successful playlist load
+// Handle successful playlist load (kept for backward compatibility)
 window.handlePlaylistEmbedLoad = function(playlistId) {
     const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
+    const loadingDiv = document.getElementById(`playlist-loading-${playlistId}`);
     const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
-    if (iframe) iframe.classList.remove('hidden');
+    if (loadingDiv) loadingDiv.classList.add('hidden');
     if (fallback) fallback.classList.add('hidden');
 };
 
@@ -13825,6 +13888,19 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
                                 </tr>
                             `;
                         }).join('')}
+                        <!-- APS Row -->
+                        <tr class="bg-gray-100 border-t-2 border-gray-300 font-bold">
+                            <td class="px-4 py-3 text-gray-800 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+                                APS
+                            </td>
+                            ${Array.from({ length: maxExams }, (_, i) => {
+                                return `
+                                    <td class="px-4 py-3 text-center border-r border-gray-200">
+                                        <span id="aps-${i}" class="px-3 py-2 rounded-lg font-semibold text-sm">-</span>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -13849,6 +13925,97 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
     window.currentExamCount = maxExams;
     window.examResultsData = examResultsData;
     window.examSubjects = subjects;
+    
+    // Calculate and display APS for all exam columns
+    updateAllAPS();
+}
+
+// Calculate APS (Average Point Score) for a specific exam column
+function calculateAPS(examIndex) {
+    const subjects = window.examSubjects || [];
+    const grades = [];
+    
+    // Collect all non-blank grades for this exam column
+    subjects.forEach((subject, subjectIdx) => {
+        const gradeInput = document.getElementById(`grade-${subjectIdx}-${examIndex}`);
+        if (gradeInput) {
+            const grade = gradeInput.value.trim();
+            if (grade && !isNaN(grade) && grade >= 1 && grade <= 9) {
+                grades.push(parseInt(grade));
+            }
+        }
+    });
+    
+    // Calculate mean (APS)
+    if (grades.length === 0) {
+        return null; // No valid grades
+    }
+    
+    const sum = grades.reduce((acc, grade) => acc + grade, 0);
+    return sum / grades.length;
+}
+
+// Get color class for APS value
+function getAPSColorClass(aps) {
+    if (aps === null || isNaN(aps)) return 'bg-gray-100 text-gray-600';
+    
+    // APS 8.0-9.0: Green (excellent)
+    if (aps >= 8.0) return 'bg-green-700 text-white font-semibold';
+    if (aps >= 7.5) return 'bg-green-500 text-white font-semibold';
+    
+    // APS 6.0-7.4: Amber (good)
+    if (aps >= 7.0) return 'bg-amber-600 text-white font-semibold';
+    if (aps >= 6.5) return 'bg-amber-500 text-white font-semibold';
+    if (aps >= 6.0) return 'bg-amber-400 text-white font-semibold';
+    
+    // APS 5.0-5.9: Light amber (passing)
+    if (aps >= 5.5) return 'bg-amber-300 text-gray-800 font-semibold';
+    if (aps >= 5.0) return 'bg-amber-200 text-gray-800 font-semibold';
+    
+    // APS 4.0-4.9: Light red (below passing)
+    if (aps >= 4.5) return 'bg-red-300 text-gray-800 font-semibold';
+    if (aps >= 4.0) return 'bg-red-200 text-gray-800 font-semibold';
+    
+    // APS below 4.0: Red (needs improvement)
+    if (aps >= 3.0) return 'bg-red-500 text-white font-semibold';
+    if (aps >= 2.0) return 'bg-red-600 text-white font-semibold';
+    return 'bg-red-700 text-white font-semibold';
+}
+
+// Update APS display for a specific exam column
+function updateAPS(examIndex) {
+    const apsElement = document.getElementById(`aps-${examIndex}`);
+    if (!apsElement) return;
+    
+    const aps = calculateAPS(examIndex);
+    
+    if (aps === null) {
+        apsElement.textContent = '-';
+        apsElement.className = 'px-3 py-2 rounded-lg font-semibold text-sm bg-gray-100 text-gray-600';
+    } else {
+        // Round to 1 decimal place
+        const roundedAPS = Math.round(aps * 10) / 10;
+        apsElement.textContent = roundedAPS.toFixed(1);
+        
+        // Remove all color classes
+        apsElement.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400', 
+                                   'bg-amber-300', 'bg-amber-200', 'bg-red-500', 'bg-red-600', 'bg-red-700', 
+                                   'bg-red-300', 'bg-red-200', 'bg-gray-100',
+                                   'text-white', 'text-gray-600', 'text-gray-800', 'font-semibold');
+        
+        // Add new color class
+        const colorClass = getAPSColorClass(aps);
+        const classes = colorClass.split(' ');
+        classes.forEach(cls => apsElement.classList.add(cls));
+    }
+}
+
+// Update all APS values
+function updateAllAPS() {
+    const maxExams = window.currentExamCount || 1;
+    for (let i = 0; i < maxExams; i++) {
+        updateAPS(i);
+    }
 }
 
 // Update grade color on input
@@ -13864,6 +14031,9 @@ function updateGradeColor(input, subject, examIndex) {
     // Add new color class
     const classes = colorClass.split(' ');
     classes.forEach(cls => input.classList.add(cls));
+    
+    // Update APS for this exam column in real-time
+    updateAPS(examIndex);
 }
 
 // Add new exam column
@@ -14018,6 +14188,9 @@ async function saveExamResults() {
             }
         });
         
+        // Update all APS values after saving
+        updateAllAPS();
+        
         showToast('Exam results saved successfully!', 'success');
         
         if (saveButton) {
@@ -14082,4 +14255,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
 
