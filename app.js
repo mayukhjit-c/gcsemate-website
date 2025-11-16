@@ -131,6 +131,15 @@ class ErrorHandler {
     setupGlobalErrorHandlers() {
         // Handle uncaught JavaScript errors
         window.addEventListener('error', (event) => {
+            // Suppress non-critical Cloudflare RUM 404 errors
+            if (event.filename && event.filename.includes('cdn-cgi/rum')) {
+                return; // Silently ignore Cloudflare RUM errors
+            }
+            // Suppress 404 errors for Cloudflare RUM endpoint
+            if (event.message && (event.message.includes('cdn-cgi/rum') || (event.message.includes('Failed to load resource') && event.message.includes('404')))) {
+                return; // Silently ignore
+            }
+            
             this.handleError({
                 type: 'JavaScript Error',
                 message: event.message,
@@ -158,6 +167,15 @@ class ErrorHandler {
         // Override Firebase error handling
         const originalConsoleError = console.error;
         console.error = (...args) => {
+            // Suppress non-critical Cloudflare RUM 404 errors
+            const firstArg = args[0];
+            if (firstArg && typeof firstArg === 'string') {
+                if (firstArg.includes('cdn-cgi/rum') || 
+                    (firstArg.includes('Failed to load resource') && firstArg.includes('404') && firstArg.includes('cdn-cgi'))) {
+                    return; // Silently ignore Cloudflare RUM 404 errors
+                }
+            }
+            
             if (args[0] && typeof args[0] === 'string' && args[0].includes('Firebase')) {
                 this.handleError({
                     type: 'Firebase Error',
@@ -3279,6 +3297,89 @@ function initializeAITutor() {
     aiTutorInitialized = true;
 }
 
+// Build system prompt for Puter.js (client-side fallback)
+function buildSystemPromptForPuter(userSubjects, subjectSummaries, subjectSpecifications, aiType = 'general') {
+    // If English Literature Edexcel, use a simplified version
+    if (aiType === 'english-literature-edexcel') {
+        return `You are GCSEMate AI, an intelligent tutoring assistant for GCSE English Literature (Edexcel). Help students with exam preparation, marking, and question generation.`;
+    }
+    
+    // Get current date for context
+    const currentDate = new Date();
+    const dateStr = currentDate.toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    let subjectsInfo = '';
+    if (userSubjects && userSubjects.length > 0) {
+        subjectsInfo = '\n\nYou have access to information about the following GCSE subjects:\n';
+        userSubjects.forEach(subject => {
+            const subjectLower = subject.toLowerCase();
+            const summary = subjectSummaries && subjectSummaries[subjectLower];
+            const specs = subjectSpecifications && subjectSpecifications[subjectLower];
+            
+            if (summary) {
+                subjectsInfo += `\n- ${subject}: ${summary.description || summary.summary}`;
+                if (specs) {
+                    const specEntries = Object.entries(specs);
+                    specEntries.forEach(([board, spec]) => {
+                        subjectsInfo += `\n  Exam Board: ${board} - ${spec.label}`;
+                    });
+                }
+            } else {
+                subjectsInfo += `\n- ${subject}`;
+            }
+        });
+    } else {
+        subjectsInfo = '\n\nYou have access to information about all GCSE subjects including: Biology, Chemistry, Physics, Mathematics, English Language (AQA), English Literature (Edexcel), History, Geography, Computing, German, Music, and Philosophy and Ethics.';
+    }
+    
+    return `You are GCSEMate AI, an intelligent tutoring assistant created by Mayukhjit Chakraborty for GCSE students in the UK.
+
+CURRENT DATE AND TIME: Today is ${dateStr}. Always use this date when answering questions about current events, exam dates, or time-sensitive information.
+
+YOUR CAPABILITIES AND LIMITATIONS:
+- You can answer questions and help students revise GCSE topics
+- You can provide explanations, step-by-step solutions, and study guidance
+- You can help with questions about the GCSEMate platform
+- You CANNOT generate, create, or display images
+- You CANNOT see or view images, pictures, or visual content
+- You CANNOT read or access external links or websites directly
+
+Your primary purpose is to help students with:
+1. GCSE academic topics across all subjects
+2. Questions about GCSEMate platform features and usage
+
+${subjectsInfo}
+
+About GCSEMate:
+GCSEMate is a GCSE revision platform created by Mayukhjit Chakraborty. The website URL is https://gcsemate.com.
+
+Key Features:
+- Subject Dashboard: Browse organized folders for different GCSE subjects
+- File Access: Access revision notes, past papers, and study materials
+- Video Library: Curated educational videos organized by subject
+- Blog: Regular blog posts with revision tips and study guides
+- AI Tutor: Interactive AI-powered tutoring (this feature) - available for Pro users
+- Calendar: Track study sessions and monitor learning progress
+
+Pricing:
+- Most features are free
+- Pro plan: £1.20 for your first month, then £1.00/month after (including VAT)
+- Pro plan includes additional features including AI Tutor access
+
+Response Guidelines:
+- Use clear, educational, and encouraging language appropriate for GCSE students
+- Format responses using markdown: use **bold** for emphasis, *italics* for terms
+- Break down complex topics into digestible explanations
+- Provide step-by-step solutions when appropriate
+- Be encouraging and supportive
+- If you don't know something, admit it rather than guessing`;
+}
+
 async function sendAIMessage(retryMessage = null) {
     const chatForm = document.getElementById('ai-chat-form');
     const chatInput = document.getElementById('ai-chat-input');
@@ -3467,16 +3568,103 @@ async function sendAIMessage(retryMessage = null) {
             lastLoadingId = null;
         }
         
+        // Check if it was aborted
+        if (error.name === 'AbortError') {
+            stopButton.classList.add('hidden');
+            sendButton.classList.remove('hidden');
+            currentAIRequest = null;
+            showToast('Request cancelled', 'info');
+            return;
+        }
+        
+        // Check if error indicates all backend services failed - try Puter.js as fallback
+        const errorMessageText = error.message || '';
+        const isServiceUnavailable = errorMessageText.includes('AI service unavailable') || 
+                                     errorMessageText.includes('All AI services') ||
+                                     errorMessageText.includes('unavailable or have reached their limits');
+        
+        if (isServiceUnavailable && typeof puter !== 'undefined' && puter && puter.ai && puter.ai.chat) {
+            // Try Puter.js as client-side fallback
+            try {
+                // Build system prompt from conversation context
+                const systemPrompt = buildSystemPromptForPuter(subjectsToSend, subjectSummaries, subjectSpecifications, document.getElementById('ai-subject-selector')?.value || 'general');
+                
+                // Build conversation context for Puter
+                // Puter.js format: include system prompt in the message or as context
+                let puterPrompt = message;
+                
+                // Include conversation history if available
+                if (aiConversationHistory && aiConversationHistory.length > 0) {
+                    // Build context from recent conversation
+                    const recentHistory = aiConversationHistory.slice(-6); // Last 3 exchanges
+                    let contextText = '';
+                    recentHistory.forEach(msg => {
+                        if (msg.role === 'user') {
+                            contextText += `User: ${msg.content}\n`;
+                        } else if (msg.role === 'assistant') {
+                            contextText += `Assistant: ${msg.content}\n`;
+                        }
+                    });
+                    if (contextText) {
+                        puterPrompt = `${contextText}User: ${message}`;
+                    }
+                }
+                
+                // Call Puter.js - try with system prompt in options first
+                let puterResponse;
+                try {
+                    // Try with system parameter
+                    puterResponse = await puter.ai.chat(puterPrompt, { 
+                        model: 'gpt-5-chat-latest',
+                        system: systemPrompt,
+                        temperature: 0.7,
+                        max_tokens: 2048
+                    });
+                } catch (systemError) {
+                    // If system parameter doesn't work, prepend system prompt to message
+                    puterResponse = await puter.ai.chat(`${systemPrompt}\n\n${puterPrompt}`, { 
+                        model: 'gpt-5-chat-latest',
+                        temperature: 0.7,
+                        max_tokens: 2048
+                    });
+                }
+                
+                // Filter out em dashes and emojis from response
+                const cleanedResponse = cleanAIResponse(puterResponse);
+                
+                // Add AI response with formatting
+                const aiMessageId = addChatMessage('assistant', cleanedResponse, false, true);
+                lastAIMessageId = aiMessageId;
+                
+                // Update conversation history
+                aiConversationHistory.push(
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: cleanedResponse }
+                );
+                
+                // Keep only last 10 messages for context
+                if (aiConversationHistory.length > 20) {
+                    aiConversationHistory = aiConversationHistory.slice(-20);
+                }
+                
+                // Hide stop button, show send button
+                stopButton.classList.add('hidden');
+                sendButton.classList.remove('hidden');
+                currentAIRequest = null;
+                
+                // Show success message
+                showToast('Response received via Puter.js (User-Pays model)', 'success');
+                return;
+            } catch (puterError) {
+                console.error('Puter.js fallback error:', puterError);
+                // Fall through to show error
+            }
+        }
+        
         // Hide stop button, show send button
         stopButton.classList.add('hidden');
         sendButton.classList.remove('hidden');
         currentAIRequest = null;
-        
-        // Check if it was aborted
-        if (error.name === 'AbortError') {
-            showToast('Request cancelled', 'info');
-            return;
-        }
         
         // Show error with retry option (pass the message that failed)
         addChatMessage('assistant', '', false, false, error.message || 'Failed to send message. Please try again.', message);
@@ -5064,7 +5252,7 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
                     <div class="bg-green-600 text-white p-4 rounded-lg mb-6">
                         <p class="text-sm font-semibold mb-1">Renewal Pricing</p>
                         <p class="text-2xl font-bold">£1.00/month</p>
-                        <p class="text-xs opacity-90">Standard monthly rate (excluding VAT)</p>
+                        <p class="text-xs opacity-90">Standard monthly rate (including VAT)</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
                         <button onclick="document.getElementById('subscription-renewal-modal').classList.add('hidden')" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button>
@@ -5580,6 +5768,11 @@ window.applyProfilePictureCrop = async function() {
                     const errorData = await response.json();
                     errorMessage = errorData.error?.message || errorData.message || errorMessage;
                     console.error('Cloudinary upload error:', errorData);
+                    
+                    // Provide specific error for transformation/eager parameter issues
+                    if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
+                        errorMessage = 'Image upload configuration error. Please contact support.';
+                    }
                 } catch (e) {
                     // If JSON parsing fails, use status text
                     console.error('Failed to parse Cloudinary error response:', e);
@@ -11134,8 +11327,22 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
         );
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error?.message || `Upload failed: ${response.statusText}`);
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { error: { message: `Upload failed: ${response.statusText}` } };
+            }
+            
+            // Extract error message
+            const errorMessage = errorData?.error?.message || errorData?.message || `Upload failed: ${response.statusText}`;
+            
+            // Provide specific error for transformation/eager parameter issues
+            if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
+                throw new Error('Image upload configuration error. Please contact support.');
+            }
+            
+            throw new Error(errorMessage);
         }
         
         const data = await response.json();

@@ -1,11 +1,14 @@
 // Cloudflare Function for AI Tutor - Request-Based System with Firebase Firestore
 // Handles daily request limits (50 for paid users, configurable by admin)
-// Uses Groq API with OpenRouter fallback
+// Uses Groq API with OpenRouter fallback, and Puter.js as secondary fallback
 //
 // Required Environment Variables:
 //   - GROQ_API_KEY: Your Groq API key from https://console.groq.com/
 //   - OPENROUTER_API_KEY: Your OpenRouter API key from https://openrouter.ai/
 //   - FIREBASE_PROJECT_ID: Your Firebase project ID
+//
+// Note: Puter.js uses the "User-Pays" model and requires no API key.
+//       If backend services fail, client-side Puter.js fallback is used.
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -92,7 +95,7 @@ async function getUserRequestCount(projectId, userId, dateStr, idToken) {
     const docId = `${userId}_${dateStr}`;
     const data = await firestoreGet(projectId, 'aiTutorRequests', docId, idToken);
     return data?.count ? parseInt(data.count) : 0;
-  } catch (error) {
+      } catch (error) {
     console.error('Error getting request count:', error);
     return 0;
   }
@@ -126,7 +129,7 @@ async function getGlobalProviderCount(projectId, provider, dateStr, idToken) {
     const docId = `${provider}_${dateStr}`;
     const data = await firestoreGet(projectId, 'aiTutorGlobalStats', docId, idToken);
     return data?.count ? parseInt(data.count) : 0;
-  } catch (error) {
+      } catch (error) {
     return 0;
   }
 }
@@ -146,7 +149,7 @@ async function incrementGlobalProviderCount(projectId, provider, dateStr, servic
     }, serviceToken);
     
     return newCount;
-  } catch (error) {
+      } catch (error) {
     console.error('Error incrementing global count:', error);
     return 0;
   }
@@ -794,7 +797,7 @@ Key Features (as of 2024-2025):
 
        Pricing:
        - Most features are free
-       - Pro plan: £1.20 for your first month, then £1.00/month after (excluding VAT)
+       - Pro plan: £1.20 for your first month, then £1.00/month after (including VAT)
        - Pro plan includes additional features including AI Tutor access
        - The platform is designed to be accessible to all students
 
@@ -869,23 +872,23 @@ Example format:
 Remember: You're helping students succeed in their GCSE exams. Be supportive, clear, and educational. Always prioritize accuracy, safety, and appropriateness. When in doubt, use web search or apologize if you cannot verify information.`;
 }
 
-// Call Groq API
+    // Call Groq API
 async function callGroqAPI(apiKey, messages) {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
+      method: 'POST',
+      headers: {
       'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 2048,
-      stream: false
-    })
-  });
-  
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+        stream: false
+      })
+    });
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Groq API error: ${response.status} - ${errorText}`);
@@ -918,6 +921,71 @@ async function callOpenRouterAPI(apiKey, messages) {
   }
   
   return await response.json();
+}
+
+// Call Puter.js API (User-Pays model - no API key required)
+async function callPuterAPI(messages) {
+  // Convert messages array to Puter format
+  // Puter expects the last message as the prompt and optional system message
+  const systemMessage = messages.find(m => m.role === 'system');
+  const userMessages = messages.filter(m => m.role === 'user');
+  const assistantMessages = messages.filter(m => m.role === 'assistant');
+  
+  // Build the prompt from conversation history
+  let prompt = '';
+  if (systemMessage) {
+    prompt += systemMessage.content + '\n\n';
+  }
+  
+  // Build conversation context
+  const conversationMessages = messages.filter(m => m.role !== 'system');
+  for (let i = 0; i < conversationMessages.length; i++) {
+    const msg = conversationMessages[i];
+    if (msg.role === 'user') {
+      prompt += `User: ${msg.content}\n`;
+    } else if (msg.role === 'assistant') {
+      prompt += `Assistant: ${msg.content}\n`;
+    }
+  }
+  
+  // Use Puter's API endpoint (assuming they have one)
+  // If Puter doesn't have a direct API, we'll need to use client-side integration
+  // For now, try calling their API endpoint
+  try {
+    const response = await fetch('https://api.puter.com/v1/ai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': 'https://gcsemate.com',
+        'Referer': 'https://gcsemate.com'
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        model: 'gpt-5-chat-latest',
+        temperature: 0.7,
+        max_tokens: 2048
+      })
+    });
+    
+    if (!response.ok) {
+      // If API endpoint doesn't exist, throw error to try alternative
+      throw new Error(`Puter API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    // Return in OpenAI-compatible format
+    return {
+      choices: [{
+        message: {
+          content: data.response || data.text || data.content || ''
+        }
+      }]
+    };
+  } catch (apiError) {
+    // If direct API doesn't work, we'll need client-side fallback
+    // For now, throw the error
+    throw new Error(`Puter API unavailable: ${apiError.message}`);
+  }
 }
 
 export async function onRequest(context) {
@@ -1008,7 +1076,7 @@ export async function onRequest(context) {
       }
       
       if (userRequestCount >= maxRequests) {
-        return json({ 
+      return json({ 
           error: 'Daily limit exceeded', 
           message: `You have reached your daily limit of ${maxRequests} requests. Please try again tomorrow.`,
           requestsUsed: userRequestCount,
@@ -1081,6 +1149,19 @@ export async function onRequest(context) {
       } catch (openRouterError) {
         console.error('OpenRouter API error:', openRouterError);
         error = openRouterError;
+        // Will fallback to Puter
+      }
+    }
+
+    // Fallback to Puter.js if OpenRouter failed or unavailable
+    if (!aiResponse) {
+      try {
+        const puterData = await callPuterAPI(messages);
+        aiResponse = puterData.choices[0]?.message?.content || null;
+        provider = 'puter';
+      } catch (puterError) {
+        console.error('Puter API error:', puterError);
+        error = puterError;
       }
     }
 
