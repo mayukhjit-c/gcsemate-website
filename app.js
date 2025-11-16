@@ -163,6 +163,25 @@ class ErrorHandler {
                 return; // Silently ignore ad blocker blocks
             }
             
+            // Suppress Puter.js whoami 401 errors (expected - User-Pays model)
+            if (message.includes('api.puter.com/whoami') || 
+                (message.includes('401') && message.includes('puter'))) {
+                return; // Silently ignore
+            }
+            
+            // Suppress YouTube thumbnail 404 errors (not critical)
+            if (message.includes('ytimg.com') || 
+                message.includes('hqdefault.jpg') ||
+                message.includes('videoseries')) {
+                return; // Silently ignore
+            }
+            
+            // Suppress YouTube Error 153 (video player configuration)
+            if (message.includes('Error 153') || 
+                message.includes('Video player configuration error')) {
+                return; // Silently ignore - handled by fallback UI
+            }
+            
             // Suppress 404 errors for analytics endpoints
             if (message.includes('Failed to load resource') && 
                 (message.includes('404') || message.includes('ERR_BLOCKED_BY_CLIENT'))) {
@@ -204,7 +223,11 @@ class ErrorHandler {
             if (message.includes('ERR_BLOCKED_BY_CLIENT') ||
                 message.includes('pagead2') ||
                 message.includes('cdn-cgi') ||
-                message.includes('zaraz')) {
+                message.includes('zaraz') ||
+                message.includes('api.puter.com/whoami') ||
+                message.includes('ytimg.com') ||
+                message.includes('Error 153') ||
+                message.includes('Video player configuration')) {
                 return; // Silently ignore
             }
             
@@ -269,6 +292,25 @@ class ErrorHandler {
                     errorStr.includes('transformation parameter') ||
                     errorStr.includes('not allowed when using unsigned upload')) {
                     return; // Silently ignore - error is already shown to user
+                }
+                
+                // Suppress Puter.js whoami 401 errors (expected - User-Pays model)
+                if (errorStr.includes('api.puter.com/whoami') || 
+                    errorStr.includes('puter') && errorStr.includes('401')) {
+                    return; // Silently ignore - Puter.js uses User-Pays model
+                }
+                
+                // Suppress YouTube thumbnail 404 errors (not critical)
+                if (errorStr.includes('ytimg.com') || 
+                    errorStr.includes('hqdefault.jpg') ||
+                    errorStr.includes('videoseries')) {
+                    return; // Silently ignore - thumbnail errors are not critical
+                }
+                
+                // Suppress YouTube Error 153 (video player configuration)
+                if (errorStr.includes('error 153') || 
+                    errorStr.includes('video player configuration')) {
+                    return; // Silently ignore - handled by fallback UI
                 }
                 
                 // Suppress 404 errors for analytics endpoints
@@ -9782,6 +9824,7 @@ function getVideoEmbed(url) {
         if (data && data.type) {
             const sep = data.embedUrl.includes('?') ? '&' : '?';
             // Build embed URL with safe parameters (removed problematic params that cause Error 153)
+            // Removed enablejsapi and origin parameters to prevent Error 153
             const finalUrl = `${data.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1`;
             const watchUrl = escapeHTML(data.watchUrl || url);
             const uniqueId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -10003,7 +10046,8 @@ function showPlaylistViewer(playlist) {
     }
     
     const playlistUrl = playlist.url || '';
-    const embedUrl = playlistId ? `https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}` : '';
+    // Remove enablejsapi and origin to prevent Error 153 - these can cause issues with unsigned embeds
+    const embedUrl = playlistId ? `https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1` : '';
     
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
@@ -10071,7 +10115,7 @@ function showPlaylistViewer(playlist) {
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
     
-    // Handle iframe load
+    // Handle iframe load and errors
     if (playlistId && embedUrl) {
         const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
         const loadingDiv = document.getElementById(`playlist-loading-${playlistId}`);
@@ -10084,16 +10128,57 @@ function showPlaylistViewer(playlist) {
                 if (fallbackDiv) fallbackDiv.classList.remove('hidden');
             }, 10000); // 10 second timeout
             
+            // Listen for YouTube postMessage errors (Error 153)
+            const messageListener = (event) => {
+                // Only listen to messages from YouTube
+                if (event.origin !== 'https://www.youtube.com') return;
+                
+                // Check for error messages
+                if (event.data && typeof event.data === 'string') {
+                    if (event.data.includes('error') || event.data.includes('153')) {
+                        clearTimeout(loadTimeout);
+                        if (loadingDiv) loadingDiv.classList.add('hidden');
+                        if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                        window.removeEventListener('message', messageListener);
+                    }
+                }
+            };
+            window.addEventListener('message', messageListener);
+            
             iframe.onload = function() {
                 clearTimeout(loadTimeout);
-                if (loadingDiv) loadingDiv.classList.add('hidden');
-                if (fallbackDiv) fallbackDiv.classList.add('hidden');
+                // Check if iframe actually loaded (not Error 153)
+                setTimeout(() => {
+                    try {
+                        // Try to access iframe content - if it fails, show fallback
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (iframeDoc && iframeDoc.body) {
+                            const bodyText = iframeDoc.body.textContent || '';
+                            if (bodyText.includes('Error 153') || bodyText.includes('Video player configuration error')) {
+                                if (loadingDiv) loadingDiv.classList.add('hidden');
+                                if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                            } else {
+                                if (loadingDiv) loadingDiv.classList.add('hidden');
+                                if (fallbackDiv) fallbackDiv.classList.add('hidden');
+                            }
+                        } else {
+                            // Iframe loaded successfully
+                            if (loadingDiv) loadingDiv.classList.add('hidden');
+                            if (fallbackDiv) fallbackDiv.classList.add('hidden');
+                        }
+                    } catch (e) {
+                        // Cross-origin - assume it loaded successfully
+                        if (loadingDiv) loadingDiv.classList.add('hidden');
+                        if (fallbackDiv) fallbackDiv.classList.add('hidden');
+                    }
+                }, 2000); // Wait 2 seconds to check for errors
             };
             
             iframe.onerror = function() {
                 clearTimeout(loadTimeout);
                 if (loadingDiv) loadingDiv.classList.add('hidden');
                 if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                window.removeEventListener('message', messageListener);
             };
         }
     }
