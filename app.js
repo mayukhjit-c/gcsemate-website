@@ -11027,8 +11027,18 @@ function setupBlogEditorEnhancements() {
         editor.dataset.imageResizeSetup = 'true';
         editor.addEventListener('click', (e) => {
             const img = e.target.closest('img.blog-inline-image');
+            const handle = e.target.closest('.resize-handle');
+            const deleteBtn = e.target.closest('.image-delete-btn');
+            const wrapper = e.target.closest('.image-resize-wrapper');
+            
+            // Don't hide if clicking on resize handles, delete button, or wrapper
+            if (handle || deleteBtn || wrapper) {
+                return;
+            }
+            
             if (img) {
                 e.preventDefault();
+                e.stopPropagation();
                 showImageResizeControls(img);
             } else {
                 hideImageResizeControls();
@@ -11046,46 +11056,280 @@ function showImageResizeControls(img) {
     
     currentResizingImage = img;
     
-    // Create resize controls
-    const controls = document.createElement('div');
-    controls.className = 'image-resize-controls';
-    controls.innerHTML = `
-        <div class="bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center gap-3 text-sm">
-            <span>Resize:</span>
-            <button onclick="resizeImage(25)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">25%</button>
-            <button onclick="resizeImage(50)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">50%</button>
-            <button onclick="resizeImage(75)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">75%</button>
-            <button onclick="resizeImage(100)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">100%</button>
-            <button onclick="resizeImage(150)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">150%</button>
-            <button onclick="resizeImage(200)" class="px-2 py-1 bg-white/20 rounded hover:bg-white/30">200%</button>
-            <div class="w-px h-4 bg-white/30"></div>
-            <button onclick="removeImage()" class="px-2 py-1 bg-red-500 rounded hover:bg-red-600">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `;
+    // Check if image is already wrapped
+    let wrapper = img.parentNode;
+    if (!wrapper.classList.contains('image-resize-wrapper')) {
+        // Create wrapper for resize handles
+        wrapper = document.createElement('div');
+        wrapper.className = 'image-resize-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.maxWidth = '100%';
+        
+        // Wrap the image
+        img.parentNode.insertBefore(wrapper, img);
+        wrapper.appendChild(img);
+    } else {
+        // Remove existing handles if any
+        const existingHandles = wrapper.querySelectorAll('.resize-handle, .image-delete-btn');
+        existingHandles.forEach(handle => handle.remove());
+    }
     
-    // Position controls above the image
-    const rect = img.getBoundingClientRect();
-    const editor = document.getElementById('blog-post-content');
-    const editorRect = editor.getBoundingClientRect();
+    // Ensure image has proper styling
+    img.style.display = 'block';
+    img.style.position = 'relative';
     
-    controls.style.position = 'absolute';
-    controls.style.top = `${rect.top - editorRect.top - 50}px`;
-    controls.style.left = `${rect.left - editorRect.left}px`;
-    controls.style.zIndex = '1000';
+    // Create resize handles (8 handles: 4 corners + 4 edges)
+    const handles = [
+        { position: 'nw', cursor: 'nw-resize' }, // Top-left
+        { position: 'n', cursor: 'n-resize' },  // Top
+        { position: 'ne', cursor: 'ne-resize' }, // Top-right
+        { position: 'e', cursor: 'e-resize' },  // Right
+        { position: 'se', cursor: 'se-resize' }, // Bottom-right
+        { position: 's', cursor: 's-resize' },  // Bottom
+        { position: 'sw', cursor: 'sw-resize' }, // Bottom-left
+        { position: 'w', cursor: 'w-resize' }   // Left
+    ];
     
-    editor.style.position = 'relative';
-    editor.appendChild(controls);
-    resizeControls = controls;
+    handles.forEach(handle => {
+        const handleEl = document.createElement('div');
+        handleEl.className = `resize-handle resize-handle-${handle.position}`;
+        handleEl.style.position = 'absolute';
+        handleEl.style.width = '12px';
+        handleEl.style.height = '12px';
+        handleEl.style.backgroundColor = '#3b82f6';
+        handleEl.style.border = '2px solid white';
+        handleEl.style.borderRadius = '50%';
+        handleEl.style.cursor = handle.cursor;
+        handleEl.style.zIndex = '1001';
+        handleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        handleEl.dataset.position = handle.position;
+        
+        // Position the handle
+        const positions = {
+            'nw': { top: '-6px', left: '-6px' },
+            'n': { top: '-6px', left: '50%', transform: 'translateX(-50%)' },
+            'ne': { top: '-6px', right: '-6px' },
+            'e': { top: '50%', right: '-6px', transform: 'translateY(-50%)' },
+            'se': { bottom: '-6px', right: '-6px' },
+            's': { bottom: '-6px', left: '50%', transform: 'translateX(-50%)' },
+            'sw': { bottom: '-6px', left: '-6px' },
+            'w': { top: '50%', left: '-6px', transform: 'translateY(-50%)' }
+        };
+        
+        Object.assign(handleEl.style, positions[handle.position]);
+        
+        // Add drag functionality
+        handleEl.addEventListener('mousedown', (e) => startResize(e, handle.position, img, wrapper));
+        
+        wrapper.appendChild(handleEl);
+    });
+    
+    // Add delete button
+    const deleteBtn = document.createElement('div');
+    deleteBtn.className = 'image-delete-btn';
+    deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+    deleteBtn.style.position = 'absolute';
+    deleteBtn.style.top = '-8px';
+    deleteBtn.style.right = '-8px';
+    deleteBtn.style.width = '24px';
+    deleteBtn.style.height = '24px';
+    deleteBtn.style.backgroundColor = '#ef4444';
+    deleteBtn.style.color = 'white';
+    deleteBtn.style.borderRadius = '50%';
+    deleteBtn.style.display = 'flex';
+    deleteBtn.style.alignItems = 'center';
+    deleteBtn.style.justifyContent = 'center';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.style.zIndex = '1002';
+    deleteBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeImage();
+    };
+    wrapper.appendChild(deleteBtn);
+    
+    resizeControls = wrapper;
+    
+    // Highlight the image
+    img.style.outline = '2px solid #3b82f6';
+    img.style.outlineOffset = '2px';
 }
 
 function hideImageResizeControls() {
     if (resizeControls) {
-        resizeControls.remove();
+        // Remove all handles and delete button
+        const handles = resizeControls.querySelectorAll('.resize-handle, .image-delete-btn');
+        handles.forEach(handle => handle.remove());
+        
+        // Unwrap the image if it's wrapped in a resize wrapper
+        const img = resizeControls.querySelector('img');
+        if (img && resizeControls.classList.contains('image-resize-wrapper')) {
+            const parent = resizeControls.parentNode;
+            if (parent) {
+                parent.insertBefore(img, resizeControls);
+                resizeControls.remove();
+            }
+        }
+        
         resizeControls = null;
     }
-    currentResizingImage = null;
+    if (currentResizingImage) {
+        currentResizingImage.style.outline = '';
+        currentResizingImage.style.outlineOffset = '';
+        currentResizingImage = null;
+    }
+}
+
+// Drag-to-resize functionality
+let isResizing = false;
+let resizeStartX = 0;
+let resizeStartY = 0;
+let resizeStartWidth = 0;
+let resizeStartHeight = 0;
+let resizeAspectRatio = 1;
+let resizeDirection = '';
+
+function startResize(e, direction, img, wrapper) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    isResizing = true;
+    resizeDirection = direction;
+    currentResizingImage = img;
+    
+    // Get initial dimensions
+    const rect = img.getBoundingClientRect();
+    resizeStartWidth = rect.width;
+    resizeStartHeight = rect.height;
+    resizeAspectRatio = resizeStartWidth / resizeStartHeight;
+    
+    // Get initial mouse position
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+    
+    // Store original dimensions if not stored
+    if (!img.dataset.originalWidth) {
+        img.dataset.originalWidth = img.naturalWidth || resizeStartWidth;
+        img.dataset.originalHeight = img.naturalHeight || resizeStartHeight;
+    }
+    
+    // Add global event listeners
+    document.addEventListener('mousemove', handleResize);
+    document.addEventListener('mouseup', stopResize);
+    
+    // Prevent text selection during resize
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = getResizeCursor(direction);
+}
+
+function handleResize(e) {
+    if (!isResizing || !currentResizingImage) return;
+    
+    const deltaX = e.clientX - resizeStartX;
+    const deltaY = e.clientY - resizeStartY;
+    
+    let newWidth = resizeStartWidth;
+    let newHeight = resizeStartHeight;
+    
+    // Calculate new dimensions based on resize direction
+    const isCorner = ['nw', 'ne', 'se', 'sw'].includes(resizeDirection);
+    const maintainAspectRatio = isCorner; // Maintain aspect ratio for corners
+    
+    switch (resizeDirection) {
+        case 'se': // Bottom-right corner
+            newWidth = resizeStartWidth + deltaX;
+            if (maintainAspectRatio) {
+                newHeight = newWidth / resizeAspectRatio;
+            } else {
+                newHeight = resizeStartHeight + deltaY;
+            }
+            break;
+        case 'sw': // Bottom-left corner
+            newWidth = resizeStartWidth - deltaX;
+            if (maintainAspectRatio) {
+                newHeight = newWidth / resizeAspectRatio;
+            } else {
+                newHeight = resizeStartHeight + deltaY;
+            }
+            break;
+        case 'ne': // Top-right corner
+            newWidth = resizeStartWidth + deltaX;
+            if (maintainAspectRatio) {
+                newHeight = newWidth / resizeAspectRatio;
+            } else {
+                newHeight = resizeStartHeight - deltaY;
+            }
+            break;
+        case 'nw': // Top-left corner
+            newWidth = resizeStartWidth - deltaX;
+            if (maintainAspectRatio) {
+                newHeight = newWidth / resizeAspectRatio;
+            } else {
+                newHeight = resizeStartHeight - deltaY;
+            }
+            break;
+        case 'e': // Right edge
+            newWidth = resizeStartWidth + deltaX;
+            break;
+        case 'w': // Left edge
+            newWidth = resizeStartWidth - deltaX;
+            break;
+        case 's': // Bottom edge
+            newHeight = resizeStartHeight + deltaY;
+            break;
+        case 'n': // Top edge
+            newHeight = resizeStartHeight - deltaY;
+            break;
+    }
+    
+    // Apply minimum size constraints
+    const minSize = 50;
+    newWidth = Math.max(minSize, newWidth);
+    newHeight = Math.max(minSize, newHeight);
+    
+    // Apply maximum size constraints (max 100% of container)
+    const editor = document.getElementById('blog-post-content');
+    if (editor) {
+        const maxWidth = editor.offsetWidth;
+        newWidth = Math.min(newWidth, maxWidth);
+        if (maintainAspectRatio) {
+            newHeight = newWidth / resizeAspectRatio;
+        }
+    }
+    
+    // Apply new dimensions
+    currentResizingImage.style.width = `${newWidth}px`;
+    if (maintainAspectRatio || resizeDirection === 'e' || resizeDirection === 'w') {
+        currentResizingImage.style.height = 'auto';
+    } else {
+        currentResizingImage.style.height = `${newHeight}px`;
+    }
+    currentResizingImage.style.maxWidth = '100%';
+}
+
+function stopResize() {
+    if (isResizing) {
+        isResizing = false;
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', stopResize);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    }
+}
+
+function getResizeCursor(direction) {
+    const cursors = {
+        'nw': 'nw-resize',
+        'n': 'n-resize',
+        'ne': 'ne-resize',
+        'e': 'e-resize',
+        'se': 'se-resize',
+        's': 's-resize',
+        'sw': 'sw-resize',
+        'w': 'w-resize'
+    };
+    return cursors[direction] || 'default';
 }
 
 window.resizeImage = function(percentage) {
@@ -11122,7 +11366,14 @@ window.removeImage = function() {
         deleteCloudinaryImage(publicId);
     }
     
-    currentResizingImage.remove();
+    // Remove wrapper if it exists
+    const wrapper = currentResizingImage.closest('.image-resize-wrapper');
+    if (wrapper) {
+        wrapper.remove();
+    } else {
+        currentResizingImage.remove();
+    }
+    
     hideImageResizeControls();
     showToast('Image removed', 'success');
 };
@@ -11151,7 +11402,7 @@ async function insertBlogImageFromFile(file, source = 'upload') {
         const altText = escapeHTML(file.name || 'Embedded image');
         // Store public_id as data attribute for cleanup tracking
         const publicId = uploadResult.publicId ? ` data-public-id="${escapeHTML(uploadResult.publicId)}"` : '';
-        const imageHTML = `<img src="${downloadURL}" alt="${altText}" class="blog-inline-image" loading="lazy" decoding="async" style="cursor: pointer; max-width: 100%; height: auto;"${publicId}>`;
+        const imageHTML = `<img src="${downloadURL}" alt="${altText}" class="blog-inline-image" loading="lazy" decoding="async" style="cursor: pointer; max-width: 100%; height: auto; position: relative; display: inline-block;"${publicId}>`;
         if (placeholder) {
             placeholder.outerHTML = imageHTML;
         } else {

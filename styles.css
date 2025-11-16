@@ -2007,11 +2007,64 @@ nav a {
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
 }
 
-.blog-inline-image:hover {
+.blog-inline-image:hover:not(:has(+ .resize-handle)) {
     transform: scale(1.02);
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.image-resize-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 0.75rem 0;
+}
+
+.image-resize-wrapper .blog-inline-image {
+    margin: 0;
+    display: block;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 1001;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.resize-handle:hover {
+    transform: scale(1.2);
+    background-color: #2563eb;
+}
+
+.image-delete-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1002;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.image-delete-btn:hover {
+    transform: scale(1.1);
+    background-color: #dc2626;
 }
 
 .image-resize-controls {
