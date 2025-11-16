@@ -9221,7 +9221,7 @@ async function renderDashboard() {
             
             // Build DOM nodes instead of innerHTML to avoid any async repaint issue
             const wrapper = document.createElement('div');
-            wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full h-full';
+            wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full flex-grow';
             const iconHost = document.createElement('div');
             iconHost.className = 'flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 mb-2';
             iconHost.innerHTML = `${iconSvg}`;
@@ -9236,16 +9236,22 @@ async function renderDashboard() {
                 badgeWrap.innerHTML = badge;
                 wrapper.appendChild(badgeWrap.firstChild);
             }
-            // Add summary text with arrow
+            // Add summary text with arrow - allow wrapping for longer content
             const summaryContainer = document.createElement('div');
-            summaryContainer.className = 'text-xs sm:text-sm text-gray-600 mt-2 px-3 text-center w-full flex items-center justify-center gap-1.5';
+            summaryContainer.className = 'text-xs sm:text-sm text-gray-600 mt-2 px-3 text-center w-full flex items-start justify-center gap-1.5';
             const summary = document.createElement('p');
-            summary.className = 'leading-relaxed overflow-hidden text-ellipsis whitespace-nowrap';
-            summary.style.maxWidth = 'calc(100% - 24px)';
+            // Allow text to wrap for longer subjects like Maths and English (max 2 lines)
+            summary.className = 'leading-relaxed';
+            summary.style.display = '-webkit-box';
+            summary.style.webkitLineClamp = '2';
+            summary.style.webkitBoxOrient = 'vertical';
+            summary.style.overflow = 'hidden';
+            summary.style.textOverflow = 'ellipsis';
+            summary.style.maxHeight = '2.5em';
             summary.textContent = subjectData.summary;
             summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
             const arrowIcon = document.createElement('i');
-            arrowIcon.className = 'fas fa-chevron-right text-xs text-gray-400 flex-shrink-0';
+            arrowIcon.className = 'fas fa-chevron-right text-xs text-gray-400 flex-shrink-0 mt-0.5';
             summaryContainer.appendChild(summary);
             summaryContainer.appendChild(arrowIcon);
             wrapper.appendChild(summaryContainer);
@@ -9282,8 +9288,9 @@ async function renderDashboard() {
             card.appendChild(wrapper);
             if (subjectId) {
                 // Set consistent height constraints to maintain grid alignment
-                // Max height accommodates cards with up to 2 specification buttons
-                card.className = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise min-h-[220px] max-h-[300px] overflow-hidden';
+                // Increased max height to accommodate longer content like Maths and English cards
+                // Allow content to grow naturally but cap at reasonable max height
+                card.className = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise min-h-[220px] max-h-[400px] overflow-hidden';
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -9793,21 +9800,6 @@ function renderVideosPage(playlists) {
         const card = document.createElement('div');
         card.className = 'relative bg-white/70 border border-gray-200/60 backdrop-blur-lg rounded-xl shadow-lg p-5 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl';
         const playlistUrl = playlist.url || '';
-        // Direct click opens YouTube playlist in new tab
-        if (playlistUrl) {
-            card.onclick = () => {
-                if (currentUser.tier === 'free') {
-                    document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
-                    document.getElementById('upgrade-modal').style.display = 'flex';
-                    return;
-                }
-                window.open(playlistUrl, '_blank', 'noopener,noreferrer');
-            };
-        } else {
-            card.onclick = () => {
-                showToast('Playlist URL not available', 'error');
-            };
-        }
         card.innerHTML = `
             <div class="flex-grow flex flex-col justify-center items-center text-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -9835,6 +9827,23 @@ function renderVideosPage(playlists) {
                 </button>
             </div>` : ''}
         `;
+        // Add click handler after innerHTML to ensure it works
+        card.addEventListener('click', (e) => {
+            // Don't trigger if clicking on buttons or admin controls
+            if (e.target.closest('button') || e.target.closest('.absolute')) {
+                return;
+            }
+            if (currentUser.tier === 'free') {
+                document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
+                document.getElementById('upgrade-modal').style.display = 'flex';
+                return;
+            }
+            if (playlistUrl) {
+                window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+            } else {
+                showToast('Playlist URL not available', 'error');
+            }
+        });
         grid.appendChild(card);
     });
 }
@@ -14271,7 +14280,8 @@ const lazyLoadObserver = new IntersectionObserver((entries) => {
 
 // Preload critical resources
 function preloadCriticalResources() {
-    const criticalImages = ['gcsemate new.png', 'gcsemate favicon.png'];
+    // Only preload the main logo, not the favicon (favicons are loaded automatically)
+    const criticalImages = ['gcsemate new.png'];
     criticalImages.forEach(src => {
         const link = document.createElement('link');
         link.rel = 'preload';
