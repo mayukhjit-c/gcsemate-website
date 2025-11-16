@@ -298,9 +298,9 @@
                     const firstArg = args[0];
                     if (firstArg && typeof firstArg === 'string') {
                         const message = firstArg.toLowerCase();
-                        // Check for Tailwind CDN production warning patterns
-                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss')) && 
-                            (message.includes('production') || message.includes('not recommended'))) {
+                        // Check for Tailwind CDN production warning patterns (catch all variations)
+                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss') || message.includes('tailwind')) && 
+                            (message.includes('production') || message.includes('not recommended') || message.includes('should not be used') || message.includes('install'))) {
                             return; // Suppress only this specific warning
                         }
                     }
@@ -308,6 +308,9 @@
                     originalConsoleWarn.apply(console, args);
                 };
             }
+            
+            // Apply the warning wrapper before Tailwind loads
+            console.warn = createWarnWrapper();
             
             // Load Tailwind CDN immediately as fallback
             // This ensures styles work even if tailwind.css is not built yet

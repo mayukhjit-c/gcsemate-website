@@ -9127,6 +9127,39 @@ async function clearAnnouncement() {
         showToast("Could not clear announcement.", 'error');
     }
 }
+
+// Dismiss announcement for current session (stored in localStorage)
+// Exposed globally for onclick handlers
+function dismissAnnouncement() {
+    const announcementBanner = document.getElementById('site-announcement-banner');
+    if (announcementBanner) {
+        // Store the current message before hiding
+        const messageElement = announcementBanner.querySelector('span');
+        if (messageElement) {
+            const message = messageElement.textContent.trim();
+            if (message) {
+                localStorage.setItem('dismissedAnnouncement', message);
+            }
+        }
+        announcementBanner.classList.add('hidden');
+    }
+}
+
+// Restore last dismissed announcement
+// Exposed globally for onclick handlers
+function restoreLastAnnouncement() {
+    const dismissedMessage = localStorage.getItem('dismissedAnnouncement');
+    if (dismissedMessage) {
+        localStorage.removeItem('dismissedAnnouncement');
+        showAnnouncement(dismissedMessage);
+    }
+}
+
+// Ensure functions are available globally (for onclick handlers in dynamically generated HTML)
+if (typeof window !== 'undefined') {
+    window.dismissAnnouncement = dismissAnnouncement;
+    window.restoreLastAnnouncement = restoreLastAnnouncement;
+}
 async function renderDashboard() {
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
