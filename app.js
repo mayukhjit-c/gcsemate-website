@@ -9792,8 +9792,22 @@ function renderVideosPage(playlists) {
     playlists.forEach(playlist => {
         const card = document.createElement('div');
         card.className = 'relative bg-white/70 border border-gray-200/60 backdrop-blur-lg rounded-xl shadow-lg p-5 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl';
-        card.onclick = () => handlePlaylistClick(playlist);
         const playlistUrl = playlist.url || '';
+        // Direct click opens YouTube playlist in new tab
+        if (playlistUrl) {
+            card.onclick = () => {
+                if (currentUser.tier === 'free') {
+                    document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
+                    document.getElementById('upgrade-modal').style.display = 'flex';
+                    return;
+                }
+                window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+            };
+        } else {
+            card.onclick = () => {
+                showToast('Playlist URL not available', 'error');
+            };
+        }
         card.innerHTML = `
             <div class="flex-grow flex flex-col justify-center items-center text-center">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
