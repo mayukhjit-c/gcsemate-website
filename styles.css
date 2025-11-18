@@ -3323,12 +3323,13 @@ will-change: transform;
         /* ═══════════════════════════════════════════════════════════════ */
         /* ED TECH-INSPIRED PAGE & LAYOUT STYLES */
         /* ═══════════════════════════════════════════════════════════════ */
+        /* Page background - padding handled by existing .page rules */
         .page {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-primary) !important;
         }
         
         #page-content {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-primary) !important;
         }
         
         /* EdTech-inspired input styles */
@@ -3416,36 +3417,25 @@ will-change: transform;
             color: var(--text-light) !important;
         }
         
-        /* Override semi-transparent backgrounds for EdTech style */
-        [class*="bg-white/"], [class*="bg-white/70"], [class*="bg-white/50"], [class*="bg-white/90"], [class*="bg-white/95"] {
+        /* Override semi-transparent backgrounds for EdTech style (more selective) */
+        .page [class*="bg-white/70"], .page [class*="bg-white/50"], 
+        .page [class*="bg-white/90"], .page [class*="bg-white/95"],
+        #playlist-grid [class*="bg-white/"], #subject-grid [class*="bg-white/"] {
             background: var(--bg-card) !important;
         }
         
-        [class*="bg-gray-50"], [class*="bg-gray-100"] {
-            background: var(--bg-primary) !important;
+        /* Preserve existing padding - don't override */
+        /* Padding is already handled by existing .page rules in the stylesheet */
+        
+        /* Ensure proper spacing for cards */
+        #playlist-grid, #subject-grid {
+            gap: 1.5rem !important;
         }
         
-        /* Update border colors */
-        [class*="border-gray-200"], [class*="border-gray-300"] {
+        /* Update border colors (selective) */
+        .page [class*="border-gray-200"], .page [class*="border-gray-300"],
+        #playlist-grid > div[class*="border"], #subject-grid > div[class*="border"] {
             border-color: var(--border-color) !important;
-        }
-        
-        /* Update shadows to EdTech style */
-        [class*="shadow-md"], [class*="shadow-lg"], [class*="shadow-xl"] {
-            box-shadow: var(--shadow-md) !important;
-        }
-        
-        [class*="shadow-lg"]:hover, [class*="shadow-xl"]:hover {
-            box-shadow: var(--shadow-lg) !important;
-        }
-        
-        /* Update rounded corners to match EdTech */
-        [class*="rounded-xl"], [class*="rounded-2xl"] {
-            border-radius: 16px !important;
-        }
-        
-        [class*="rounded-lg"] {
-            border-radius: 12px !important;
         }
         
         /* Override blue buttons to use EdTech dark blue */
@@ -3470,9 +3460,26 @@ will-change: transform;
             background: #1a2f4d !important;
         }
         
-        /* Ensure all text uses Inter font */
-        * {
+        /* Ensure all text uses Inter font (except icons) */
+        *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not([class*="fa-"]):not(svg):not(code):not(pre):not(kbd):not(samp) {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        }
+        
+        /* Ensure FontAwesome icons display correctly */
+        i[class*="fa-"], .fa, .fas, .far, .fab, .fal, .fad {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+            font-style: normal !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+        }
+        
+        .far {
+            font-weight: 400 !important;
+        }
+        
+        .fab {
+            font-family: "Font Awesome 6 Brands" !important;
+            font-weight: 400 !important;
         }
         
         /* Code and monospace exceptions */
