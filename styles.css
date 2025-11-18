@@ -3564,37 +3564,41 @@ will-change: transform;
         /* ═══════════════════════════════════════════════════════════════ */
         
         /* Force FontAwesome font-family with maximum specificity */
-        i[class*="fa-"]:before,
-        i[class*="fa-"]:after,
-        i.fa:before, i.fa:after,
-        i.fas:before, i.fas:after,
-        i.far:before, i.far:after,
-        i.fab:before, i.fab:after,
-        i.fal:before, i.fal:after,
-        i.fad:before, i.fad:after,
-        .fa:before, .fa:after,
-        .fas:before, .fas:after,
-        .far:before, .far:after,
-        .fab:before, .fab:after,
-        .fal:before, .fal:after,
-        .fad:before, .fad:after {
+        /* Use both :before/:after and ::before/::after for maximum compatibility */
+        i[class*="fa-"]::before, i[class*="fa-"]:before,
+        i[class*="fa-"]::after, i[class*="fa-"]:after,
+        i.fa::before, i.fa:before, i.fa::after, i.fa:after,
+        i.fas::before, i.fas:before, i.fas::after, i.fas:after,
+        i.far::before, i.far:before, i.far::after, i.far:after,
+        i.fab::before, i.fab:before, i.fab::after, i.fab:after,
+        i.fal::before, i.fal:before, i.fal::after, i.fal:after,
+        i.fad::before, i.fad:before, i.fad::after, i.fad:after,
+        .fa::before, .fa:before, .fa::after, .fa:after,
+        .fas::before, .fas:before, .fas::after, .fas:after,
+        .far::before, .far:before, .far::after, .far:after,
+        .fab::before, .fab:before, .fab::after, .fab:after,
+        .fal::before, .fal:before, .fal::after, .fal:after,
+        .fad::before, .fad:before, .fad::after, .fad:after {
             font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
+            font-style: normal !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
         }
         
-        .far:before, .far:after,
-        i.far:before, i.far:after {
+        .far::before, .far:before, .far::after, .far:after,
+        i.far::before, i.far:before, i.far::after, i.far:after {
             font-weight: 400 !important;
         }
         
-        .fab:before, .fab:after,
-        i.fab:before, i.fab:after {
+        .fab::before, .fab:before, .fab::after, .fab:after,
+        i.fab::before, i.fab:before, i.fab::after, i.fab:after {
             font-family: "Font Awesome 6 Brands" !important;
             font-weight: 400 !important;
         }
         
-        .fal:before, .fal:after,
-        i.fal:before, i.fal:after {
+        .fal::before, .fal:before, .fal::after, .fal:after,
+        i.fal::before, i.fal:before, i.fal::after, i.fal:after {
             font-weight: 300 !important;
         }
         
@@ -3648,34 +3652,75 @@ will-change: transform;
         /* FINAL FONTAWESOME FIX - Must be at the very end to override all */
         /* ═══════════════════════════════════════════════════════════════ */
         
-        /* FontAwesome uses :before pseudo-elements - ensure they have correct font */
-        i.fas:before, i.far:before, i.fab:before, i.fal:before, i.fad:before,
-        .fas:before, .far:before, .fab:before, .fal:before, .fad:before {
+        /* FontAwesome uses ::before pseudo-elements - ensure they have correct font */
+        /* Use both :before and ::before for maximum compatibility */
+        i.fas::before, i.fas:before,
+        i.far::before, i.far:before,
+        i.fab::before, i.fab:before,
+        i.fal::before, i.fal:before,
+        i.fad::before, i.fad:before,
+        .fas::before, .fas:before,
+        .far::before, .far:before,
+        .fab::before, .fab:before,
+        .fal::before, .fal:before,
+        .fad::before, .fad:before,
+        i[class*="fa-"]::before,
+        i[class*="fa-"]:before,
+        [class*="fa-"]::before,
+        [class*="fa-"]:before {
             font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-style: normal !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
         }
         
-        .fab:before, i.fab:before {
+        .fab::before, .fab:before,
+        i.fab::before, i.fab:before,
+        [class*="fab"]::before,
+        [class*="fab"]:before {
             font-family: "Font Awesome 6 Brands" !important;
+            font-weight: 400 !important;
+        }
+        
+        .far::before, .far:before,
+        i.far::before, i.far:before,
+        [class*="far"]::before,
+        [class*="far"]:before {
+            font-weight: 400 !important;
+        }
+        
+        .fal::before, .fal:before,
+        i.fal::before, i.fal:before,
+        [class*="fal"]::before,
+        [class*="fal"]:before {
+            font-weight: 300 !important;
         }
         
         /* Ultimate override - any i element with fa- in class */
-        i[class*="fa-"] {
-            font-family: "Font Awesome 6 Free" !important;
+        i[class*="fa-"],
+        [class*="fa-"] {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "FontAwesome" !important;
             font-style: normal !important;
             font-weight: 900 !important;
             -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            display: inline-block !important;
         }
         
-        i[class*="far"] {
+        i[class*="far"],
+        [class*="far"] {
             font-weight: 400 !important;
         }
         
-        i[class*="fab"] {
-            font-family: "Font Awesome 6 Brands" !important;
+        i[class*="fab"],
+        [class*="fab"] {
+            font-family: "Font Awesome 6 Brands", "FontAwesome" !important;
             font-weight: 400 !important;
         }
         
-        i[class*="fal"] {
+        i[class*="fal"],
+        [class*="fal"] {
             font-weight: 300 !important;
         }
         
