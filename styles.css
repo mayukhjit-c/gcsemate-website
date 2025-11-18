@@ -4,8 +4,10 @@
 /* Protected by copyright and trade secret laws. */
 /* Unauthorized copying, reproduction, or distribution is strictly prohibited. */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 :root {
-/* Default accent: Tailwind blue-500 rgb */
+/* GCSEMate Brand Colors (adapted from EdTech design) */
 --accent-50: 239 246 255;
 --accent-100: 219 234 254;
 --accent-300: 147 197 253;
@@ -13,6 +15,22 @@
 --accent-500: 59 130 246;
 --accent-600: 37 99 235;
 --accent-700: 29 78 216;
+/* EdTech-inspired color palette */
+--bg-primary: #F8F7F2;
+--bg-secondary: #1E3A5F;
+--bg-card: #FFFFFF;
+--text-primary: #1F2937;
+--text-secondary: #6B7280;
+--text-light: #9CA3AF;
+--border-color: rgba(0, 0, 0, 0.08);
+--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+/* Pastel colors for cards (EdTech style) */
+--pastel-pink: #FCE7F3;
+--pastel-blue: #DBEAFE;
+--pastel-purple: #E9D5FF;
 /* Performance optimizations */
 --animation-fast: 150ms;
 --animation-normal: 300ms;
@@ -23,10 +41,10 @@
 --input-radius: 12px;
 --button-radius: 12px;
         }
-        /* Base styles for a polished look - Enhanced for accessibility */
+        /* Base styles - EdTech-inspired design */
         body {
-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-background-color: #f8fafc;
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+background-color: var(--bg-primary);
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 text-rendering: optimizeLegibility;
@@ -38,7 +56,36 @@ padding-bottom: env(safe-area-inset-bottom, 0);
 padding-left: env(safe-area-inset-left, 0);
 /* Enhanced accessibility */
 line-height: 1.6;
-color: #1f2937;
+color: var(--text-primary);
+font-weight: 400;
+        }
+        
+        /* EdTech-inspired typography */
+        h1, h2, h3, h4, h5, h6 {
+font-family: 'Inter', sans-serif;
+font-weight: 700;
+letter-spacing: -0.02em;
+line-height: 1.2;
+color: var(--text-primary);
+        }
+        
+        h1 {
+font-size: clamp(2.5rem, 5vw, 4rem);
+font-weight: 800;
+        }
+        
+        h2 {
+font-size: clamp(2rem, 4vw, 3rem);
+font-weight: 700;
+        }
+        
+        h3 {
+font-size: clamp(1.5rem, 3vw, 2rem);
+font-weight: 600;
+        }
+        
+        p, span, div {
+font-family: 'Inter', sans-serif;
         }
         
         /* Performance optimizations */
@@ -54,27 +101,44 @@ perspective: 1000px;
         }
         
         /* ═══════════════════════════════════════════════════════════════ */
-        /* ENHANCED CARDS - Modern, Clean, Interactive */
+        /* ED TECH-INSPIRED CARDS - Clean, Modern, Professional */
         /* ═══════════════════════════════════════════════════════════════ */
-        .glass-card-premium {
-background: rgba(255, 255, 255, 1);
-border: 1px solid rgba(0, 0, 0, 0.08);
+        .glass-card-premium, .card-modern, .modern-card {
+background: var(--bg-card);
+border: 1px solid var(--border-color);
 border-radius: var(--card-radius);
+box-shadow: var(--shadow-md);
 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 transform: translateZ(0);
 will-change: transform, box-shadow, border-color;
 backface-visibility: hidden;
         }
         
-        .glass-card-premium:hover {
-transform: translateY(-4px) translateZ(0);
-border-color: rgba(var(--accent-500), 0.2);
-box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08),
-            0 4px 12px -4px rgba(var(--accent-500), 0.1);
+        .glass-card-premium:hover, .card-modern:hover, .modern-card:hover {
+transform: translateY(-2px) translateZ(0);
+box-shadow: var(--shadow-lg);
+border-color: rgba(59, 130, 246, 0.15);
         }
         
-        .glass-card-premium:active {
-transform: translateY(-2px) translateZ(0);
+        .glass-card-premium:active, .card-modern:active, .modern-card:active {
+transform: translateY(0) translateZ(0);
+box-shadow: var(--shadow-md);
+        }
+        
+        /* EdTech-style pastel cards */
+        .card-pastel-pink {
+background: var(--pastel-pink);
+border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-pastel-blue {
+background: var(--pastel-blue);
+border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-pastel-purple {
+background: var(--pastel-purple);
+border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         /* ═══════════════════════════════════════════════════════════════ */
@@ -98,14 +162,16 @@ transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* ═══════════════════════════════════════════════════════════════ */
-        /* ENHANCED BUTTONS - Premium Feel with Smooth Interactions */
+        /* ED TECH-INSPIRED BUTTONS - Clean, Modern, Professional */
         /* ═══════════════════════════════════════════════════════════════ */
-        .btn-gradient {
-background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
+        .btn-gradient, button[class*="bg-blue"], .btn-primary {
+background: var(--bg-secondary);
 border: none;
 border-radius: var(--button-radius);
-color: white;
+color: #FFFFFF;
+font-family: 'Inter', sans-serif;
 font-weight: 600;
+font-size: 0.9375rem;
 padding: 0.875rem 1.75rem;
 transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 transform: translateZ(0);
@@ -113,32 +179,48 @@ will-change: transform, box-shadow;
 backface-visibility: hidden;
 position: relative;
 overflow: hidden;
+box-shadow: var(--shadow-sm);
+cursor: pointer;
         }
         
-        .btn-gradient::before {
+        .btn-gradient::before, button[class*="bg-blue"]::before, .btn-primary::before {
 content: '';
 position: absolute;
 top: 0;
 left: -100%;
 width: 100%;
 height: 100%;
-background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 transition: left 0.5s ease;
         }
         
-        .btn-gradient:hover {
-transform: translateY(-2px) translateZ(0);
-box-shadow: 0 8px 16px -4px rgba(var(--accent-600), 0.4),
-            0 4px 8px -2px rgba(var(--accent-600), 0.2);
+        .btn-gradient:hover, button[class*="bg-blue"]:hover, .btn-primary:hover {
+transform: translateY(-1px) translateZ(0);
+box-shadow: var(--shadow-md);
+background: #1a2f4d;
         }
         
-        .btn-gradient:hover::before {
+        .btn-gradient:hover::before, button[class*="bg-blue"]:hover::before, .btn-primary:hover::before {
 left: 100%;
         }
         
-        .btn-gradient:active {
+        .btn-gradient:active, button[class*="bg-blue"]:active, .btn-primary:active {
 transform: translateY(0) translateZ(0);
-box-shadow: 0 2px 4px -1px rgba(var(--accent-600), 0.3);
+box-shadow: var(--shadow-sm);
+        }
+        
+        /* Secondary buttons (EdTech style) */
+        button.bg-white, button.bg-gray, .btn-secondary {
+background: var(--bg-card);
+border: 1px solid var(--border-color);
+color: var(--text-primary);
+font-family: 'Inter', sans-serif;
+font-weight: 500;
+        }
+        
+        button.bg-white:hover, button.bg-gray:hover, .btn-secondary:hover {
+background: #F9F9F9;
+border-color: rgba(0, 0, 0, 0.12);
         }
         
         /* Enhanced Smooth Scrolling with Overscroll Behavior */
@@ -701,19 +783,19 @@ transform: translateY(-6px) translateZ(0);
         /* ═══════════════════════════════════════════════════════════════ */
         /* ENHANCED PRIMARY BUTTON - Premium Gradient with Shine Effect */
         /* ═══════════════════════════════════════════════════════════════ */
+        /* Override existing .btn-primary with EdTech style */
         .btn-primary {
-background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
-border: none;
-color: white;
-font-weight: 600;
-border-radius: 0.75rem;
-padding: 0.875rem 1.75rem;
-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-transform: translateZ(0);
-will-change: transform, box-shadow;
-backface-visibility: hidden;
-position: relative;
-overflow: hidden;
+background: var(--bg-secondary) !important;
+border: none !important;
+color: #FFFFFF !important;
+font-family: 'Inter', sans-serif !important;
+font-weight: 600 !important;
+font-size: 0.9375rem !important;
+border-radius: var(--button-radius) !important;
+padding: 0.875rem 1.75rem !important;
+transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+transform: translateZ(0) !important;
+box-shadow: var(--shadow-sm) !important;
         }
         
         .btn-primary::before {
@@ -723,14 +805,14 @@ top: 0;
 left: -100%;
 width: 100%;
 height: 100%;
-background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-transition: left 0.6s ease;
+background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+transition: left 0.5s ease;
         }
         
         .btn-primary:hover {
-background: linear-gradient(135deg, rgb(var(--accent-700)), rgb(var(--accent-600)));
-transform: translateY(-2px) translateZ(0);
-box-shadow: 0 8px 20px -6px rgba(var(--accent-600), 0.4);
+background: #1a2f4d !important;
+transform: translateY(-1px) translateZ(0) !important;
+box-shadow: var(--shadow-md) !important;
         }
         
         .btn-primary:hover::before {
@@ -738,18 +820,24 @@ left: 100%;
         }
         
         .btn-primary:active {
-transform: translateY(0) translateZ(0);
-box-shadow: 0 2px 8px -2px rgba(var(--accent-600), 0.3);
+transform: translateY(0) translateZ(0) !important;
+box-shadow: var(--shadow-sm) !important;
         }
         
         .btn-secondary {
-background: rgba(255, 255, 255, 1);
-border: 1px solid rgba(0, 0, 0, 0.1);
-color: #374151;
-font-weight: 500;
-border-radius: 0.5rem;
-padding: 0.75rem 1.5rem;
-transition: transform 0.15s ease-out, border-color 0.15s ease-out;
+background: var(--bg-card) !important;
+border: 1px solid var(--border-color) !important;
+color: var(--text-primary) !important;
+font-family: 'Inter', sans-serif !important;
+font-weight: 500 !important;
+border-radius: 0.5rem !important;
+padding: 0.75rem 1.5rem !important;
+transition: all 0.15s ease-out !important;
+        }
+        
+        .btn-secondary:hover {
+background: #F9F9F9 !important;
+border-color: rgba(0, 0, 0, 0.12) !important;
         }
         
         .btn-secondary:hover {
@@ -3230,5 +3318,182 @@ will-change: transform;
             line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* ED TECH-INSPIRED PAGE & LAYOUT STYLES */
+        /* ═══════════════════════════════════════════════════════════════ */
+        .page {
+            background-color: var(--bg-primary);
+        }
+        
+        #page-content {
+            background-color: var(--bg-primary);
+        }
+        
+        /* EdTech-inspired input styles */
+        input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="url"], 
+        textarea, select {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--input-radius);
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, 
+        input[type="search"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--bg-secondary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+        }
+        
+        /* EdTech-inspired playlist cards */
+        #playlist-grid > div, .playlist-card {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--shadow-md) !important;
+        }
+        
+        #playlist-grid > div:hover, .playlist-card:hover {
+            box-shadow: var(--shadow-lg) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        /* EdTech-inspired subject cards */
+        #subject-grid > div {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--shadow-md) !important;
+        }
+        
+        #subject-grid > div:hover {
+            box-shadow: var(--shadow-lg) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        /* Header styling (EdTech style) */
+        header {
+            background: var(--bg-card) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+        
+        /* Dark blue sections (EdTech style) */
+        .section-dark, [class*="bg-blue"][class*="dark"] {
+            background: var(--bg-secondary) !important;
+            color: #FFFFFF !important;
+        }
+        
+        .section-dark h1, .section-dark h2, .section-dark h3,
+        [class*="bg-blue"][class*="dark"] h1,
+        [class*="bg-blue"][class*="dark"] h2,
+        [class*="bg-blue"][class*="dark"] h3 {
+            color: #FFFFFF !important;
+        }
+        
+        /* Glass effect adjustments for EdTech style */
+        .glass-card, .glass-effect, [class*="backdrop-blur"] {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        /* Text color adjustments */
+        .text-gray-900, .text-gray-800 {
+            color: var(--text-primary) !important;
+        }
+        
+        .text-gray-600, .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .text-gray-400 {
+            color: var(--text-light) !important;
+        }
+        
+        /* Override semi-transparent backgrounds for EdTech style */
+        [class*="bg-white/"], [class*="bg-white/70"], [class*="bg-white/50"], [class*="bg-white/90"], [class*="bg-white/95"] {
+            background: var(--bg-card) !important;
+        }
+        
+        [class*="bg-gray-50"], [class*="bg-gray-100"] {
+            background: var(--bg-primary) !important;
+        }
+        
+        /* Update border colors */
+        [class*="border-gray-200"], [class*="border-gray-300"] {
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Update shadows to EdTech style */
+        [class*="shadow-md"], [class*="shadow-lg"], [class*="shadow-xl"] {
+            box-shadow: var(--shadow-md) !important;
+        }
+        
+        [class*="shadow-lg"]:hover, [class*="shadow-xl"]:hover {
+            box-shadow: var(--shadow-lg) !important;
+        }
+        
+        /* Update rounded corners to match EdTech */
+        [class*="rounded-xl"], [class*="rounded-2xl"] {
+            border-radius: 16px !important;
+        }
+        
+        [class*="rounded-lg"] {
+            border-radius: 12px !important;
+        }
+        
+        /* Override blue buttons to use EdTech dark blue */
+        button[class*="bg-blue-600"], button[class*="bg-blue-700"],
+        [class*="from-blue-600"], [class*="to-blue-700"],
+        [class*="from-blue-700"], [class*="to-blue-800"] {
+            background: var(--bg-secondary) !important;
+            background-image: none !important;
+        }
+        
+        button[class*="bg-blue-600"]:hover, button[class*="bg-blue-700"]:hover {
+            background: #1a2f4d !important;
+        }
+        
+        /* Update gradient buttons */
+        [class*="bg-gradient-to-r"][class*="from-blue"] {
+            background: var(--bg-secondary) !important;
+            background-image: none !important;
+        }
+        
+        [class*="bg-gradient-to-r"][class*="from-blue"]:hover {
+            background: #1a2f4d !important;
+        }
+        
+        /* Ensure all text uses Inter font */
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        }
+        
+        /* Code and monospace exceptions */
+        code, pre, kbd, samp {
+            font-family: 'Courier New', Courier, monospace !important;
+        }
+        
+        /* Main app background (EdTech style) */
+        #main-app {
+            background-color: var(--bg-primary) !important;
+        }
+        
+        /* Update skeleton colors */
+        .skeleton {
+            background: linear-gradient(90deg, #E5E7EB 25%, #D1D5DB 50%, #E5E7EB 75%) !important;
+            background-size: 200% 100% !important;
+        }
+        
+        /* Footer styling (EdTech style) */
+        footer {
+            background-color: var(--bg-card) !important;
+            border-top: 1px solid var(--border-color) !important;
         }
         

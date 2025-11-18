@@ -9285,9 +9285,10 @@ async function renderDashboard() {
             iconHost.innerHTML = `${iconSvg}`;
             wrapper.appendChild(iconHost);
             const title = document.createElement('h3');
-            // Use smaller font for long English subject names to fit better
+            // Use smaller font for long English subject names to fit better (EdTech typography)
             const isLongEnglishName = name.includes('English Language') || name.includes('English Literature');
             title.className = `font-bold text-gray-900 mb-2 leading-tight ${isLongEnglishName ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`;
+            title.style.fontFamily = "'Inter', sans-serif";
             title.style.display = '-webkit-box';
             title.style.webkitLineClamp = '2';
             title.style.webkitBoxOrient = 'vertical';
@@ -9332,6 +9333,7 @@ async function renderDashboard() {
                 specEntries.forEach(([board, spec]) => {
                     const specButton = document.createElement('button');
                     specButton.className = 'w-full mt-2 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 flex-shrink-0 hover:shadow-sm';
+                    specButton.style.fontFamily = "'Inter', sans-serif";
                     // For English, show Language/Literature clearly in button text
                     let buttonText = 'View Spec';
                     if (board.includes('Language')) {
@@ -9353,11 +9355,11 @@ async function renderDashboard() {
             wrapper.appendChild(specContainer);
             card.appendChild(wrapper);
             if (subjectId) {
-                // Set consistent height constraints to maintain grid alignment
+                // Set consistent height constraints to maintain grid alignment (EdTech-inspired design)
                 // Increased max height to accommodate longer content like Maths and English cards
                 // Allow content to grow naturally but cap at reasonable max height
                 const isLongEnglishName = subject.toLowerCase().includes('english language') || subject.toLowerCase().includes('english literature');
-                const baseClasses = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise overflow-hidden';
+                const baseClasses = 'p-5 sm:p-7 rounded-2xl shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg flex flex-col items-center justify-center text-center bg-white border border-gray-200 overflow-hidden';
                 const heightClasses = isLongEnglishName ? 'min-h-[240px] max-h-[420px]' : 'min-h-[220px] max-h-[400px]';
                 card.className = `${baseClasses} ${heightClasses}`;
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
@@ -9882,7 +9884,7 @@ function getPlaylistThumbnail(playlistUrl) {
     return null;
 }
 
-// Generate skeleton loader cards
+// Generate skeleton loader cards (EdTech-inspired design)
 function generatePlaylistSkeletons(count = 8) {
     const skeleton = document.getElementById('playlist-skeleton');
     if (!skeleton) return;
@@ -9890,7 +9892,7 @@ function generatePlaylistSkeletons(count = 8) {
     skeleton.innerHTML = '';
     for (let i = 0; i < count; i++) {
         const card = document.createElement('div');
-        card.className = 'bg-white/70 border border-gray-200/60 rounded-2xl p-6 sm:p-7 flex flex-col';
+        card.className = 'bg-white border border-gray-200 rounded-2xl shadow-md p-6 sm:p-7 flex flex-col';
         card.innerHTML = `
             <div class="flex-grow flex flex-col justify-center items-center text-center">
                 <div class="skeleton w-20 h-20 rounded-2xl mb-4"></div>
@@ -10022,11 +10024,11 @@ function copyToClipboard(text, playlistTitle) {
     });
 }
 
-// Render a single playlist card
+// Render a single playlist card (EdTech-inspired design)
 function renderPlaylistCard(playlist, isRecent = false) {
     const card = document.createElement('div');
-    card.className = `relative group bg-gradient-to-br from-white to-gray-50/80 border border-gray-200/60 backdrop-blur-lg rounded-2xl shadow-md hover:shadow-2xl p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-500 transform hover:scale-[1.03] hover:-translate-y-1 overflow-hidden ${isRecent ? 'ring-2 ring-blue-400' : ''}`;
-    card.classList.add('animate-fade-in-up');
+    card.className = `relative group bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${isRecent ? 'ring-2 ring-blue-400' : ''}`;
+    card.classList.add('animate-fade-in-up', 'playlist-card');
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
     card.setAttribute('aria-label', `Open playlist: ${playlist.title}`);
@@ -10060,7 +10062,7 @@ function renderPlaylistCard(playlist, isRecent = false) {
     card.innerHTML = `
         <div class="flex-grow flex flex-col justify-center items-center text-center">
             ${thumbnailHtml}
-            <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">${escapeHTML(playlist.title)}</h3>
+            <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 transition-colors duration-300" style="font-family: 'Inter', sans-serif;">${escapeHTML(playlist.title)}</h3>
             ${category ? `<div class="mb-2">${category}</div>` : ''}
             <div class="mt-2 flex items-center gap-3 text-xs text-gray-500">
                 <i class="fab fa-youtube text-red-500"></i>
@@ -10070,11 +10072,11 @@ function renderPlaylistCard(playlist, isRecent = false) {
         </div>
         <div class="mt-6 pt-5 border-t border-gray-200/70 flex gap-2">
             ${playlistUrl ? `
-            <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]" data-tooltip="Open playlist in new tab">
+            <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="flex-1 px-4 py-3 text-white text-sm font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" style="background: var(--bg-secondary); font-family: 'Inter', sans-serif;" onmouseover="this.style.background='#1a2f4d'" onmouseout="this.style.background='var(--bg-secondary)'" data-tooltip="Open playlist in new tab">
                 <i class="fas fa-external-link-alt"></i>
                 <span>Open</span>
             </button>
-            <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-[1.02]" data-tooltip="Share playlist">
+            <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md" data-tooltip="Share playlist">
                 <i class="fas fa-share-alt"></i>
             </button>
             ` : `
