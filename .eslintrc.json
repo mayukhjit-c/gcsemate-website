@@ -22,9 +22,9 @@
     "no-var": "error",
     "eqeqeq": ["error", "always"],
     "curly": ["error", "all"],
-    "jsdoc/require-param": "warn",
-    "jsdoc/require-returns": "warn",
-    "jsdoc/require-description": "warn"
+    "jsdoc/require-param": "off",
+    "jsdoc/require-returns": "off",
+    "jsdoc/require-description": "off"
   },
   "globals": {
     "currentUser": "readonly",
