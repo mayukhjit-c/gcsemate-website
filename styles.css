@@ -197,7 +197,7 @@ transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 background: var(--bg-secondary);
 border: none;
 border-radius: var(--button-radius);
-color: #FFFFFF;
+color: #FFFFFF !important;
 font-family: 'Inter', sans-serif;
 font-weight: 600;
 font-size: 0.9375rem;
@@ -210,6 +210,19 @@ position: relative;
 overflow: hidden;
 box-shadow: var(--shadow-sm);
 cursor: pointer;
+        }
+        
+        /* Ensure white text and icons on dark blue backgrounds */
+        .btn-gradient i, button[class*="bg-blue"] i, .btn-primary i,
+        .btn-gradient svg, button[class*="bg-blue"] svg, .btn-primary svg,
+        button[style*="background: var(--bg-secondary)"] i,
+        button[style*="background: var(--bg-secondary)"] svg,
+        button[style*="background: var(--bg-secondary)"] span,
+        button[style*="background: #1a2f4d"] i,
+        button[style*="background: #1a2f4d"] svg,
+        button[style*="background: #1a2f4d"] span {
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
         }
         
         .btn-gradient::before, button[class*="bg-blue"]::before, .btn-primary::before {
@@ -3722,5 +3735,106 @@ will-change: transform;
         i[class*="fal"],
         [class*="fal"] {
             font-weight: 300 !important;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* ICON ALIGNMENT & SPACING IMPROVEMENTS */
+        /* ═══════════════════════════════════════════════════════════════ */
+        
+        /* Ensure icons are properly aligned in buttons and containers */
+        button i, .btn i, a i, [class*="button"] i {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            vertical-align: middle !important;
+        }
+        
+        /* Icon spacing in flex containers */
+        .flex i, [class*="flex"] i {
+            flex-shrink: 0;
+        }
+        
+        /* Better icon alignment in text */
+        i + span, span + i {
+            vertical-align: middle;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* LAYOUT & PADDING IMPROVEMENTS */
+        /* ═══════════════════════════════════════════════════════════════ */
+        
+        /* Subject dashboard cards - prevent cutoff */
+        #subject-grid .card,
+        #subject-grid > div {
+            overflow: visible !important;
+        }
+        
+        /* Better padding for cards */
+        .card-modern, .modern-card, .glass-card-premium {
+            padding: 1.5rem !important;
+        }
+        
+        @media (min-width: 640px) {
+            .card-modern, .modern-card, .glass-card-premium {
+                padding: 1.75rem !important;
+            }
+        }
+        
+        /* Playlist cards spacing */
+        .playlist-card {
+            padding: 1.5rem !important;
+        }
+        
+        @media (min-width: 640px) {
+            .playlist-card {
+                padding: 1.75rem !important;
+            }
+        }
+        
+        /* Button padding improvements */
+        button[class*="px-4"][class*="py-3"] {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+        }
+        
+        /* View spec button specific improvements */
+        button[class*="View Spec"], button:has(i.fa-file-pdf) {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+            white-space: nowrap !important;
+        }
+        
+        /* Ensure text doesn't overflow in buttons */
+        button span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Dark blue background text/icon fixes */
+        [style*="background: var(--bg-secondary)"],
+        [style*="background: #1E3A5F"],
+        [style*="background: #1a2f4d"],
+        [class*="bg-blue-600"],
+        [class*="bg-blue-700"] {
+            color: #FFFFFF !important;
+        }
+        
+        [style*="background: var(--bg-secondary)"] i,
+        [style*="background: #1E3A5F"] i,
+        [style*="background: #1a2f4d"] i,
+        [class*="bg-blue-600"] i,
+        [class*="bg-blue-700"] i,
+        [style*="background: var(--bg-secondary)"] svg,
+        [style*="background: #1E3A5F"] svg,
+        [style*="background: #1a2f4d"] svg,
+        [class*="bg-blue-600"] svg,
+        [class*="bg-blue-700"] svg {
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
         }
         

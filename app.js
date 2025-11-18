@@ -9280,6 +9280,7 @@ async function renderDashboard() {
             // Build DOM nodes instead of innerHTML to avoid any async repaint issue
             const wrapper = document.createElement('div');
             wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full flex-grow';
+            wrapper.style.overflow = 'visible'; // Prevent content cutoff
             const iconHost = document.createElement('div');
             iconHost.className = 'flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 mb-2';
             iconHost.innerHTML = `${iconSvg}`;
@@ -9287,14 +9288,16 @@ async function renderDashboard() {
             const title = document.createElement('h3');
             // Use smaller font for long English subject names to fit better (EdTech typography)
             const isLongEnglishName = name.includes('English Language') || name.includes('English Literature');
-            title.className = `font-bold text-gray-900 mb-2 leading-tight ${isLongEnglishName ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`;
+            const isMaths = name.toLowerCase().includes('maths') || name.toLowerCase().includes('mathematics');
+            title.className = `font-bold text-gray-900 mb-2 leading-tight ${isLongEnglishName || isMaths ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`;
             title.style.fontFamily = "'Inter', sans-serif";
             title.style.display = '-webkit-box';
-            title.style.webkitLineClamp = '2';
+            title.style.webkitLineClamp = '3'; // Allow 3 lines for better text fitting
             title.style.webkitBoxOrient = 'vertical';
             title.style.overflow = 'hidden';
             title.style.textOverflow = 'ellipsis';
-            title.style.maxHeight = isLongEnglishName ? '3em' : '2.5em';
+            title.style.maxHeight = isLongEnglishName || isMaths ? '4em' : '3.5em';
+            title.style.wordBreak = 'break-word'; // Better word breaking
             title.textContent = name;
             title.setAttribute('data-animate','fade-up');
             wrapper.appendChild(title);
@@ -9305,16 +9308,17 @@ async function renderDashboard() {
             }
             // Add summary text with arrow - allow wrapping for longer content
             const summaryContainer = document.createElement('div');
-            summaryContainer.className = 'text-xs sm:text-sm text-gray-600 mt-2 px-3 text-center w-full flex items-start justify-center gap-1.5';
+            summaryContainer.className = 'text-xs sm:text-sm text-gray-600 mt-2 px-2 text-center w-full flex items-start justify-center gap-1.5';
             const summary = document.createElement('p');
-            // Allow text to wrap for longer subjects like Maths and English (max 2 lines)
+            // Allow text to wrap for longer subjects like Maths and English (max 3 lines for better fitting)
             summary.className = 'leading-relaxed';
             summary.style.display = '-webkit-box';
-            summary.style.webkitLineClamp = '2';
+            summary.style.webkitLineClamp = '3';
             summary.style.webkitBoxOrient = 'vertical';
             summary.style.overflow = 'hidden';
             summary.style.textOverflow = 'ellipsis';
-            summary.style.maxHeight = '2.5em';
+            summary.style.maxHeight = '3.5em';
+            summary.style.wordBreak = 'break-word';
             summary.textContent = subjectData.summary;
             summary.setAttribute('data-tooltip', subjectData.description || subjectData.summary);
             const arrowIcon = document.createElement('i');
@@ -9325,14 +9329,14 @@ async function renderDashboard() {
             
             // Add "View Specification" button(s)
             const specContainer = document.createElement('div');
-            specContainer.className = 'mt-3 w-full px-3 flex-shrink-0';
+            specContainer.className = 'mt-3 w-full px-2 flex-shrink-0 flex flex-col gap-2';
             const specs = subjectSpecifications[subject.toLowerCase()];
             if (specs) {
                 // Limit to 2 buttons max to maintain consistent card height
                 const specEntries = Object.entries(specs).slice(0, 2);
                 specEntries.forEach(([board, spec]) => {
                     const specButton = document.createElement('button');
-                    specButton.className = 'w-full mt-2 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 flex-shrink-0 hover:shadow-sm';
+                    specButton.className = 'w-full px-3 py-2.5 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0 shadow-sm hover:shadow-md';
                     specButton.style.fontFamily = "'Inter', sans-serif";
                     // For English, show Language/Literature clearly in button text
                     let buttonText = 'View Spec';
@@ -9343,7 +9347,7 @@ async function renderDashboard() {
                     } else if (spec.tier) {
                         buttonText = `View Spec (${spec.tier})`;
                     }
-                    specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i> <span>${buttonText}</span>`;
+                    specButton.innerHTML = `<i class="fas fa-file-pdf text-xs"></i><span class="whitespace-nowrap">${buttonText}</span>`;
                     specButton.setAttribute('data-tooltip', spec.label);
                     specButton.onclick = (e) => {
                         e.stopPropagation(); // Prevent card click
@@ -9359,9 +9363,12 @@ async function renderDashboard() {
                 // Increased max height to accommodate longer content like Maths and English cards
                 // Allow content to grow naturally but cap at reasonable max height
                 const isLongEnglishName = subject.toLowerCase().includes('english language') || subject.toLowerCase().includes('english literature');
-                const baseClasses = 'p-5 sm:p-7 rounded-2xl shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg flex flex-col items-center justify-center text-center bg-white border border-gray-200 overflow-hidden';
-                const heightClasses = isLongEnglishName ? 'min-h-[240px] max-h-[420px]' : 'min-h-[220px] max-h-[400px]';
+                const isMaths = subject.toLowerCase().includes('maths') || subject.toLowerCase().includes('mathematics');
+                const baseClasses = 'p-5 sm:p-6 rounded-2xl shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg flex flex-col items-center justify-center text-center bg-white border border-gray-200';
+                // Better height management - allow more space for content, prevent cutoff
+                const heightClasses = isLongEnglishName || isMaths ? 'min-h-[260px] max-h-[480px]' : 'min-h-[240px] max-h-[450px]';
                 card.className = `${baseClasses} ${heightClasses}`;
+                card.style.overflow = 'visible'; // Prevent content cutoff
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -10073,11 +10080,14 @@ function renderPlaylistCard(playlist, isRecent = false) {
         <div class="mt-6 pt-5 border-t border-gray-200/70 flex gap-2">
             ${playlistUrl ? `
             <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="flex-1 px-4 py-3 text-white text-sm font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" style="background: var(--bg-secondary); font-family: 'Inter', sans-serif;" onmouseover="this.style.background='#1a2f4d'" onmouseout="this.style.background='var(--bg-secondary)'" data-tooltip="Open playlist in new tab">
-                <i class="fas fa-external-link-alt"></i>
+                <i class="fas fa-external-link-alt text-white"></i>
                 <span>Open</span>
             </button>
             <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md" data-tooltip="Share playlist">
                 <i class="fas fa-share-alt"></i>
+            </button>
+            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="px-4 py-3 bg-white border border-gray-200 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md" data-tooltip="Delete playlist">
+                <i class="fas fa-trash-alt"></i>
             </button>
             ` : `
             <div class="w-full px-4 py-3 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl text-center cursor-not-allowed">
