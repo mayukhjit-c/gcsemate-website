@@ -9260,7 +9260,15 @@ async function renderDashboard() {
             iconHost.innerHTML = `${iconSvg}`;
             wrapper.appendChild(iconHost);
             const title = document.createElement('h3');
-            title.className = 'text-lg sm:text-xl font-bold text-gray-900 mb-2 leading-tight';
+            // Use smaller font for long English subject names to fit better
+            const isLongEnglishName = name.includes('English Language') || name.includes('English Literature');
+            title.className = `font-bold text-gray-900 mb-2 leading-tight ${isLongEnglishName ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`;
+            title.style.display = '-webkit-box';
+            title.style.webkitLineClamp = '2';
+            title.style.webkitBoxOrient = 'vertical';
+            title.style.overflow = 'hidden';
+            title.style.textOverflow = 'ellipsis';
+            title.style.maxHeight = isLongEnglishName ? '3em' : '2.5em';
             title.textContent = name;
             title.setAttribute('data-animate','fade-up');
             wrapper.appendChild(title);
@@ -9323,7 +9331,10 @@ async function renderDashboard() {
                 // Set consistent height constraints to maintain grid alignment
                 // Increased max height to accommodate longer content like Maths and English cards
                 // Allow content to grow naturally but cap at reasonable max height
-                card.className = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise min-h-[220px] max-h-[400px] overflow-hidden';
+                const isLongEnglishName = subject.toLowerCase().includes('english language') || subject.toLowerCase().includes('english literature');
+                const baseClasses = 'p-5 sm:p-7 rounded-2xl shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/95 backdrop-blur-sm border border-gray-200/60 hover:border-blue-400/60 brand-gradient hover-raise overflow-hidden';
+                const heightClasses = isLongEnglishName ? 'min-h-[240px] max-h-[420px]' : 'min-h-[220px] max-h-[400px]';
+                card.className = `${baseClasses} ${heightClasses}`;
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -9829,54 +9840,73 @@ function renderVideosPage(playlists) {
         if (existing) { existing.replaceWith(node); } else { document.head.appendChild(node); }
     } catch(_){}
 
-    playlists.forEach(playlist => {
+    playlists.forEach((playlist, index) => {
         const card = document.createElement('div');
-        card.className = 'relative bg-white/70 border border-gray-200/60 backdrop-blur-lg rounded-xl shadow-lg p-5 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl';
+        card.className = 'relative group bg-gradient-to-br from-white to-gray-50/80 border border-gray-200/60 backdrop-blur-lg rounded-2xl shadow-md hover:shadow-2xl p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-500 transform hover:scale-[1.03] hover:-translate-y-1 overflow-hidden';
+        card.style.animationDelay = `${index * 50}ms`;
+        card.classList.add('animate-fade-in-up');
         const playlistUrl = playlist.url || '';
+        
+        // Create YouTube icon with better styling
+        const youtubeIcon = `
+            <div class="relative mb-4 flex items-center justify-center">
+                <div class="absolute inset-0 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all duration-500"></div>
+                <div class="relative bg-red-500/10 group-hover:bg-red-500/20 rounded-2xl p-4 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12 text-red-600 group-hover:text-red-700 transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                </div>
+            </div>
+        `;
+        
         card.innerHTML = `
             <div class="flex-grow flex flex-col justify-center items-center text-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 class="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1">${playlist.title}</h3>
+                ${youtubeIcon}
+                <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">${playlist.title}</h3>
+                <div class="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                    <i class="fab fa-youtube text-red-500"></i>
+                    <span class="font-medium">YouTube Playlist</span>
+                </div>
             </div>
-             <div class="mt-4 pt-4 border-t border-gray-200/70 flex justify-between items-center">
-                 <span class="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wide">YouTube Playlist</span>
-                 ${playlistUrl ? `
-                 <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-2 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-1.5 hover:shadow-md" data-tooltip="Open playlist in new tab">
-                     <i class="fas fa-external-link-alt text-xs"></i>
-                     <span>Open</span>
-                 </button>
-                 ` : ''}
+            <div class="mt-6 pt-5 border-t border-gray-200/70">
+                ${playlistUrl ? `
+                <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]" data-tooltip="Open playlist in new tab">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>Open Playlist</span>
+                </button>
+                ` : `
+                <div class="w-full px-4 py-3 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl text-center cursor-not-allowed">
+                    URL not available
+                </div>
+                `}
             </div>
             ${currentUser.role === 'admin' ? `
-            <div class="absolute top-2 right-2 flex gap-1">
-                <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
+            <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-2 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Edit Playlist">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
                 </button>
-                <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
+                <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-2 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Delete Playlist">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
             </div>` : ''}
         `;
-        // Add click handler after innerHTML to ensure it works
-        card.addEventListener('click', (e) => {
-            // Don't trigger if clicking on buttons or admin controls
-            if (e.target.closest('button') || e.target.closest('.absolute')) {
-                return;
-            }
-            if (currentUser.tier === 'free') {
-                document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
-                document.getElementById('upgrade-modal').style.display = 'flex';
-                return;
-            }
-            if (playlistUrl) {
+        
+        // Simplified click handler - just open YouTube link
+        if (playlistUrl) {
+            card.addEventListener('click', (e) => {
+                // Don't trigger if clicking on buttons or admin controls
+                if (e.target.closest('button') || e.target.closest('.absolute')) {
+                    return;
+                }
+                if (currentUser.tier === 'free') {
+                    document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
+                    document.getElementById('upgrade-modal').style.display = 'flex';
+                    return;
+                }
                 window.open(playlistUrl, '_blank', 'noopener,noreferrer');
-            } else {
-                showToast('Playlist URL not available', 'error');
-            }
-        });
+            });
+        }
+        
         grid.appendChild(card);
     });
 }
