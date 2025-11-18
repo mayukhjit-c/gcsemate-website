@@ -57,7 +57,7 @@ function canDownload() {
 function getTimeUntilNextDownload() {
     const history = getDownloadHistory();
     if (history.length < DOWNLOAD_RATE_LIMIT.maxDownloads) return 0;
-    
+
     // Find the oldest download in the current window
     const oldest = Math.min(...history);
     const elapsed = Date.now() - oldest;
@@ -67,13 +67,13 @@ function getTimeUntilNextDownload() {
 
 function formatFilenameWithWatermark(originalName) {
     if (!originalName) return 'download - Downloaded from GCSEMate.com';
-    
+
     // Extract file extension
     const lastDot = originalName.lastIndexOf('.');
     if (lastDot === -1) {
         return `${originalName} - Downloaded from GCSEMate.com`;
     }
-    
+
     const nameWithoutExt = originalName.substring(0, lastDot);
     const extension = originalName.substring(lastDot);
     return `${nameWithoutExt} - Downloaded from GCSEMate.com${extension}`;
@@ -127,72 +127,72 @@ class ErrorHandler {
         this.errorLog = [];
         this.setupGlobalErrorHandlers();
     }
-    
+
     setupGlobalErrorHandlers() {
         // Handle uncaught JavaScript errors
         window.addEventListener('error', (event) => {
             // Suppress non-critical errors from ad blockers and analytics
             const filename = event.filename || '';
             const message = event.message || '';
-            
+
             // Suppress ad blocker errors
-            if (filename.includes('pagead2.googlesyndication.com') || 
+            if (filename.includes('pagead2.googlesyndication.com') ||
                 filename.includes('adsbygoogle') ||
                 filename.includes('googlesyndication')) {
                 return; // Silently ignore ad script errors
             }
-            
+
             // Suppress Cloudflare analytics errors
-            if (filename.includes('cdn-cgi/rum') || 
+            if (filename.includes('cdn-cgi/rum') ||
                 filename.includes('beacon.min.js') ||
                 filename.includes('zaraz') ||
                 filename.includes('cdn-cgi/zaraz')) {
                 return; // Silently ignore Cloudflare analytics errors
             }
-            
+
             // Suppress Chrome extension errors (not our code)
-            if (filename.includes('content.js') || 
+            if (filename.includes('content.js') ||
                 filename.includes('extension://') ||
                 filename.includes('chrome-extension://')) {
                 return; // Silently ignore browser extension errors
             }
-            
+
             // Suppress ERR_BLOCKED_BY_CLIENT errors (ad blockers)
-            if (message.includes('ERR_BLOCKED_BY_CLIENT') || 
+            if (message.includes('ERR_BLOCKED_BY_CLIENT') ||
                 message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
                 return; // Silently ignore ad blocker blocks
             }
-            
+
             // Suppress Puter.js whoami 401 errors (expected - User-Pays model)
-            if (message.includes('api.puter.com/whoami') || 
+            if (message.includes('api.puter.com/whoami') ||
                 (message.includes('401') && message.includes('puter'))) {
                 return; // Silently ignore
             }
-            
+
             // Suppress YouTube thumbnail 404 errors (not critical)
-            if (message.includes('ytimg.com') || 
+            if (message.includes('ytimg.com') ||
                 message.includes('hqdefault.jpg') ||
                 message.includes('videoseries')) {
                 return; // Silently ignore
             }
-            
+
             // Suppress YouTube Error 153 (video player configuration)
-            if (message.includes('Error 153') || 
+            if (message.includes('Error 153') ||
                 message.includes('Video player configuration error')) {
                 return; // Silently ignore - handled by fallback UI
             }
-            
+
             // Suppress 404 errors for analytics endpoints
-            if (message.includes('Failed to load resource') && 
+            if (message.includes('Failed to load resource') &&
                 (message.includes('404') || message.includes('ERR_BLOCKED_BY_CLIENT'))) {
-                if (filename.includes('cdn-cgi') || 
+                if (filename.includes('cdn-cgi') ||
                     filename.includes('pagead2') ||
                     filename.includes('beacon') ||
                     filename.includes('zaraz')) {
                     return; // Silently ignore
                 }
             }
-            
+
             this.handleError({
                 type: 'JavaScript Error',
                 message: event.message,
@@ -202,14 +202,14 @@ class ErrorHandler {
                 error: event.error
             });
         });
-        
+
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
             // Suppress non-critical promise rejections from ad blockers
             const reason = event.reason;
             if (reason && typeof reason === 'object') {
                 const reasonStr = JSON.stringify(reason).toLowerCase();
-                if (reasonStr.includes('pagead2') || 
+                if (reasonStr.includes('pagead2') ||
                     reasonStr.includes('adsbygoogle') ||
                     reasonStr.includes('err_blocked_by_client') ||
                     reasonStr.includes('cdn-cgi') ||
@@ -218,7 +218,7 @@ class ErrorHandler {
                     return; // Silently ignore ad blocker rejections
                 }
             }
-            
+
             const message = event.reason?.message || '';
             if (message.includes('ERR_BLOCKED_BY_CLIENT') ||
                 message.includes('pagead2') ||
@@ -230,93 +230,93 @@ class ErrorHandler {
                 message.includes('Video player configuration')) {
                 return; // Silently ignore
             }
-            
+
             this.handleError({
                 type: 'Unhandled Promise Rejection',
                 message: event.reason?.message || 'Unknown promise rejection',
                 error: event.reason
             });
         });
-        
+
         // Handle Firebase errors
         this.setupFirebaseErrorHandling();
     }
-    
+
     setupFirebaseErrorHandling() {
         // Override Firebase error handling
         const originalConsoleError = console.error;
         console.error = (...args) => {
             // Suppress non-critical errors from ad blockers and analytics
             const firstArg = args[0];
-            
+
             // Check if it's an object with error property (Cloudinary errors)
             if (firstArg && typeof firstArg === 'object' && firstArg.error) {
                 const errorMessage = firstArg.error.message || '';
-                if (errorMessage.includes('Eager parameter') || 
+                if (errorMessage.includes('Eager parameter') ||
                     errorMessage.includes('Transformation parameter') ||
                     errorMessage.includes('not allowed when using unsigned upload')) {
                     // This error is already handled in the upload function, suppress console logging
                     return; // Silently ignore - error is already shown to user via toast
                 }
             }
-            
+
             if (firstArg && typeof firstArg === 'string') {
                 const errorStr = firstArg.toLowerCase();
-                
+
                 // Suppress ad blocker errors
-                if (errorStr.includes('pagead2') || 
+                if (errorStr.includes('pagead2') ||
                     errorStr.includes('adsbygoogle') ||
                     errorStr.includes('googlesyndication') ||
                     errorStr.includes('err_blocked_by_client')) {
                     return; // Silently ignore ad blocker errors
                 }
-                
+
                 // Suppress Cloudflare analytics errors
-                if (errorStr.includes('cdn-cgi/rum') || 
+                if (errorStr.includes('cdn-cgi/rum') ||
                     errorStr.includes('beacon.min.js') ||
                     errorStr.includes('zaraz') ||
                     errorStr.includes('cdn-cgi/zaraz')) {
                     return; // Silently ignore Cloudflare analytics errors
                 }
-                
+
                 // Suppress Chrome extension errors
-                if (errorStr.includes('content.js') || 
+                if (errorStr.includes('content.js') ||
                     errorStr.includes('extension://') ||
                     errorStr.includes('chrome-extension://') ||
                     errorStr.includes('runtime.connect')) {
                     return; // Silently ignore browser extension errors
                 }
-                
+
                 // Suppress Cloudinary eager parameter errors (already handled)
-                if (errorStr.includes('eager parameter') || 
+                if (errorStr.includes('eager parameter') ||
                     errorStr.includes('transformation parameter') ||
                     errorStr.includes('not allowed when using unsigned upload')) {
                     return; // Silently ignore - error is already shown to user
                 }
-                
+
                 // Suppress Puter.js whoami 401 errors (expected - User-Pays model)
-                if (errorStr.includes('api.puter.com/whoami') || 
+                if (errorStr.includes('api.puter.com/whoami') ||
                     errorStr.includes('puter') && errorStr.includes('401')) {
                     return; // Silently ignore - Puter.js uses User-Pays model
                 }
-                
+
                 // Suppress YouTube thumbnail 404 errors (not critical)
-                if (errorStr.includes('ytimg.com') || 
+                if (errorStr.includes('ytimg.com') ||
                     errorStr.includes('hqdefault.jpg') ||
                     errorStr.includes('videoseries')) {
                     return; // Silently ignore - thumbnail errors are not critical
                 }
-                
+
                 // Suppress YouTube Error 153 (video player configuration)
-                if (errorStr.includes('error 153') || 
+                if (errorStr.includes('error 153') ||
                     errorStr.includes('video player configuration')) {
                     return; // Silently ignore - handled by fallback UI
                 }
-                
+
                 // Suppress 404 errors for analytics endpoints
-                if (errorStr.includes('failed to load resource') && 
+                if (errorStr.includes('failed to load resource') &&
                     (errorStr.includes('404') || errorStr.includes('err_blocked_by_client'))) {
-                    if (errorStr.includes('cdn-cgi') || 
+                    if (errorStr.includes('cdn-cgi') ||
                         errorStr.includes('pagead2') ||
                         errorStr.includes('beacon') ||
                         errorStr.includes('zaraz')) {
@@ -324,19 +324,19 @@ class ErrorHandler {
                     }
                 }
             }
-            
+
             // Check all args for Cloudinary error patterns
             for (const arg of args) {
                 if (arg && typeof arg === 'object') {
                     const argStr = JSON.stringify(arg).toLowerCase();
-                    if (argStr.includes('eager parameter') || 
+                    if (argStr.includes('eager parameter') ||
                         argStr.includes('transformation parameter') ||
                         argStr.includes('not allowed when using unsigned upload')) {
                         return; // Silently ignore - error is already handled
                     }
                 }
             }
-            
+
             if (args[0] && typeof args[0] === 'string' && args[0].includes('Firebase')) {
                 this.handleError({
                     type: 'Firebase Error',
@@ -347,7 +347,7 @@ class ErrorHandler {
             originalConsoleError.apply(console, args);
         };
     }
-    
+
     handleError(errorInfo) {
         this.errorCount++;
         this.errorLog.push({
@@ -356,12 +356,12 @@ class ErrorHandler {
             userAgent: navigator.userAgent,
             url: window.location.href
         });
-        
+
         // Log to console in development
         if (isDevelopment) {
             console.error('Error Handler:', errorInfo);
         }
-        
+
         // Send to analytics in production
         if (isProduction && typeof gtag !== 'undefined') {
             gtag('event', 'exception', {
@@ -369,19 +369,19 @@ class ErrorHandler {
                 fatal: false
             });
         }
-        
+
         // Prevent error spam
         if (this.errorCount > this.maxErrors) {
             this.showErrorLimitReached();
             return;
         }
-        
+
         // Show user-friendly error message for critical errors
         if (this.isCriticalError(errorInfo)) {
             this.showUserFriendlyError(errorInfo);
         }
     }
-    
+
     isCriticalError(errorInfo) {
         const criticalPatterns = [
             'Firebase',
@@ -390,13 +390,13 @@ class ErrorHandler {
             'Database',
             'Storage'
         ];
-        
-        return criticalPatterns.some(pattern => 
-            errorInfo.message?.includes(pattern) || 
+
+        return criticalPatterns.some(pattern =>
+            errorInfo.message?.includes(pattern) ||
             errorInfo.type?.includes(pattern)
         );
     }
-    
+
     showUserFriendlyError(errorInfo) {
         const errorMessages = {
             'Firebase Error': 'There was a temporary issue with our servers. Please try again in a moment.',
@@ -405,16 +405,16 @@ class ErrorHandler {
             'Database': 'We\'re experiencing technical difficulties. Please try again later.',
             'Storage': 'There was an issue saving your data. Please try again.'
         };
-        
+
         const message = errorMessages[errorInfo.type] || 'Something went wrong. Please try again.';
-        
+
         showToast(message, 'error');
     }
-    
+
     showErrorLimitReached() {
         showToast('Multiple errors detected. Please refresh the page.', 'error');
     }
-    
+
     getErrorSummary() {
         return {
             totalErrors: this.errorCount,
@@ -422,7 +422,7 @@ class ErrorHandler {
             errorTypes: this.getErrorTypeCount()
         };
     }
-    
+
     getErrorTypeCount() {
         const types = {};
         this.errorLog.forEach(error => {
@@ -444,12 +444,12 @@ function logError(error, context = '') {
         error: error,
         stack: error?.stack
     };
-    
+
     // Development logging
     if (isDevelopment) {
         console.error(`[${context}]`, error);
     }
-    
+
     // Production logging
     if (isProduction) {
         try {
@@ -463,7 +463,7 @@ function logError(error, context = '') {
             // Silent fail for logging
         }
     }
-    
+
     errorHandler.handleError(errorInfo);
 }
 
@@ -502,7 +502,7 @@ const Validator = {
         }
         return { valid: true };
     },
-    
+
     password(password, isNew = false) {
         if (!password) {
             return { valid: false, error: 'Password is required' };
@@ -528,7 +528,7 @@ const Validator = {
         }
         return { valid: true };
     },
-    
+
     displayName(name) {
         if (!name || !name.trim()) {
             return { valid: false, error: 'Name is required' };
@@ -545,10 +545,10 @@ const Validator = {
         }
         return { valid: true };
     },
-    
+
     file(file, options = {}) {
         const { maxSize = 5 * 1024 * 1024, allowedTypes = [] } = options;
-        
+
         if (!file) return { valid: false, error: 'No file provided' };
         if (file.size > maxSize) {
             const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1);
@@ -557,10 +557,10 @@ const Validator = {
         if (allowedTypes.length && !allowedTypes.includes(file.type)) {
             return { valid: false, error: 'Invalid file type' };
         }
-        
+
         return { valid: true };
     },
-    
+
     url(url) {
         if (!url || !url.trim()) {
             return { valid: false, error: 'URL is required' };
@@ -575,7 +575,7 @@ const Validator = {
             return { valid: false, error: 'Please enter a valid URL' };
         }
     },
-    
+
     title(title) {
         if (!title || !title.trim()) {
             return { valid: false, error: 'Title is required' };
@@ -595,15 +595,15 @@ const Validator = {
 function setupFormValidation(formId, validationRules) {
     const form = document.getElementById(formId);
     if (!form) return;
-    
+
     Object.keys(validationRules).forEach(inputId => {
         const input = document.getElementById(inputId);
         if (!input) return;
-        
+
         const rule = validationRules[inputId];
-        let errorElement = input.parentElement.querySelector(`#${inputId}-error`) || 
+        let errorElement = input.parentElement.querySelector(`#${inputId}-error`) ||
                           input.nextElementSibling;
-        
+
         if (!errorElement || !errorElement.classList.contains('error-message')) {
             errorElement = document.createElement('div');
             errorElement.id = `${inputId}-error`;
@@ -612,12 +612,12 @@ function setupFormValidation(formId, validationRules) {
             errorElement.setAttribute('aria-live', 'polite');
             input.parentElement.appendChild(errorElement);
         }
-        
+
         // Real-time validation on input
         input.addEventListener('input', () => {
             const value = input.value.trim();
             const result = rule.validator(value, rule.options);
-            
+
             if (result.valid) {
                 input.classList.remove('border-red-500', 'bg-red-50');
                 input.classList.add('border-gray-300');
@@ -633,7 +633,7 @@ function setupFormValidation(formId, validationRules) {
                 errorElement.className = 'error-message text-red-600 text-sm mt-1 h-4 transition-all';
             }
         });
-        
+
         // Validation on blur
         input.addEventListener('blur', () => {
             const value = input.value.trim();
@@ -660,7 +660,7 @@ function initializeFormValidations() {
             options: {}
         }
     });
-    
+
     // Register form
     setupFormValidation('register-form', {
         'register-displayname': {
@@ -676,7 +676,7 @@ function initializeFormValidations() {
             options: {}
         }
     });
-    
+
     // Add link form
     setupFormValidation('add-link-form-container', {
         'link-title': {
@@ -688,7 +688,7 @@ function initializeFormValidations() {
             options: {}
         }
     });
-    
+
     // User settings form
     setupFormValidation('user-details-form', {
         'user-displayname': {
@@ -713,14 +713,14 @@ class ResourceManager {
         this.resources = new Map();
         this.cleanupFunctions = new Set();
     }
-    
+
     registerResource(id, resource, cleanupFn) {
         this.resources.set(id, resource);
         if (cleanupFn) {
             this.cleanupFunctions.add(cleanupFn);
         }
     }
-    
+
     cleanupResource(id) {
         const resource = this.resources.get(id);
         if (resource && resource.cleanup) {
@@ -728,7 +728,7 @@ class ResourceManager {
         }
         this.resources.delete(id);
     }
-    
+
     cleanupAll() {
         this.cleanupFunctions.forEach(cleanup => {
             try {
@@ -751,7 +751,7 @@ class WebsiteValidator {
         this.results = [];
         this.setupTests();
     }
-    
+
     setupTests() {
         // DOM Element Tests
         this.addTest('DOM Elements', () => {
@@ -759,14 +759,14 @@ class WebsiteValidator {
                 'app-loading', 'landing-page', 'login-page', 'register-page',
                 'subject-dashboard-page', 'admin-panel', 'user-settings-panel'
             ];
-            
+
             const missing = criticalElements.filter(id => !document.getElementById(id));
             return {
                 passed: missing.length === 0,
                 message: missing.length === 0 ? 'All critical DOM elements present' : `Missing elements: ${missing.join(', ')}`
             };
         });
-        
+
         // Firebase Connection Test
         this.addTest('Firebase Connection', async () => {
             try {
@@ -776,7 +776,7 @@ class WebsiteValidator {
                 return { passed: false, message: `Firebase connection failed: ${error.message}` };
             }
         });
-        
+
         // Authentication Test
         this.addTest('Authentication System', () => {
             const authMethods = ['signInWithEmailAndPassword', 'createUserWithEmailAndPassword'];
@@ -786,7 +786,7 @@ class WebsiteValidator {
                 message: `Authentication methods available: ${available.length}/${authMethods.length}`
             };
         });
-        
+
         // Storage Test
         this.addTest('Firebase Storage', () => {
             const hasStorage = typeof storage !== 'undefined' && storage.ref;
@@ -795,7 +795,7 @@ class WebsiteValidator {
                 message: hasStorage ? 'Firebase Storage available' : 'Firebase Storage not available'
             };
         });
-        
+
         // Error Handling Test
         this.addTest('Error Handling', () => {
             const hasErrorHandler = typeof errorHandler !== 'undefined' && errorHandler.handleError;
@@ -804,40 +804,40 @@ class WebsiteValidator {
                 message: hasErrorHandler ? 'Error handling system active' : 'Error handling system missing'
             };
         });
-        
+
         // Performance Test
         this.addTest('Performance Utilities', () => {
             const hasDebounce = typeof debounce === 'function';
             const hasThrottle = typeof throttle === 'function';
             const hasCleanup = typeof cleanupTimers === 'function';
-            
+
             return {
                 passed: hasDebounce && hasThrottle && hasCleanup,
                 message: `Performance utilities: debounce=${hasDebounce}, throttle=${hasThrottle}, cleanup=${hasCleanup}`
             };
         });
-        
+
         // Validation Test
         this.addTest('Input Validation', () => {
             const hasValidator = typeof Validator !== 'undefined';
             const emailTest = hasValidator ? Validator.email('test@example.com') : false;
             const passwordTest = hasValidator ? Validator.password('password123') : false;
-            
+
             return {
                 passed: hasValidator && emailTest && passwordTest,
                 message: `Input validation: ${hasValidator ? 'Available' : 'Missing'}`
             };
         });
     }
-    
+
     addTest(name, testFunction) {
         this.tests.push({ name, testFunction });
     }
-    
+
     async runAllTests() {
         this.results = [];
         console.log('🧪 Running website validation tests...');
-        
+
         for (const test of this.tests) {
             try {
                 const result = await test.testFunction();
@@ -846,7 +846,7 @@ class WebsiteValidator {
                     ...result,
                     timestamp: new Date().toISOString()
                 });
-                
+
                 const status = result.passed ? 'PASS' : 'FAIL';
                 console.log(`${status} ${test.name}: ${result.message}`);
             } catch (error) {
@@ -859,26 +859,26 @@ class WebsiteValidator {
                 console.log(`FAIL ${test.name}: Test failed with error: ${error.message}`);
             }
         }
-        
+
         const passed = this.results.filter(r => r.passed).length;
         const total = this.results.length;
-        
+
         console.log(`\nTest Results: ${passed}/${total} tests passed`);
-        
+
         if (passed === total) {
             console.log('All tests passed! Website is bug-free and ready for production.');
         } else {
             console.log('Some tests failed. Please review the issues above.');
         }
-        
+
         return this.results;
     }
-    
+
     getTestSummary() {
         const passed = this.results.filter(r => r.passed).length;
         const total = this.results.length;
         const failed = this.results.filter(r => !r.passed);
-        
+
         return {
             total,
             passed,
@@ -910,7 +910,7 @@ class HealthMonitor {
         this.setupHealthChecks();
         this.startMonitoring();
     }
-    
+
     setupHealthChecks() {
         // Memory usage check
         this.addHealthCheck('Memory Usage', () => {
@@ -918,7 +918,7 @@ class HealthMonitor {
                 const used = performance.memory.usedJSHeapSize;
                 const total = performance.memory.totalJSHeapSize;
                 const percentage = (used / total) * 100;
-                
+
                 return {
                     healthy: percentage < 80,
                     value: `${percentage.toFixed(1)}%`,
@@ -927,7 +927,7 @@ class HealthMonitor {
             }
             return { healthy: true, value: 'N/A', warning: null };
         });
-        
+
         // Connection status check
         this.addHealthCheck('Network Connection', () => {
             const online = navigator.onLine;
@@ -937,7 +937,7 @@ class HealthMonitor {
                 warning: !online ? 'No internet connection' : null
             };
         });
-        
+
         // Firebase connection check
         this.addHealthCheck('Firebase Status', async () => {
             try {
@@ -951,19 +951,19 @@ class HealthMonitor {
                 };
             }
         });
-        
+
         // Error rate check
         this.addHealthCheck('Error Rate', () => {
             const errorSummary = errorHandler.getErrorSummary();
             const errorRate = errorSummary.totalErrors;
-            
+
             return {
                 healthy: errorRate < 5,
                 value: `${errorRate} errors`,
                 warning: errorRate > 2 ? 'High error rate detected' : null
             };
         });
-        
+
         // Performance check
         this.addHealthCheck('Performance', () => {
             const navigation = performance.getEntriesByType('navigation')[0];
@@ -978,15 +978,15 @@ class HealthMonitor {
             return { healthy: true, value: 'N/A', warning: null };
         });
     }
-    
+
     addHealthCheck(name, checkFunction) {
         this.healthChecks.push({ name, checkFunction });
     }
-    
+
     async runHealthChecks() {
         const results = [];
         let overallHealthy = true;
-        
+
         for (const check of this.healthChecks) {
             try {
                 const result = await check.checkFunction();
@@ -995,7 +995,7 @@ class HealthMonitor {
                     ...result,
                     timestamp: new Date().toISOString()
                 });
-                
+
                 if (!result.healthy) {
                     overallHealthy = false;
                 }
@@ -1010,10 +1010,10 @@ class HealthMonitor {
                 overallHealthy = false;
             }
         }
-        
+
         this.isHealthy = overallHealthy;
         this.lastCheck = new Date().toISOString();
-        
+
         // Log health status
         if (isDevelopment) {
             console.log(`Health Check: ${overallHealthy ? 'Healthy' : 'Issues Detected'}`);
@@ -1022,22 +1022,22 @@ class HealthMonitor {
                 console.log(`${status} ${result.name}: ${result.value}${result.warning ? ` (${result.warning})` : ''}`);
             });
         }
-        
+
         return results;
     }
-    
+
     startMonitoring() {
         // Run health checks every 30 seconds
         setInterval(() => {
             this.runHealthChecks();
         }, 30000);
-        
+
         // Initial health check
         setTimeout(() => {
             this.runHealthChecks();
         }, 5000);
     }
-    
+
     getHealthSummary() {
         return {
             isHealthy: this.isHealthy,
@@ -1062,7 +1062,7 @@ window.getSystemHealth = () => {
 // System Health Modal - Enhanced with error copying and better UI
 function showSystemHealthModal() {
     if (currentUser?.role !== 'admin') return;
-    
+
     const healthData = getSystemHealth();
     const hasErrors = healthData.tests.failedTests.length > 0 || healthData.errors.totalErrors > 0;
     const allErrors = [
@@ -1070,7 +1070,7 @@ function showSystemHealthModal() {
         ...Object.entries(healthData.errors.errorTypes).map(([type, count]) => `[ERROR] ${type}: ${count} occurrence(s)`)
     ];
     const errorsText = allErrors.join('\n');
-    
+
     // Auto-copy errors to clipboard if any exist
     if (hasErrors && errorsText) {
         navigator.clipboard.writeText(errorsText).then(() => {
@@ -1079,7 +1079,7 @@ function showSystemHealthModal() {
             // Fallback if clipboard API fails
         });
     }
-    
+
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
@@ -1096,7 +1096,7 @@ function showSystemHealthModal() {
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            
+
             <div class="overflow-y-auto flex-1 pr-2">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <!-- Health Status -->
@@ -1118,7 +1118,7 @@ function showSystemHealthModal() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Test Results -->
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
                         <div class="flex items-center justify-between mb-3">
@@ -1155,7 +1155,7 @@ function showSystemHealthModal() {
                             ` : ''}
                         </div>
                     </div>
-                    
+
                     <!-- Error Summary -->
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
                         <div class="flex items-center justify-between mb-3">
@@ -1192,7 +1192,7 @@ function showSystemHealthModal() {
                         </div>
                     </div>
                 </div>
-                
+
                 ${hasErrors ? `
                     <div class="bg-red-50 border-2 border-red-200 rounded-xl p-5 mb-6">
                         <div class="flex items-center justify-between mb-3">
@@ -1210,7 +1210,7 @@ function showSystemHealthModal() {
                     </div>
                 ` : ''}
             </div>
-            
+
             <div class="mt-6 flex gap-3 justify-center flex-shrink-0 pt-4 border-t border-gray-200">
                 <button onclick="websiteValidator.runAllTests(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-vial"></i> Run Tests
@@ -1227,11 +1227,11 @@ function showSystemHealthModal() {
             </div>
         </div>
     `;
-    
+
     // Store errors text for copy functions
     window.currentHealthErrors = errorsText;
     window.currentHealthData = healthData;
-    
+
     document.body.appendChild(modal);
 }
 
@@ -1285,7 +1285,7 @@ function throttle(func, limit) {
     let inThrottle;
     let lastFunc;
     let lastRan;
-    
+
     return function executedFunction(...args) {
         if (!inThrottle) {
             func(...args);
@@ -1309,18 +1309,18 @@ class RAFManager {
         this.callbacks = new Set();
         this.rafId = null;
     }
-    
+
     add(callback) {
         this.callbacks.add(callback);
         if (this.callbacks.size === 1) {
             this.tick();
         }
     }
-    
+
     remove(callback) {
         this.callbacks.delete(callback);
     }
-    
+
     tick() {
         this.callbacks.forEach(callback => callback());
         if (this.callbacks.size > 0) {
@@ -1354,7 +1354,7 @@ async function safeFirebaseOperation(operation, context = '') {
         return await operation();
     } catch (error) {
         logError(error, `Firebase Operation: ${context}`);
-        
+
         // Handle specific Firebase errors
         if (error.code === 'permission-denied') {
             showToast('You don\'t have permission to perform this action', 'error');
@@ -1365,7 +1365,7 @@ async function safeFirebaseOperation(operation, context = '') {
         } else {
             showToast('An error occurred. Please try again.', 'error');
         }
-        
+
         return null;
     }
 }
@@ -1408,14 +1408,14 @@ async function getUserIPWithLocation() {
             'https://ipapi.co/json/',
             'https://api.ipgeolocation.io/ipgeo?apiKey=free'
         ];
-        
+
         for (const service of ipServices) {
             try {
                 const response = await fetch(service, { timeout: 5000 });
                 const data = await response.json();
-                
+
                 let ip = data.ip || data.query;
-                
+
                 // Convert IPv6 to IPv4 or hide if not possible
                 if (ip && isIPv6(ip)) {
                     const ipv4 = await convertIPv6ToIPv4(ip);
@@ -1426,10 +1426,10 @@ async function getUserIPWithLocation() {
                         ip = 'IPv6_Hidden';
                     }
                 }
-                
+
                 // Get location data
                 const locationData = await getLocationFromIP(ip);
-                
+
                 return {
                     ip: ip,
                     location: locationData,
@@ -1440,7 +1440,7 @@ async function getUserIPWithLocation() {
                 continue;
             }
         }
-        
+
         // Fallback to basic IP detection
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();
@@ -1481,11 +1481,11 @@ async function getLocationFromIP(ip) {
     if (!ip || ip === 'Unknown' || ip === 'IPv6_Hidden') {
         return null;
     }
-    
+
     try {
         const response = await fetch(`https://ipapi.co/${ip}/json/`);
         const data = await response.json();
-        
+
         return {
             country: data.country_name || 'Unknown',
             countryCode: data.country_code || 'Unknown',
@@ -1506,22 +1506,22 @@ async function getLocationFromIP(ip) {
 // Initialize user tracking
 async function initializeUserTracking() {
     if (!currentUser) return;
-    
+
     return safeExecuteAsync(async () => {
         // Get user's IP address with IPv4 preference and location data
         const ipData = await getUserIPWithLocation();
         userIP = ipData.ip;
         userLocation = ipData.location;
-        
+
         // Generate unique session ID
         sessionId = `${currentUser.uid}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
+
         // Initialize activity tracker
         userActivityTracker.sessionStart = Date.now();
-        
+
         // Check for concurrent sessions (account sharing detection)
         await checkConcurrentSessions();
-        
+
         // Log session start with enhanced data
         await logUserActivity('session_start', {
             sessionId: sessionId,
@@ -1531,21 +1531,21 @@ async function initializeUserTracking() {
             loginTime: userActivityTracker.loginTime,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
         // Update daily stats
         userActivityTracker.dailyStats.loginCount++;
         await updateDailyStats();
-        
+
         // Start periodic activity logging
         const intervalId = setInterval(logPeriodicActivity, 30000); // Every 30 seconds
         resourceManager.registerResource('periodicActivity', { intervalId }, () => clearInterval(intervalId));
-        
+
         // Initialize real-time tracking
         initializeRealtimeTracking();
-        
+
         // Initialize admin diagnostics if user is admin
         initializeAdminDiagnostics();
-        
+
     }, 'User Tracking Initialization');
 }
 
@@ -1556,7 +1556,7 @@ async function checkConcurrentSessions() {
             .where('userId', '==', currentUser.uid)
             .where('isActive', '==', true)
             .get();
-        
+
         const activeSessions = [];
         sessionsSnapshot.forEach(doc => {
             const session = doc.data();
@@ -1564,12 +1564,12 @@ async function checkConcurrentSessions() {
                 activeSessions.push(session);
             }
         });
-        
+
         if (activeSessions.length > 0) {
             // Account sharing detected
             await handleAccountSharing(activeSessions);
         }
-        
+
     }, 'Concurrent Session Check');
 }
 
@@ -1587,7 +1587,7 @@ async function handleAccountSharing(concurrentSessions) {
                 lastSeen: s.lastSeen
             }))
         });
-        
+
         // Log the violation
         await db.collection('accountViolations').add({
             userId: currentUser.uid,
@@ -1598,15 +1598,15 @@ async function handleAccountSharing(concurrentSessions) {
             currentIP: userIP,
             currentUserAgent: navigator.userAgent
         });
-        
+
         // Show warning to user
         showAccountSharingWarning();
-        
+
         // Force logout after warning
         setTimeout(() => {
             handleLogout();
         }, 10000);
-        
+
     }, 'Account Sharing Handling');
 }
 
@@ -1624,7 +1624,7 @@ function showAccountSharingWarning() {
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Account Sharing Detected</h2>
                 <p class="text-gray-600 mb-6">
-                    Your account has been detected being used from multiple locations simultaneously. 
+                    Your account has been detected being used from multiple locations simultaneously.
                     This violates our terms of service.
                 </p>
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -1647,7 +1647,7 @@ function showAccountSharingWarning() {
 // Log user activity
 async function logUserActivity(activityType, additionalData = {}) {
     if (!currentUser) return;
-    
+
     return safeExecuteAsync(async () => {
         const activityData = {
             userId: currentUser.uid,
@@ -1659,9 +1659,9 @@ async function logUserActivity(activityType, additionalData = {}) {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             ...additionalData
         };
-        
+
         await db.collection('userActivities').add(activityData);
-        
+
         // Update session activity
         if (sessionId) {
             await db.collection('userSessions').doc(sessionId).set({
@@ -1674,17 +1674,17 @@ async function logUserActivity(activityType, additionalData = {}) {
                 lastActivity: activityType
             }, { merge: true });
         }
-        
+
     }, 'User Activity Logging');
 }
 
 // Update daily statistics
 async function updateDailyStats() {
     if (!currentUser) return;
-    
+
     const today = new Date().toDateString();
     const dailyStatsRef = db.collection('userDailyStats').doc(`${currentUser.uid}_${today}`);
-    
+
     try {
         await dailyStatsRef.set({
             userId: currentUser.uid,
@@ -1704,11 +1704,11 @@ async function updateDailyStats() {
 // Track logout
 async function trackLogout() {
     if (!currentUser) return;
-    
+
     userActivityTracker.logoutTime = Date.now();
     const sessionDuration = userActivityTracker.logoutTime - userActivityTracker.loginTime;
     userActivityTracker.dailyStats.totalSessionTime += sessionDuration;
-    
+
     await logUserActivity('session_end', {
         sessionId: sessionId,
         ip: userIP,
@@ -1721,9 +1721,9 @@ async function trackLogout() {
         openedFiles: Array.from(userActivityTracker.openedFiles),
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
-    
+
     await updateDailyStats();
-    
+
     // Cleanup real-time tracking
     cleanupRealtimeTracking();
 }
@@ -1745,16 +1745,16 @@ function initializeRealtimeTracking() {
 
     // Start heartbeat system
     startHeartbeatSystem();
-    
+
     // Start real-time analytics updates
     startRealtimeAnalytics();
-    
+
     // Monitor connection status
     monitorConnectionStatus();
-    
+
     // Track page visibility changes
     trackPageVisibility();
-    
+
     console.log('Real-time tracking initialized');
 }
 
@@ -1772,7 +1772,7 @@ function startHeartbeatSystem() {
         } catch (error) {
             realtimeTracker.failedRequests++;
             console.warn(`Heartbeat failed (${realtimeTracker.failedRequests}/${realtimeTracker.maxFailedRequests}):`, error);
-            
+
             if (realtimeTracker.failedRequests >= realtimeTracker.maxFailedRequests) {
                 updateConnectionStatus('disconnected');
             }
@@ -1799,7 +1799,7 @@ async function sendHeartbeat() {
 
     // Update session document
     await db.collection('userSessions').doc(sessionId).set(heartbeatData, { merge: true });
-    
+
     // Update user's last seen
     await db.collection('users').doc(currentUser.uid).update({
         lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1823,7 +1823,7 @@ function startRealtimeAnalytics() {
     }, 5000); // Every 5 seconds for admin users
 }
 
-// Enhanced real-time analytics  
+// Enhanced real-time analytics
 // Copyright © 2024 Mayukhjit Chakraborty. All rights reserved.
 async function updateAnalyticsRealtime() {
     try {
@@ -1847,7 +1847,7 @@ async function updateAnalyticsRealtime() {
         // Update active today count
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const todaySessionsSnapshot = await db.collection('userSessions')
             .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(today))
             .get();
@@ -1874,11 +1874,11 @@ async function updateRealtimeActivityFeed(activeSessions) {
     if (!activityFeedEl) return;
 
     const activities = [];
-    
+
     for (const session of activeSessions.slice(0, 10)) { // Show last 10 activities
         const userDoc = await db.collection('users').doc(session.userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
-        
+
         if (userData) {
             activities.push({
                 user: userData.displayName || userData.email,
@@ -1929,7 +1929,7 @@ function monitorConnectionStatus() {
     db.enableNetwork().catch(() => {
         updateConnectionStatus('disconnected');
     });
-    
+
     // Periodic connection check every 15 seconds
     if (connectionCheckInterval) {
         clearInterval(connectionCheckInterval);
@@ -1941,7 +1941,7 @@ function monitorConnectionStatus() {
                 updateConnectionStatus('disconnected');
                 return;
             }
-            
+
             // Try a lightweight Firebase operation to verify connection
             await db.collection('settings').doc('maintenance').get();
             updateConnectionStatus('connected');
@@ -1951,7 +1951,7 @@ function monitorConnectionStatus() {
             updateConnectionStatus('disconnected');
         }
     }, 15000); // Check every 15 seconds
-    
+
     // Initial check
     setTimeout(async () => {
         try {
@@ -1979,10 +1979,10 @@ async function refreshOnlineStatus() {
     try {
         const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
         const maintenanceEnabled = maintenanceDoc.exists ? !!maintenanceDoc.data()?.enabled : false;
-        
+
         const statusElements = document.querySelectorAll('.online-status');
         const statusTextElements = document.querySelectorAll('.online-text');
-        
+
         // Maintenance mode takes priority - if enabled, always show offline (red)
         if (maintenanceEnabled) {
             statusElements.forEach(element => {
@@ -2010,7 +2010,7 @@ async function refreshOnlineStatus() {
         const statusElements = document.querySelectorAll('.online-status');
         const statusTextElements = document.querySelectorAll('.online-text');
         const isConnected = realtimeTracker.connectionStatus === 'connected';
-        
+
         statusElements.forEach(element => {
             if (isConnected) {
                 element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
@@ -2039,7 +2039,7 @@ function trackPageVisibility() {
                 sessionId: sessionId,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
+
             // Send immediate heartbeat
             await sendHeartbeat();
         }
@@ -2051,7 +2051,7 @@ async function updateSystemHealthRealtime() {
     try {
         // Calculate active users
         const totalUsers = Object.keys(allUsers).length || 0;
-        
+
         // Update UI elements
         const responseTimeEl = document.getElementById('avg-response-time');
         if (responseTimeEl) {
@@ -2098,9 +2098,9 @@ async function calculateErrorRate() {
             .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(new Date(Date.now() - 3600000)))
             .get();
 
-        const errorRate = totalLogsSnapshot.size > 0 ? 
+        const errorRate = totalLogsSnapshot.size > 0 ?
             ((errorLogsSnapshot.size / totalLogsSnapshot.size) * 100).toFixed(2) : 0;
-        
+
         return errorRate;
     } catch (error) {
         return 0;
@@ -2130,13 +2130,13 @@ function formatTimeAgo(date) {
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours}h ago`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
 }
@@ -2198,10 +2198,10 @@ async function runTrackingDiagnostics() {
         };
 
         adminDiagnostics.trackingStatus = diagnostics;
-        
+
         // Log diagnostics to console for debugging
         console.log('🔍 Tracking Diagnostics:', diagnostics);
-        
+
         // Update diagnostic UI if visible
         updateDiagnosticUI(diagnostics);
 
@@ -2259,10 +2259,10 @@ async function testRealtimeUpdates() {
         };
 
         await db.collection('diagnosticTests').doc(testData.testId).set(testData);
-        
+
         // Wait for update
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Verify update
         const doc = await db.collection('diagnosticTests').doc(testData.testId).get();
         return doc.exists;
@@ -2277,7 +2277,7 @@ async function testDatabaseConnection() {
         const start = Date.now();
         await db.collection('systemHealth').doc('ping').get();
         const responseTime = Date.now() - start;
-        
+
         return {
             connected: true,
             responseTime: responseTime,
@@ -2319,7 +2319,7 @@ async function testAnalytics() {
     try {
         const usersSnapshot = await db.collection('users').limit(1).get();
         const activitiesSnapshot = await db.collection('userActivities').limit(1).get();
-        
+
         return {
             usersAccessible: usersSnapshot.size >= 0,
             activitiesAccessible: activitiesSnapshot.size >= 0,
@@ -2427,7 +2427,7 @@ function updateDiagnosticUI(diagnostics) {
                     <div>Real-time: ${statusIcon(diagnostics.trackingSystem?.realtimeUpdates)}</div>
                 </div>
             </div>
-            
+
             <div class="bg-white/50 p-4 rounded-lg border border-white/30">
                 <h4 class="font-semibold text-gray-800 mb-2">Database Connection</h4>
                 <div class="space-y-1 text-sm">
@@ -2436,7 +2436,7 @@ function updateDiagnosticUI(diagnostics) {
                     <div>Real-time: ${statusIcon(diagnostics.realtimeUpdates)}</div>
                 </div>
             </div>
-            
+
             <div class="bg-white/50 p-4 rounded-lg border border-white/30">
                 <h4 class="font-semibold text-gray-800 mb-2">User Sessions</h4>
                 <div class="space-y-1 text-sm">
@@ -2444,7 +2444,7 @@ function updateDiagnosticUI(diagnostics) {
                     <div>Active: ${diagnostics.userSessions?.activeSessions || 0}</div>
                 </div>
             </div>
-            
+
             <div class="bg-white/50 p-4 rounded-lg border border-white/30">
                 <h4 class="font-semibold text-gray-800 mb-2">Analytics</h4>
                 <div class="space-y-1 text-sm">
@@ -2453,7 +2453,7 @@ function updateDiagnosticUI(diagnostics) {
                 </div>
             </div>
         </div>
-        
+
         <div class="mt-4 text-xs text-gray-500">
             Last updated: ${diagnostics.timestamp.toLocaleTimeString()}
         </div>
@@ -2512,14 +2512,14 @@ async function clearDiagnosticLogs() {
         try {
             const batch = db.batch();
             const logsSnapshot = await db.collection('errorLogs').get();
-            
+
             logsSnapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
-            
+
             await batch.commit();
             adminDiagnostics.errorLogs = [];
-            
+
             alert('Diagnostic logs cleared successfully');
         } catch (error) {
             alert('Failed to clear logs: ' + error.message);
@@ -2530,13 +2530,13 @@ async function clearDiagnosticLogs() {
 // Enhanced user activity tracking
 function trackSubjectChange(subjectName) {
     if (!currentUser) return;
-    
+
     // End previous subject tracking
     if (userActivityTracker.currentSubject && userActivityTracker.subjectStartTime) {
         const timeSpent = Date.now() - userActivityTracker.subjectStartTime;
-        userActivityTracker.totalSubjectTime[userActivityTracker.currentSubject] = 
+        userActivityTracker.totalSubjectTime[userActivityTracker.currentSubject] =
             (userActivityTracker.totalSubjectTime[userActivityTracker.currentSubject] || 0) + timeSpent;
-        
+
         // Log subject activity
         logUserActivity('subject_change', {
             previousSubject: userActivityTracker.currentSubject,
@@ -2547,13 +2547,13 @@ function trackSubjectChange(subjectName) {
             location: userLocation
         });
     }
-    
+
     // Start new subject tracking
     userActivityTracker.currentSubject = subjectName;
     userActivityTracker.subjectStartTime = Date.now();
     userActivityTracker.dailyStats.subjectsStudied.add(subjectName);
     currentSubject = subjectName;
-    
+
     // Log subject start
     logUserActivity('subject_start', {
         subject: subjectName,
@@ -2561,20 +2561,20 @@ function trackSubjectChange(subjectName) {
         ip: userIP,
         location: userLocation
     });
-    
+
     // Update daily stats
     updateDailyStats();
 }
 
 function trackFileOpen(fileName, fileType, subjectName) {
     if (!currentUser) return;
-    
+
     // End previous file tracking
     if (userActivityTracker.currentFile && userActivityTracker.fileStartTime) {
         const timeSpent = Date.now() - userActivityTracker.fileStartTime;
-        userActivityTracker.totalFileTime[userActivityTracker.currentFile] = 
+        userActivityTracker.totalFileTime[userActivityTracker.currentFile] =
             (userActivityTracker.totalFileTime[userActivityTracker.currentFile] || 0) + timeSpent;
-        
+
         // Log file activity
         logUserActivity('file_change', {
             previousFile: userActivityTracker.currentFile,
@@ -2585,14 +2585,14 @@ function trackFileOpen(fileName, fileType, subjectName) {
             location: userLocation
         });
     }
-    
+
     // Start new file tracking
     userActivityTracker.currentFile = fileName;
     userActivityTracker.fileStartTime = Date.now();
     userActivityTracker.openedFiles.add(fileName);
     userActivityTracker.dailyStats.filesAccessed.add(fileName);
     currentFile = fileName;
-    
+
     // Log file open
     logUserActivity('file_open', {
         fileName: fileName,
@@ -2602,18 +2602,18 @@ function trackFileOpen(fileName, fileType, subjectName) {
         ip: userIP,
         location: userLocation
     });
-    
+
     // Update daily stats
     updateDailyStats();
 }
 
 function trackFileClose(fileName) {
     if (!currentUser || !userActivityTracker.fileStartTime) return;
-    
+
     const timeSpent = Date.now() - userActivityTracker.fileStartTime;
-    userActivityTracker.totalFileTime[fileName] = 
+    userActivityTracker.totalFileTime[fileName] =
         (userActivityTracker.totalFileTime[fileName] || 0) + timeSpent;
-    
+
     // Log file close
     logUserActivity('file_close', {
         fileName: fileName,
@@ -2622,7 +2622,7 @@ function trackFileClose(fileName) {
         ip: userIP,
         location: userLocation
     });
-    
+
     userActivityTracker.currentFile = null;
     userActivityTracker.fileStartTime = null;
     currentFile = null;
@@ -2631,7 +2631,7 @@ function trackFileClose(fileName) {
 // Log periodic activity to track session duration
 async function logPeriodicActivity() {
     if (!currentUser) return;
-    
+
     await logUserActivity('heartbeat', {
         pageViewTime: Date.now() - currentPageStart,
         sessionDuration: Date.now() - userActivityTracker.sessionStart,
@@ -2649,17 +2649,17 @@ async function logPeriodicActivity() {
 // Track file viewing
 async function trackFileView(fileId, fileName, subject) {
     if (!currentUser) return;
-    
+
     const viewStart = Date.now();
     currentFile = { id: fileId, name: fileName, subject: subject, startTime: viewStart };
-    
+
     await logUserActivity('file_view_start', {
         fileId: fileId,
         fileName: fileName,
         subject: subject,
         viewStartTime: viewStart
     });
-    
+
     // Track when user leaves the file
     const trackFileEnd = () => {
         if (currentFile && currentFile.id === fileId) {
@@ -2674,26 +2674,26 @@ async function trackFileView(fileId, fileName, subject) {
             currentFile = null;
         }
     };
-    
+
     // Track file end on page unload or navigation
     window.addEventListener('beforeunload', trackFileEnd);
     window.addEventListener('pagehide', trackFileEnd);
-    
+
     return trackFileEnd;
 }
 
 // Track subject revision time
 async function trackSubjectRevision(subject) {
     if (!currentUser) return;
-    
+
     const revisionStart = Date.now();
     currentSubject = { name: subject, startTime: revisionStart };
-    
+
     await logUserActivity('subject_revision_start', {
         subject: subject,
         revisionStartTime: revisionStart
     });
-    
+
     // Track when user leaves the subject
     const trackSubjectEnd = () => {
         if (currentSubject && currentSubject.name === subject) {
@@ -2706,7 +2706,7 @@ async function trackSubjectRevision(subject) {
             currentSubject = null;
         }
     };
-    
+
     return trackSubjectEnd;
 }
 
@@ -2931,20 +2931,20 @@ function ensureInitialView() {
 function hideAppLoading() {
     const overlay = document.getElementById('app-loading');
     if (!overlay) return;
-    
+
     const logo = overlay.querySelector('.animate-logo');
-    if (logo) { 
-        logo.style.opacity = '1'; 
-        logo.style.transform = 'translateY(0)'; 
+    if (logo) {
+        logo.style.opacity = '1';
+        logo.style.transform = 'translateY(0)';
     }
-    
+
     ensureInitialView();
-    
+
     // Smooth fade out with better timing
     overlay.style.opacity = '0';
     overlay.style.transition = 'opacity 300ms ease-out';
-    
-    setTimeout(() => { 
+
+    setTimeout(() => {
         overlay.style.display = 'none';
         // Ensure body scroll is restored
         document.body.style.overflow = '';
@@ -2954,7 +2954,7 @@ function hideAppLoading() {
 function showAppLoading() {
     const overlay = document.getElementById('app-loading');
     if (!overlay) return;
-    
+
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
     document.body.style.overflow = 'hidden';
@@ -2965,13 +2965,13 @@ function showAppLoading() {
 function initializeSecurityFeatures() {
     // Right-click context menu is enabled for all areas
     // Users can right-click anywhere to access browser context menu and dev tools
-    
+
     // All keyboard shortcuts are enabled
     // Users can use Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, F12, Ctrl+Shift+I, etc. freely
-    
+
     // Text selection is enabled for all areas
     // Users can freely select and copy text anywhere on the page
-    
+
     // Add visible watermark to content areas
     const style = document.createElement('style');
     style.textContent = `
@@ -2988,7 +2988,7 @@ function initializeSecurityFeatures() {
             font-family: Arial, sans-serif;
             user-select: none;
         }
-        
+
         /* Enable text selection everywhere */
         * {
             -webkit-user-select: text;
@@ -2996,7 +2996,7 @@ function initializeSecurityFeatures() {
             -ms-user-select: text;
             user-select: text;
         }
-        
+
         /* Disable drag and drop of images */
         img:not(.blog-inline-image) {
             -webkit-user-drag: none;
@@ -3008,7 +3008,7 @@ function initializeSecurityFeatures() {
         }
     `;
     document.head.appendChild(style);
-    
+
     // Track suspicious activity
     let suspiciousActivityCount = 0;
     const trackSuspiciousActivity = (action) => {
@@ -3025,10 +3025,10 @@ function initializeSecurityFeatures() {
             }
         }
     };
-    
+
     // Developer tools detection is disabled
     // Users can freely use browser dev tools without restrictions
-    
+
     // Detect iframe embedding (unauthorized embedding)
     if (window.self !== window.top) {
         trackSuspiciousActivity('iframe_embedding');
@@ -3040,31 +3040,31 @@ function initializeSecurityFeatures() {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize security features
     initializeSecurityFeatures();
-    
+
     // Initialize form validations
     initializeFormValidations();
-    
+
     // Use requestIdleCallback for better performance
     if ('requestIdleCallback' in window) {
         requestIdleCallback(() => {
             const overlay = document.getElementById('app-loading');
             const logo = overlay?.querySelector?.('.animate-logo');
-            if (logo) { 
-                requestAnimationFrame(() => { 
-                    logo.style.opacity = '1'; 
-                    logo.style.transform = 'translateY(0)'; 
-                }); 
+            if (logo) {
+                requestAnimationFrame(() => {
+                    logo.style.opacity = '1';
+                    logo.style.transform = 'translateY(0)';
+                });
             }
         }, { timeout: 1000 });
     } else {
         setTimeout(() => {
             const overlay = document.getElementById('app-loading');
             const logo = overlay?.querySelector?.('.animate-logo');
-            if (logo) { 
-                requestAnimationFrame(() => { 
-                    logo.style.opacity = '1'; 
-                    logo.style.transform = 'translateY(0)'; 
-                }); 
+            if (logo) {
+                requestAnimationFrame(() => {
+                    logo.style.opacity = '1';
+                    logo.style.transform = 'translateY(0)';
+                });
             }
         }, 0);
     }
@@ -3083,14 +3083,14 @@ window.addEventListener('load', () => {
 window.addEventListener('beforeunload', () => {
     cleanupTimers();
     resourceManager.cleanupAll();
-    
+
     // Cleanup activity monitoring
     if (activityDataUnsubscribe) activityDataUnsubscribe();
     if (userSessionsUnsubscribe) userSessionsUnsubscribe();
-    
+
     // Track logout
     trackLogout();
-    
+
     // Mark session as inactive
     if (currentUser && sessionId) {
         navigator.sendBeacon('/api/logout', JSON.stringify({
@@ -3202,12 +3202,12 @@ function initializeAppState() {
         unsubscribeMaintenance = db.collection('settings').doc('maintenance').onSnapshot(doc => {
             const enabled = !!doc.data()?.enabled;
             const message = doc.data()?.message || 'System is currently under maintenance. Please check back later.';
-            
+
             // Update online/offline status based on maintenance mode
             updateOnlineStatus(enabled);
             // Also refresh status to ensure it's updated immediately
             refreshOnlineStatus();
-            
+
             if (enabled && currentUser?.role !== 'admin') {
                 showMaintenancePage(message);
             } else {
@@ -3219,11 +3219,11 @@ function initializeAppState() {
     if (currentUser?.role !== 'admin') {
         checkMaintenanceMode();
     }
-    
+
     document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('email-verify-page').classList.add('hidden');
-    
+
     const mainApp = document.getElementById('main-app');
     mainApp.classList.remove('hidden');
     mainApp.style.display = 'flex';
@@ -3232,16 +3232,16 @@ function initializeAppState() {
     setupRealtimeListeners();
     startClock();
     hideAppLoading();
-    
+
     if (currentUser) {
         renderDashboard();
         // Log client access context for auditing
         logClientAccess().catch(() => {});
-        
+
         // Check subscription expiry on login
         checkSubscriptionExpiry();
     }
-    
+
     // Set up periodic subscription expiry check (every hour)
     if (!window.subscriptionExpiryInterval) {
         window.subscriptionExpiryInterval = setInterval(checkSubscriptionExpiry, 60 * 60 * 1000);
@@ -3271,7 +3271,7 @@ function initializeAppState() {
         const saved = localStorage.getItem('gcsemate_accent');
         if (saved) applyAccent(JSON.parse(saved));
     } catch (e) {}
-    
+
     // Update AI Tutor navigation visibility
     updateAITutorNavVisibility();
 }
@@ -3298,10 +3298,10 @@ let currentTipIndex = 0;
 // Clean AI response to remove em dashes and emojis
 function cleanAIResponse(text) {
     if (!text || typeof text !== 'string') return text;
-    
+
     // Replace em dashes (—) and en dashes (–) with regular hyphens or colons
     text = text.replace(/—/g, '-').replace(/–/g, '-');
-    
+
     // Remove emojis and emoticons (common Unicode ranges)
     // This covers most emoji ranges including:
     // - Emoticons (😀-🙏)
@@ -3318,17 +3318,17 @@ function cleanAIResponse(text) {
     text = text.replace(/[\u{1F900}-\u{1F9FF}]/gu, ''); // Supplemental Symbols and Pictographs
     text = text.replace(/[\u{1FA00}-\u{1FA6F}]/gu, ''); // Chess Symbols
     text = text.replace(/[\u{1FA70}-\u{1FAFF}]/gu, ''); // Symbols and Pictographs Extended-A
-    
+
     // Remove common emoji-like symbols
     text = text.replace(/[✅❌⚠️⭐🌟💡📝📚🎓💯🔥💪👍👎]/g, '');
-    
+
     // Normalize line breaks - ensure proper spacing
     // Replace multiple consecutive newlines with double newline (for paragraph breaks)
     text = text.replace(/\n{3,}/g, '\n\n');
-    
+
     // Clean up any double spaces (but preserve intentional spacing)
     text = text.replace(/[ \t]+/g, ' ').replace(/\s-\s/g, ' - ').trim();
-    
+
     return text;
 }
 
@@ -3336,7 +3336,7 @@ function updateAITutorNavVisibility() {
     const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
     const desktopNav = document.getElementById('ai-tutor-nav');
     const mobileNav = document.getElementById('ai-tutor-nav-mobile');
-    
+
     if (desktopNav) {
         if (isPaidOrAdmin) {
             desktopNav.classList.remove('hidden');
@@ -3344,7 +3344,7 @@ function updateAITutorNavVisibility() {
             desktopNav.classList.add('hidden');
         }
     }
-    
+
     if (mobileNav) {
         if (isPaidOrAdmin) {
             mobileNav.classList.remove('hidden');
@@ -3370,9 +3370,9 @@ function initializeAITutor() {
     const chatMessages = document.getElementById('ai-chat-messages');
     const errorMessage = document.getElementById('ai-error-message');
     const tokenUsageEl = document.getElementById('ai-token-usage');
-    
+
     if (!chatForm || !chatInput || !sendButton || !chatMessages) return;
-    
+
     // Remove existing listeners if already initialized (prevent duplicate listeners)
     if (aiTutorInitialized) {
         try {
@@ -3390,14 +3390,14 @@ function initializeAITutor() {
             console.warn('Error removing AI Tutor listeners:', e);
         }
     }
-    
+
     // Create named functions for event handlers so we can remove them later
     aiTutorEventHandlers.inputResize = function() {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         sendButton.disabled = !this.value.trim();
     };
-    
+
     aiTutorEventHandlers.keydown = function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -3406,17 +3406,17 @@ function initializeAITutor() {
             }
         }
     };
-    
+
     aiTutorEventHandlers.submit = async function(e) {
         e.preventDefault();
         await sendAIMessage();
     };
-    
+
     // Add event listeners
     chatInput.addEventListener('input', aiTutorEventHandlers.inputResize);
     chatInput.addEventListener('keydown', aiTutorEventHandlers.keydown);
     chatForm.addEventListener('submit', aiTutorEventHandlers.submit);
-    
+
     // Character count tracking - show when typing, hide when empty
     const updateCharCount = () => {
         const charCount = chatInput.value.length;
@@ -3440,21 +3440,21 @@ function initializeAITutor() {
             }
         }
     };
-    
+
     chatInput.addEventListener('input', updateCharCount);
-    
+
     // Clear chat button
     const clearChatBtn = document.getElementById('ai-clear-chat-btn');
     if (clearChatBtn) {
         clearChatBtn.addEventListener('click', clearAIChatHistory);
     }
-    
+
     // Stop button
     const stopButton = document.getElementById('ai-stop-button');
     if (stopButton) {
         stopButton.addEventListener('click', stopAIRequest);
     }
-    
+
     aiTutorInitialized = true;
 }
 
@@ -3464,16 +3464,16 @@ function buildSystemPromptForPuter(userSubjects, subjectSummaries, subjectSpecif
     if (aiType === 'english-literature-edexcel') {
         return `You are GCSEMate AI, an intelligent tutoring assistant for GCSE English Literature (Edexcel). Help students with exam preparation, marking, and question generation.`;
     }
-    
+
     // Get current date for context
     const currentDate = new Date();
-    const dateStr = currentDate.toLocaleDateString('en-GB', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+    const dateStr = currentDate.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     });
-    
+
     let subjectsInfo = '';
     if (userSubjects && userSubjects.length > 0) {
         subjectsInfo = '\n\nYou have access to information about the following GCSE subjects:\n';
@@ -3481,7 +3481,7 @@ function buildSystemPromptForPuter(userSubjects, subjectSummaries, subjectSpecif
             const subjectLower = subject.toLowerCase();
             const summary = subjectSummaries && subjectSummaries[subjectLower];
             const specs = subjectSpecifications && subjectSpecifications[subjectLower];
-            
+
             if (summary) {
                 subjectsInfo += `\n- ${subject}: ${summary.description || summary.summary}`;
                 if (specs) {
@@ -3497,7 +3497,7 @@ function buildSystemPromptForPuter(userSubjects, subjectSummaries, subjectSpecif
     } else {
         subjectsInfo = '\n\nYou have access to information about all GCSE subjects including: Biology, Chemistry, Physics, Mathematics, English Language (AQA), English Literature (Edexcel), History, Geography, Computing, German, Music, and Philosophy and Ethics.';
     }
-    
+
     return `You are GCSEMate AI, an intelligent tutoring assistant created by Mayukhjit Chakraborty for GCSE students in the UK.
 
 CURRENT DATE AND TIME: Today is ${dateStr}. Always use this date when answering questions about current events, exam dates, or time-sensitive information.
@@ -3549,14 +3549,14 @@ async function sendAIMessage(retryMessage = null) {
     const chatMessages = document.getElementById('ai-chat-messages');
     const errorMessage = document.getElementById('ai-error-message');
     const tokenUsageEl = document.getElementById('ai-token-usage');
-    
+
     // Create abort controller for stop functionality
     const abortController = new AbortController();
     currentAIRequest = abortController;
-    
+
     const message = retryMessage || chatInput.value.trim();
     if (!message) return;
-    
+
     // Clear input and reset character count after getting message (before sending)
     if (!retryMessage) {
         chatInput.value = '';
@@ -3568,18 +3568,18 @@ async function sendAIMessage(retryMessage = null) {
             charCountEl.classList.add('text-gray-500', 'hidden');
         }
     }
-    
+
     // Check if user is paid or admin
     if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
         showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
         showPage('features-page');
         return;
     }
-    
+
     // Get user's allowed subjects
     const userAllowedSubjects = currentUser.allowedSubjects;
     let subjectsToSend = [];
-    
+
     if (userAllowedSubjects === null || userAllowedSubjects === undefined) {
         // Free users - assume all subjects
         subjectsToSend = SUBJECTS;
@@ -3587,16 +3587,16 @@ async function sendAIMessage(retryMessage = null) {
         // Paid users - only their allowed subjects
         subjectsToSend = SUBJECTS.filter(s => userAllowedSubjects.includes(s.toLowerCase()));
     }
-    
+
     // Store message for retry
     lastUserMessage = message;
-    
+
     // Disable input and button
     chatInput.disabled = true;
     sendButton.disabled = true;
     errorMessage.classList.add('hidden');
     errorMessage.textContent = '';
-    
+
     // Add user message to chat (only if not retrying)
     if (!retryMessage) {
         addChatMessage('user', message);
@@ -3609,18 +3609,18 @@ async function sendAIMessage(retryMessage = null) {
             lastMsg.remove();
         }
     }
-    
+
     // Show loading indicator with animation (pass isFirstAIResponse flag)
     lastLoadingId = addChatMessage('assistant', '', true, false, null, null, isFirstAIResponse);
-    
+
     try {
         // Get Firebase Auth token for server-side verification
         const idToken = await firebase.auth().currentUser.getIdToken();
-        
+
         // Show stop button, hide send button
         sendButton.classList.add('hidden');
         stopButton.classList.remove('hidden');
-        
+
         const response = await fetch('/api/ai-tutor', {
             method: 'POST',
             headers: {
@@ -3645,45 +3645,45 @@ async function sendAIMessage(retryMessage = null) {
                 aiType: document.getElementById('ai-subject-selector')?.value || 'general'
             })
         });
-        
+
         const data = await response.json();
-        
+
         // Remove loading message
         const loadingEl = document.getElementById(lastLoadingId);
         if (loadingEl) loadingEl.remove();
         lastLoadingId = null;
-        
+
         // Hide stop button, show send button
         stopButton.classList.add('hidden');
         sendButton.classList.remove('hidden');
         currentAIRequest = null;
-        
+
         if (!response.ok) {
             throw new Error(data.message || data.error || 'Failed to get AI response');
         }
-        
+
         // Filter out em dashes and emojis from response
         const cleanedResponse = cleanAIResponse(data.response);
-        
+
         // Add AI response with formatting
         const aiMessageId = addChatMessage('assistant', cleanedResponse, false, true);
         lastAIMessageId = aiMessageId; // Track for retry replacement
-        
+
         // Update conversation history (store cleaned response)
         aiConversationHistory.push(
             { role: 'user', content: message },
             { role: 'assistant', content: cleanedResponse }
         );
-        
+
         // Keep only last 10 messages for context
         if (aiConversationHistory.length > 20) {
             aiConversationHistory = aiConversationHistory.slice(-20);
         }
-        
+
         // Update request count
         aiRequestCount = data.requestsUsed || 0;
         aiMaxRequests = data.maxRequests || 50;
-        
+
         // Write request count to Firestore if server says to increment
         const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
         if (data.shouldIncrement && !isAdmin) {
@@ -3700,7 +3700,7 @@ async function sendAIMessage(retryMessage = null) {
                 console.error('Error writing request count:', error);
             }
         }
-        
+
         if (tokenUsageEl) {
             if (data.requestsRemaining === -1) {
                 tokenUsageEl.textContent = `Requests: Unlimited (Admin)`;
@@ -3720,7 +3720,7 @@ async function sendAIMessage(retryMessage = null) {
                 }
             }
         }
-        
+
     } catch (error) {
         // Remove loading message
         if (lastLoadingId) {
@@ -3728,7 +3728,7 @@ async function sendAIMessage(retryMessage = null) {
             if (loadingEl) loadingEl.remove();
             lastLoadingId = null;
         }
-        
+
         // Check if it was aborted
         if (error.name === 'AbortError') {
             stopButton.classList.add('hidden');
@@ -3737,29 +3737,29 @@ async function sendAIMessage(retryMessage = null) {
             showToast('Request cancelled', 'info');
             return;
         }
-        
+
         // Check if error indicates all backend services failed - try Puter.js as fallback
         const errorMessageText = error.message || '';
-        const isServiceUnavailable = errorMessageText.includes('AI service unavailable') || 
+        const isServiceUnavailable = errorMessageText.includes('AI service unavailable') ||
                                      errorMessageText.includes('All AI services') ||
                                      errorMessageText.includes('unavailable or have reached their limits');
-        
+
         // Check if Puter.js is available (with error handling)
-        const isPuterAvailable = typeof puter !== 'undefined' && 
-                                  puter && 
-                                  puter.ai && 
+        const isPuterAvailable = typeof puter !== 'undefined' &&
+                                  puter &&
+                                  puter.ai &&
                                   typeof puter.ai.chat === 'function';
-        
+
         if (isServiceUnavailable && isPuterAvailable) {
             // Try Puter.js as client-side fallback
             try {
                 // Build system prompt from conversation context
                 const systemPrompt = buildSystemPromptForPuter(subjectsToSend, subjectSummaries, subjectSpecifications, document.getElementById('ai-subject-selector')?.value || 'general');
-                
+
                 // Build conversation context for Puter
                 // Puter.js format: include system prompt in the message or as context
                 let puterPrompt = message;
-                
+
                 // Include conversation history if available
                 if (aiConversationHistory && aiConversationHistory.length > 0) {
                     // Build context from recent conversation
@@ -3776,12 +3776,12 @@ async function sendAIMessage(retryMessage = null) {
                         puterPrompt = `${contextText}User: ${message}`;
                     }
                 }
-                
+
                 // Call Puter.js - try with system prompt in options first
                 let puterResponse;
                 try {
                     // Try with system parameter
-                    puterResponse = await puter.ai.chat(puterPrompt, { 
+                    puterResponse = await puter.ai.chat(puterPrompt, {
                         model: 'gpt-5-chat-latest',
                         system: systemPrompt,
                         temperature: 0.7,
@@ -3789,36 +3789,36 @@ async function sendAIMessage(retryMessage = null) {
                     });
                 } catch (systemError) {
                     // If system parameter doesn't work, prepend system prompt to message
-                    puterResponse = await puter.ai.chat(`${systemPrompt}\n\n${puterPrompt}`, { 
+                    puterResponse = await puter.ai.chat(`${systemPrompt}\n\n${puterPrompt}`, {
                         model: 'gpt-5-chat-latest',
                         temperature: 0.7,
                         max_tokens: 2048
                     });
                 }
-                
+
                 // Filter out em dashes and emojis from response
                 const cleanedResponse = cleanAIResponse(puterResponse);
-                
+
                 // Add AI response with formatting
                 const aiMessageId = addChatMessage('assistant', cleanedResponse, false, true);
                 lastAIMessageId = aiMessageId;
-                
+
                 // Update conversation history
                 aiConversationHistory.push(
                     { role: 'user', content: message },
                     { role: 'assistant', content: cleanedResponse }
                 );
-                
+
                 // Keep only last 10 messages for context
                 if (aiConversationHistory.length > 20) {
                     aiConversationHistory = aiConversationHistory.slice(-20);
                 }
-                
+
                 // Hide stop button, show send button
                 stopButton.classList.add('hidden');
                 sendButton.classList.remove('hidden');
                 currentAIRequest = null;
-                
+
                 // Show success message
                 showToast('Response received via Puter.js (User-Pays model)', 'success');
                 return;
@@ -3827,15 +3827,15 @@ async function sendAIMessage(retryMessage = null) {
                 // Fall through to show error
             }
         }
-        
+
         // Hide stop button, show send button
         stopButton.classList.add('hidden');
         sendButton.classList.remove('hidden');
         currentAIRequest = null;
-        
+
         // Show error with retry option (pass the message that failed)
         addChatMessage('assistant', '', false, false, error.message || 'Failed to send message. Please try again.', message);
-        
+
         // Show error
         errorMessage.textContent = error.message || 'Failed to send message. Please try again.';
         errorMessage.classList.remove('hidden');
@@ -3851,7 +3851,7 @@ async function sendAIMessage(retryMessage = null) {
 // Enhanced markdown parser for comprehensive formatting
 function parseMarkdown(text) {
     if (!text) return '';
-    
+
     // Split into lines for processing
     const lines = text.split('\n');
     let html = '';
@@ -3863,11 +3863,11 @@ function parseMarkdown(text) {
     let orderedItems = [];
     let inBlockquote = false;
     let blockquoteContent = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmedLine = line.trim();
-        
+
         // Handle code blocks (```code```)
         if (trimmedLine.startsWith('```')) {
             // Close any open lists or blockquotes
@@ -3886,7 +3886,7 @@ function parseMarkdown(text) {
                 blockquoteContent = [];
                 inBlockquote = false;
             }
-            
+
             if (inCodeBlock) {
                 // End code block
                 html += `<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-3 border border-gray-200"><code class="text-sm font-mono">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
@@ -3898,12 +3898,12 @@ function parseMarkdown(text) {
             }
             continue;
         }
-        
+
         if (inCodeBlock) {
             codeBlockContent += line + '\n';
             continue;
         }
-        
+
         // Handle horizontal rules (---, ***, ___)
         if (trimmedLine.match(/^[-*_]{3,}$/)) {
             if (inUnorderedList) {
@@ -3924,12 +3924,12 @@ function parseMarkdown(text) {
             html += `<hr class="my-4 border-gray-300">`;
             continue;
         }
-        
+
         // Process headers (must be at start of line, allow for indentation)
         const h1Match = line.match(/^#\s+(.+)$/);
         const h2Match = line.match(/^##\s+(.+)$/);
         const h3Match = line.match(/^###\s+(.+)$/);
-        
+
         if (h1Match || h2Match || h3Match) {
             // Close any open lists or blockquotes
             if (inUnorderedList) {
@@ -3947,7 +3947,7 @@ function parseMarkdown(text) {
                 blockquoteContent = [];
                 inBlockquote = false;
             }
-            
+
             if (h1Match) {
                 html += `<h1 class="text-2xl font-bold mt-6 mb-3 text-gray-900">${processInlineMarkdown(h1Match[1])}</h1>`;
             } else if (h2Match) {
@@ -3957,7 +3957,7 @@ function parseMarkdown(text) {
             }
             continue;
         }
-        
+
         // Handle blockquotes (>)
         if (trimmedLine.startsWith('>')) {
             if (!inBlockquote) {
@@ -3986,7 +3986,7 @@ function parseMarkdown(text) {
                 inBlockquote = false;
             }
         }
-        
+
         // Handle ordered lists (1., 2., etc.)
         const orderedListMatch = line.match(/^(\d+)\.\s+(.+)$/);
         if (orderedListMatch) {
@@ -4009,7 +4009,7 @@ function parseMarkdown(text) {
             orderedItems.push(`<li class="ml-4 mb-1.5">${itemText}</li>`);
             continue;
         }
-        
+
         // Handle unordered lists (*, -, +)
         const unorderedListMatch = line.match(/^[\*\-\+]\s+(.+)$/);
         if (unorderedListMatch) {
@@ -4032,7 +4032,7 @@ function parseMarkdown(text) {
             unorderedItems.push(`<li class="ml-4 mb-1.5">${itemText}</li>`);
             continue;
         }
-        
+
         // If we hit a non-list line, close any open lists
         if (inUnorderedList) {
             html += `<ul class="list-disc ml-6 my-3 space-y-1.5">${unorderedItems.join('')}</ul>`;
@@ -4044,7 +4044,7 @@ function parseMarkdown(text) {
             orderedItems = [];
             inOrderedList = false;
         }
-        
+
         // Handle line breaks (// at end of line or standalone)
         if (trimmedLine === '//' || trimmedLine.endsWith('//')) {
             // Remove // from end if present
@@ -4056,7 +4056,7 @@ function parseMarkdown(text) {
             html += '<div class="h-4"></div>';
             continue;
         }
-        
+
         // Process inline markdown for regular lines
         if (trimmedLine) {
             html += '<p class="mb-2.5 leading-relaxed">' + processInlineMarkdown(line) + '</p>';
@@ -4065,7 +4065,7 @@ function parseMarkdown(text) {
             html += '<div class="h-4"></div>';
         }
     }
-    
+
     // Close any open code block, lists, or blockquotes
     if (inCodeBlock) {
         html += `<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-3 border border-gray-200"><code class="text-sm font-mono">${escapeHtml(codeBlockContent.trim())}</code></pre>`;
@@ -4079,20 +4079,20 @@ function parseMarkdown(text) {
     if (inBlockquote) {
         html += `<blockquote class="border-l-4 border-blue-300 pl-4 py-2 my-3 bg-blue-50/50 italic text-gray-700">${blockquoteContent.join('<br>')}</blockquote>`;
     }
-    
+
     // Remove leading/trailing empty paragraphs and fix spacing
     html = html.replace(/^<p class="mb-2.5 leading-relaxed"><\/p>/, '');
     html = html.replace(/<p class="mb-2.5 leading-relaxed"><\/p>$/, '');
-    
+
     // Remove excessive consecutive spacing divs (more than 2 in a row)
     html = html.replace(/(<div class="h-4"><\/div>\s*){3,}/g, '<div class="h-4"></div><div class="h-4"></div>');
-    
+
     // Fix last paragraph margin
     const lastParagraphMatch = html.match(/(<p class="mb-2.5 leading-relaxed">.*?<\/p>)(?![\s\S]*<p)/);
     if (lastParagraphMatch) {
         html = html.replace(lastParagraphMatch[1], lastParagraphMatch[1].replace('mb-2.5', 'mb-0'));
     }
-    
+
     return html;
 }
 
@@ -4116,7 +4116,7 @@ function processInlineMarkdown(text) {
     // Use placeholders to protect HTML tags from being escaped
     const placeholders = [];
     let placeholderIndex = 0;
-    
+
     // Step 1: Protect inline code first
     text = text.replace(/`([^`]+)`/g, (match, code) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
@@ -4124,7 +4124,7 @@ function processInlineMarkdown(text) {
         placeholderIndex++;
         return placeholder;
     });
-    
+
     // Step 2: Process links: [text](url) - must be before bold/italic
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
         const sanitizedUrl = sanitizeUrlForDisplay(url);
@@ -4136,7 +4136,7 @@ function processInlineMarkdown(text) {
         placeholderIndex++;
         return placeholder;
     });
-    
+
     // Step 3: Process bold: **text** (non-greedy to handle multiple instances)
     text = text.replace(/\*\*([^*]+?)\*\*/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
@@ -4144,7 +4144,7 @@ function processInlineMarkdown(text) {
         placeholderIndex++;
         return placeholder;
     });
-    
+
     // Step 4: Process italic: *text* (but not if it's part of **)
     text = text.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, (match, content) => {
         const placeholder = `__PLACEHOLDER_${placeholderIndex}__`;
@@ -4152,15 +4152,15 @@ function processInlineMarkdown(text) {
         placeholderIndex++;
         return placeholder;
     });
-    
+
     // Step 5: Escape remaining HTML in text
     text = escapeHtml(text);
-    
+
     // Step 6: Restore placeholders (which contain already-escaped content)
     placeholders.forEach((html, index) => {
         text = text.replace(`__PLACEHOLDER_${index}__`, html);
     });
-    
+
     return text;
 }
 
@@ -4186,13 +4186,13 @@ function renderLatex(container) {
 function addChatMessage(role, content, isLoading = false, isAIResponse = false, errorText = null, retryMessage = null, isFirstResponse = false) {
     const chatMessages = document.getElementById('ai-chat-messages');
     if (!chatMessages) return;
-    
+
     const messageId = 'ai-msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const isUser = role === 'user';
-    
+
     // For retry buttons, use the provided retryMessage or fall back to lastUserMessage
     const messageToRetry = retryMessage || lastUserMessage;
-    
+
     const messageEl = document.createElement('div');
     messageEl.id = messageId;
     messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-fade-in`;
@@ -4200,7 +4200,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
     messageEl.style.transform = 'translateY(10px)';
     messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     messageEl.style.marginBottom = isUser ? '1rem' : '1.25rem'; // Better spacing - more for AI responses
-    
+
     if (errorText) {
         // Error message with retry button - store the message to retry in data attribute
         messageEl.innerHTML = `
@@ -4216,10 +4216,10 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
         `;
     } else if (isLoading) {
         // Loading animation with rotating tips
-        const loadingText = isFirstResponse 
+        const loadingText = isFirstResponse
             ? 'Initializing AI Tutor... This may take a moment on first use.'
             : loadingTips[currentTipIndex % loadingTips.length];
-        
+
         messageEl.innerHTML = `
             <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
                 <i class="fas fa-robot text-white text-sm"></i>
@@ -4240,7 +4240,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
                 </div>
             </div>
         `;
-        
+
         // Rotate tips every 2 seconds
         if (!isFirstResponse) {
             const tipInterval = setInterval(() => {
@@ -4268,7 +4268,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
                 </button>
             </div>
         ` : '';
-        
+
         messageEl.innerHTML = `
             <div class="w-8 h-8 rounded-full ${isUser ? 'bg-gray-600' : 'bg-blue-600'} flex items-center justify-center flex-shrink-0 shadow-sm">
                 ${isUser ? '<i class="fas fa-user text-white text-sm"></i>' : '<i class="fas fa-robot text-white text-sm"></i>'}
@@ -4281,7 +4281,7 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             </div>
         `;
     }
-    
+
     // Remove any extra spacing before appending
     const lastMessage = chatMessages.lastElementChild;
     if (lastMessage && !isUser && !isLoading && !errorText) {
@@ -4294,9 +4294,9 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             }
         }
     }
-    
+
     chatMessages.appendChild(messageEl);
-    
+
     // Add retry button handlers - use the stored message from data attribute
     messageEl.querySelectorAll('.ai-retry-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -4319,13 +4319,13 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             }
         });
     });
-    
+
     // Animate in
     setTimeout(() => {
         messageEl.style.opacity = '1';
         messageEl.style.transform = 'translateY(0)';
     }, 10);
-    
+
     // Render LaTeX if it's an AI response
     if (isAIResponse && typeof renderMathInElement === 'function') {
         setTimeout(() => {
@@ -4340,25 +4340,25 @@ function addChatMessage(role, content, isLoading = false, isAIResponse = false, 
             }
         }, 100);
     }
-    
+
     // Scroll to bottom
     setTimeout(() => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }, 50);
-    
+
     return messageId;
 }
 
 function copyAIMessage(messageId) {
     const messageEl = document.getElementById(messageId);
     if (!messageEl) return;
-    
+
     const contentEl = messageEl.querySelector('.ai-message-content');
     if (!contentEl) return;
-    
+
     // Get text content (without HTML)
     const text = contentEl.innerText || contentEl.textContent;
-    
+
     // Copy to clipboard
     navigator.clipboard.writeText(text).then(() => {
         // Visual feedback with tooltip
@@ -4390,10 +4390,10 @@ function clearAIChatHistory() {
     if (!confirm('Are you sure you want to clear the chat history? This cannot be undone.')) {
         return;
     }
-    
+
     const chatMessages = document.getElementById('ai-chat-messages');
     if (!chatMessages) return;
-    
+
     // Keep only the welcome message
     const welcomeMessage = chatMessages.querySelector('.bg-blue-50');
     chatMessages.innerHTML = '';
@@ -4414,33 +4414,33 @@ function clearAIChatHistory() {
             </div>
         `;
     }
-    
+
     // Reset conversation state
     aiConversationHistory = [];
     aiNameConfirmed = false;
     isFirstAIResponse = true;
     lastAIMessageId = null;
     lastUserMessage = null;
-    
+
     // Stop any ongoing request
     if (currentAIRequest) {
         currentAIRequest.abort();
         currentAIRequest = null;
     }
-    
+
     // Remove any loading messages
     if (lastLoadingId) {
         const loadingEl = document.getElementById(lastLoadingId);
         if (loadingEl) loadingEl.remove();
         lastLoadingId = null;
     }
-    
+
     // Reset buttons
     const sendButton = document.getElementById('ai-send-button');
     const stopButton = document.getElementById('ai-stop-button');
     if (sendButton) sendButton.classList.remove('hidden');
     if (stopButton) stopButton.classList.add('hidden');
-    
+
     showToast('Chat history cleared', 'success');
 }
 
@@ -4449,20 +4449,20 @@ function stopAIRequest() {
     if (currentAIRequest) {
         currentAIRequest.abort();
         currentAIRequest = null;
-        
+
         // Remove loading message
         if (lastLoadingId) {
             const loadingEl = document.getElementById(lastLoadingId);
             if (loadingEl) loadingEl.remove();
             lastLoadingId = null;
         }
-        
+
         // Reset buttons
         const sendButton = document.getElementById('ai-send-button');
         const stopButton = document.getElementById('ai-stop-button');
         if (sendButton) sendButton.classList.remove('hidden');
         if (stopButton) stopButton.classList.add('hidden');
-        
+
         showToast('Request stopped', 'info');
     }
 }
@@ -4542,10 +4542,10 @@ function setupRealtimeListeners() {
         document.getElementById('user-settings-panel').classList.add('hidden');
         document.getElementById('add-link-form-container').classList.remove('hidden');
         document.getElementById('add-blog-post-form-container').classList.remove('hidden');
-        
+
         // Initialize maintenance mode status
         initializeMaintenanceStatus();
-        
+
         // Listen for all users for the management panel
         unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
             allUsers = {};
@@ -4555,13 +4555,13 @@ function setupRealtimeListeners() {
             renderUserManagementPanel(allUsers);
             updateAnalytics(); // Update analytics when user data changes
         }, err => logError(err, "User Management"));
-        
+
         // Start server time updates for admin
         startServerTimeUpdates();
-        
+
         // Initialize real-time activity monitoring
         initializeActivityMonitoring();
-        
+
         // Initialize calendar
         initializeCalendar();
     } else {
@@ -4579,18 +4579,18 @@ function setupRealtimeListeners() {
             });
             renderUsefulLinks(links);
         }, err => logError(err, "Useful Links"));
-        
+
     // Show skeleton on initial load
     generatePlaylistSkeletons(8);
-    
+
     // Listen for video playlists with enhanced error handling
     unsubscribeVideoPlaylists = db.collection('videoPlaylists').orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
             const playlists = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                playlists.push({ 
-                    id: doc.id, 
+                playlists.push({
+                    id: doc.id,
                     ...data,
                     url: data.url || (data.playlistId ? `https://www.youtube.com/playlist?list=${data.playlistId}` : '')
                 });
@@ -4600,7 +4600,7 @@ function setupRealtimeListeners() {
             logError(err, "Video Playlists");
             renderVideosPage([], true);
         });
-    
+
     // Setup event handlers when page loads
     setTimeout(() => {
         setupPlaylistEventHandlers();
@@ -4655,10 +4655,10 @@ async function checkMaintenanceMode() {
         if (maintenanceDoc.exists && maintenanceDoc.data().enabled) {
             const maintenanceData = maintenanceDoc.data();
             const message = maintenanceData.message || 'System is currently under maintenance. Please check back later.';
-            
+
             // Update online status
             updateOnlineStatus(true);
-            
+
             // Show maintenance page
             showMaintenancePage(message);
         } else {
@@ -4676,7 +4676,7 @@ function showMaintenancePage(message) {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('email-verify-page').classList.add('hidden');
     document.getElementById('main-app').classList.add('hidden');
-    
+
     // Create maintenance page
     const maintenancePage = document.createElement('div');
     maintenancePage.id = 'maintenance-page';
@@ -4698,7 +4698,7 @@ function showMaintenancePage(message) {
             </button>
         </div>
     `;
-    
+
     document.body.appendChild(maintenancePage);
 }
 
@@ -4707,12 +4707,12 @@ const RateLimiter = {
     // Storage keys
     SIGNIN_ATTEMPTS_KEY: 'gcsemate_signin_attempts',
     PASSWORD_RESET_KEY: 'gcsemate_password_reset_attempts',
-    
+
     // Rate limits
     MAX_SIGNIN_ATTEMPTS: 6,
     SIGNIN_WINDOW_MS: 60 * 1000, // 1 minute
     PASSWORD_RESET_WINDOW_MS: 30 * 1000, // 30 seconds
-    
+
     // Check if user is admin (exempt from rate limits)
     isAdminUser(email) {
         // Check if email is in admin list or if current user is admin
@@ -4721,10 +4721,10 @@ const RateLimiter = {
             'support@gcsemate.com'
             // Add more admin emails as needed
         ];
-        return adminEmails.includes(email?.toLowerCase()) || 
+        return adminEmails.includes(email?.toLowerCase()) ||
                (currentUser && currentUser.role === 'admin');
     },
-    
+
     // Get attempts from localStorage
     getAttempts(key) {
         try {
@@ -4734,7 +4734,7 @@ const RateLimiter = {
             return [];
         }
     },
-    
+
     // Save attempts to localStorage
     saveAttempts(key, attempts) {
         try {
@@ -4743,79 +4743,79 @@ const RateLimiter = {
             console.warn('Failed to save rate limit data:', e);
         }
     },
-    
+
     // Clean old attempts outside the time window
     cleanOldAttempts(attempts, windowMs) {
         const now = Date.now();
         return attempts.filter(timestamp => now - timestamp < windowMs);
     },
-    
+
     // Check sign-in rate limit
     checkSignInLimit(email) {
         if (this.isAdminUser(email)) {
             return { allowed: true, remainingAttempts: this.MAX_SIGNIN_ATTEMPTS };
         }
-        
+
         const attempts = this.getAttempts(this.SIGNIN_ATTEMPTS_KEY);
         const validAttempts = this.cleanOldAttempts(attempts, this.SIGNIN_WINDOW_MS);
-        
+
         if (validAttempts.length >= this.MAX_SIGNIN_ATTEMPTS) {
             const oldestAttempt = Math.min(...validAttempts);
             const timeUntilReset = this.SIGNIN_WINDOW_MS - (Date.now() - oldestAttempt);
-            return { 
-                allowed: false, 
+            return {
+                allowed: false,
                 remainingAttempts: 0,
                 timeUntilReset: Math.ceil(timeUntilReset / 1000)
             };
         }
-        
-        return { 
-            allowed: true, 
-            remainingAttempts: this.MAX_SIGNIN_ATTEMPTS - validAttempts.length 
+
+        return {
+            allowed: true,
+            remainingAttempts: this.MAX_SIGNIN_ATTEMPTS - validAttempts.length
         };
     },
-    
+
     // Record sign-in attempt
     recordSignInAttempt(email) {
         if (this.isAdminUser(email)) return;
-        
+
         const attempts = this.getAttempts(this.SIGNIN_ATTEMPTS_KEY);
         const validAttempts = this.cleanOldAttempts(attempts, this.SIGNIN_WINDOW_MS);
         validAttempts.push(Date.now());
         this.saveAttempts(this.SIGNIN_ATTEMPTS_KEY, validAttempts);
     },
-    
+
     // Check password reset rate limit
     checkPasswordResetLimit(email) {
         if (this.isAdminUser(email)) {
             return { allowed: true };
         }
-        
+
         const attempts = this.getAttempts(this.PASSWORD_RESET_KEY);
         const validAttempts = this.cleanOldAttempts(attempts, this.PASSWORD_RESET_WINDOW_MS);
-        
+
         if (validAttempts.length >= 1) {
             const oldestAttempt = Math.min(...validAttempts);
             const timeUntilReset = this.PASSWORD_RESET_WINDOW_MS - (Date.now() - oldestAttempt);
-            return { 
+            return {
                 allowed: false,
                 timeUntilReset: Math.ceil(timeUntilReset / 1000)
             };
         }
-        
+
         return { allowed: true };
     },
-    
+
     // Record password reset attempt
     recordPasswordResetAttempt(email) {
         if (this.isAdminUser(email)) return;
-        
+
         const attempts = this.getAttempts(this.PASSWORD_RESET_KEY);
         const validAttempts = this.cleanOldAttempts(attempts, this.PASSWORD_RESET_WINDOW_MS);
         validAttempts.push(Date.now());
         this.saveAttempts(this.PASSWORD_RESET_KEY, validAttempts);
     },
-    
+
     // Format time remaining for display
     formatTimeRemaining(seconds) {
         if (seconds < 60) {
@@ -4836,13 +4836,13 @@ async function handleRegister() {
         const nameErrorEl = document.getElementById('register-name-error');
         const emailErrorEl = document.getElementById('register-email-error');
         const passwordErrorEl = document.getElementById('register-password-error');
-        
+
         // Clear previous errors
         if (messageEl) messageEl.textContent = '';
         if (nameErrorEl) nameErrorEl.textContent = '';
         if (emailErrorEl) emailErrorEl.textContent = '';
         if (passwordErrorEl) passwordErrorEl.textContent = '';
-        
+
         // Enhanced validation using Validator
         // Enhanced validation with detailed feedback
         const nameValidation = Validator.displayName(displayName);
@@ -4854,7 +4854,7 @@ async function handleRegister() {
             }
             return;
         }
-        
+
         const emailValidation = Validator.email(email);
         if (!emailValidation.valid) {
             if (emailErrorEl) emailErrorEl.textContent = emailValidation.error;
@@ -4864,7 +4864,7 @@ async function handleRegister() {
             }
             return;
         }
-        
+
         const passwordValidation = Validator.password(password, true);
         if (!passwordValidation.valid) {
             if (passwordErrorEl) passwordErrorEl.textContent = passwordValidation.error;
@@ -4874,14 +4874,14 @@ async function handleRegister() {
             }
             return;
         }
-        
+
         try {
         // Show loading state
         const registerButton = document.getElementById('register-button');
         const originalText = registerButton.textContent;
         registerButton.textContent = 'Creating Account...';
         registerButton.disabled = true;
-        
+
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
@@ -4927,10 +4927,10 @@ async function handleRegister() {
         showVerificationMessagePage(email);
     } catch (error) {
         console.error("Registration Error:", error);
-        
+
         // Provide more specific error messages
         let errorMessage = 'An error occurred during registration. Please try again.';
-        
+
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'An account with this email already exists.';
             emailErrorEl.textContent = 'Email already in use';
@@ -4948,7 +4948,7 @@ async function handleRegister() {
         } else if (error.code === 'auth/too-many-requests') {
             errorMessage = 'Too many failed attempts. Please try again later.';
         }
-        
+
         messageEl.textContent = errorMessage;
     } finally {
         // Reset button state
@@ -4956,7 +4956,7 @@ async function handleRegister() {
         registerButton.textContent = 'Create Free Account';
         registerButton.disabled = false;
     }
-        
+
     }, 'Registration');
 }
 async function handleLogin() {
@@ -4966,12 +4966,12 @@ async function handleLogin() {
     const messageEl = document.getElementById('auth-error');
     const emailErrorEl = document.getElementById('email-error');
     const passwordErrorEl = document.getElementById('password-error');
-    
+
     // Clear previous errors
     messageEl.textContent = '';
     emailErrorEl.textContent = '';
     passwordErrorEl.textContent = '';
-    
+
     // Enhanced validation with detailed feedback
     const emailValidation = Validator.email(email);
     if (!emailValidation.valid) {
@@ -4981,7 +4981,7 @@ async function handleLogin() {
         emailInput.classList.add('border-red-500', 'bg-red-50');
         return;
     }
-    
+
     const passwordValidation = Validator.password(password, false);
     if (!passwordValidation.valid) {
         passwordErrorEl.textContent = passwordValidation.error;
@@ -4990,7 +4990,7 @@ async function handleLogin() {
         passwordInput.classList.add('border-red-500', 'bg-red-50');
         return;
     }
-    
+
     // Check rate limit before attempting login
     const rateLimitCheck = RateLimiter.checkSignInLimit(email);
     if (!rateLimitCheck.allowed) {
@@ -4999,14 +4999,14 @@ async function handleLogin() {
         messageEl.className = 'text-red-600 text-sm text-center h-4';
         return;
     }
-    
+
     try {
         // Show loading state
         const loginButton = document.getElementById('login-button');
         const originalText = loginButton.textContent;
         loginButton.textContent = 'Signing in...';
         loginButton.disabled = true;
-        
+
         // Enterprise reCAPTCHA token acquisition
         try {
             if (window.grecaptcha && typeof window.grecaptcha.ready === 'function' && RECAPTCHA_SITE_KEY) {
@@ -5039,34 +5039,34 @@ async function handleLogin() {
                 console.warn('reCAPTCHA token acquisition failed, proceeding:', e);
             }
         }
-        
-        const persistence = rememberMe 
-            ? firebase.auth.Auth.Persistence.LOCAL 
+
+        const persistence = rememberMe
+            ? firebase.auth.Auth.Persistence.LOCAL
             : firebase.auth.Auth.Persistence.SESSION;
-        
+
         await auth.setPersistence(persistence);
-        
+
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        
+
         if (!userCredential.user.emailVerified) {
             messageEl.textContent = 'Please verify your email before logging in.';
             // The onAuthStateChanged listener will handle redirecting them to the verification page.
             return;
         }
-        
+
         // Clear rate limit on successful login
         localStorage.removeItem(RateLimiter.SIGNIN_ATTEMPTS_KEY);
-        
+
         // onAuthStateChanged will handle successful, verified login.
     } catch (error) {
         console.error("Login Error:", error);
-        
+
         // Record failed attempt for rate limiting
         RateLimiter.recordSignInAttempt(email);
-        
+
         // Provide more specific error messages
         let errorMessage = 'An error occurred during login. Please try again.';
-        
+
         if (error.code === 'auth/user-not-found') {
             errorMessage = 'No account found with this email address.';
             emailErrorEl.textContent = 'No account found with this email';
@@ -5086,7 +5086,7 @@ async function handleLogin() {
         } else if (error.code === 'auth/user-disabled') {
             errorMessage = 'This account has been disabled. Please contact support.';
         }
-        
+
         // Update rate limit info after failed attempt
         const updatedRateLimitCheck = RateLimiter.checkSignInLimit(email);
         if (!updatedRateLimitCheck.allowed) {
@@ -5095,7 +5095,7 @@ async function handleLogin() {
         } else if (updatedRateLimitCheck.remainingAttempts < 3) {
             errorMessage += ` (${updatedRateLimitCheck.remainingAttempts} attempts remaining)`;
         }
-        
+
         messageEl.textContent = errorMessage;
     } finally {
         // Reset button state
@@ -5112,7 +5112,7 @@ async function handleLogout() {
             recaptchaVerifier.clear();
             recaptchaVerifier = null;
         }
-        
+
         await auth.signOut();
         // onAuthStateChanged will handle UI changes
         path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
@@ -5159,13 +5159,13 @@ async function resendVerificationEmail() {
 function renderUserManagementPanel(allUsers) {
     const container = document.getElementById('user-management-grid');
     container.innerHTML = '';
-    
+
     // Calculate statistics
     const totalUsers = Object.keys(allUsers).length;
     const freeUsers = Object.values(allUsers).filter(user => user.tier === 'free').length;
     const paidUsers = Object.values(allUsers).filter(user => user.tier === 'paid').length;
     const adminUsers = Object.values(allUsers).filter(user => user.role === 'admin').length;
-    
+
     // Calculate active today (users who accessed in last 24 hours)
     const today = new Date();
     const activeToday = Object.values(allUsers).filter(user => {
@@ -5174,7 +5174,7 @@ function renderUserManagementPanel(allUsers) {
         const hoursDiff = (today - lastAccess) / (1000 * 60 * 60);
         return hoursDiff <= 24;
     }).length;
-    
+
     // Update statistics display
     const totalUsersEl = document.getElementById('total-users-count');
     if (totalUsersEl) totalUsersEl.textContent = totalUsers;
@@ -5184,7 +5184,7 @@ function renderUserManagementPanel(allUsers) {
     if (paidUsersEl) paidUsersEl.textContent = paidUsers;
     const activeTodayEl = document.getElementById('active-today-count');
     if (activeTodayEl) activeTodayEl.textContent = activeToday;
-    
+
     let list = Object.values(allUsers);
     // Apply filters
     list = list.filter(u => {
@@ -5264,10 +5264,10 @@ function renderUserManagementPanel(allUsers) {
 // Admin Functions for Time-Based Access Control
 async function grantTemporaryAccess(userId, durationMinutes) {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         const expiryTime = new Date(Date.now() + (durationMinutes * 60 * 1000));
-        
+
         await db.collection('users').doc(userId).update({
             temporaryAccess: {
                 grantedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -5278,7 +5278,7 @@ async function grantTemporaryAccess(userId, durationMinutes) {
             },
             tier: 'paid' // Temporarily upgrade to paid
         });
-        
+
         // Log admin action
         await db.collection('adminAuditLog').add({
             adminId: currentUser.uid,
@@ -5292,9 +5292,9 @@ async function grantTemporaryAccess(userId, durationMinutes) {
                 expiresAt: expiryTime
             }
         });
-        
+
         showToast(`Temporary access granted for ${durationMinutes} minutes`, 'success');
-        
+
     } catch (error) {
         logError(error, 'Grant Temporary Access');
         showToast('Failed to grant temporary access', 'error');
@@ -5303,13 +5303,13 @@ async function grantTemporaryAccess(userId, durationMinutes) {
 
 async function revokeTemporaryAccess(userId) {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         await db.collection('users').doc(userId).update({
             temporaryAccess: firebase.firestore.FieldValue.delete(),
             tier: 'free' // Downgrade to free
         });
-        
+
         // Log admin action
         await db.collection('adminAuditLog').add({
             adminId: currentUser.uid,
@@ -5320,9 +5320,9 @@ async function revokeTemporaryAccess(userId) {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             details: {}
         });
-        
+
         showToast('Temporary access revoked', 'success');
-        
+
     } catch (error) {
         logError(error, 'Revoke Temporary Access');
         showToast('Failed to revoke temporary access', 'error');
@@ -5334,7 +5334,7 @@ async function checkTemporaryAccessExpiry() {
         const usersSnapshot = await db.collection('users')
             .where('temporaryAccess.expiresAt', '<=', new Date())
             .get();
-        
+
         const batch = db.batch();
         usersSnapshot.forEach(doc => {
             batch.update(doc.ref, {
@@ -5342,12 +5342,12 @@ async function checkTemporaryAccessExpiry() {
                 tier: 'free'
             });
         });
-        
+
         if (usersSnapshot.size > 0) {
             await batch.commit();
             console.log(`Expired temporary access for ${usersSnapshot.size} users`);
         }
-        
+
     } catch (error) {
         logError(error, 'Check Temporary Access Expiry');
     }
@@ -5358,20 +5358,20 @@ async function checkSubscriptionExpiry() {
     try {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         // Check for expired subscriptions
         const expiredUsers = await db.collection('users')
             .where('tier', '==', 'paid')
             .where('subscriptionExpiresAt', '!=', null)
             .get();
-        
+
         const batch = db.batch();
         expiredUsers.forEach(doc => {
             const user = doc.data();
             if (user.subscriptionExpiresAt) {
                 const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
                 const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
-                
+
                 if (expiryDay < today) {
                     // Subscription expired - downgrade to free
                     batch.update(doc.ref, {
@@ -5382,16 +5382,16 @@ async function checkSubscriptionExpiry() {
                 }
             }
         });
-        
+
         if (expiredUsers.size > 0) {
             await batch.commit();
         }
-        
+
         // Check current user's subscription status
         if (currentUser && currentUser.tier === 'paid' && currentUser.subscriptionExpiresAt) {
             checkUserSubscriptionWarning(currentUser);
         }
-        
+
     } catch (error) {
         logError(error, 'Check Subscription Expiry');
     }
@@ -5399,18 +5399,18 @@ async function checkSubscriptionExpiry() {
 
 function checkUserSubscriptionWarning(user) {
     if (!user.subscriptionExpiresAt) return;
-    
+
     const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
     const now = new Date();
     const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-    
+
     // Check if we should show warning (5, 3, 2, 1 days before or on expiry day)
     const warningDays = [5, 3, 2, 1, 0];
     const lastWarningShown = user.lastSubscriptionWarningShown || 0;
-    
+
     if (warningDays.includes(daysUntilExpiry) && daysUntilExpiry !== lastWarningShown) {
         showSubscriptionRenewalOffer(daysUntilExpiry, expiryDate);
-        
+
         // Mark warning as shown
         db.collection('users').doc(user.uid).update({
             lastSubscriptionWarningShown: daysUntilExpiry
@@ -5446,7 +5446,7 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
-    
+
     const messageEl = document.getElementById('renewal-message');
     let message = '';
     if (daysLeft === 0) {
@@ -5456,31 +5456,31 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
     } else {
         message = `Your subscription expires in ${daysLeft} days (${formatDateUK(expiryDate)}). Renew now at a special discounted rate!`;
     }
-    
+
     if (messageEl) messageEl.textContent = message;
     document.getElementById('subscription-renewal-modal').classList.remove('hidden');
 }
 
 async function handleSubscriptionRenewal() {
     if (!currentUser) return;
-    
+
     try {
         // For now, just show the checkout page
         // In production, this would integrate with payment processing
         showToast('Redirecting to checkout...', 'info');
         document.getElementById('subscription-renewal-modal').classList.add('hidden');
         showPage('checkout-page');
-        
+
         // Update user to extend subscription by 1 month
         const newExpiryDate = new Date();
         newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
-        
+
         await db.collection('users').doc(currentUser.uid).update({
             subscriptionExpiresAt: firebase.firestore.Timestamp.fromDate(newExpiryDate),
             lastSubscriptionWarningShown: null,
             subscriptionRenewedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
         showToast('Subscription renewed successfully!', 'success');
     } catch (error) {
         logError(error, 'Handle Subscription Renewal');
@@ -5491,37 +5491,37 @@ async function handleSubscriptionRenewal() {
 // View User Tracking Data
 async function viewUserTracking(userId) {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         const modal = document.getElementById('edit-user-modal');
         modal.style.display = 'flex';
-        
+
         // Fetch user activities
         const activitiesSnapshot = await db.collection('userActivities')
             .where('userId', '==', userId)
             .orderBy('timestamp', 'desc')
             .limit(100)
             .get();
-        
+
         const activities = [];
         activitiesSnapshot.forEach(doc => {
             activities.push({ id: doc.id, ...doc.data() });
         });
-        
+
         // Fetch user sessions
         const sessionsSnapshot = await db.collection('userSessions')
             .where('userId', '==', userId)
             .orderBy('lastSeen', 'desc')
             .limit(50)
             .get();
-        
+
         const sessions = [];
         sessionsSnapshot.forEach(doc => {
             sessions.push({ id: doc.id, ...doc.data() });
         });
-        
+
         const user = allUsers[userId];
-        
+
         modal.innerHTML = `
             <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl flex flex-col fade-in max-h-[90vh]">
                 <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
@@ -5532,7 +5532,7 @@ async function viewUserTracking(userId) {
                         </svg>
                     </button>
                 </div>
-                
+
                 <div class="p-6 overflow-y-auto flex-1">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Recent Activities -->
@@ -5556,7 +5556,7 @@ async function viewUserTracking(userId) {
                                 `).join('')}
                             </div>
                         </div>
-                        
+
                         <!-- Session History -->
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 mb-4">Session History (${sessions.length})</h4>
@@ -5581,7 +5581,7 @@ async function viewUserTracking(userId) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Summary Statistics -->
                     <div class="mt-6 bg-blue-50 p-4 rounded-lg">
                         <h4 class="text-lg font-semibold text-gray-800 mb-3">Activity Summary</h4>
@@ -5607,7 +5607,7 @@ async function viewUserTracking(userId) {
                 </div>
             </div>
         `;
-        
+
     } catch (error) {
         logError(error, 'View User Tracking');
         showToast('Failed to load user tracking data', 'error');
@@ -5620,19 +5620,19 @@ async function uploadProfilePicture(file) {
         showToast('Please log in to upload a profile picture', 'error');
         return;
     }
-    
+
     // Profile pictures are now available to all users
     // Validate file using Validator
     const validation = Validator.file(file, {
         maxSize: 5 * 1024 * 1024, // 5MB
         allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     });
-    
+
     if (!validation.valid) {
         showToast(validation.error, 'error');
         return;
     }
-    
+
     // Open profile picture crop modal
     openProfilePictureCropModal(file);
 }
@@ -5658,37 +5658,37 @@ window.openProfilePictureCropModal = function(file) {
     const modal = document.getElementById('profile-picture-crop-modal');
     const canvas = document.getElementById('profile-crop-canvas');
     const cropBox = document.getElementById('profile-crop-box');
-    
+
     if (!modal || !canvas || !cropBox) return;
-    
+
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
-    
+
     const img = new Image();
     img.onload = () => {
         const maxWidth = 600;
         const maxHeight = 600;
         let width = img.width;
         let height = img.height;
-        
+
         if (width > maxWidth || height > maxHeight) {
             const ratio = Math.min(maxWidth / width, maxHeight / height);
             width = width * ratio;
             height = height * ratio;
         }
-        
+
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         profileCropState.image = img;
         profileCropState.canvas = canvas;
         profileCropState.ctx = ctx;
         profileCropState.zoom = 1;
         profileCropState.panX = 0;
         profileCropState.panY = 0;
-        
+
         // Initialize crop box (square, 80% of smaller dimension)
         const size = Math.min(width, height) * 0.8;
         profileCropState.cropBox = {
@@ -5697,11 +5697,11 @@ window.openProfilePictureCropModal = function(file) {
             width: size,
             height: size
         };
-        
+
         updateProfileCropBox();
         setupProfileCropInteractions();
     };
-    
+
     const reader = new FileReader();
     reader.onload = (e) => img.src = e.target.result;
     reader.readAsDataURL(file);
@@ -5710,19 +5710,19 @@ window.openProfilePictureCropModal = function(file) {
 function updateProfileCropBox() {
     const cropBox = document.getElementById('profile-crop-box');
     if (!cropBox || !profileCropState.canvas) return;
-    
+
     const { x, y, width, height } = profileCropState.cropBox;
     const canvas = profileCropState.canvas;
     const canvasRect = canvas.getBoundingClientRect();
     const container = cropBox.parentElement;
-    
+
     const scaleX = canvasRect.width / canvas.width;
     const scaleY = canvasRect.height / canvas.height;
-    
+
     const containerRect = container.getBoundingClientRect();
     const canvasOffsetX = canvasRect.left - containerRect.left;
     const canvasOffsetY = canvasRect.top - containerRect.top;
-    
+
     cropBox.style.left = `${canvasOffsetX + x * scaleX}px`;
     cropBox.style.top = `${canvasOffsetY + y * scaleY}px`;
     cropBox.style.width = `${width * scaleX}px`;
@@ -5733,7 +5733,7 @@ function setupProfileCropInteractions() {
     const cropBox = document.getElementById('profile-crop-box');
     const overlay = document.getElementById('profile-crop-overlay');
     if (!cropBox || !overlay) return;
-    
+
     // Clean up existing listeners before adding new ones
     if (profileCropState.cropBoxMouseDownHandler) {
         cropBox.removeEventListener('mousedown', profileCropState.cropBoxMouseDownHandler);
@@ -5756,9 +5756,9 @@ function setupProfileCropInteractions() {
     if (profileCropState.mouseUpHandler) {
         document.removeEventListener('mouseup', profileCropState.mouseUpHandler);
     }
-    
+
     overlay.style.pointerEvents = 'auto';
-    
+
     // Make crop box draggable
     const cropBoxMouseDownHandler = (e) => {
         if (e.target.closest('[data-handle]')) return;
@@ -5770,7 +5770,7 @@ function setupProfileCropInteractions() {
     };
     cropBox.addEventListener('mousedown', cropBoxMouseDownHandler);
     profileCropState.cropBoxMouseDownHandler = cropBoxMouseDownHandler;
-    
+
     // Handle resize handles
     profileCropState.handleMouseDownHandlers = [];
     cropBox.querySelectorAll('[data-handle]').forEach(handle => {
@@ -5785,7 +5785,7 @@ function setupProfileCropInteractions() {
         handle.addEventListener('mousedown', handleMouseDownHandler);
         profileCropState.handleMouseDownHandlers.push({ handle, handler: handleMouseDownHandler });
     });
-    
+
     // Zoom controls
     const zoomSlider = document.getElementById('profile-zoom-slider');
     const zoomValue = document.getElementById('profile-zoom-value');
@@ -5800,15 +5800,15 @@ function setupProfileCropInteractions() {
         zoomSlider.addEventListener('input', zoomInputHandler);
         profileCropState.zoomInputHandler = zoomInputHandler;
     }
-    
+
     let mouseMoveHandler = (e) => {
         if (!profileCropState.isDragging) return;
-        
+
         const canvas = profileCropState.canvas;
         const canvasRect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / canvasRect.width;
         const scaleY = canvas.height / canvasRect.height;
-        
+
         if (profileCropState.dragHandle === 'move') {
             const deltaX = (e.clientX - profileCropState.startX) * scaleX;
             const deltaY = (e.clientY - profileCropState.startY) * scaleY;
@@ -5822,7 +5822,7 @@ function setupProfileCropInteractions() {
             const deltaY = (e.clientY - profileCropState.startY) * scaleY;
             const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY)) * (deltaX > 0 ? 1 : -1);
             const handle = profileCropState.dragHandle;
-            
+
             if (handle.includes('e') || handle.includes('se')) {
                 const newSize = Math.max(50, Math.min(canvas.width - profileCropState.cropBox.x, profileCropState.cropBox.width + delta));
                 profileCropState.cropBox.width = newSize;
@@ -5845,22 +5845,22 @@ function setupProfileCropInteractions() {
                 profileCropState.cropBox.height = newSize;
                 profileCropState.cropBox.width = newSize;
             }
-            
+
             profileCropState.startX = e.clientX;
             profileCropState.startY = e.clientY;
         }
-        
+
         updateProfileCropBox();
     };
-    
+
     document.addEventListener('mousemove', mouseMoveHandler);
     profileCropState.mouseMoveHandler = mouseMoveHandler;
-    
+
     let mouseUpHandler = () => {
         profileCropState.isDragging = false;
         profileCropState.dragHandle = null;
     };
-    
+
     document.addEventListener('mouseup', mouseUpHandler);
     profileCropState.mouseUpHandler = mouseUpHandler;
 }
@@ -5878,9 +5878,9 @@ function redrawProfileCanvas() {
 
 window.applyProfilePictureCrop = async function() {
     if (!profileCropState.canvas || !profileCropState.originalFile) return;
-    
+
     const { x, y, width, height } = profileCropState.cropBox;
-    
+
     // Create cropped canvas (square 400x400)
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = 400;
@@ -5891,47 +5891,47 @@ window.applyProfilePictureCrop = async function() {
         x, y, width, height,
         0, 0, 400, 400
     );
-    
+
     // Convert to blob with aggressive compression
     const blob = await new Promise(resolve => {
         croppedCanvas.toBlob(resolve, 'image/jpeg', PROFILE_PICTURE_COMPRESSION.quality);
     });
-    
+
     const croppedFile = new File([blob], profileCropState.originalFile.name, {
         type: 'image/jpeg',
         lastModified: Date.now()
     });
-    
+
     // Further compress
     const compressedFile = await compressImage(croppedFile, { profilePicture: true });
-    
+
     closeProfilePictureCropModal();
-    
+
     // Upload the cropped and compressed file
     return safeExecuteAsync(async () => {
         showToast('Uploading profile picture...', 'info');
-        
+
         try {
             // Validate Cloudinary config
             if (!CLOUDINARY_CONFIG || !CLOUDINARY_CONFIG.cloudName || !CLOUDINARY_CONFIG.uploadPreset) {
                 throw new Error('Cloudinary configuration is missing. Please contact support.');
             }
-            
+
             // Validate file
             if (!compressedFile || !(compressedFile instanceof File) && !(compressedFile instanceof Blob)) {
                 throw new Error('Invalid file. Please try again.');
             }
-            
+
             // Check file size (max 5MB)
             if (compressedFile.size > 5 * 1024 * 1024) {
                 throw new Error('File is too large. Maximum size is 5MB.');
             }
-            
+
             // Check file type
             if (!compressedFile.type || !compressedFile.type.startsWith('image/')) {
                 throw new Error('Invalid file type. Please upload an image file.');
             }
-            
+
             const formData = new FormData();
             formData.append('file', compressedFile);
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
@@ -5939,18 +5939,18 @@ window.applyProfilePictureCrop = async function() {
             formData.append('tags', `profile,user-${currentUser.uid}`);
             // Note: Transformation parameters (eager, transformation) are NOT allowed with unsigned uploads
             // Transformations should be applied via URL parameters when displaying images
-            
+
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
                 { method: 'POST', body: formData }
             );
-            
+
             if (!response.ok) {
                 let errorMessage = `Upload failed: ${response.statusText}`;
                 try {
                     const errorData = await response.json();
                     errorMessage = errorData.error?.message || errorData.message || errorMessage;
-                    
+
                     // Provide specific error for transformation/eager parameter issues
                     if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
                         errorMessage = 'Image upload configuration error. Please contact support.';
@@ -5965,7 +5965,7 @@ window.applyProfilePictureCrop = async function() {
                 }
                 throw new Error(errorMessage);
             }
-            
+
             const data = await response.json();
             // Apply transformations via URL parameters (required for unsigned uploads)
             // Format: /upload/transformations/public_id
@@ -5974,22 +5974,22 @@ window.applyProfilePictureCrop = async function() {
                 // Apply transformation: auto format, auto quality (low), width 400, height 400, fill crop
                 downloadURL = downloadURL.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
             }
-            
+
             await db.collection('users').doc(currentUser.uid).update({
                 profilePictureURL: downloadURL,
                 profilePictureUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
+
             currentUser.profilePictureURL = downloadURL;
             updateProfilePictureInUI(downloadURL);
-            
+
             await logUserActivity('profile_picture_upload', {
                 fileName: profileCropState.originalFile.name,
                 fileSize: profileCropState.originalFile.size,
                 compressedSize: compressedFile.size,
                 fileType: profileCropState.originalFile.type
             });
-            
+
             showToast('Profile picture uploaded successfully!', 'success');
         } catch (error) {
             logError(error, 'Profile Picture Upload');
@@ -6005,7 +6005,7 @@ window.closeProfilePictureCropModal = function() {
         modal.classList.add('hidden');
         modal.style.display = 'none';
     }
-    
+
     // Clean up all event listeners
     if (profileCropState.mouseMoveHandler) {
         document.removeEventListener('mousemove', profileCropState.mouseMoveHandler);
@@ -6013,23 +6013,23 @@ window.closeProfilePictureCropModal = function() {
     if (profileCropState.mouseUpHandler) {
         document.removeEventListener('mouseup', profileCropState.mouseUpHandler);
     }
-    
+
     const cropBox = document.getElementById('profile-crop-box');
     if (cropBox && profileCropState.cropBoxMouseDownHandler) {
         cropBox.removeEventListener('mousedown', profileCropState.cropBoxMouseDownHandler);
     }
-    
+
     if (profileCropState.handleMouseDownHandlers) {
         profileCropState.handleMouseDownHandlers.forEach(({ handle, handler }) => {
             handle.removeEventListener('mousedown', handler);
         });
     }
-    
+
     const zoomSlider = document.getElementById('profile-zoom-slider');
     if (zoomSlider && profileCropState.zoomInputHandler) {
         zoomSlider.removeEventListener('input', profileCropState.zoomInputHandler);
     }
-    
+
     profileCropState = {
         image: null,
         canvas: null,
@@ -6079,7 +6079,7 @@ function updateProfilePictureInUI(imageURL) {
             profilePic.dataset.clickHandlerAdded = 'true';
         }
     }
-    
+
     // Update profile picture in account settings (both user and admin)
     const accountProfilePic = document.getElementById('account-profile-picture');
     const adminAccountProfilePic = document.getElementById('admin-account-profile-picture');
@@ -6102,9 +6102,9 @@ function showProfilePictureUploadModal() {
         showToast('Please log in to upload a profile picture', 'error');
         return;
     }
-    
+
     // Profile pictures are now available to all users
-    
+
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
@@ -6117,10 +6117,10 @@ function showProfilePictureUploadModal() {
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Upload Profile Picture</h2>
                 <p class="text-gray-600 mb-6">
-                    Choose a profile picture to personalize your account. 
+                    Choose a profile picture to personalize your account.
                     Supported formats: JPEG, PNG, GIF, WebP (max 5MB)
                 </p>
-                
+
                 <div class="mb-6">
                     <input type="file" id="profile-picture-input" accept="image/*" class="hidden">
                     <label for="profile-picture-input" class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
@@ -6131,7 +6131,7 @@ function showProfilePictureUploadModal() {
                     </label>
                     <div id="file-info" class="mt-2 text-sm text-gray-500 hidden"></div>
                 </div>
-                
+
                 <div class="flex gap-3 justify-center">
                     <button onclick="this.closest('.fixed').remove()" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">
                         Cancel
@@ -6143,14 +6143,14 @@ function showProfilePictureUploadModal() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Handle file selection
     const fileInput = document.getElementById('profile-picture-input');
     const fileInfo = document.getElementById('file-info');
     const uploadBtn = document.getElementById('upload-btn');
-    
+
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -6174,7 +6174,7 @@ function showProfilePictureUploadModal() {
 async function handleProfilePictureUpload() {
     const fileInput = document.getElementById('profile-picture-input');
     const file = fileInput.files[0];
-    
+
     if (file) {
         await uploadProfilePicture(file);
         // Close modal
@@ -6184,25 +6184,25 @@ async function handleProfilePictureUpload() {
 
 async function removeProfilePicture() {
     if (!currentUser) return;
-    
+
     try {
         // Remove profile picture URL from user document
         await db.collection('users').doc(currentUser.uid).update({
             profilePictureURL: firebase.firestore.FieldValue.delete(),
             profilePictureUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
         // Update current user object
         delete currentUser.profilePictureURL;
-        
+
         // Update UI
         updateProfilePictureInUI('');
-        
+
         // Log activity
         await logUserActivity('profile_picture_remove', {});
-        
+
         showToast('Profile picture removed successfully', 'success');
-        
+
     } catch (error) {
         logError(error, 'Remove Profile Picture');
         showToast('Failed to remove profile picture', 'error');
@@ -6283,7 +6283,7 @@ async function openEditUserModal(userId) {
                              <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
                          </div>
                      </form>
-                     
+
                      <!-- Exam Results Section -->
                      <div class="mt-6 pt-6 border-t border-gray-200">
                          <h4 class="text-lg font-semibold text-gray-800 mb-4">Exam Results</h4>
@@ -6301,7 +6301,7 @@ async function openEditUserModal(userId) {
                  </div>
             </div>
         `;
-        
+
         // Load exam results for this user
         loadExamResults(user.id);
         const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
@@ -6315,17 +6315,17 @@ async function openEditUserModal(userId) {
             `;
             subjectContainer.appendChild(label);
         });
-        
+
         // Handle subscription expiry type change
         const expiryTypeSelect = modal.querySelector('#edit-subscription-expiry-type');
         const monthsContainer = modal.querySelector('#subscription-months-container');
         const dateContainer = modal.querySelector('#subscription-date-container');
-        
+
         if (user.subscriptionExpiresAt) {
             const expiryDate = user.subscriptionExpiresAt.toDate ? user.subscriptionExpiresAt.toDate() : new Date(user.subscriptionExpiresAt);
             modal.querySelector('#edit-subscription-date').value = expiryDate.toISOString().split('T')[0];
         }
-        
+
         expiryTypeSelect.addEventListener('change', function() {
             monthsContainer.classList.add('hidden');
             dateContainer.classList.add('hidden');
@@ -6335,7 +6335,7 @@ async function openEditUserModal(userId) {
                 dateContainer.classList.remove('hidden');
             }
         });
-        
+
         // Trigger initial state
         expiryTypeSelect.dispatchEvent(new Event('change'));
     } catch (error) {
@@ -6351,7 +6351,7 @@ async function handleUpdateUser(userId) {
         const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
         const aiMaxRequests = parseInt(document.getElementById('edit-ai-max-requests').value) || 50;
         const aiAccessBlocked = document.getElementById('edit-ai-access-blocked').checked;
-        
+
         const updateData = {
             displayName: newDisplayName,
             tier: newTier,
@@ -6360,7 +6360,7 @@ async function handleUpdateUser(userId) {
             aiMaxRequestsDaily: aiMaxRequests,
             aiAccessBlocked: aiAccessBlocked
         };
-        
+
         // Handle subscription expiry
         const expiryType = document.getElementById('edit-subscription-expiry-type').value;
         if (expiryType === 'never') {
@@ -6378,12 +6378,12 @@ async function handleUpdateUser(userId) {
                 updateData.subscriptionExpiresAt = firebase.firestore.Timestamp.fromDate(expiryDate);
             }
         }
-        
+
         await db.collection('users').doc(userId).update(updateData);
-        
+
         document.getElementById('edit-user-modal').style.display = 'none';
         showToast('User updated successfully!', 'success');
-        
+
         // Refresh user list
         if (typeof renderUserManagementPanel === 'function') {
             renderUserManagementPanel(allUsers);
@@ -6477,7 +6477,7 @@ function exportUserData() {
                 `"${user.createdAt ? formatDateUK(user.createdAt) : 'Unknown'}"`
             ].join(','))
         ].join('\n');
-        
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
@@ -6487,7 +6487,7 @@ function exportUserData() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         showToast('User data exported successfully!', 'success');
     } catch (error) {
         console.error('Export failed:', error);
@@ -6521,7 +6521,7 @@ function viewUserActivity(userId) {
         showToast('User not found', 'error');
         return;
     }
-    
+
     const modal = document.getElementById('edit-user-modal');
     modal.style.display = 'flex';
     modal.innerHTML = `
@@ -6569,7 +6569,7 @@ function viewUserActivity(userId) {
 // Comprehensive System Health Diagnostic Tests
 async function checkSystemHealth() {
     showToast('Running comprehensive system diagnostics...', 'info');
-    
+
     const diagnosticResults = {
         tests: [],
         overallStatus: 'healthy',
@@ -6577,7 +6577,7 @@ async function checkSystemHealth() {
         warnings: 0,
         passed: 0
     };
-    
+
     // Test 1: Database Connection
     try {
         await db.collection('users').limit(1).get();
@@ -6597,7 +6597,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 2: Authentication Service
     try {
         const currentUser = firebase.auth().currentUser;
@@ -6627,17 +6627,17 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 3: Image Storage Service (Cloudinary)
     try {
         if (CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.cloudName !== 'your-cloud-name') {
             // Test Cloudinary connectivity by checking if cloud name is accessible
             const testResponse = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/image/upload/v1/test`);
-            
+
             if (!testResponse.ok) {
                 throw new Error(`Cloudinary endpoint returned ${testResponse.status}: ${testResponse.statusText}`);
             }
-            
+
             diagnosticResults.tests.push({
                 name: 'Image Storage Service',
                 status: 'pass',
@@ -6663,7 +6663,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 4: User Collection Access
     try {
         const usersSnapshot = await db.collection('users').limit(5).get();
@@ -6683,7 +6683,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 5: Blog Posts Collection
     try {
         const blogSnapshot = await db.collection('blogPosts').limit(3).get();
@@ -6703,7 +6703,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 6: Video Playlists Collection
     try {
         const videoSnapshot = await db.collection('videoPlaylists').limit(3).get();
@@ -6723,7 +6723,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 7: Useful Links Collection
     try {
         const linksSnapshot = await db.collection('usefulLinks').limit(3).get();
@@ -6743,7 +6743,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 8: Global Events Collection
     try {
         const eventsSnapshot = await db.collection('globalEvents').limit(3).get();
@@ -6763,7 +6763,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 9: Settings Collection
     try {
         const settingsSnapshot = await db.collection('settings').limit(3).get();
@@ -6783,7 +6783,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 10: Network Connectivity
     try {
         const response = await fetch('https://www.google.com', { method: 'HEAD', mode: 'no-cors' });
@@ -6803,7 +6803,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 11: Browser Compatibility
     const browserTests = {
         localStorage: typeof Storage !== 'undefined',
@@ -6811,7 +6811,7 @@ async function checkSystemHealth() {
         promises: typeof Promise !== 'undefined',
         es6: typeof Symbol !== 'undefined'
     };
-    
+
     const browserScore = Object.values(browserTests).filter(Boolean).length;
     if (browserScore >= 3) {
         diagnosticResults.tests.push({
@@ -6830,7 +6830,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 12: Memory Usage
     if (performance.memory) {
         const memoryUsage = performance.memory.usedJSHeapSize / performance.memory.totalJSHeapSize;
@@ -6860,7 +6860,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 13: Local Storage
     try {
         localStorage.setItem('test', 'test');
@@ -6881,7 +6881,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 14: Session Storage
     try {
         sessionStorage.setItem('test', 'test');
@@ -6902,7 +6902,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 15: Console Access
     try {
         console.log('Diagnostic test');
@@ -6922,7 +6922,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.warnings++;
     }
-    
+
     // Test 16: DOM Manipulation
     try {
         const testEl = document.createElement('div');
@@ -6945,7 +6945,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 17: Event Handling
     try {
         const testEl = document.createElement('div');
@@ -6972,7 +6972,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 18: Timer Functions
     try {
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -6992,7 +6992,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 19: JSON Processing
     try {
         const testObj = { test: 'data', number: 123 };
@@ -7018,7 +7018,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Test 20: Error Handling
     try {
         try {
@@ -7045,7 +7045,7 @@ async function checkSystemHealth() {
         });
         diagnosticResults.criticalIssues++;
     }
-    
+
     // Determine overall status
     if (diagnosticResults.criticalIssues > 0) {
         diagnosticResults.overallStatus = 'critical';
@@ -7054,14 +7054,14 @@ async function checkSystemHealth() {
     } else {
         diagnosticResults.overallStatus = 'healthy';
     }
-    
+
     // Update UI with results
     updateSystemHealthUI(diagnosticResults);
-    
-    const statusMessage = diagnosticResults.criticalIssues > 0 ? 
+
+    const statusMessage = diagnosticResults.criticalIssues > 0 ?
         `System health check completed with ${diagnosticResults.criticalIssues} critical issues` :
         `System health check completed: ${diagnosticResults.passed}/${diagnosticResults.tests.length} tests passed`;
-    
+
     showToast(statusMessage, diagnosticResults.criticalIssues > 0 ? 'error' : 'success');
 }
 
@@ -7069,7 +7069,7 @@ function updateSystemHealthUI(results) {
         const dbStatus = document.getElementById('db-status');
         const storageUsage = document.getElementById('storage-usage');
         const lastBackup = document.getElementById('last-backup');
-        
+
     // Update basic status indicators
     if (results.overallStatus === 'healthy') {
         dbStatus.textContent = 'Healthy';
@@ -7081,13 +7081,13 @@ function updateSystemHealthUI(results) {
         dbStatus.textContent = 'Critical';
         dbStatus.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
     }
-    
+
     // Update storage usage (mock calculation)
     const totalTests = results.tests.length;
     const passedTests = results.passed;
     const storagePercent = Math.round((passedTests / totalTests) * 100);
     storageUsage.textContent = `${passedTests}/${totalTests} Tests (${storagePercent}%)`;
-    
+
     // Update last backup time
         lastBackup.textContent = formatDateUK(new Date());
 }
@@ -7098,11 +7098,11 @@ async function initializeMaintenanceStatus() {
         const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
         const isEnabled = maintenanceDoc.exists ? maintenanceDoc.data().enabled : false;
         const message = maintenanceDoc.exists ? maintenanceDoc.data().message : 'System is currently under maintenance. Please check back later.';
-        
+
         const statusEl = document.getElementById('maintenance-status');
         const buttonEl = document.getElementById('toggle-maintenance-btn');
         const messageEl = document.getElementById('maintenance-message');
-        
+
         if (isEnabled) {
             statusEl.textContent = 'Enabled';
             statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
@@ -7114,7 +7114,7 @@ async function initializeMaintenanceStatus() {
             buttonEl.textContent = 'Enable Maintenance';
             buttonEl.className = 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
         }
-        
+
         if (messageEl) {
             messageEl.textContent = message;
         }
@@ -7126,22 +7126,22 @@ async function initializeMaintenanceStatus() {
 // Maintenance Mode Functions
 async function toggleMaintenanceMode() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         const maintenanceRef = db.collection('settings').doc('maintenance');
         const doc = await maintenanceRef.get();
         const isEnabled = doc.exists ? doc.data().enabled : false;
-        
+
         await maintenanceRef.set({
             enabled: !isEnabled,
             message: doc.exists ? doc.data().message : 'System is currently under maintenance. Please check back later.',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         });
-        
+
         const statusEl = document.getElementById('maintenance-status');
         const buttonEl = document.getElementById('toggle-maintenance-btn');
-        
+
         if (!isEnabled) {
             statusEl.textContent = 'Enabled';
             statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
@@ -7155,7 +7155,7 @@ async function toggleMaintenanceMode() {
             buttonEl.className = 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
             showToast('Maintenance mode disabled', 'success');
         }
-        
+
         // Update online status
         updateOnlineStatus(!isEnabled);
     } catch (error) {
@@ -7166,17 +7166,17 @@ async function toggleMaintenanceMode() {
 
 async function setMaintenanceMessage() {
     if (currentUser.role !== 'admin') return;
-    
+
     const currentMessageEl = document.getElementById('maintenance-message');
     const currentMessage = currentMessageEl ? currentMessageEl.textContent : '';
     const message = prompt('Enter maintenance message:', currentMessage || 'System is currently under maintenance. Please check back later.');
     if (message === null) return;
-    
+
     if (!message.trim()) {
         showToast('Message cannot be empty', 'error');
         return;
     }
-    
+
     try {
         await db.collection('settings').doc('maintenance').set({
             enabled: true,
@@ -7184,7 +7184,7 @@ async function setMaintenanceMessage() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         }, { merge: true });
-        
+
         if (currentMessageEl) currentMessageEl.textContent = message.trim();
         showToast('Maintenance message updated', 'success');
     } catch (error) {
@@ -7219,18 +7219,18 @@ const maintenanceTemplates = {
 
 function showMaintenanceTemplateModal() {
     if (currentUser.role !== 'admin') return;
-    
+
     const modal = document.getElementById('maintenance-template-modal');
     if (!modal) return;
-    
+
     modal.classList.remove('hidden');
-    
+
     // Reset form
     document.getElementById('maintenance-template-select').value = '';
     document.getElementById('maintenance-template-message').value = '';
     document.getElementById('maintenance-eta-date').value = '';
     document.getElementById('maintenance-eta-time').value = '';
-    
+
     // Add template change listener
     const select = document.getElementById('maintenance-template-select');
     select.onchange = function() {
@@ -7248,7 +7248,7 @@ function showMaintenanceTemplateModal() {
 
 async function applyMaintenanceTemplate() {
     if (currentUser.role !== 'admin') return;
-    
+
     const templateSelect = document.getElementById('maintenance-template-select');
     const messageTextarea = document.getElementById('maintenance-template-message');
     const etaDate = document.getElementById('maintenance-eta-date');
@@ -7259,12 +7259,12 @@ async function applyMaintenanceTemplate() {
         showToast('Maintenance template controls are unavailable. Please refresh the page.', 'error');
         return;
     }
-    
+
     if (!templateSelect.value && !messageTextarea.value.trim()) {
         showToast('Please select a template or enter a message', 'error');
         return;
     }
-    
+
     const message = messageTextarea.value.trim();
     if (!message) {
         showToast('Message cannot be empty', 'error');
@@ -7275,7 +7275,7 @@ async function applyMaintenanceTemplate() {
         showToast('Please provide both an ETA date and time or leave both blank.', 'error');
         return;
     }
-    
+
     let etaTimestamp = null;
     let etaDateTime = null;
     if (etaDate.value && etaTime.value) {
@@ -7299,7 +7299,7 @@ async function applyMaintenanceTemplate() {
             applyBtn.classList.remove('opacity-70', 'cursor-not-allowed');
         }
     };
-    
+
     try {
         setApplyButtonState(true);
         const maintenanceRef = db.collection('settings').doc('maintenance');
@@ -7311,35 +7311,35 @@ async function applyMaintenanceTemplate() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         };
-        
+
         if (etaTimestamp) {
             maintenanceData.eta = etaTimestamp;
         } else if (existingDoc.exists && existingDoc.data().eta) {
             maintenanceData.eta = firebase.firestore.FieldValue.delete();
         }
-        
+
         await maintenanceRef.set(maintenanceData, { merge: true });
-        
+
         // Update UI elements
         const statusEl = document.getElementById('maintenance-status');
         const buttonEl = document.getElementById('toggle-maintenance-btn');
         const messageEl = document.getElementById('maintenance-message');
         const etaEl = document.getElementById('maintenance-eta');
-        
+
         if (statusEl) {
             statusEl.textContent = 'Enabled';
             statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
         }
-        
+
         if (buttonEl) {
             buttonEl.textContent = 'Disable Maintenance';
             buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
         }
-        
+
         if (messageEl) {
             messageEl.textContent = message;
         }
-        
+
         if (etaEl) {
             if (etaTimestamp && etaDateTime) {
                 etaEl.textContent = formatDateUK(etaDateTime);
@@ -7347,10 +7347,10 @@ async function applyMaintenanceTemplate() {
                 etaEl.textContent = '-';
             }
         }
-        
+
         updateOnlineStatus(true);
         initializeMaintenanceStatus();
-        
+
         const modal = document.getElementById('maintenance-template-modal');
         if (modal) modal.classList.add('hidden');
         showToast('Maintenance mode activated with template', 'success');
@@ -7369,7 +7369,7 @@ let userSessionsUnsubscribe = null;
 // Initialize real-time activity monitoring
 function initializeActivityMonitoring() {
     if (currentUser.role !== 'admin') return;
-    
+
     // Listen to user activities in real-time
     activityDataUnsubscribe = db.collection('userActivities')
         .orderBy('timestamp', 'desc')
@@ -7382,7 +7382,7 @@ function initializeActivityMonitoring() {
             updateActivityFeed(activities);
             updateActivityStats(activities);
         }, err => logError(err, "Activity Monitoring"));
-    
+
     // Listen to user sessions in real-time
     userSessionsUnsubscribe = db.collection('userSessions')
         .where('isActive', '==', true)
@@ -7400,7 +7400,7 @@ function initializeActivityMonitoring() {
 function updateActivityFeed(activities) {
     const feed = document.getElementById('activity-feed');
     if (!feed) return;
-    
+
     if (activities.length === 0) {
         feed.innerHTML = `
             <div class="text-center text-gray-500 py-8">
@@ -7412,12 +7412,12 @@ function updateActivityFeed(activities) {
         `;
         return;
     }
-    
+
     const feedHTML = activities.slice(0, 20).map(activity => {
         const timeAgo = getTimeAgo(activity.timestamp?.toDate() || new Date());
         const activityIcon = getActivityIcon(activity.activityType);
         const activityText = getActivityText(activity);
-        
+
         return `
             <div class="activity-item activity-item-${activity.activityType} flex items-start gap-3 p-3 bg-white rounded-lg shadow-sm border border-gray-200 mb-2">
                 <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -7434,7 +7434,7 @@ function updateActivityFeed(activities) {
             </div>
         `;
     }).join('');
-    
+
     feed.innerHTML = feedHTML;
 }
 
@@ -7442,22 +7442,22 @@ function updateActivityFeed(activities) {
 function updateActivityStats(activities) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const todayActivities = activities.filter(activity => {
         const activityDate = activity.timestamp?.toDate() || new Date();
         return activityDate >= today;
     });
-    
+
     // Count files opened today
     const filesOpened = todayActivities.filter(a => a.activityType === 'file_open').length;
     const filesOpenedEl = document.getElementById('files-opened-today');
     if (filesOpenedEl) filesOpenedEl.textContent = filesOpened;
-    
+
     // Count subjects studied today
     const subjectsStudied = new Set(todayActivities.filter(a => a.activityType === 'subject_start').map(a => a.subject)).size;
     const subjectsStudiedEl = document.getElementById('subjects-studied-today');
     if (subjectsStudiedEl) subjectsStudiedEl.textContent = subjectsStudied;
-    
+
     // Calculate average study time
     const studyTimes = todayActivities.filter(a => a.timeSpent).map(a => a.timeSpent);
     const avgStudyTime = studyTimes.length > 0 ? Math.round(studyTimes.reduce((a, b) => a + b, 0) / studyTimes.length / 1000 / 60) : 0;
@@ -7475,7 +7475,7 @@ function updateSessionStats(sessions) {
 function updateUserActivityTable(sessions) {
     const tableBody = document.getElementById('user-activity-table');
     if (!tableBody) return;
-    
+
     if (sessions.length === 0) {
         tableBody.innerHTML = `
             <tr>
@@ -7486,12 +7486,12 @@ function updateUserActivityTable(sessions) {
         `;
         return;
     }
-    
+
     const tableHTML = sessions.map(session => {
         const user = allUsers[session.userId];
         const lastSeen = session.lastSeen?.toDate() || new Date();
         const timeAgo = getTimeAgo(lastSeen);
-        
+
         return `
             <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 whitespace-nowrap">
@@ -7528,7 +7528,7 @@ function updateUserActivityTable(sessions) {
             </tr>
         `;
     }).join('');
-    
+
     tableBody.innerHTML = tableHTML;
 }
 
@@ -7567,7 +7567,7 @@ function getTimeAgo(date) {
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
@@ -7577,11 +7577,11 @@ function getTimeAgo(date) {
 // Refresh activity data
 function refreshActivityData() {
     if (currentUser.role !== 'admin') return;
-    
+
     // Reinitialize monitoring
     if (activityDataUnsubscribe) activityDataUnsubscribe();
     if (userSessionsUnsubscribe) userSessionsUnsubscribe();
-    
+
     initializeActivityMonitoring();
     showToast('Activity data refreshed', 'success');
 }
@@ -7595,10 +7595,10 @@ let userDailyStats = {};
 // Initialize calendar
 function initializeCalendar() {
     if (currentUser.role !== 'admin') return;
-    
+
     // Populate user selector
     populateUserSelector();
-    
+
     // Load current month
     loadCalendarMonth();
 }
@@ -7607,9 +7607,9 @@ function initializeCalendar() {
 function populateUserSelector() {
     const selector = document.getElementById('user-selector');
     if (!selector) return;
-    
+
     selector.innerHTML = '<option value="">Select User</option>';
-    
+
     Object.values(allUsers).forEach(user => {
         const option = document.createElement('option');
         option.value = user.id;
@@ -7622,17 +7622,17 @@ function populateUserSelector() {
 async function loadCalendarMonth() {
     const calendarGrid = document.getElementById('calendar-grid');
     const monthYearEl = document.getElementById('calendar-month-year');
-    
+
     if (!calendarGrid || !monthYearEl) return;
-    
+
     // Update month/year display
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
     monthYearEl.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
-    
+
     // Clear calendar
     calendarGrid.innerHTML = '';
-    
+
     // Add day headers
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
@@ -7641,32 +7641,32 @@ async function loadCalendarMonth() {
         header.textContent = day;
         calendarGrid.appendChild(header);
     });
-    
+
     // Get first day of month and number of days
     const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
     const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     // Add empty cells for days before month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'p-2 h-16 bg-gray-50 rounded';
         calendarGrid.appendChild(emptyCell);
     }
-    
+
     // Add days of month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day p-2 h-16 bg-white border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors';
         dayCell.textContent = day;
-        
+
         // Add click handler
         dayCell.onclick = () => showDailyDetails(day);
-        
+
         // Load activity data for this day
         await loadDayActivity(dayCell, day);
-        
+
         calendarGrid.appendChild(dayCell);
     }
 }
@@ -7674,18 +7674,18 @@ async function loadCalendarMonth() {
 // Load activity data for a specific day
 async function loadDayActivity(dayCell, day) {
     if (!selectedUserId) return;
-    
+
     const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
+
     try {
         const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
         const doc = await dailyStatsRef.get();
-        
+
         if (doc.exists) {
             const data = doc.data();
             const hasActivity = data.loginCount > 0 || data.totalSessionTime > 0;
             const hasStudy = data.subjectsStudied && data.subjectsStudied.length > 0;
-            
+
             if (hasActivity && hasStudy) {
                 dayCell.classList.add('has-both');
             } else if (hasActivity) {
@@ -7693,10 +7693,10 @@ async function loadDayActivity(dayCell, day) {
             } else if (hasStudy) {
                 dayCell.classList.add('has-study');
             }
-            
+
             // Add tooltip with summary
             const sessionTime = Math.round(data.totalSessionTime / 1000 / 60);
-            dayCell.setAttribute('data-tooltip', 
+            dayCell.setAttribute('data-tooltip',
                 `Login Count: ${data.loginCount}\nSession Time: ${sessionTime}m\nSubjects: ${data.subjectsStudied?.length || 0}`);
         }
     } catch (error) {
@@ -7707,22 +7707,22 @@ async function loadDayActivity(dayCell, day) {
 // Show daily details
 async function showDailyDetails(day) {
     if (!selectedUserId) return;
-    
+
     const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const dailyDetails = document.getElementById('daily-details');
     const dailyStats = document.getElementById('daily-stats');
     const subjectsList = document.getElementById('subjects-list');
     const filesList = document.getElementById('files-list');
-    
+
     if (!dailyDetails) return;
-    
+
     try {
         const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
         const doc = await dailyStatsRef.get();
-        
+
         if (doc.exists) {
             const data = doc.data();
-            
+
             // Show daily stats
             dailyStats.innerHTML = `
                 <div class="bg-blue-50 p-4 rounded-lg">
@@ -7738,7 +7738,7 @@ async function showDailyDetails(day) {
                     <p class="text-2xl font-bold text-purple-900">${data.subjectsStudied?.length || 0}</p>
                 </div>
             `;
-            
+
             // Show subjects
             subjectsList.innerHTML = '';
             if (data.subjectsStudied && data.subjectsStudied.length > 0) {
@@ -7751,7 +7751,7 @@ async function showDailyDetails(day) {
             } else {
                 subjectsList.innerHTML = '<span class="text-gray-500 text-sm">No subjects studied</span>';
             }
-            
+
             // Show files
             filesList.innerHTML = '';
             if (data.filesAccessed && data.filesAccessed.length > 0) {
@@ -7764,7 +7764,7 @@ async function showDailyDetails(day) {
             } else {
                 filesList.innerHTML = '<span class="text-gray-500 text-sm">No files accessed</span>';
             }
-            
+
             dailyDetails.classList.remove('hidden');
         } else {
             dailyDetails.classList.add('hidden');
@@ -7778,7 +7778,7 @@ async function showDailyDetails(day) {
 function loadUserCalendar() {
     const selector = document.getElementById('user-selector');
     selectedUserId = selector.value;
-    
+
     if (selectedUserId) {
         loadCalendarMonth();
         loadUserCharts();
@@ -7788,7 +7788,7 @@ function loadUserCalendar() {
 // Load user charts
 async function loadUserCharts() {
     if (!selectedUserId) return;
-    
+
     await Promise.all([
         loadLoginLogoutChart(),
         loadSubjectTimeChart(),
@@ -7801,7 +7801,7 @@ async function loadUserCharts() {
 async function loadLoginLogoutChart() {
     const chartContainer = document.getElementById('login-logout-chart');
     if (!chartContainer) return;
-    
+
     try {
         // Get last 7 days of activity
         const activities = [];
@@ -7809,15 +7809,15 @@ async function loadLoginLogoutChart() {
             const date = new Date();
             date.setDate(date.getDate() - i);
             const dateStr = date.toDateString();
-            
+
             const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
             const doc = await dailyStatsRef.get();
-            
+
             if (doc.exists) {
                 activities.push(doc.data());
             }
         }
-        
+
         // Create simple chart visualization
         chartContainer.innerHTML = `
             <div class="w-full h-full">
@@ -7842,17 +7842,17 @@ async function loadLoginLogoutChart() {
 async function loadSubjectTimeChart() {
     const chartContainer = document.getElementById('subject-time-chart');
     if (!chartContainer) return;
-    
+
     try {
         // Get subject data for current month
         const subjectStats = {};
         const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-        
+
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
             const doc = await dailyStatsRef.get();
-            
+
             if (doc.exists) {
                 const data = doc.data();
                 if (data.subjectsStudied) {
@@ -7862,7 +7862,7 @@ async function loadSubjectTimeChart() {
                 }
             }
         }
-        
+
         // Create pie chart visualization
         const total = Object.values(subjectStats).reduce((a, b) => a + b, 0);
         if (total > 0) {
@@ -7892,7 +7892,7 @@ async function loadSubjectTimeChart() {
 async function loadActivityHeatmap() {
     const chartContainer = document.getElementById('activity-heatmap');
     if (!chartContainer) return;
-    
+
     try {
         // Get last 30 days of activity
         const heatmapData = [];
@@ -7900,14 +7900,14 @@ async function loadActivityHeatmap() {
             const date = new Date();
             date.setDate(date.getDate() - i);
             const dateStr = date.toDateString();
-            
+
             const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
             const doc = await dailyStatsRef.get();
-            
+
             const activityLevel = doc.exists ? Math.min(4, Math.floor((doc.data().totalSessionTime || 0) / 1000 / 60 / 30)) : 0;
             heatmapData.push(activityLevel);
         }
-        
+
         // Create heatmap visualization
         chartContainer.innerHTML = `
             <div class="w-full h-full">
@@ -7929,27 +7929,27 @@ async function loadActivityHeatmap() {
 async function loadStudyStreakChart() {
     const chartContainer = document.getElementById('study-streak-chart');
     if (!chartContainer) return;
-    
+
     try {
         // Calculate current streak
         let streak = 0;
         const today = new Date();
-        
+
         for (let i = 0; i < 30; i++) {
             const date = new Date(today);
             date.setDate(date.getDate() - i);
             const dateStr = date.toDateString();
-            
+
             const dailyStatsRef = db.collection('userDailyStats').doc(`${selectedUserId}_${dateStr}`);
             const doc = await dailyStatsRef.get();
-            
+
             if (doc.exists && doc.data().totalSessionTime > 0) {
                 streak++;
             } else {
                 break;
             }
         }
-        
+
         chartContainer.innerHTML = `
             <div class="w-full h-full flex flex-col items-center justify-center">
                 <div class="text-4xl font-bold text-orange-600 mb-2">${streak}</div>
@@ -7995,37 +7995,37 @@ function refreshCalendarData() {
 // Advanced Analytics Functions
 async function updateAnalytics() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         // Calculate active users
         const today = new Date();
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
         const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-        
+
         const activeToday = Object.values(allUsers).filter(user => {
             if (!user.lastAccess) return false;
             const lastAccess = user.lastAccess.toDate ? user.lastAccess.toDate() : new Date(user.lastAccess);
             return lastAccess >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
         }).length;
-        
+
         const activeWeek = Object.values(allUsers).filter(user => {
             if (!user.lastAccess) return false;
             const lastAccess = user.lastAccess.toDate ? user.lastAccess.toDate() : new Date(user.lastAccess);
             return lastAccess >= weekAgo;
         }).length;
-        
+
         const newMonth = Object.values(allUsers).filter(user => {
             if (!user.createdAt) return false;
             const createdAt = user.createdAt.toDate ? user.createdAt.toDate() : new Date(user.createdAt);
             return createdAt >= monthAgo;
         }).length;
-        
+
         // Calculate user statistics
         const totalUsers = Object.keys(allUsers).length;
         const freeUsers = Object.values(allUsers).filter(user => user.tier === 'free').length;
         const paidUsers = Object.values(allUsers).filter(user => user.tier === 'paid').length;
         const adminUsers = Object.values(allUsers).filter(user => user.role === 'admin').length;
-        
+
         // Update basic counts
         const totalUsersEl = document.getElementById('total-users-count');
         if (totalUsersEl) totalUsersEl.textContent = totalUsers;
@@ -8035,11 +8035,11 @@ async function updateAnalytics() {
         if (paidUsersEl) paidUsersEl.textContent = paidUsers;
         const activeTodayEl = document.getElementById('active-today-count');
         if (activeTodayEl) activeTodayEl.textContent = activeToday;
-        
+
         // Update enhanced analytics
         const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0.0';
         const growthPercentage = await calculateGrowthPercentage();
-        
+
         const conversionRateEl = document.getElementById('free-conversion-rate');
         if (conversionRateEl) conversionRateEl.textContent = conversionRate + '%';
         const growthPercentageEl = document.getElementById('growth-percentage');
@@ -8048,27 +8048,27 @@ async function updateAnalytics() {
         if (activeWeekEl) activeWeekEl.textContent = activeWeek;
         const newMonthEl = document.getElementById('new-month-count');
         if (newMonthEl) newMonthEl.textContent = newMonth;
-        
+
         // Update server time
         updateServerTime();
-        
+
         // Content stats
         const totalFilesEl = document.getElementById('total-files-count');
         if (totalFilesEl) totalFilesEl.textContent = Object.keys(allSubjectFolders).length;
         const blogPostsEl = document.getElementById('blog-posts-count');
         if (blogPostsEl) blogPostsEl.textContent = allBlogPosts.length;
-        
+
         // Get playlists count
         const playlistsSnapshot = await db.collection('videoPlaylists').get();
         const playlistsCountEl = document.getElementById('playlists-count');
         if (playlistsCountEl) playlistsCountEl.textContent = playlistsSnapshot.size;
-        
+
         // Update engagement metrics
         await updateEngagementMetrics();
-        
+
         // Update system health
         await updateSystemHealth();
-        
+
     } catch (error) {
         logError(error, 'Analytics Update');
     }
@@ -8088,9 +8088,9 @@ async function calculateGrowthPercentage() {
 
 function updateServerTime() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString('en-GB', { 
+    const timeString = now.toLocaleTimeString('en-GB', {
         timeZone: 'Europe/London',
-        hour12: false 
+        hour12: false
     });
     const serverTimeEl = document.getElementById('server-time');
     if (serverTimeEl) {
@@ -8103,12 +8103,12 @@ async function updateEngagementMetrics() {
         // Calculate real engagement metrics from user data
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        
+
         // Calculate active users today
         let activeUsersToday = 0;
         let totalSessions = 0;
         let totalSessionTime = 0;
-        
+
         Object.values(allUsers).forEach(user => {
             if (user.lastActiveAt) {
                 const lastActive = user.lastActiveAt.toDate ? user.lastActiveAt.toDate() : new Date(user.lastActiveAt);
@@ -8119,57 +8119,57 @@ async function updateEngagementMetrics() {
             if (user.totalSessions) totalSessions += user.totalSessions;
             if (user.totalSessionTime) totalSessionTime += user.totalSessionTime;
         });
-        
+
         // Calculate average session time
         const avgSessionMinutes = totalSessions > 0 ? Math.round(totalSessionTime / totalSessions / 60) : 0;
         const avgSessionTime = avgSessionMinutes > 0 ? `${avgSessionMinutes}m` : '0m';
-        
+
         // Calculate total page views (estimate based on sessions)
         const estimatedPageViews = totalSessions * 3; // Assume 3 pages per session
         const totalPageViews = estimatedPageViews.toLocaleString();
-        
+
         // Calculate bounce rate (users with only 1 session)
         const singleSessionUsers = Object.values(allUsers).filter(user => user.totalSessions === 1).length;
         const bounceRate = totalSessions > 0 ? ((singleSessionUsers / totalSessions) * 100).toFixed(1) : '0';
-        
+
         const avgSessionEl = document.getElementById('avg-session-time');
         const pageViewsEl = document.getElementById('total-page-views');
         const bounceRateEl = document.getElementById('bounce-rate');
-        
+
         if (avgSessionEl) avgSessionEl.textContent = avgSessionTime;
         if (pageViewsEl) pageViewsEl.textContent = totalPageViews;
         if (bounceRateEl) bounceRateEl.textContent = `${bounceRate}%`;
-        
+
         // Content performance metrics - get real data from collections
         let filesDownloaded = 0;
         let blogViews = 0;
         let videoPlays = 0;
-        
+
         // Count blog posts and estimate views
         if (allBlogPosts && allBlogPosts.length > 0) {
             blogViews = allBlogPosts.reduce((total, post) => {
                 return total + (post.views || 0);
             }, 0);
         }
-        
+
         // Estimate file downloads based on user activity
         filesDownloaded = Object.values(allUsers).reduce((total, user) => {
             return total + (user.filesDownloaded || 0);
         }, 0);
-        
+
         // Estimate video plays based on user activity
         videoPlays = Object.values(allUsers).reduce((total, user) => {
             return total + (user.videosWatched || 0);
         }, 0);
-        
+
         const filesEl = document.getElementById('files-downloaded');
         const blogEl = document.getElementById('blog-views');
         const videoEl = document.getElementById('video-plays');
-        
+
         if (filesEl) filesEl.textContent = filesDownloaded.toLocaleString();
         if (blogEl) blogEl.textContent = blogViews.toLocaleString();
         if (videoEl) videoEl.textContent = videoPlays.toLocaleString();
-        
+
     } catch (error) {
         logError(error, 'Engagement Metrics');
     }
@@ -8180,7 +8180,7 @@ async function updateSystemHealth() {
         // Calculate real system health metrics
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         // Calculate system uptime based on user activity
         const totalUsers = Object.keys(allUsers).length;
         const activeUsersToday = Object.values(allUsers).filter(user => {
@@ -8190,38 +8190,38 @@ async function updateSystemHealth() {
             }
             return false;
         }).length;
-        
+
         // Calculate uptime percentage based on active users
         const uptimePercentage = totalUsers > 0 ? ((activeUsersToday / totalUsers) * 100).toFixed(1) : '100';
         const systemUptime = `${uptimePercentage}%`;
-        
+
         // Calculate average response time based on user activity patterns
         // Estimate based on user engagement (more active users = better performance)
         const engagementScore = activeUsersToday / Math.max(totalUsers, 1);
         const avgResponseTime = engagementScore > 0.5 ? '120ms' : engagementScore > 0.3 ? '180ms' : '250ms';
-        
+
         // Calculate error rate based on user issues
         const usersWithIssues = Object.values(allUsers).filter(user => {
-            return user.lastErrorAt && user.lastErrorAt.toDate ? 
+            return user.lastErrorAt && user.lastErrorAt.toDate ?
                 user.lastErrorAt.toDate() >= startOfDay : false;
         }).length;
         const errorRate = totalUsers > 0 ? ((usersWithIssues / totalUsers) * 100).toFixed(1) : '0';
-        
+
         const responseTimeEl = document.getElementById('avg-response-time');
         const errorRateEl = document.getElementById('error-rate');
         const uptimeEl = document.getElementById('system-uptime');
-        
+
         if (responseTimeEl) responseTimeEl.textContent = avgResponseTime;
         if (errorRateEl) errorRateEl.textContent = `${errorRate}%`;
         if (uptimeEl) uptimeEl.textContent = systemUptime;
-        
+
         // Update peak concurrent users (real calculation)
         const peakConcurrent = Math.max(activeUsersToday, Object.values(allUsers).reduce((max, user) => {
             return Math.max(max, user.peakConcurrent || 0);
         }, 0));
         const peakEl = document.getElementById('peak-concurrent');
         if (peakEl) peakEl.textContent = peakConcurrent;
-        
+
         // Calculate admin actions today (real data)
         const adminActionsToday = Object.values(allUsers).reduce((total, user) => {
             if (user.role === 'admin' && user.adminActionsToday) {
@@ -8231,7 +8231,7 @@ async function updateSystemHealth() {
         }, 0);
         const adminActionsEl = document.getElementById('admin-actions-today');
         if (adminActionsEl) adminActionsEl.textContent = adminActionsToday;
-        
+
     } catch (error) {
         logError(error, 'System Health');
     }
@@ -8240,17 +8240,17 @@ async function updateSystemHealth() {
 // Quick Actions Functions
 async function exportAllData() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         showToast('Preparing data export...', 'info');
-        
+
         const exportData = {
             users: Object.values(allUsers),
             blogPosts: allBlogPosts,
             timestamp: new Date().toISOString(),
             exportedBy: currentUser.uid
         };
-        
+
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -8260,7 +8260,7 @@ async function exportAllData() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         showToast('Data exported successfully!', 'success');
     } catch (error) {
         console.error('Export failed:', error);
@@ -8270,16 +8270,16 @@ async function exportAllData() {
 
 async function sendBulkEmail() {
     if (currentUser.role !== 'admin') return;
-    
+
     const subject = prompt('Email subject:', 'Important Update from GCSEMate');
     if (!subject) return;
-    
+
     const message = prompt('Email message:', '');
     if (!message) return;
-    
+
     try {
         showToast('Sending bulk email...', 'info');
-        
+
         // This would integrate with an email service like SendGrid or Firebase Functions
         // For now, we'll just show a success message
         await db.collection('bulkEmails').add({
@@ -8289,7 +8289,7 @@ async function sendBulkEmail() {
             sentAt: firebase.firestore.FieldValue.serverTimestamp(),
             recipientCount: Object.keys(allUsers).length
         });
-        
+
         showToast(`Bulk email queued for ${Object.keys(allUsers).length} users`, 'success');
     } catch (error) {
         console.error('Bulk email failed:', error);
@@ -8299,10 +8299,10 @@ async function sendBulkEmail() {
 
 async function backupDatabase() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         showToast('Creating database backup...', 'info');
-        
+
         const backupData = {
             users: Object.values(allUsers),
             blogPosts: allBlogPosts,
@@ -8310,14 +8310,14 @@ async function backupDatabase() {
             timestamp: new Date().toISOString(),
             backedUpBy: currentUser.uid
         };
-        
+
         await db.collection('backups').add({
             data: backupData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             createdBy: currentUser.uid,
             type: 'full_backup'
         });
-        
+
         showToast('Database backup created successfully!', 'success');
     } catch (error) {
         console.error('Backup failed:', error);
@@ -8327,29 +8327,29 @@ async function backupDatabase() {
 
 async function viewSystemLogs() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         const logsSnapshot = await db.collection('systemLogs').orderBy('timestamp', 'desc').limit(100).get();
         const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
         modal.id = 'system-logs-modal';
-        
+
         const levelColors = {
             'ERROR': 'bg-red-100 text-red-800 border-red-300',
             'WARN': 'bg-yellow-100 text-yellow-800 border-yellow-300',
             'INFO': 'bg-blue-100 text-blue-800 border-blue-300',
             'DEBUG': 'bg-gray-100 text-gray-800 border-gray-300'
         };
-        
+
         const levelIcons = {
             'ERROR': 'fa-exclamation-circle',
             'WARN': 'fa-exclamation-triangle',
             'INFO': 'fa-info-circle',
             'DEBUG': 'fa-bug'
         };
-        
+
         modal.innerHTML = `
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 flex flex-col max-h-[90vh]">
                 <div class="p-5 border-b border-gray-200 flex justify-between items-center flex-shrink-0 bg-gradient-to-r from-gray-50 to-white">
@@ -8364,7 +8364,7 @@ async function viewSystemLogs() {
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                
+
                 <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center gap-3 flex-shrink-0">
                     <div class="flex items-center gap-2 flex-1 min-w-[200px]">
                         <i class="fas fa-filter text-gray-400"></i>
@@ -8392,7 +8392,7 @@ async function viewSystemLogs() {
                         </button>
                     </div>
                 </div>
-                
+
                 <div id="logs-container" class="p-5 overflow-y-auto flex-1">
                     <div class="space-y-3">
                         ${logs.length === 0 ? `
@@ -8406,7 +8406,7 @@ async function viewSystemLogs() {
                             const icon = levelIcons[level] || levelIcons['INFO'];
                             const timestamp = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp)) : null;
                             const detailsStr = log.details ? (typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : String(log.details)) : '';
-                            
+
                             return `
                                 <div class="log-entry bg-white border-l-4 ${colorClass.split(' ')[2]} rounded-lg shadow-sm hover:shadow-md transition-all" data-level="${level}" data-log-id="${log.id}">
                                     <div class="p-4">
@@ -8450,7 +8450,7 @@ async function viewSystemLogs() {
                         }).join('')}
                     </div>
                 </div>
-                
+
                 <div class="p-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0 bg-gray-50">
                     <div class="text-sm text-gray-600">
                         Showing <span id="logs-count">${logs.length}</span> of ${logs.length} logs
@@ -8461,10 +8461,10 @@ async function viewSystemLogs() {
                 </div>
             </div>
         `;
-        
+
         // Store logs for filtering and export
         window.currentSystemLogs = logs;
-        
+
         document.body.appendChild(modal);
         initializeTooltips();
 
@@ -8483,23 +8483,23 @@ async function viewSystemLogs() {
                 copyLogDetails(logId);
             }
         });
-        
+
         // Setup filter and search
         const levelFilter = document.getElementById('log-level-filter');
         const searchInput = document.getElementById('log-search-input');
-        
+
         const filterLogs = () => {
             const level = levelFilter.value;
             const search = searchInput.value.toLowerCase();
             const entries = modal.querySelectorAll('.log-entry');
             let visibleCount = 0;
-            
+
             entries.forEach(entry => {
                 const entryLevel = entry.dataset.level;
                 const entryText = entry.textContent.toLowerCase();
                 const matchesLevel = level === 'all' || entryLevel === level;
                 const matchesSearch = !search || entryText.includes(search);
-                
+
                 if (matchesLevel && matchesSearch) {
                     entry.classList.remove('hidden');
                     visibleCount++;
@@ -8507,13 +8507,13 @@ async function viewSystemLogs() {
                     entry.classList.add('hidden');
                 }
             });
-            
+
             document.getElementById('logs-count').textContent = visibleCount;
         };
-        
+
         levelFilter.addEventListener('change', filterLogs);
         searchInput.addEventListener('input', debounce(filterLogs, 300));
-        
+
     } catch (error) {
         console.error('Error fetching logs:', error);
         showToast('Failed to fetch system logs', 'error');
@@ -8528,7 +8528,7 @@ window.dismissLog = async function(logId) {
         entry.style.opacity = '0';
         entry.style.transform = 'translateX(-20px)';
         setTimeout(() => entry.remove(), 300);
-        
+
         const countEl = document.getElementById('logs-count');
         if (countEl) {
             const current = parseInt(countEl.textContent) || 0;
@@ -8555,7 +8555,7 @@ window.copyAllLogsToClipboard = function() {
         const timestamp = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate().toLocaleString() : new Date(log.timestamp).toLocaleString()) : 'Unknown';
         return `[${timestamp}] [${log.level || 'INFO'}] ${log.message || 'No message'}${details ? '\n' + details : ''}`;
     }).join('\n\n');
-    
+
     navigator.clipboard.writeText(text).then(() => {
         showToast('All logs copied to clipboard', 'success');
     });
@@ -8571,7 +8571,7 @@ window.exportSystemLogs = function() {
             return `"${timestamp}","${log.level || 'INFO'}","${(log.message || '').replace(/"/g, '""')}","${details}","${log.userId || ''}"`;
         })
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -8586,7 +8586,7 @@ window.clearSystemLogs = async function() {
     if (!confirm('Are you sure you want to clear all system logs? This action cannot be undone.')) {
         return;
     }
-    
+
     try {
         showToast('Clearing system logs...', 'info');
         const logsSnapshot = await db.collection('systemLogs').limit(500).get();
@@ -8637,33 +8637,33 @@ async function logSystemEvent(level, message, details = {}) {
 // Clear system cache function
 async function clearSystemCache() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         showToast('Clearing system cache...', 'info');
-        
+
         // Clear local storage
         localStorage.clear();
         sessionStorage.clear();
-        
+
         // Clear any cached data
         allUsers = {};
         allSubjectFolders = {};
         allBlogPosts = [];
         currentFolderFiles = [];
-        
+
         // Log the cache clear action
         await logSystemEvent('INFO', 'System cache cleared by admin', {
             clearedBy: currentUser.uid,
             timestamp: new Date().toISOString()
         });
-        
+
         showToast('System cache cleared successfully!', 'success');
-        
+
         // Refresh the page to reload everything
         setTimeout(() => {
             location.reload();
         }, 2000);
-        
+
     } catch (error) {
         console.error('Failed to clear cache:', error);
         showToast('Failed to clear system cache', 'error');
@@ -8679,13 +8679,13 @@ async function handleUpdateUserSettings() {
     const messageEl = isAdmin ? document.getElementById('admin-user-settings-message') : document.getElementById('user-settings-message');
     const nameErrorEl = isAdmin ? document.getElementById('admin-user-displayname-error') : (document.getElementById('user-displayname-error') || displayNameInput.nextElementSibling);
     const passwordErrorEl = isAdmin ? document.getElementById('admin-user-password-error') : (document.getElementById('user-password-error') || passwordInput.nextElementSibling);
-    
+
     // Clear previous errors
     messageEl.textContent = '';
     messageEl.className = 'text-sm text-center h-4';
     if (nameErrorEl) nameErrorEl.textContent = '';
     if (passwordErrorEl) passwordErrorEl.textContent = '';
-    
+
     // Enhanced validation
     const nameValidation = Validator.displayName(displayName);
     if (!nameValidation.valid) {
@@ -8697,7 +8697,7 @@ async function handleUpdateUserSettings() {
         displayNameInput.focus();
         return;
     }
-    
+
     if (newPassword) {
         const passwordValidation = Validator.password(newPassword, true);
         if (!passwordValidation.valid) {
@@ -8710,18 +8710,18 @@ async function handleUpdateUserSettings() {
             return;
         }
     }
-    
+
     try {
         // Update Firestore display name
         await db.collection('users').doc(currentUser.uid).update({ displayName });
         await auth.currentUser.updateProfile({ displayName: displayName });
-        
+
         // Update password if provided
         if (newPassword) {
             await auth.currentUser.updatePassword(newPassword);
             passwordInput.value = '';
         }
-        
+
         // Update local state
         currentUser.displayName = displayName;
         updateWelcomeMessage();
@@ -8730,7 +8730,7 @@ async function handleUpdateUserSettings() {
         displayNameInput.classList.remove('border-red-500', 'bg-red-50');
         passwordInput.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => messageEl.textContent = '', 3000);
-        
+
         // If admin, also update admin profile picture display
         if (isAdmin) {
             const adminProfilePic = document.getElementById('admin-account-profile-picture');
@@ -8747,7 +8747,7 @@ async function handleUpdateUserSettings() {
         const friendlyMessage = handleAPIError(error, 'updating settings');
         messageEl.textContent = friendlyMessage;
         messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
-        
+
         // Handle specific password errors
         if (error.code === 'auth/weak-password') {
             passwordInput.classList.add('border-red-500', 'bg-red-50');
@@ -8767,11 +8767,11 @@ function showErrorMessage(inputElement, message) {
     if (messageEl) {
         messageEl.textContent = message;
         messageEl.className = 'text-red-600 text-sm text-center h-4 transition-all duration-300';
-        
+
         // Add visual feedback to the input field
         inputElement.classList.add('border-red-500', 'bg-red-50');
         inputElement.classList.remove('border-gray-300');
-        
+
         // Auto-clear error when user starts typing
         const handleInput = () => {
             inputElement.classList.remove('border-red-500', 'bg-red-50');
@@ -8786,7 +8786,7 @@ function showErrorMessage(inputElement, message) {
 // Enhanced toast notification system
 function showToast(message, type = 'info', duration = 4000) {
     const toastContainer = document.getElementById('toast-container') || createToastContainer();
-    
+
     const toast = document.createElement('div');
     const bgColor = {
         'success': 'bg-green-600',
@@ -8794,28 +8794,28 @@ function showToast(message, type = 'info', duration = 4000) {
         'warning': 'bg-yellow-600',
         'info': 'bg-blue-600'
     }[type] || 'bg-blue-600';
-    
+
     const icon = {
         'success': '✓',
         'error': '✕',
         'warning': '⚠',
         'info': 'ℹ'
     }[type] || 'ℹ';
-    
+
     toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out gpu-accelerated`;
     toast.innerHTML = `
         <span class="text-lg font-bold">${icon}</span>
         <span class="flex-1">${message}</span>
         <button class="text-white hover:text-gray-200 ml-2" onclick="this.parentElement.remove()">×</button>
     `;
-    
+
     toastContainer.appendChild(toast);
-    
+
     // Trigger slide-in animation
     setTimeout(() => {
         toast.classList.remove('translate-x-full');
     }, 10);
-    
+
     // Auto remove
     setTimeout(() => {
         if (toast.parentElement) {
@@ -8836,9 +8836,9 @@ function createToastContainer() {
 // Global error handler for better user experience
 function handleAPIError(error, context = '') {
     console.error(`API Error ${context}:`, error);
-    
+
     let userMessage = 'Something went wrong. Please try again.';
-    
+
     if (error.message.includes('network') || error.message.includes('fetch')) {
         userMessage = 'Network error. Please check your connection and try again.';
     } else if (error.message.includes('permission') || error.message.includes('auth')) {
@@ -8846,7 +8846,7 @@ function handleAPIError(error, context = '') {
     } else if (error.message.includes('quota') || error.message.includes('limit')) {
         userMessage = 'Service temporarily unavailable. Please try again later.';
     }
-    
+
     showToast(userMessage, 'error');
     return userMessage;
 }
@@ -8869,12 +8869,12 @@ function updateWelcomeMessage() {
     welcomeEl.textContent = `Welcome, ${name}!`;
     // Ensure truncation has a title tooltip for full name
     welcomeEl.title = `Welcome, ${name}!`;
-    
+
     // Update profile pictures (header, user settings, admin settings)
     const profilePic = document.getElementById('profile-picture');
     const accountProfilePic = document.getElementById('account-profile-picture');
     const adminAccountProfilePic = document.getElementById('admin-account-profile-picture');
-    
+
     if (currentUser.profilePictureURL) {
         // Use uploaded profile picture
         if (profilePic) profilePic.src = currentUser.profilePictureURL;
@@ -8887,7 +8887,7 @@ function updateWelcomeMessage() {
         if (accountProfilePic) accountProfilePic.src = avatarUrl;
         if (adminAccountProfilePic) adminAccountProfilePic.src = avatarUrl;
     }
-    
+
     // Set error handlers for profile pictures
     [profilePic, accountProfilePic, adminAccountProfilePic].forEach(img => {
         if (img) {
@@ -8896,7 +8896,7 @@ function updateWelcomeMessage() {
             };
         }
     });
-    
+
     // Update form fields (both user and admin)
     if (document.getElementById('user-displayname')) document.getElementById('user-displayname').value = currentUser.displayName;
     if (document.getElementById('user-email')) document.getElementById('user-email').value = currentUser.email;
@@ -8914,7 +8914,7 @@ function showAuthPage(showLogin = true) {
     document.getElementById('landing-page').classList.add('hidden');
     const loginPage = document.getElementById('login-page');
     loginPage.classList.remove('hidden');
-    
+
     // Add click handler to close on backdrop click
     const backdropClickHandler = (e) => {
         if (e.target === loginPage) {
@@ -8924,7 +8924,7 @@ function showAuthPage(showLogin = true) {
         }
     };
     loginPage.addEventListener('click', backdropClickHandler);
-    
+
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const formTitle = document.getElementById('form-title');
@@ -8968,12 +8968,12 @@ function showPage(pageId) {
             setupBlogEditorEnhancements();
         }, 100);
     }
-    
+
     // Re-render useful links when page is shown (to ensure search/filter work)
     if (pageId === 'useful-links-page' && Object.keys(allUsefulLinks).length > 0) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
-    
+
     // Show skeleton when videos page is opened (if playlists not loaded yet)
     if (pageId === 'videos-page' && allPlaylists.length === 0) {
         const skeleton = document.getElementById('playlist-skeleton');
@@ -8982,14 +8982,14 @@ function showPage(pageId) {
             generatePlaylistSkeletons(8);
         }
     }
-    
+
     // Initialize exam results when account settings page is shown
     if (pageId === 'account-settings-page') {
         setTimeout(() => {
             initializeExamResults();
         }, 100);
     }
-    
+
     // Initialize AI Tutor when page is shown
     if (pageId === 'ai-tutor-page') {
         // Check access
@@ -9006,7 +9006,7 @@ function showPage(pageId) {
                 // Only welcome message, conversation is fresh
                 aiConversationHistory = [];
             }
-            
+
             // Load current request count
             const tokenUsageEl = document.getElementById('ai-token-usage');
             if (tokenUsageEl && currentUser) {
@@ -9024,7 +9024,7 @@ function showPage(pageId) {
                         const maxRequests = currentUser.aiMaxRequestsDaily || 50;
                         aiRequestCount = currentCount;
                         aiMaxRequests = maxRequests;
-                        
+
                         tokenUsageEl.textContent = `Requests: ${currentCount} / ${maxRequests}`;
                         const remaining = maxRequests - currentCount;
                         if (remaining === 0) {
@@ -9088,7 +9088,7 @@ function showPage(pageId) {
     if (!mobileMenu.classList.contains('hidden')) {
         mobileMenu.classList.add('hidden');
     }
-    
+
 }
 function showAnnouncement(message) {
     const announcementBanner = document.getElementById('site-announcement-banner');
@@ -9110,19 +9110,19 @@ function showAnnouncement(message) {
 async function postAnnouncement() {
     if (currentUser.role !== 'admin') return;
     const text = document.getElementById('announcement-text').value.trim();
-    
+
     if (!text) {
         showToast('Announcement message cannot be empty', 'error');
         return;
     }
-    
+
     if (text.length > 500) {
         showToast('Announcement message is too long (max 500 characters)', 'error');
         return;
     }
-    
+
     try {
-        await db.collection('settings').doc('announcement').set({ 
+        await db.collection('settings').doc('announcement').set({
             message: text,
             postedAt: firebase.firestore.FieldValue.serverTimestamp(),
             postedBy: currentUser.uid
@@ -9138,7 +9138,7 @@ async function postAnnouncement() {
 async function clearAnnouncement() {
     if (currentUser.role !== 'admin') return;
     try {
-        await db.collection('settings').doc('announcement').set({ 
+        await db.collection('settings').doc('announcement').set({
             message: '',
             clearedAt: firebase.firestore.FieldValue.serverTimestamp(),
             clearedBy: currentUser.uid
@@ -9194,7 +9194,7 @@ async function renderDashboard() {
         skeletonHTML += '<div class="h-36 skeleton"></div>';
     }
     subjectGrid.innerHTML = skeletonHTML;
-    
+
     try {
         // Try multiple function routes in case Pages is configured differently
         let data = null;
@@ -9223,10 +9223,10 @@ async function renderDashboard() {
                 allSubjectFolders[folder.name.toLowerCase()] = folder.id;
             });
         }
-        
+
         subjectGrid.innerHTML = '';
         const userAllowedSubjects = currentUser.allowedSubjects;
-        
+
         // Handle migration from old "english" to new "English Language (AQA)" and "English Literature (Edexcel)"
         // Check if user has old "english" access and grant access to both new English subjects
         const hasOldEnglishAccess = userAllowedSubjects && userAllowedSubjects.includes('english');
@@ -9240,7 +9240,7 @@ async function renderDashboard() {
                 normalizedAllowedSubjects.push('english literature (edexcel)');
             }
         }
-        
+
         // Enable both English subjects if user has access to either
         const hasEnglishLanguage = normalizedAllowedSubjects.includes('english language (aqa)');
         const hasEnglishLiterature = normalizedAllowedSubjects.includes('english literature (edexcel)');
@@ -9250,7 +9250,7 @@ async function renderDashboard() {
         if (hasEnglishLiterature && !hasEnglishLanguage) {
             normalizedAllowedSubjects.push('english language (aqa)');
         }
-        
+
         let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
         if (subjectsToShow.length === 0) {
             subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
@@ -9276,7 +9276,7 @@ async function renderDashboard() {
             const badge = board ? `<span class="mt-1.5 inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/70 border border-gray-300/50 text-gray-800">${board}</span>` : '';
             const name = subject && subject.trim() ? subject : 'Subject';
             const subjectData = subjectSummaries[subject.toLowerCase()] || { summary: 'Access revision materials and resources for this subject.', description: '' };
-            
+
             // Build DOM nodes instead of innerHTML to avoid any async repaint issue
             const wrapper = document.createElement('div');
             wrapper.className = 'flex flex-col items-center justify-center gap-2 w-full flex-grow';
@@ -9326,7 +9326,7 @@ async function renderDashboard() {
             summaryContainer.appendChild(summary);
             summaryContainer.appendChild(arrowIcon);
             wrapper.appendChild(summaryContainer);
-            
+
             // Add "View Specification" button(s)
             const specContainer = document.createElement('div');
             specContainer.className = 'mt-3 w-full px-2 flex-shrink-0 flex flex-col gap-2';
@@ -9376,10 +9376,10 @@ async function renderDashboard() {
                         document.getElementById('upgrade-modal').style.display = 'flex';
                         return;
                     }
-                    
+
                     // Track subject selection
                     trackSubjectChange(subject);
-                    
+
                     // Handle English subjects - auto-open correct folder
                     let targetFolderId = subjectId;
                     if (subject.toLowerCase() === 'english language (aqa)') {
@@ -9453,11 +9453,11 @@ async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
         }
         if (!data) throw new Error(lastErr ? lastErr.message : 'Proxy not found');
         currentFolderFiles = data.files;
-        
+
         // If targetSubfolderName is specified, find and navigate to it
         if (targetSubfolderName && data.files) {
-            const targetFolder = data.files.find(file => 
-                file.mimeType === 'application/vnd.google-apps.folder' && 
+            const targetFolder = data.files.find(file =>
+                file.mimeType === 'application/vnd.google-apps.folder' &&
                 file.name === targetSubfolderName
             );
             if (targetFolder) {
@@ -9467,7 +9467,7 @@ async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
                 return;
             }
         }
-        
+
         renderItems();
     } catch (err) {
         renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
@@ -9510,7 +9510,7 @@ function timeAgo(date) {
 function getFileIcon(fileName, mimeType, className) {
     const ext = fileName.split('.').pop()?.toLowerCase();
     const baseClasses = className || 'w-12 h-12';
-    
+
     // Define SVG icons for different file types
     const icons = {
         // Word documents
@@ -9528,7 +9528,7 @@ function getFileIcon(fileName, mimeType, className) {
                 <path d="M6 12V10H18V12H6ZM6 15V13H18V15H6ZM6 18V16H14V18H6Z" fill="white"/>
             </svg>
         </div>`,
-        
+
         // Excel documents
         'xlsx': `<div class="${baseClasses}" style="background: linear-gradient(135deg, #1D6F42 0%, #165933 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(29, 111, 66, 0.3);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9544,7 +9544,7 @@ function getFileIcon(fileName, mimeType, className) {
                 <path d="M6 10V12H8V10H6ZM10 10V12H12V10H10ZM14 10V12H16V10H14ZM6 14V16H8V14H6ZM10 14V16H12V14H10ZM14 14V16H16V14H14Z" fill="white"/>
             </svg>
         </div>`,
-        
+
         // PowerPoint documents
         'pptx': `<div class="${baseClasses}" style="background: linear-gradient(135deg, #D04423 0%, #B83A1E 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(208, 68, 35, 0.3);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9562,7 +9562,7 @@ function getFileIcon(fileName, mimeType, className) {
                 <path d="M12 9L14 13L10 13L12 9Z" fill="white"/>
             </svg>
         </div>`,
-        
+
         // PDF files
         'pdf': `<div class="${baseClasses}" style="background: linear-gradient(135deg, #DC143C 0%, #B81234 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(220, 20, 60, 0.3);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9572,12 +9572,12 @@ function getFileIcon(fileName, mimeType, className) {
             </svg>
         </div>`,
     };
-    
+
     // Check by extension first
     if (ext && icons[ext]) {
         return icons[ext];
     }
-    
+
     // Check by MIME type
     if (mimeType) {
         if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
@@ -9590,7 +9590,7 @@ function getFileIcon(fileName, mimeType, className) {
             return icons['pdf'];
         }
     }
-    
+
     // Fallback to generic file icon
     return `<div class="${baseClasses}" style="background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(107, 114, 128, 0.3);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9629,7 +9629,7 @@ function renderItems() {
     container.innerHTML = ''; // Clear previous items
 
     // 1. Filter
-    let filteredFiles = currentFolderFiles.filter(file => 
+    let filteredFiles = currentFolderFiles.filter(file =>
         file.name.toLowerCase().includes(searchInput)
     );
 
@@ -9662,11 +9662,11 @@ function renderItems() {
             const isStarred = starredFiles.includes(file.id);
             const itemElement = document.createElement('div');
             itemElement.className = `relative p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl modern-card ${isStarred ? 'border-yellow-400' : ''} opacity-0 translate-y-2 min-h-[100px]`;
-            
+
             const mainInfo = document.createElement('div');
             mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
             const highlightedName = highlightMatch(file.name, rawQuery.trim());
-            
+
             // Use custom folder icon for folders, custom file icons for files
             let iconHtml;
             if (isFolder) {
@@ -9674,7 +9674,7 @@ function renderItems() {
             } else {
                 iconHtml = getFileIcon(file.name, file.mimeType, 'w-12 h-12 mb-2');
             }
-            
+
             mainInfo.innerHTML = `${iconHtml}<p class="text-sm font-medium text-gray-800 break-words w-full">${highlightedName}</p>`;
 
             if (isFolder) {
@@ -9682,7 +9682,7 @@ function renderItems() {
             } else {
                 itemElement.addEventListener('click', () => showPreview(file));
             }
-            
+
             // Add star button for both files and folders
             const actions = document.createElement('div');
             actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
@@ -9719,7 +9719,7 @@ function renderItems() {
             const mainInfo = document.createElement('div');
             mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
             const highlightedName = highlightMatch(file.name, rawQuery.trim());
-            
+
             // Use custom folder icon for folders, custom file icons for files
             let iconHtml;
             if (isFolder) {
@@ -9727,9 +9727,9 @@ function renderItems() {
             } else {
                 iconHtml = getFileIcon(file.name, file.mimeType, 'w-6 h-6 mr-3 flex-shrink-0');
             }
-            
+
             mainInfo.innerHTML = `${iconHtml}<span class="truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span>`;
-            
+
             if (isFolder) {
                 mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
             } else {
@@ -9766,7 +9766,7 @@ async function handleToggleStar(fileId, event) {
     const userRef = db.collection('users').doc(currentUser.uid);
     const starredFiles = currentUser.starredFiles || [];
     const isCurrentlyStarred = starredFiles.includes(fileId);
-    const updateAction = isCurrentlyStarred 
+    const updateAction = isCurrentlyStarred
         ? firebase.firestore.FieldValue.arrayRemove(fileId)
         : firebase.firestore.FieldValue.arrayUnion(fileId);
     try {
@@ -9895,7 +9895,7 @@ function getPlaylistThumbnail(playlistUrl) {
 function generatePlaylistSkeletons(count = 8) {
     const skeleton = document.getElementById('playlist-skeleton');
     if (!skeleton) return;
-    
+
     skeleton.innerHTML = '';
     for (let i = 0; i < count; i++) {
         const card = document.createElement('div');
@@ -9916,23 +9916,23 @@ function generatePlaylistSkeletons(count = 8) {
 // Filter and sort playlists
 function filterAndSortPlaylists(playlists) {
     let filtered = [...playlists];
-    
+
     // Apply search filter
     if (playlistSearchQuery.trim()) {
         const query = playlistSearchQuery.toLowerCase();
-        filtered = filtered.filter(p => 
+        filtered = filtered.filter(p =>
             p.title.toLowerCase().includes(query) ||
             (p.category && p.category.toLowerCase().includes(query))
         );
     }
-    
+
     // Apply category filter
     if (playlistCategoryFilter !== 'all') {
-        filtered = filtered.filter(p => 
+        filtered = filtered.filter(p =>
             p.category && p.category.toLowerCase() === playlistCategoryFilter.toLowerCase()
         );
     }
-    
+
     // Apply sorting
     switch (playlistSortOrder) {
         case 'newest':
@@ -9956,7 +9956,7 @@ function filterAndSortPlaylists(playlists) {
             filtered.sort((a, b) => b.title.localeCompare(a.title));
             break;
     }
-    
+
     return filtered;
 }
 
@@ -9973,19 +9973,19 @@ function updatePaginationUI(totalPlaylists) {
     const pageInfo = document.getElementById('playlist-page-info');
     const prevBtn = document.getElementById('playlist-prev-btn');
     const nextBtn = document.getElementById('playlist-next-btn');
-    
+
     if (!pagination || !pageInfo) return;
-    
+
     const totalPages = Math.ceil(totalPlaylists / playlistsPerPage);
-    
+
     if (totalPages <= 1) {
         pagination.classList.add('hidden');
         return;
     }
-    
+
     pagination.classList.remove('hidden');
     pageInfo.textContent = `Page ${currentPlaylistPage} of ${totalPages}`;
-    
+
     if (prevBtn) {
         prevBtn.disabled = currentPlaylistPage === 1;
     }
@@ -9997,7 +9997,7 @@ function updatePaginationUI(totalPlaylists) {
 // Share playlist functionality (global)
 window.sharePlaylist = function(playlistId, playlistTitle) {
     const shareUrl = `${window.location.origin}${window.location.pathname}#playlist-${playlistId}`;
-    
+
     if (navigator.share) {
         navigator.share({
             title: playlistTitle,
@@ -10039,20 +10039,20 @@ function renderPlaylistCard(playlist, isRecent = false) {
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
     card.setAttribute('aria-label', `Open playlist: ${playlist.title}`);
-    
+
     const playlistUrl = playlist.url || '';
     const playlistId = playlist.id;
     const thumbnailUrl = getPlaylistThumbnail(playlistUrl);
     const parsed = parseYoutubeUrl(playlistUrl);
-    
+
     // Format metadata
     const videoCount = playlist.videoCount ? `${playlist.videoCount} videos` : '';
     const category = playlist.category ? `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${escapeHTML(playlist.category)}</span>` : '';
-    
+
     // Thumbnail or icon
     const thumbnailHtml = thumbnailUrl ? `
         <div class="relative mb-4 w-full aspect-video rounded-xl overflow-hidden bg-gray-200">
-            <img src="${thumbnailUrl}" alt="${escapeHTML(playlist.title)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            <img src="${thumbnailUrl}" alt="${escapeHTML(playlist.title)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                  onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-red-500/10\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' class=\\'h-12 w-12 text-red-600\\' fill=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path d=\\'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\\'/></svg></div>'">
         </div>
     ` : `
@@ -10065,7 +10065,7 @@ function renderPlaylistCard(playlist, isRecent = false) {
             </div>
         </div>
     `;
-    
+
     card.innerHTML = `
         <div class="flex-grow flex flex-col justify-center items-center text-center">
             ${thumbnailHtml}
@@ -10105,7 +10105,7 @@ function renderPlaylistCard(playlist, isRecent = false) {
             </button>
         </div>` : ''}
     `;
-    
+
     // Keyboard navigation
     card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -10113,7 +10113,7 @@ function renderPlaylistCard(playlist, isRecent = false) {
             card.click();
         }
     });
-    
+
     // Click handler
     if (playlistUrl) {
         card.addEventListener('click', (e) => {
@@ -10129,7 +10129,7 @@ function renderPlaylistCard(playlist, isRecent = false) {
             window.open(playlistUrl, '_blank', 'noopener,noreferrer');
         });
     }
-    
+
     return card;
 }
 
@@ -10138,22 +10138,22 @@ function renderRecentlyViewed() {
     const section = document.getElementById('recently-viewed-section');
     const grid = document.getElementById('recently-viewed-grid');
     if (!section || !grid) return;
-    
+
     const recentIds = getRecentlyViewedPlaylists();
     if (recentIds.length === 0) {
         section.classList.add('hidden');
         return;
     }
-    
+
     const recentPlaylists = recentIds
         .map(id => allPlaylists.find(p => p.id === id))
         .filter(p => p !== undefined);
-    
+
     if (recentPlaylists.length === 0) {
         section.classList.add('hidden');
         return;
     }
-    
+
     section.classList.remove('hidden');
     grid.innerHTML = '';
     recentPlaylists.forEach(playlist => {
@@ -10166,10 +10166,10 @@ function renderRecentlyViewed() {
 function updateCategoryFilter(categories) {
     const filter = document.getElementById('playlist-category-filter');
     if (!filter) return;
-    
+
     // Keep "All Categories" option
     filter.innerHTML = '<option value="all">All Categories</option>';
-    
+
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category.toLowerCase();
@@ -10185,12 +10185,12 @@ function renderVideosPage(playlists, showError = false) {
     const skeleton = document.getElementById('playlist-skeleton');
     const errorContainer = document.getElementById('playlist-error-container');
     const emptyState = document.getElementById('playlist-empty-state');
-    
+
     if (!grid || !adminForm) return;
-    
+
     // Hide skeleton
     if (skeleton) skeleton.classList.add('hidden');
-    
+
     // Show/hide error
     if (errorContainer) {
         if (showError) {
@@ -10199,39 +10199,39 @@ function renderVideosPage(playlists, showError = false) {
             errorContainer.classList.add('hidden');
         }
     }
-    
+
     // Show admin form if user is admin
     adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-    
+
     // Store all playlists globally
     allPlaylists = playlists || [];
-    
+
     // Extract categories
     const categories = [...new Set(allPlaylists
         .map(p => p.category)
         .filter(c => c && c.trim())
         .map(c => c.trim()))].sort();
     updateCategoryFilter(categories);
-    
+
     // Filter and sort
     filteredPlaylists = filterAndSortPlaylists(allPlaylists);
-    
+
     // Reset to page 1 when filtering
     currentPlaylistPage = 1;
-    
+
     // Get paginated results
     const paginatedPlaylists = getPaginatedPlaylists(filteredPlaylists);
-    
+
     // Update stats
     const statsEl = document.getElementById('playlist-count-display');
     if (statsEl) {
         statsEl.textContent = `${filteredPlaylists.length} ${filteredPlaylists.length === 1 ? 'playlist' : 'playlists'}`;
         document.getElementById('playlist-stats')?.classList.remove('hidden');
     }
-    
+
     // Clear grid
     grid.innerHTML = '';
-    
+
     // Show empty state if no playlists
     if (filteredPlaylists.length === 0) {
         if (emptyState) emptyState.classList.remove('hidden');
@@ -10240,23 +10240,23 @@ function renderVideosPage(playlists, showError = false) {
         renderRecentlyViewed();
         return;
     }
-    
+
     if (emptyState) emptyState.classList.add('hidden');
     grid.classList.remove('hidden');
-    
+
     // Render playlists
     paginatedPlaylists.forEach((playlist, index) => {
         const card = renderPlaylistCard(playlist);
         card.style.animationDelay = `${index * 50}ms`;
         grid.appendChild(card);
     });
-    
+
     // Update pagination
     updatePaginationUI(filteredPlaylists.length);
-    
+
     // Render recently viewed
     renderRecentlyViewed();
-    
+
     // Inject JSON-LD for SEO
     try {
         const ldId = 'jsonld-videos';
@@ -10288,7 +10288,7 @@ function setupPlaylistEventHandlers() {
     // Search input
     const searchInput = document.getElementById('playlist-search');
     const searchClear = document.getElementById('playlist-search-clear');
-    
+
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             playlistSearchQuery = e.target.value;
@@ -10297,7 +10297,7 @@ function setupPlaylistEventHandlers() {
             }
             renderVideosPage(allPlaylists);
         });
-        
+
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 searchInput.value = '';
@@ -10307,7 +10307,7 @@ function setupPlaylistEventHandlers() {
             }
         });
     }
-    
+
     if (searchClear) {
         searchClear.addEventListener('click', () => {
             if (searchInput) {
@@ -10318,7 +10318,7 @@ function setupPlaylistEventHandlers() {
             }
         });
     }
-    
+
     // Category filter
     const categoryFilter = document.getElementById('playlist-category-filter');
     if (categoryFilter) {
@@ -10327,7 +10327,7 @@ function setupPlaylistEventHandlers() {
             renderVideosPage(allPlaylists);
         });
     }
-    
+
     // Sort button
     const sortBtn = document.getElementById('playlist-sort-btn');
     if (sortBtn) {
@@ -10335,23 +10335,23 @@ function setupPlaylistEventHandlers() {
             const sortOptions = ['newest', 'oldest', 'title-asc', 'title-desc'];
             const currentIndex = sortOptions.indexOf(playlistSortOrder);
             playlistSortOrder = sortOptions[(currentIndex + 1) % sortOptions.length];
-            
+
             const sortLabels = {
                 'newest': 'Newest',
                 'oldest': 'Oldest',
                 'title-asc': 'Title A-Z',
                 'title-desc': 'Title Z-A'
             };
-            
+
             sortBtn.innerHTML = `<i class="fas fa-sort"></i><span>${sortLabels[playlistSortOrder]}</span>`;
             renderVideosPage(allPlaylists);
         });
     }
-    
+
     // Pagination
     const prevBtn = document.getElementById('playlist-prev-btn');
     const nextBtn = document.getElementById('playlist-next-btn');
-    
+
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             if (currentPlaylistPage > 1) {
@@ -10361,7 +10361,7 @@ function setupPlaylistEventHandlers() {
             }
         });
     }
-    
+
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             const totalPages = Math.ceil(filteredPlaylists.length / playlistsPerPage);
@@ -10372,7 +10372,7 @@ function setupPlaylistEventHandlers() {
             }
         });
     }
-    
+
     // Retry button
     const retryBtn = document.getElementById('playlist-retry-btn');
     if (retryBtn) {
@@ -10387,13 +10387,13 @@ async function loadPlaylistsWithRetry() {
     const skeleton = document.getElementById('playlist-skeleton');
     const errorContainer = document.getElementById('playlist-error-container');
     const errorMessage = document.getElementById('playlist-error-message');
-    
+
     if (skeleton) {
         skeleton.classList.remove('hidden');
         generatePlaylistSkeletons(8);
     }
     if (errorContainer) errorContainer.classList.add('hidden');
-    
+
     try {
         const snapshot = await db.collection('videoPlaylists').orderBy('createdAt', 'desc').get();
         const playlists = [];
@@ -10425,11 +10425,11 @@ function getVideoEmbed(url) {
             const watchUrl = escapeHTML(data.watchUrl || url);
             const uniqueId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${uniqueId}">
-                <iframe 
+                <iframe
                     id="iframe-${uniqueId}"
-                    src="${finalUrl}" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    src="${finalUrl}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowfullscreen
                     class="w-full h-full"
                     loading="lazy"
@@ -10455,11 +10455,11 @@ function getVideoEmbed(url) {
         const safeUrl = escapeHTML(url);
         const fallbackId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${fallbackId}">
-            <iframe 
+            <iframe
                 id="iframe-${fallbackId}"
-                src="${safeUrl}" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                src="${safeUrl}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowfullscreen
                 class="w-full h-full"
                 loading="lazy"
@@ -10486,10 +10486,10 @@ function getVideoEmbed(url) {
 window.handleVideoEmbedError = function(containerId, watchUrl) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     const iframe = document.getElementById(`iframe-${containerId}`);
     if (iframe) iframe.classList.add('hidden');
-    
+
     const fallback = document.getElementById(`video-fallback-${containerId}`);
     if (fallback) {
         fallback.classList.remove('hidden');
@@ -10539,11 +10539,11 @@ async function handleAddPlaylist() {
     const urlInput = document.getElementById('playlist-url');
     const categoryInput = document.getElementById('playlist-category');
     const messageEl = document.getElementById('add-playlist-message');
-    
+
     const title = titleInput.value.trim();
     const url = urlInput.value.trim();
     const category = categoryInput ? categoryInput.value.trim() : '';
-    
+
     if (!title || !url) {
         messageEl.textContent = 'Please fill in both title and URL.';
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
@@ -10632,7 +10632,7 @@ function handlePlaylistClick(playlist) {
 function showPlaylistViewer(playlist) {
     const modal = document.getElementById('playlist-viewer-modal');
     if (!modal) return;
-    
+
     // Extract playlist ID from URL if not already stored
     let playlistId = playlist.playlistId;
     if (!playlistId && playlist.url) {
@@ -10651,11 +10651,11 @@ function showPlaylistViewer(playlist) {
             console.error('Error parsing playlist URL:', e);
         }
     }
-    
+
     const playlistUrl = playlist.url || '';
     // Remove enablejsapi and origin to prevent Error 153 - these can cause issues with unsigned embeds
     const embedUrl = playlistId ? `https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1` : '';
-    
+
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
@@ -10676,12 +10676,12 @@ function showPlaylistViewer(playlist) {
             <div class="flex-1 p-4 overflow-y-auto">
                 ${playlistId && embedUrl ? `
                 <div class="relative w-full mb-4" style="padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000;" id="playlist-embed-${playlistId}">
-                    <iframe 
+                    <iframe
                         id="playlist-iframe-${playlistId}"
-                        src="${embedUrl}" 
-                        title="YouTube video player" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        src="${embedUrl}"
+                        title="YouTube video player"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowfullscreen
                         class="absolute top-0 left-0 w-full h-full"
                         style="border: none;"
@@ -10721,25 +10721,25 @@ function showPlaylistViewer(playlist) {
     `;
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
-    
+
     // Handle iframe load and errors
     if (playlistId && embedUrl) {
         const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
         const loadingDiv = document.getElementById(`playlist-loading-${playlistId}`);
         const fallbackDiv = document.getElementById(`playlist-fallback-${playlistId}`);
-        
+
         if (iframe) {
             // Set timeout to show fallback if iframe doesn't load
             const loadTimeout = setTimeout(() => {
                 if (loadingDiv) loadingDiv.classList.add('hidden');
                 if (fallbackDiv) fallbackDiv.classList.remove('hidden');
             }, 10000); // 10 second timeout
-            
+
             // Listen for YouTube postMessage errors (Error 153)
             const messageListener = (event) => {
                 // Only listen to messages from YouTube
                 if (event.origin !== 'https://www.youtube.com') return;
-                
+
                 // Check for error messages
                 if (event.data && typeof event.data === 'string') {
                     if (event.data.includes('error') || event.data.includes('153')) {
@@ -10751,7 +10751,7 @@ function showPlaylistViewer(playlist) {
                 }
             };
             window.addEventListener('message', messageListener);
-            
+
             iframe.onload = function() {
                 clearTimeout(loadTimeout);
                 // Check if iframe actually loaded (not Error 153)
@@ -10780,7 +10780,7 @@ function showPlaylistViewer(playlist) {
                     }
                 }, 2000); // Wait 2 seconds to check for errors
             };
-            
+
             iframe.onerror = function() {
                 clearTimeout(loadTimeout);
                 if (loadingDiv) loadingDiv.classList.add('hidden');
@@ -10825,9 +10825,9 @@ function parseYoutubeUrl(url) {
             if (playlistId) {
                 // Clean playlist ID (remove any extra characters)
                 const cleanPlaylistId = playlistId.split('&')[0].split('?')[0];
-                return { 
-                    type: 'youtube_playlist', 
-                    id: cleanPlaylistId, 
+                return {
+                    type: 'youtube_playlist',
+                    id: cleanPlaylistId,
                     embedUrl: `https://www.youtube.com/embed/videoseries?list=${cleanPlaylistId}`,
                     watchUrl: `https://www.youtube.com/playlist?list=${cleanPlaylistId}`
                 };
@@ -10839,16 +10839,16 @@ function parseYoutubeUrl(url) {
             if (videoId) {
                 // Clean video ID
                 const cleanVideoId = videoId.split('&')[0].split('?')[0];
-                return { 
-                    type: 'youtube_video', 
-                    id: cleanVideoId, 
+                return {
+                    type: 'youtube_video',
+                    id: cleanVideoId,
                     embedUrl: `https://www.youtube.com/embed/${cleanVideoId}`,
                     watchUrl: `https://www.youtube.com/watch?v=${cleanVideoId}`
                 };
             }
         }
-    } catch (e) { 
-        console.error("Could not parse YouTube URL", e); 
+    } catch (e) {
+        console.error("Could not parse YouTube URL", e);
     }
     return null;
 }
@@ -10859,16 +10859,16 @@ async function handleAddLink() {
     const messageEl = document.getElementById('add-link-message');
     const titleErrorEl = document.getElementById('link-title-error') || titleInput.nextElementSibling;
     const urlErrorEl = document.getElementById('link-url-error') || urlInput.nextElementSibling;
-    
+
     const title = titleInput.value.trim();
     const url = urlInput.value.trim();
-    
+
     // Clear previous errors
     messageEl.textContent = '';
     messageEl.className = 'text-sm mt-2 h-4';
     if (titleErrorEl) titleErrorEl.textContent = '';
     if (urlErrorEl) urlErrorEl.textContent = '';
-    
+
     // Enhanced validation
     const titleValidation = Validator.title(title);
     if (!titleValidation.valid) {
@@ -10880,7 +10880,7 @@ async function handleAddLink() {
         titleInput.focus();
         return;
     }
-    
+
     const urlValidation = Validator.url(url);
     if (!urlValidation.valid) {
         urlInput.classList.add('border-red-500', 'bg-red-50');
@@ -10891,7 +10891,7 @@ async function handleAddLink() {
         urlInput.focus();
         return;
     }
-    
+
     try {
         const youtubeData = parseYoutubeUrl(url);
         const linkData = {
@@ -10940,38 +10940,38 @@ function filterAndRenderLinks() {
     const emptyState = document.getElementById('links-empty-state');
     const searchInput = document.getElementById('links-search-input');
     const filterSelect = document.getElementById('links-filter-type');
-    
+
     if (!linksContainer) return;
-    
+
     const searchTerm = (searchInput?.value || '').toLowerCase().trim();
     const filterType = filterSelect?.value || 'all';
-    
+
     linksContainer.innerHTML = '';
-    
+
     // Filter links
     const filteredLinks = Object.entries(allUsefulLinks).filter(([id, link]) => {
-        const matchesSearch = !searchTerm || 
+        const matchesSearch = !searchTerm ||
             link.title.toLowerCase().includes(searchTerm) ||
             (link.url && link.url.toLowerCase().includes(searchTerm));
-        const matchesFilter = filterType === 'all' || 
+        const matchesFilter = filterType === 'all' ||
             link.type === filterType ||
             (filterType === 'link' && link.type !== 'youtube_video' && link.type !== 'youtube_playlist');
         return matchesSearch && matchesFilter;
     });
-    
+
     if (filteredLinks.length === 0) {
         linksContainer.classList.add('hidden');
         if (emptyState) emptyState.classList.remove('hidden');
         return;
     }
-    
+
     linksContainer.classList.remove('hidden');
     if (emptyState) emptyState.classList.add('hidden');
-    
+
     // Group by type
     const videos = filteredLinks.filter(([id, link]) => link.type === 'youtube_video' || link.type === 'youtube_playlist');
     const regularLinks = filteredLinks.filter(([id, link]) => link.type !== 'youtube_video' && link.type !== 'youtube_playlist');
-    
+
     // Render videos section
     if (videos.length > 0) {
         const videosSection = document.createElement('div');
@@ -10979,16 +10979,16 @@ function filterAndRenderLinks() {
         videosSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-video text-red-600 flex items-center"></i> Videos & Playlists</h3>`;
         const videosGrid = document.createElement('div');
         videosGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
-        
+
         videos.forEach(([id, link]) => {
             const card = createVideoCard(id, link);
             videosGrid.appendChild(card);
         });
-        
+
         videosSection.appendChild(videosGrid);
         linksContainer.appendChild(videosSection);
     }
-    
+
     // Render regular links section
     if (regularLinks.length > 0) {
         const linksSection = document.createElement('div');
@@ -10996,55 +10996,55 @@ function filterAndRenderLinks() {
         linksSection.innerHTML = `<h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-link text-blue-600 flex items-center"></i> Links & Resources</h3>`;
         const linksGrid = document.createElement('div');
         linksGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-        
+
         regularLinks.forEach(([id, link]) => {
             const card = createLinkCard(id, link);
             linksGrid.appendChild(card);
         });
-        
+
         linksSection.appendChild(linksGrid);
         linksContainer.appendChild(linksSection);
     }
-    
+
     initializeTooltips();
 }
 
 function createVideoCard(id, link) {
     const card = document.createElement('div');
     card.className = 'bg-white/70 backdrop-blur-lg rounded-xl shadow-md border border-white/30 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]';
-    
+
     // Parse YouTube URL to get proper embed URL
     const youtubeData = parseYoutubeUrl(link.url);
     let embedUrl = link.embedUrl || '';
     let watchUrl = link.url;
-    
+
     if (youtubeData) {
         embedUrl = youtubeData.embedUrl;
         watchUrl = youtubeData.watchUrl || link.url;
     }
-    
+
     // Build safe embed URL
     const sep = embedUrl.includes('?') ? '&' : '?';
     const finalUrl = `${embedUrl}${sep}modestbranding=1&rel=0&playsinline=1`;
     const uniqueId = `video-card-${id}-${Date.now()}`;
-    
-    const removeBtn = currentUser.role === 'admin' ? 
+
+    const removeBtn = currentUser.role === 'admin' ?
         `<button onclick="handleRemoveLink('${id}')" class="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white text-red-600 hover:text-red-700 p-2 rounded-full shadow-md transition-all hover:scale-110" data-tooltip="Remove link" aria-label="Remove link">
             <i class="fas fa-trash text-sm"></i>
         </button>` : '';
-    
+
     const typeIcon = link.type === 'youtube_playlist' ? 'fa-list' : 'fa-play-circle';
     const typeLabel = link.type === 'youtube_playlist' ? 'Playlist' : 'Video';
-    
+
     card.innerHTML = `
         <div class="relative">
             ${removeBtn}
             <div class="aspect-w-16 aspect-h-9 bg-gray-100 rounded-t-xl overflow-hidden video-brand-wrapper relative" id="${uniqueId}">
-                <iframe 
+                <iframe
                     id="iframe-${uniqueId}"
-                    src="${finalUrl}" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    src="${finalUrl}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowfullscreen
                     class="w-full h-full"
                     loading="lazy"
@@ -11087,19 +11087,19 @@ function createVideoCard(id, link) {
             </div>
         </div>
     `;
-    
+
     return card;
 }
 
 function createLinkCard(id, link) {
     const card = document.createElement('div');
     card.className = 'bg-white/70 backdrop-blur-lg rounded-xl shadow-md border border-white/30 p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group';
-    
-    const removeBtn = currentUser.role === 'admin' ? 
+
+    const removeBtn = currentUser.role === 'admin' ?
         `<button onclick="handleRemoveLink('${id}')" class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-all" data-tooltip="Remove link" aria-label="Remove link">
             <i class="fas fa-trash text-sm"></i>
         </button>` : '';
-    
+
     // Extract domain for display
     let domain = '';
     try {
@@ -11108,7 +11108,7 @@ function createLinkCard(id, link) {
     } catch (e) {
         domain = link.url;
     }
-    
+
     card.innerHTML = `
         <div class="relative">
             ${removeBtn}
@@ -11128,7 +11128,7 @@ function createLinkCard(id, link) {
             </a>
         </div>
     `;
-    
+
     return card;
 }
 
@@ -11136,7 +11136,7 @@ function createLinkCard(id, link) {
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('links-search-input');
     const filterSelect = document.getElementById('links-filter-type');
-    
+
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             if (linksSearchDebounce) clearTimeout(linksSearchDebounce);
@@ -11145,7 +11145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         });
     }
-    
+
     if (filterSelect) {
         filterSelect.addEventListener('change', () => {
             filterAndRenderLinks();
@@ -11192,7 +11192,7 @@ function renderCalendar(userEvents, globalEvents) {
     } else if (yearSelect) {
         yearSelect.value = String(year);
     }
-    
+
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
         const dayEl = document.createElement('div');
@@ -11212,20 +11212,20 @@ function renderCalendar(userEvents, globalEvents) {
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         dayEl.className = 'calendar-day min-h-[80px] p-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50/70 hover:border-blue-400 hover:shadow-md transition-all duration-200 flex flex-col relative';
         dayEl.dataset.date = dateKey;
-        
+
         const dayNumber = document.createElement('div');
         dayNumber.className = 'text-sm font-semibold text-gray-800 mb-1';
         dayNumber.textContent = day;
         dayEl.appendChild(dayNumber);
-        
+
         const today = new Date();
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
             dayEl.classList.add('today', 'ring-2', 'ring-blue-500', 'ring-offset-1', 'bg-blue-50');
             dayNumber.classList.add('text-blue-700');
         }
-        
+
         const filterVal = document.getElementById('calendar-category-filter')?.value || 'all';
-        
+
         // Get events for this day, including multi-day events that span this date
         const getEventsForDate = (eventsObj) => {
             const directEvents = eventsObj[dateKey] || [];
@@ -11240,10 +11240,10 @@ function renderCalendar(userEvents, globalEvents) {
             });
             return [...directEvents, ...multiDayEvents];
         };
-        
+
         const userEventsForDay = getEventsForDate(calendarUserEvents);
         const globalEventsForDay = getEventsForDate(calendarGlobalEvents);
-        
+
         const categoryMatches = (ev) => {
             if (filterVal === 'all') return true;
             const title = (ev.title||'').toLowerCase();
@@ -11255,22 +11255,22 @@ function renderCalendar(userEvents, globalEvents) {
         if (userHas || globalHas) {
             dayEl.classList.add('has-event');
             if (globalHas) dayEl.classList.add('has-global-event');
-            
+
             // Create event indicators container
             const eventsContainer = document.createElement('div');
             eventsContainer.className = 'flex-1 flex flex-col gap-1 mt-1';
-            
+
             // Show event titles (max 2-3 visible)
             const allEvents = [...userEventsForDay, ...globalEventsForDay].filter(categoryMatches);
             const visibleEvents = allEvents.slice(0, 2);
             visibleEvents.forEach(event => {
                 const eventDot = document.createElement('div');
                 eventDot.className = 'text-xs px-1.5 py-0.5 rounded truncate text-white font-medium';
-                
+
                 // Determine color based on event type
                 const isGlobal = globalEventsForDay.includes(event);
                 const category = (event.category || '').toLowerCase();
-                
+
                 if (event.color && /^#([0-9a-f]{3}){1,2}$/i.test(event.color)) {
                     // Use custom color if set
                     eventDot.style.backgroundColor = event.color;
@@ -11287,25 +11287,25 @@ function renderCalendar(userEvents, globalEvents) {
                     // Default to blue for user events
                     eventDot.className += ' bg-blue-500';
                 }
-                
+
                 eventDot.textContent = event.title || 'Event';
                 eventDot.setAttribute('data-tooltip', `${event.title || 'Event'}${event.description ? ': ' + event.description : ''}`);
                 eventsContainer.appendChild(eventDot);
             });
-            
+
             if (allEvents.length > 2) {
                 const moreEvents = document.createElement('div');
                 moreEvents.className = 'text-xs text-gray-500 font-semibold mt-auto';
                 moreEvents.textContent = `+${allEvents.length - 2} more`;
                 eventsContainer.appendChild(moreEvents);
             }
-            
+
             dayEl.appendChild(eventsContainer);
         }
         // Month grid drag target
         dayEl.ondragover = (ev)=> ev.preventDefault();
         dayEl.ondrop = (ev)=> onMonthDrop(ev, dateKey);
-        
+
         dayEl.addEventListener('click', () => openEventModal(dateKey));
         calendarGrid.appendChild(dayEl);
     }
@@ -11545,7 +11545,7 @@ function renderBlogPage(posts) {
 
 async function handleSaveBlogPost() {
     if (currentUser.role !== 'admin') return;
-    
+
     const postId = document.getElementById('blog-post-id').value;
     const title = document.getElementById('blog-post-title').value.trim();
     const contentEl = document.getElementById('blog-post-content');
@@ -11559,7 +11559,7 @@ async function handleSaveBlogPost() {
     }
     // Extract Cloudinary image public IDs from content for cleanup tracking
     const imagePublicIds = extractCloudinaryImageIds(content);
-    
+
     const postData = {
         title,
         content,
@@ -11603,7 +11603,7 @@ async function handleSaveBlogPost() {
 window.formatText = function(command, value = null) {
     const editor = document.getElementById('blog-post-content');
     if (!editor) return;
-    
+
     editor.focus();
     try {
         document.execCommand(command, false, value);
@@ -11623,7 +11623,7 @@ window.insertLink = function() {
 function updateToolbarState() {
     const toolbar = document.getElementById('blog-editor-toolbar');
     if (!toolbar) return;
-    
+
     const toggleCommands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
     toggleCommands.forEach(cmd => {
         const btn = toolbar.querySelector(`[data-command="${cmd}"]`);
@@ -11713,7 +11713,7 @@ function setupBlogEditorEnhancements() {
             imageFiles.forEach(file => insertBlogImageFromFile(file, 'drop'));
         });
     }
-    
+
     // Add image resize functionality
     if (!editor.dataset.imageResizeSetup) {
         editor.dataset.imageResizeSetup = 'true';
@@ -11722,12 +11722,12 @@ function setupBlogEditorEnhancements() {
             const handle = e.target.closest('.resize-handle');
             const deleteBtn = e.target.closest('.image-delete-btn');
             const wrapper = e.target.closest('.image-resize-wrapper');
-            
+
             // Don't hide if clicking on resize handles, delete button, or wrapper
             if (handle || deleteBtn || wrapper) {
                 return;
             }
-            
+
             if (img) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -11745,9 +11745,9 @@ let resizeControls = null;
 
 function showImageResizeControls(img) {
     hideImageResizeControls(); // Remove any existing controls
-    
+
     currentResizingImage = img;
-    
+
     // Check if image is already wrapped
     let wrapper = img.parentNode;
     if (!wrapper.classList.contains('image-resize-wrapper')) {
@@ -11757,7 +11757,7 @@ function showImageResizeControls(img) {
         wrapper.style.position = 'relative';
         wrapper.style.display = 'inline-block';
         wrapper.style.maxWidth = '100%';
-        
+
         // Wrap the image
         img.parentNode.insertBefore(wrapper, img);
         wrapper.appendChild(img);
@@ -11766,11 +11766,11 @@ function showImageResizeControls(img) {
         const existingHandles = wrapper.querySelectorAll('.resize-handle, .image-delete-btn');
         existingHandles.forEach(handle => handle.remove());
     }
-    
+
     // Ensure image has proper styling
     img.style.display = 'block';
     img.style.position = 'relative';
-    
+
     // Create resize handles (8 handles: 4 corners + 4 edges)
     const handles = [
         { position: 'nw', cursor: 'nw-resize' }, // Top-left
@@ -11782,7 +11782,7 @@ function showImageResizeControls(img) {
         { position: 'sw', cursor: 'sw-resize' }, // Bottom-left
         { position: 'w', cursor: 'w-resize' }   // Left
     ];
-    
+
     handles.forEach(handle => {
         const handleEl = document.createElement('div');
         handleEl.className = `resize-handle resize-handle-${handle.position}`;
@@ -11796,7 +11796,7 @@ function showImageResizeControls(img) {
         handleEl.style.zIndex = '1001';
         handleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         handleEl.dataset.position = handle.position;
-        
+
         // Position the handle
         const positions = {
             'nw': { top: '-6px', left: '-6px' },
@@ -11808,15 +11808,15 @@ function showImageResizeControls(img) {
             'sw': { bottom: '-6px', left: '-6px' },
             'w': { top: '50%', left: '-6px', transform: 'translateY(-50%)' }
         };
-        
+
         Object.assign(handleEl.style, positions[handle.position]);
-        
+
         // Add drag functionality
         handleEl.addEventListener('mousedown', (e) => startResize(e, handle.position, img, wrapper));
-        
+
         wrapper.appendChild(handleEl);
     });
-    
+
     // Add delete button
     const deleteBtn = document.createElement('div');
     deleteBtn.className = 'image-delete-btn';
@@ -11840,9 +11840,9 @@ function showImageResizeControls(img) {
         removeImage();
     };
     wrapper.appendChild(deleteBtn);
-    
+
     resizeControls = wrapper;
-    
+
     // Highlight the image
     img.style.outline = '2px solid #3b82f6';
     img.style.outlineOffset = '2px';
@@ -11853,7 +11853,7 @@ function hideImageResizeControls() {
         // Remove all handles and delete button
         const handles = resizeControls.querySelectorAll('.resize-handle, .image-delete-btn');
         handles.forEach(handle => handle.remove());
-        
+
         // Unwrap the image if it's wrapped in a resize wrapper
         const img = resizeControls.querySelector('img');
         if (img && resizeControls.classList.contains('image-resize-wrapper')) {
@@ -11863,7 +11863,7 @@ function hideImageResizeControls() {
                 resizeControls.remove();
             }
         }
-        
+
         resizeControls = null;
     }
     if (currentResizingImage) {
@@ -11885,31 +11885,31 @@ let resizeDirection = '';
 function startResize(e, direction, img, wrapper) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     isResizing = true;
     resizeDirection = direction;
     currentResizingImage = img;
-    
+
     // Get initial dimensions
     const rect = img.getBoundingClientRect();
     resizeStartWidth = rect.width;
     resizeStartHeight = rect.height;
     resizeAspectRatio = resizeStartWidth / resizeStartHeight;
-    
+
     // Get initial mouse position
     resizeStartX = e.clientX;
     resizeStartY = e.clientY;
-    
+
     // Store original dimensions if not stored
     if (!img.dataset.originalWidth) {
         img.dataset.originalWidth = img.naturalWidth || resizeStartWidth;
         img.dataset.originalHeight = img.naturalHeight || resizeStartHeight;
     }
-    
+
     // Add global event listeners
     document.addEventListener('mousemove', handleResize);
     document.addEventListener('mouseup', stopResize);
-    
+
     // Prevent text selection during resize
     document.body.style.userSelect = 'none';
     document.body.style.cursor = getResizeCursor(direction);
@@ -11917,17 +11917,17 @@ function startResize(e, direction, img, wrapper) {
 
 function handleResize(e) {
     if (!isResizing || !currentResizingImage) return;
-    
+
     const deltaX = e.clientX - resizeStartX;
     const deltaY = e.clientY - resizeStartY;
-    
+
     let newWidth = resizeStartWidth;
     let newHeight = resizeStartHeight;
-    
+
     // Calculate new dimensions based on resize direction
     const isCorner = ['nw', 'ne', 'se', 'sw'].includes(resizeDirection);
     const maintainAspectRatio = isCorner; // Maintain aspect ratio for corners
-    
+
     switch (resizeDirection) {
         case 'se': // Bottom-right corner
             newWidth = resizeStartWidth + deltaX;
@@ -11974,12 +11974,12 @@ function handleResize(e) {
             newHeight = resizeStartHeight - deltaY;
             break;
     }
-    
+
     // Apply minimum size constraints
     const minSize = 50;
     newWidth = Math.max(minSize, newWidth);
     newHeight = Math.max(minSize, newHeight);
-    
+
     // Apply maximum size constraints (max 100% of container)
     const editor = document.getElementById('blog-post-content');
     if (editor) {
@@ -11989,7 +11989,7 @@ function handleResize(e) {
             newHeight = newWidth / resizeAspectRatio;
         }
     }
-    
+
     // Apply new dimensions
     currentResizingImage.style.width = `${newWidth}px`;
     if (maintainAspectRatio || resizeDirection === 'e' || resizeDirection === 'w') {
@@ -12026,38 +12026,38 @@ function getResizeCursor(direction) {
 
 window.resizeImage = function(percentage) {
     if (!currentResizingImage) return;
-    
+
     // Get original dimensions from data attributes or current dimensions
     let originalWidth = parseInt(currentResizingImage.dataset.originalWidth) || currentResizingImage.naturalWidth || currentResizingImage.width;
     let originalHeight = parseInt(currentResizingImage.dataset.originalHeight) || currentResizingImage.naturalHeight || currentResizingImage.height;
-    
+
     // Store original if not stored
     if (!currentResizingImage.dataset.originalWidth) {
         currentResizingImage.dataset.originalWidth = originalWidth;
         currentResizingImage.dataset.originalHeight = originalHeight;
     }
-    
+
     // Calculate new dimensions
     const newWidth = Math.round(originalWidth * (percentage / 100));
     const newHeight = Math.round(originalHeight * (percentage / 100));
-    
+
     // Apply new size (maintain aspect ratio)
     currentResizingImage.style.width = `${newWidth}px`;
     currentResizingImage.style.height = 'auto';
     currentResizingImage.style.maxWidth = '100%';
-    
+
     hideImageResizeControls();
     showToast(`Image resized to ${percentage}%`, 'success');
 };
 
 window.removeImage = function() {
     if (!currentResizingImage) return;
-    
+
     const publicId = currentResizingImage.getAttribute('data-public-id');
     if (publicId) {
         deleteCloudinaryImage(publicId);
     }
-    
+
     // Remove wrapper if it exists
     const wrapper = currentResizingImage.closest('.image-resize-wrapper');
     if (wrapper) {
@@ -12065,7 +12065,7 @@ window.removeImage = function() {
     } else {
         currentResizingImage.remove();
     }
-    
+
     hideImageResizeControls();
     showToast('Image removed', 'success');
 };
@@ -12105,7 +12105,7 @@ async function insertBlogImageFromFile(file, source = 'upload') {
         logError(error, 'Blog Image Upload');
         const placeholder = document.getElementById(placeholderId);
         if (placeholder) placeholder.remove();
-        
+
         // Provide specific error message
         let errorMessage = 'Could not upload image. ';
         if (error.message) {
@@ -12121,7 +12121,7 @@ async function insertBlogImageFromFile(file, source = 'upload') {
         } else {
             errorMessage += 'Please try again.';
         }
-        
+
         showToast(errorMessage, 'error');
     }
 }
@@ -12154,14 +12154,14 @@ const PROFILE_PICTURE_COMPRESSION = {
 // Compress image before upload to save storage - Aggressive compression
 async function compressImage(file, options = {}) {
     const compression = options.profilePicture ? PROFILE_PICTURE_COMPRESSION : IMAGE_COMPRESSION;
-    
+
     return new Promise((resolve, reject) => {
         // Skip compression for very small images
         if (file.size < 50 * 1024) { // Less than 50KB
             resolve(file);
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -12169,7 +12169,7 @@ async function compressImage(file, options = {}) {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                
+
                 // Calculate new dimensions maintaining aspect ratio
                 if (width > compression.maxWidth || height > compression.maxHeight) {
                     const ratio = Math.min(
@@ -12179,20 +12179,20 @@ async function compressImage(file, options = {}) {
                     width = Math.floor(width * ratio);
                     height = Math.floor(height * ratio);
                 }
-                
+
                 canvas.width = width;
                 canvas.height = height;
-                
+
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                
+
                 // Convert to blob with aggressive compression
                 canvas.toBlob((blob) => {
                     if (!blob) {
                         reject(new Error('Failed to compress image'));
                         return;
                     }
-                    
+
                     // Keep compressing until we hit target size or quality is too low
                     if (blob.size > compression.maxSize && compression.quality > 0.3) {
                         // Recursively compress with lower quality
@@ -12248,7 +12248,7 @@ function extractCloudinaryImageIds(htmlContent) {
             imageIds.push(publicIdAttr);
             return;
         }
-        
+
         // Fallback: extract from URL
         const src = img.src || img.getAttribute('src');
         if (src && src.includes('cloudinary.com')) {
@@ -12299,7 +12299,7 @@ function extractCloudinaryImageIds(htmlContent) {
 // This function stores deletion requests in Firestore for processing
 async function deleteCloudinaryImage(publicId) {
     if (!publicId || !CLOUDINARY_CONFIG.cloudName) return false;
-    
+
     try {
         // Store deletion request in Firestore for admin processing or Cloud Function
         // Admins can process these or set up a Cloud Function to auto-delete
@@ -12310,7 +12310,7 @@ async function deleteCloudinaryImage(publicId) {
             requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'pending'
         });
-        
+
         console.log('Image deletion queued:', publicId);
         return true;
     } catch (error) {
@@ -12325,18 +12325,18 @@ async function deleteCloudinaryImage(publicId) {
 // Requires Cloudinary API secret (should be in server-side function or admin panel)
 async function processCloudinaryDeletions() {
     if (currentUser.role !== 'admin') return;
-    
+
     try {
         const pendingDeletions = await db.collection('cloudinaryDeletions')
             .where('status', '==', 'pending')
             .limit(10)
             .get();
-        
+
         if (pendingDeletions.empty) {
             showToast('No pending deletions', 'info');
             return;
         }
-        
+
         // Note: Actual deletion requires Cloudinary API secret
         // This should be done via Cloud Function or admin panel with API secret
         showToast(`${pendingDeletions.size} deletions queued. Set up Cloud Function for automatic processing.`, 'info');
@@ -12350,17 +12350,17 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
     if (!currentUser || !currentUser.uid) {
         throw new Error('You must be signed in to upload images');
     }
-    
+
     // Validate file size (5MB limit before compression)
     if (file.size > 5 * 1024 * 1024) {
         throw new Error('Image must be smaller than 5MB');
     }
-    
+
     // Validate file type
     if (!file.type || !file.type.startsWith('image/')) {
         throw new Error('Only image files are allowed');
     }
-    
+
     try {
         // Compress image before upload to save storage
         const compressedFile = await compressImage(file);
@@ -12368,17 +12368,17 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
         if (compressionRatio > 0) {
             console.log(`Image compressed: ${compressionRatio}% size reduction`);
         }
-        
+
         // Create FormData for Cloudinary upload
         const formData = new FormData();
         formData.append('file', compressedFile);
         formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
         formData.append('folder', `blogUploads/${currentUser.uid}`); // Organize by user
         formData.append('tags', `blog,${source},user-${currentUser.uid}`); // Add tags for organization
-        
+
         // Note: Transformation parameters (transformation, eager) are NOT allowed with unsigned uploads
         // Transformations are applied via URL parameters when displaying images (see optimizedUrl below)
-        
+
         // Optional: Add context/metadata
         formData.append('context', JSON.stringify({
             uploadedBy: currentUser.uid,
@@ -12387,7 +12387,7 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
             originalSize: file.size,
             compressedSize: compressedFile.size
         }));
-        
+
         // Upload to Cloudinary
         const response = await fetch(
             `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -12396,7 +12396,7 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
                 body: formData
             }
         );
-        
+
         if (!response.ok) {
             let errorData;
             try {
@@ -12404,40 +12404,40 @@ async function uploadBlogImageToStorage(file, source = 'upload') {
             } catch (e) {
                 errorData = { error: { message: `Upload failed: ${response.statusText}` } };
             }
-            
+
             // Extract error message
             const errorMessage = errorData?.error?.message || errorData?.message || `Upload failed: ${response.statusText}`;
-            
+
             // Provide specific error for transformation/eager parameter issues
             if (errorMessage.includes('Transformation parameter') || errorMessage.includes('Eager parameter') || errorMessage.includes('not allowed when using unsigned upload')) {
                 // Don't log this to console - it's a configuration issue that's already handled
                 throw new Error('Image upload configuration error. Please contact support.');
             }
-            
+
             // Only log non-eager errors
             if (!errorMessage.includes('Eager parameter') && !errorMessage.includes('Transformation parameter')) {
                 console.error('Cloudinary upload error:', errorData);
             }
-            
+
             throw new Error(errorMessage);
         }
-        
+
         const data = await response.json();
-        
+
         // Use optimized URL with transformations for better compression
         // Format: https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto:good/{public_id}
         const optimizedUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:good/');
-        
+
         // Return optimized URL and public_id for cleanup tracking
         return {
             url: optimizedUrl,
             publicId: data.public_id,
             originalUrl: data.secure_url
         };
-        
+
     } catch (error) {
         console.error('Cloudinary upload error:', error);
-        
+
         // Provide helpful error messages
         if (error.message.includes('Upload preset')) {
             throw new Error('Image upload configuration error. Please contact support.');
@@ -12479,17 +12479,17 @@ window.openImagePicker = function() {
 window.handleImageFileSelect = function(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     if (!isBlogImageFile(file)) {
         showToast('Only image files are allowed', 'error');
         return;
     }
-    
+
     if (file.size > BLOG_IMAGE_MAX_SIZE) {
         showToast('Images must be smaller than 5MB', 'error');
         return;
     }
-    
+
     openImageCropModal(file);
     event.target.value = ''; // Reset input
 };
@@ -12499,34 +12499,34 @@ window.openImageCropModal = function(file) {
     const modal = document.getElementById('image-crop-modal');
     const canvas = document.getElementById('crop-canvas');
     const cropBox = document.getElementById('crop-box');
-    
+
     if (!modal || !canvas || !cropBox) return;
-    
+
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
-    
+
     const img = new Image();
     img.onload = () => {
         const maxWidth = 800;
         const maxHeight = 600;
         let width = img.width;
         let height = img.height;
-        
+
         if (width > maxWidth || height > maxHeight) {
             const ratio = Math.min(maxWidth / width, maxHeight / height);
             width = width * ratio;
             height = height * ratio;
         }
-        
+
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         cropState.image = img;
         cropState.canvas = canvas;
         cropState.ctx = ctx;
-        
+
         // Initialize crop box (80% of image)
         const cropWidth = width * 0.8;
         const cropHeight = height * 0.8;
@@ -12536,11 +12536,11 @@ window.openImageCropModal = function(file) {
             width: cropWidth,
             height: cropHeight
         };
-        
+
         updateCropBox();
         setupCropInteractions();
     };
-    
+
     const reader = new FileReader();
     reader.onload = (e) => img.src = e.target.result;
     reader.readAsDataURL(file);
@@ -12549,21 +12549,21 @@ window.openImageCropModal = function(file) {
 function updateCropBox() {
     const cropBox = document.getElementById('crop-box');
     if (!cropBox || !cropState.canvas) return;
-    
+
     const { x, y, width, height } = cropState.cropBox;
     const canvas = cropState.canvas;
     const canvasRect = canvas.getBoundingClientRect();
     const container = cropBox.parentElement;
-    
+
     // Calculate scale based on actual displayed canvas size
     const scaleX = canvasRect.width / canvas.width;
     const scaleY = canvasRect.height / canvas.height;
-    
+
     // Position relative to canvas position in container
     const containerRect = container.getBoundingClientRect();
     const canvasOffsetX = canvasRect.left - containerRect.left;
     const canvasOffsetY = canvasRect.top - containerRect.top;
-    
+
     cropBox.style.left = `${canvasOffsetX + x * scaleX}px`;
     cropBox.style.top = `${canvasOffsetY + y * scaleY}px`;
     cropBox.style.width = `${width * scaleX}px`;
@@ -12574,9 +12574,9 @@ function setupCropInteractions() {
     const cropBox = document.getElementById('crop-box');
     const overlay = document.getElementById('crop-overlay');
     if (!cropBox || !overlay) return;
-    
+
     overlay.style.pointerEvents = 'auto';
-    
+
     // Make crop box draggable
     cropBox.addEventListener('mousedown', (e) => {
         if (e.target.closest('[data-handle]')) return;
@@ -12586,7 +12586,7 @@ function setupCropInteractions() {
         cropState.startY = e.clientY;
         e.preventDefault();
     });
-    
+
     // Handle resize handles
     cropBox.querySelectorAll('[data-handle]').forEach(handle => {
         handle.addEventListener('mousedown', (e) => {
@@ -12598,15 +12598,15 @@ function setupCropInteractions() {
             cropState.startY = e.clientY;
         });
     });
-    
+
     let mouseMoveHandler = (e) => {
         if (!cropState.isDragging) return;
-        
+
         const canvas = cropState.canvas;
         const canvasRect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / canvasRect.width;
         const scaleY = canvas.height / canvasRect.height;
-        
+
         if (cropState.dragHandle === 'move') {
             const deltaX = (e.clientX - cropState.startX) * scaleX;
             const deltaY = (e.clientY - cropState.startY) * scaleY;
@@ -12619,7 +12619,7 @@ function setupCropInteractions() {
             const deltaX = (e.clientX - cropState.startX) * scaleX;
             const deltaY = (e.clientY - cropState.startY) * scaleY;
             const handle = cropState.dragHandle;
-            
+
             if (handle.includes('e')) {
                 cropState.cropBox.width = Math.max(50, Math.min(canvas.width - cropState.cropBox.x, cropState.cropBox.width + deltaX));
             }
@@ -12636,28 +12636,28 @@ function setupCropInteractions() {
                 cropState.cropBox.y = cropState.cropBox.y + cropState.cropBox.height - newHeight;
                 cropState.cropBox.height = newHeight;
             }
-            
+
             cropState.startX = e.clientX;
             cropState.startY = e.clientY;
         }
-        
+
         applyAspectRatio();
         updateCropBox();
     };
-    
+
     document.addEventListener('mousemove', mouseMoveHandler);
-    
+
     let mouseUpHandler = () => {
         cropState.isDragging = false;
         cropState.dragHandle = null;
     };
-    
+
     document.addEventListener('mouseup', mouseUpHandler);
-    
+
     // Store handlers for cleanup
     cropState.mouseMoveHandler = mouseMoveHandler;
     cropState.mouseUpHandler = mouseUpHandler;
-    
+
     // Aspect ratio selector - clean up existing listener first
     const aspectRatioSelect = document.getElementById('crop-aspect-ratio');
     if (aspectRatioSelect) {
@@ -12673,10 +12673,10 @@ function setupCropInteractions() {
 function applyAspectRatio() {
     const aspectSelect = document.getElementById('crop-aspect-ratio');
     if (!aspectSelect || aspectSelect.value === 'free') return;
-    
+
     const [w, h] = aspectSelect.value.split(':').map(Number);
     const ratio = w / h;
-    
+
     const currentRatio = cropState.cropBox.width / cropState.cropBox.height;
     if (Math.abs(currentRatio - ratio) > 0.01) {
         if (currentRatio > ratio) {
@@ -12684,7 +12684,7 @@ function applyAspectRatio() {
         } else {
             cropState.cropBox.width = cropState.cropBox.height * ratio;
         }
-        
+
         // Keep within bounds
         const canvas = cropState.canvas;
         if (cropState.cropBox.x + cropState.cropBox.width > canvas.width) {
@@ -12712,23 +12712,23 @@ window.resetCrop = function() {
 
 window.applyCropAndUpload = async function() {
     if (!cropState.canvas || !cropState.originalFile) return;
-    
+
     const { x, y, width, height } = cropState.cropBox;
     const maxWidth = parseInt(document.getElementById('crop-max-width').value);
     const quality = parseFloat(document.getElementById('crop-quality').value);
     const format = document.getElementById('crop-format').value;
-    
+
     // Create cropped canvas
     const croppedCanvas = document.createElement('canvas');
     let outputWidth = width;
     let outputHeight = height;
-    
+
     if (outputWidth > maxWidth) {
         const ratio = maxWidth / outputWidth;
         outputWidth = maxWidth;
         outputHeight = outputHeight * ratio;
     }
-    
+
     croppedCanvas.width = outputWidth;
     croppedCanvas.height = outputHeight;
     const croppedCtx = croppedCanvas.getContext('2d');
@@ -12737,17 +12737,17 @@ window.applyCropAndUpload = async function() {
         x, y, width, height,
         0, 0, outputWidth, outputHeight
     );
-    
+
     // Convert to blob
     const blob = await new Promise(resolve => {
         croppedCanvas.toBlob(resolve, `image/${format}`, quality);
     });
-    
+
     const croppedFile = new File([blob], cropState.originalFile.name, {
         type: `image/${format}`,
         lastModified: Date.now()
     });
-    
+
     closeImageCropModal();
     await insertBlogImageFromFile(croppedFile, 'crop');
 };
@@ -12758,7 +12758,7 @@ window.closeImageCropModal = function() {
         modal.classList.add('hidden');
         modal.style.display = 'none';
     }
-    
+
     // Clean up event listeners
     if (cropState.mouseMoveHandler) {
         document.removeEventListener('mousemove', cropState.mouseMoveHandler);
@@ -12766,12 +12766,12 @@ window.closeImageCropModal = function() {
     if (cropState.mouseUpHandler) {
         document.removeEventListener('mouseup', cropState.mouseUpHandler);
     }
-    
+
     const aspectRatioSelect = document.getElementById('crop-aspect-ratio');
     if (aspectRatioSelect && cropState.aspectRatioChangeHandler) {
         aspectRatioSelect.removeEventListener('change', cropState.aspectRatioChangeHandler);
     }
-    
+
     cropState = {
         image: null,
         canvas: null,
@@ -12808,14 +12808,14 @@ function handleBlogEditorKeydown(event) {
         showKeyboardShortcuts();
         return;
     }
-    
+
     // Handle Ctrl+Shift+I or Cmd+Shift+I for insert image
     if (modifierPressed && shift && key === 'i') {
         event.preventDefault();
         openImagePicker();
         return;
     }
-    
+
     if (!modifierPressed) return;
 
     const handledCommands = ['b', 'i', 'u', 'k', 'l', 'o', '7', '8', 'z', 'y', 'e', 'r', 'h'];
@@ -12907,7 +12907,7 @@ function resetBlogPostForm() {
 function editBlogPost(postId) {
     const post = allBlogPosts.find(p => p.id === postId);
     if (!post) return;
-    
+
     document.getElementById('blog-form-title').textContent = 'Edit Blog Post';
     document.getElementById('blog-post-id').value = post.id;
     document.getElementById('blog-post-title').value = post.title;
@@ -12927,17 +12927,17 @@ async function deleteBlogPost(postId) {
             if (postDoc.exists) {
                 const postData = postDoc.data();
                 const imagePublicIds = postData.imagePublicIds || [];
-                
+
                 // Also extract from content as fallback
                 const contentImageIds = extractCloudinaryImageIds(postData.content || '');
                 const allImageIds = [...new Set([...imagePublicIds, ...contentImageIds])];
-                
+
                 // Delete all images from Cloudinary
                 for (const publicId of allImageIds) {
                     await deleteCloudinaryImage(publicId);
                 }
             }
-            
+
             // Delete the blog post
             await db.collection('blogPosts').doc(postId).delete();
             showToast('Blog post deleted.', 'success');
@@ -13306,9 +13306,9 @@ function showSpecificationModal(pdfUrl, title) {
         modal.style.display = 'none';
         document.body.appendChild(modal);
     }
-    
+
     const isEdexcel = isEdexcelPdf(pdfUrl);
-    
+
     modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col fade-in">
@@ -13358,14 +13358,14 @@ function showSpecificationModal(pdfUrl, title) {
             </div>
         </div>
     `;
-    
+
     // Close on backdrop click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
         }
     });
-    
+
     // Close on Escape key
     const handleEscape = (e) => {
         if (e.key === 'Escape' && modal.style.display !== 'none') {
@@ -13586,13 +13586,13 @@ async function handleSendPasswordReset() {
     const emailInput = document.getElementById('reset-email-input');
     const messageEl = document.getElementById('reset-message');
     const email = emailInput.value.trim();
-    
+
     if (!email) {
         messageEl.textContent = 'Please enter an email address.';
         messageEl.className = 'text-red-600 text-sm text-center h-4';
         return;
     }
-    
+
     // Check rate limit before attempting password reset
     const rateLimitCheck = RateLimiter.checkPasswordResetLimit(email);
     if (!rateLimitCheck.allowed) {
@@ -13601,13 +13601,13 @@ async function handleSendPasswordReset() {
         messageEl.className = 'text-red-600 text-sm text-center h-4';
         return;
     }
-    
+
     try {
         await auth.sendPasswordResetEmail(email);
-        
+
         // Record successful password reset attempt
         RateLimiter.recordPasswordResetAttempt(email);
-        
+
         messageEl.textContent = 'Reset link sent! Check your inbox.';
         messageEl.className = 'text-green-600 text-sm text-center h-4';
         emailInput.disabled = true;
@@ -13639,12 +13639,12 @@ function getPreviewEmbedUrl(file) {
         // Use the file/d/ID/preview format which is better for embedding and doesn't auto-download
         return `https://drive.google.com/file/d/${file.id}/preview`;
     }
-    
+
     // Image types - use drive preview that doesn't trigger downloads
     if (mime.startsWith('image/')) {
         return `https://drive.google.com/uc?export=view&id=${file.id}`;
     }
-    
+
     // Microsoft Office and other document types
     const drivePreviewMimes = [
         'application/msword',
@@ -13656,11 +13656,11 @@ function getPreviewEmbedUrl(file) {
         'text/plain',
         'text/csv'
     ];
-    
+
     if (drivePreviewMimes.includes(mime)) {
         return `https://drive.google.com/file/d/${file.id}/preview`;
     }
-    
+
     // Video and audio files
     if (mime.startsWith('video/') || mime.startsWith('audio/')) {
         return `https://drive.google.com/uc?export=view&id=${file.id}`;
@@ -13752,30 +13752,30 @@ function showPreview(file) {
         const loading = document.getElementById('preview-loading');
         const fallback = document.getElementById('preview-fallback');
         const reloadBtn = document.getElementById('reload-preview-btn');
-        
+
         if (frame && loading && fallback) {
             let loaded = false;
             let retryCount = 0;
             const maxRetries = 2;
-            
+
             const hideLoading = () => {
                 loading.classList.add('hidden');
                 loading.classList.remove('flex');
             };
-            
+
             const showFallback = () => {
                 hideLoading();
                 fallback.classList.remove('hidden');
                 fallback.classList.add('flex');
             };
-            
+
             const showLoading = () => {
                 fallback.classList.add('hidden');
                 fallback.classList.remove('flex');
                 loading.classList.remove('hidden');
                 loading.classList.add('flex');
             };
-            
+
             // Enhanced timeout with progressive delays
             const timeoutId = setTimeout(() => {
                 if (!loaded) {
@@ -13783,7 +13783,7 @@ function showPreview(file) {
                     showFallback();
                 }
             }, 6000); // Increased timeout for better reliability
-            
+
             // Handle successful load
             frame.addEventListener('load', () => {
                 // For cross-origin iframes (like Google Drive), we can't access contentDocument
@@ -13792,7 +13792,7 @@ function showPreview(file) {
                 clearTimeout(timeoutId);
                 hideLoading();
                 console.log('Preview loaded successfully');
-                
+
                 // Double-check after a short delay to ensure content is visible
                 setTimeout(() => {
                     if (frame.style.display !== 'none' && frame.offsetHeight > 0) {
@@ -13801,7 +13801,7 @@ function showPreview(file) {
                     }
                 }, 500);
             }, { once: true });
-            
+
             // Handle load errors
             frame.addEventListener('error', (e) => {
                 loaded = false;
@@ -13809,7 +13809,7 @@ function showPreview(file) {
                 console.error('Preview load error:', e);
                 showFallback();
             }, { once: true });
-            
+
             // Reload button functionality
             if (reloadBtn) {
                 reloadBtn.addEventListener('click', (e) => {
@@ -13818,11 +13818,11 @@ function showPreview(file) {
                     loaded = false;
                     retryCount = 0;
                     showLoading();
-                    
+
                     // Add cache-busting parameter
                     const originalSrc = frame.src.split('?')[0].split('&')[0];
                     frame.src = originalSrc + '?reload=' + Date.now();
-                    
+
                     console.log('Manual preview reload triggered');
                 });
             }
@@ -13844,38 +13844,38 @@ function downloadFile(fileId, fileName, downloadUrl, subject = null) {
             showToast(`Download limit reached. Please wait ${timeMsg} before downloading more files.`, 'error');
             return;
         }
-        
+
         // Track file download - use provided subject or fall back to currentSubject
         const trackingSubject = subject || currentSubject;
         trackFileOpen(fileName, 'download', trackingSubject);
-        
+
         // Record download for rate limiting
         recordDownload();
-        
+
         // Format filename with watermark
         const watermarkedFileName = formatFilenameWithWatermark(fileName);
-        
+
         // Show download feedback
         showToast(`Downloading ${fileName}...`, 'info');
-        
+
         // Create a temporary link and trigger download
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = watermarkedFileName;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        
+
         // Append to body, click, and remove
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Show success message with remaining downloads
         setTimeout(() => {
             const remaining = DOWNLOAD_RATE_LIMIT.maxDownloads - getDownloadHistory().length;
             showToast(`${watermarkedFileName} download started. ${remaining} download${remaining !== 1 ? 's' : ''} remaining this minute.`, 'success');
         }, 500);
-        
+
     } catch (error) {
         console.error('Download failed:', error);
         showToast('Download failed. Please try again.', 'error');
@@ -13951,7 +13951,7 @@ document.addEventListener('DOMContentLoaded', () => {
             eyeClosed.classList.add('hidden');
         }
     });
-    
+
     // Setup other buttons
     document.getElementById('logout-button').addEventListener('click', handleLogout);
     document.getElementById('mobile-logout-button').addEventListener('click', handleLogout);
@@ -14066,14 +14066,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         // Don't interfere with form inputs
         if (e.target && ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
-        
+
         // Don't interfere with modals
         const activeModals = document.querySelectorAll('[id$="-modal"]');
-        const hasOpenModal = Array.from(activeModals).some(modal => 
+        const hasOpenModal = Array.from(activeModals).some(modal =>
             modal.style.display === 'flex' || !modal.classList.contains('hidden')
         );
         if (hasOpenModal) return;
-        
+
         if (e.key === '?') {
             e.preventDefault();
             showPage('help-page');
@@ -14095,7 +14095,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hamburgerButton) {
                     hamburgerButton.setAttribute('aria-expanded', 'false');
                 }
-                
+
                 setTimeout(() => {
                     mobileMenu.classList.add('hidden');
                     mobileMenu.style.display = 'none';
@@ -14111,14 +14111,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (goPrefix) {
             const k = e.key.toLowerCase();
             goPrefix = false;
-            const map = { 
-                d: 'subject-dashboard-page', 
-                v: 'videos-page', 
-                b: 'blog-page', 
-                c: 'calendar-page', 
-                u: 'useful-links-page', 
-                a: 'about-page', 
-                f: 'features-page', 
+            const map = {
+                d: 'subject-dashboard-page',
+                v: 'videos-page',
+                b: 'blog-page',
+                c: 'calendar-page',
+                u: 'useful-links-page',
+                a: 'about-page',
+                f: 'features-page',
                 h: 'help-page',
                 t: 'ai-tutor-page' // AI Tutor (Pro only)
             };
@@ -14129,7 +14129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    
+
     // Improve focus management for better accessibility
     document.addEventListener('focusin', (e) => {
         // Add focus ring to focused elements
@@ -14137,7 +14137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.classList.add('focus-ring');
         }
     });
-    
+
     document.addEventListener('focusout', (e) => {
         // Remove focus ring when element loses focus
         if (e.target.matches('button, a, input, select, textarea, [tabindex]')) {
@@ -14253,13 +14253,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-    
+
     // Setup Hamburger Menu
     const hamburgerButton = document.getElementById('hamburger-button');
     const closeMenuButton = document.getElementById('close-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLogoutButton = document.getElementById('mobile-logout-button');
-    
+
     if (hamburgerButton && mobileMenu && closeMenuButton) {
         hamburgerButton.addEventListener('click', () => {
             // Show menu first, then animate in
@@ -14267,26 +14267,26 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileMenu.classList.remove('hidden');
             hamburgerButton.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            
+
             // Trigger animation on next frame
             requestAnimationFrame(() => {
                 mobileMenu.style.transform = 'translateX(0)';
                 mobileMenu.style.opacity = '1';
             });
-            
+
             // Focus management for accessibility
             const firstFocusableElement = mobileMenu.querySelector('a, button');
             if (firstFocusableElement) {
                 setTimeout(() => firstFocusableElement.focus(), 100);
             }
         });
-        
+
         closeMenuButton.addEventListener('click', () => {
             // Animate out first, then hide
             mobileMenu.style.transform = 'translateX(100%)';
             mobileMenu.style.opacity = '0';
             hamburgerButton.setAttribute('aria-expanded', 'false');
-            
+
             // Hide menu after animation completes
             setTimeout(() => {
                 mobileMenu.classList.add('hidden');
@@ -14295,7 +14295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hamburgerButton.focus(); // Return focus to hamburger button
             }, 300);
         });
-        
+
         // Handle mobile menu links
         const mobileMenuLinks = mobileMenu.querySelectorAll('.nav-link');
         mobileMenuLinks.forEach(link => {
@@ -14303,7 +14303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeMobileMenu();
             });
         });
-        
+
         // Handle mobile logout button
         if (mobileLogoutButton) {
             mobileLogoutButton.addEventListener('click', () => {
@@ -14311,35 +14311,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleLogout();
             });
         }
-        
+
         // Close mobile menu when clicking outside
         document.addEventListener('click', (e) => {
             if (!mobileMenu.contains(e.target) && !hamburgerButton.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
                 closeMobileMenu();
             }
         });
-        
+
         // Close mobile menu when pressing Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
                 closeMobileMenu();
             }
         });
-        
+
         // Close mobile menu when resizing to desktop
         window.addEventListener('resize', throttle(() => {
             if (window.innerWidth >= 1024 && !mobileMenu.classList.contains('hidden')) {
                 closeMobileMenu();
             }
         }, 250));
-        
+
         // Helper function to close mobile menu with animation
         function closeMobileMenu() {
             // Animate out first, then hide
             mobileMenu.style.transform = 'translateX(100%)';
             mobileMenu.style.opacity = '0';
             hamburgerButton.setAttribute('aria-expanded', 'false');
-            
+
             // Hide menu after animation completes
             setTimeout(() => {
                 mobileMenu.classList.add('hidden');
@@ -14349,7 +14349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         }
     }
-    
+
     // Initialize new features
     initializeTooltips();
     initializeFaqAccordion();
@@ -14381,7 +14381,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Global error handling to prevent silent failures
 window.addEventListener('error', (e) => {
     console.error('Unhandled error:', e.error || e.message);
-    
+
     // Log error to database if user is authenticated
     if (currentUser) {
         logSystemEvent('JavaScript Error', e.error?.message || e.message, {
@@ -14391,9 +14391,9 @@ window.addEventListener('error', (e) => {
             stack: e.error?.stack
         });
     }
-    
-    try { 
-        showToast('An unexpected error occurred. Please refresh the page.', 'error'); 
+
+    try {
+        showToast('An unexpected error occurred. Please refresh the page.', 'error');
     } catch (_) {
         // Fallback if toast system is not available
         console.error('Error showing toast:', _);
@@ -14402,8 +14402,8 @@ window.addEventListener('error', (e) => {
 
 window.addEventListener('unhandledrejection', (e) => {
     console.error('Unhandled promise rejection:', e.reason);
-    try { 
-        showToast('Something went wrong. Please try again.', 'error'); 
+    try {
+        showToast('Something went wrong. Please try again.', 'error');
     } catch (_) {
         console.error('Error showing toast:', _);
     }
@@ -14421,17 +14421,17 @@ window.addEventListener('offline', () => {
 // Better error recovery
 function handleNetworkError(error, context = '') {
     console.error(`Network Error ${context}:`, error);
-    
+
     if (!navigator.onLine) {
         showToast('You are offline. Please check your connection.', 'error');
         return 'Network connection required';
     }
-    
+
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
         showToast('Network error. Please check your connection and try again.', 'error');
         return 'Network error occurred';
     }
-    
+
     showToast('Something went wrong. Please try again.', 'error');
     return 'An error occurred';
 }
@@ -14494,7 +14494,7 @@ function formatBlogLinks(html) {
     if (!html) return '';
     const temp = document.createElement('div');
     temp.innerHTML = html;
-    
+
     // Find all links and style them
     const links = temp.querySelectorAll('a[href]');
     links.forEach(link => {
@@ -14504,7 +14504,7 @@ function formatBlogLinks(html) {
             link.className = 'blog-link';
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            
+
             // Add icon if not already present
             if (!link.querySelector('i')) {
                 const icon = document.createElement('i');
@@ -14513,7 +14513,7 @@ function formatBlogLinks(html) {
             }
         }
     });
-    
+
     return temp.innerHTML;
 }
 
@@ -14523,11 +14523,11 @@ function sanitizeHTML(html) {
         // Create a temporary container
         const temp = document.createElement('div');
         temp.innerHTML = html;
-        
+
         // Remove script tags
         const scripts = temp.querySelectorAll('script');
         scripts.forEach(el => el.remove());
-        
+
         // Remove style tags with event handlers (check attributes manually)
         const styleTags = temp.querySelectorAll('style');
         styleTags.forEach(el => {
@@ -14541,7 +14541,7 @@ function sanitizeHTML(html) {
                 el.remove();
             }
         });
-        
+
         // Remove dangerous attributes from all elements (iterate through all elements)
         const allElements = temp.querySelectorAll('*');
         allElements.forEach(el => {
@@ -14561,7 +14561,7 @@ function sanitizeHTML(html) {
             });
             attrsToRemove.forEach(attrName => el.removeAttribute(attrName));
         });
-        
+
         return temp.innerHTML;
     } catch (error) {
         console.error('Error sanitizing HTML:', error);
@@ -14576,7 +14576,7 @@ function sanitizeHTML(html) {
 function openEventModal(date) {
     const modal = document.getElementById('event-modal');
     const userIsAdmin = currentUser.role === 'admin';
-    
+
     // Get events for this day, including multi-day events that span this date (same logic as renderCalendar)
     const getEventsForDate = (eventsObj) => {
         const directEvents = eventsObj[date] || [];
@@ -14591,10 +14591,10 @@ function openEventModal(date) {
         });
         return [...directEvents, ...multiDayEvents];
     };
-    
+
     const eventsForDay = getEventsForDate(calendarUserEvents);
     const globalEventsForDay = getEventsForDate(calendarGlobalEvents);
-    
+
     let eventsHtml = '<p class="text-gray-500 text-sm">No events for this day.</p>';
     if (eventsForDay.length > 0 || globalEventsForDay.length > 0) {
         eventsHtml = [...globalEventsForDay, ...eventsForDay].map(event => {
@@ -14683,7 +14683,7 @@ async function handleSaveEvent(date) {
     const isGlobal = document.getElementById('event-sync')?.checked || false;
     const startDate = document.getElementById('event-start-date').value;
     const endDate = document.getElementById('event-end-date').value || startDate;
-    
+
     const eventData = {
         title,
         description: document.getElementById('event-description').value.trim(),
@@ -14695,10 +14695,10 @@ async function handleSaveEvent(date) {
         category: document.getElementById('event-category')?.value || null
     };
     try {
-        const collectionRef = isGlobal 
+        const collectionRef = isGlobal
             ? db.collection('globalEvents')
             : db.collection('users').doc(currentUser.uid).collection('events');
-        
+
         await collectionRef.doc(eventId).set(eventData);
         document.getElementById('event-modal').style.display = 'none';
         resetEventForm();
@@ -14715,7 +14715,7 @@ function editEvent(date, eventId, isGlobal) {
     const allGlobalEvents = Object.values(calendarGlobalEvents).flat();
     const allEvents = isGlobal ? allGlobalEvents : allUserEvents;
     event = allEvents.find(e => e.id === eventId);
-    
+
     if (!event) return;
     document.getElementById('event-form-title').textContent = 'Edit Event';
     document.getElementById('event-id').value = event.id;
@@ -14763,7 +14763,7 @@ function updateCountdownBanner() {
     const allEvents = [];
     Object.values(calendarGlobalEvents).flat().forEach(event => allEvents.push({ ...event, dateObj: new Date(event.date + 'T00:00:00') }));
     Object.values(calendarUserEvents).flat().forEach(event => allEvents.push({ ...event, dateObj: new Date(event.date + 'T00:00:00') }));
-    
+
     activeCountdowns = allEvents
         .filter(event => event.enableCountdown && event.dateObj >= now)
         .filter(event => !dismissed.includes(event.id || event.title || event.date))
@@ -14881,7 +14881,7 @@ if ('performance' in window) {
             if (navigation) {
                 performanceMetrics.pageLoadTime = navigation.loadEventEnd - navigation.loadEventStart;
             }
-            
+
             // Track Core Web Vitals
             if ('PerformanceObserver' in window) {
                 const paintObserver = new PerformanceObserver((list) => {
@@ -14892,7 +14892,7 @@ if ('performance' in window) {
                     }
                 });
                 paintObserver.observe({ entryTypes: ['paint'] });
-                
+
                 const lcpObserver = new PerformanceObserver((list) => {
                     for (const entry of list.getEntries()) {
                         performanceMetrics.largestContentfulPaint = entry.startTime;
@@ -14909,11 +14909,11 @@ const optimizedScrollHandler = throttle(() => {
     // Handle scroll-based animations or effects
     const scrollY = window.scrollY;
     const elements = document.querySelectorAll('[data-scroll-animate]');
-    
+
     elements.forEach(element => {
         const rect = element.getBoundingClientRect();
         const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        
+
         if (isVisible) {
             element.classList.add('animate-in');
         }
@@ -14937,24 +14937,24 @@ window.addEventListener('beforeunload', () => {
 // Get grade color class based on grade value
 function getGradeColorClass(grade) {
     if (!grade || grade === '' || isNaN(grade)) return 'bg-gray-100 text-gray-600';
-    
+
     const numGrade = parseInt(grade);
-    
+
     // Grades 8-9: Green (9 is darker)
     if (numGrade === 9) return 'bg-green-700 text-white font-semibold';
     if (numGrade === 8) return 'bg-green-500 text-white font-semibold';
-    
+
     // Grades 7-6-5: Amber (lighter as grade gets lower)
     if (numGrade === 7) return 'bg-amber-600 text-white font-semibold';
     if (numGrade === 6) return 'bg-amber-500 text-white font-semibold';
     if (numGrade === 5) return 'bg-amber-400 text-white font-semibold';
-    
+
     // Grades 4-3-2-1: Red (darker as grade gets lower)
     if (numGrade === 4) return 'bg-red-500 text-white font-semibold';
     if (numGrade === 3) return 'bg-red-600 text-white font-semibold';
     if (numGrade === 2) return 'bg-red-700 text-white font-semibold';
     if (numGrade === 1) return 'bg-red-800 text-white font-semibold';
-    
+
     return 'bg-gray-100 text-gray-600';
 }
 
@@ -14963,11 +14963,11 @@ async function loadExamResults(targetUserId = null) {
     // If targetUserId is provided, it means an admin is viewing another user's results
     const viewingUserId = targetUserId || (currentUser ? currentUser.uid : null);
     if (!viewingUserId) return;
-    
+
     // Check if admin or user
     const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
     const isViewingOtherUser = targetUserId && targetUserId !== currentUser.uid;
-    
+
     // Determine which elements to use
     let loadingEl, contentEl;
     if (isViewingOtherUser) {
@@ -14979,13 +14979,13 @@ async function loadExamResults(targetUserId = null) {
         loadingEl = isAdmin ? document.getElementById('admin-exam-results-loading') : document.getElementById('exam-results-loading');
         contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
     }
-    
+
     if (!loadingEl || !contentEl) return;
-    
+
     try {
         loadingEl.classList.remove('hidden');
         contentEl.classList.add('hidden');
-        
+
         // Get the user's data to determine allowed subjects
         let userData = currentUser;
         if (isViewingOtherUser) {
@@ -15004,16 +15004,16 @@ async function loadExamResults(targetUserId = null) {
                 return;
             }
         }
-        
+
         // Get user's allowed subjects
         const userAllowedSubjects = userData.allowedSubjects || [];
         const allSubjects = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
-        
+
         // For free users, show all subjects; for paid users, show only allowed subjects
-        const subjectsToShow = userAllowedSubjects.length > 0 ? 
-            allSubjects.filter(subj => userAllowedSubjects.includes(subj.toLowerCase())) : 
+        const subjectsToShow = userAllowedSubjects.length > 0 ?
+            allSubjects.filter(subj => userAllowedSubjects.includes(subj.toLowerCase())) :
             allSubjects;
-        
+
         if (subjectsToShow.length === 0) {
             contentEl.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
@@ -15025,7 +15025,7 @@ async function loadExamResults(targetUserId = null) {
             contentEl.classList.remove('hidden');
             return;
         }
-        
+
         // Load exam results for each subject
         const examResultsData = {};
         const loadPromises = subjectsToShow.map(async (subject) => {
@@ -15033,7 +15033,7 @@ async function loadExamResults(targetUserId = null) {
             try {
                 const doc = await db.collection('userExamResults').doc(viewingUserId)
                     .collection('subjects').doc(subjectKey).get();
-                
+
                 if (doc.exists) {
                     examResultsData[subject] = doc.data();
                 } else {
@@ -15044,12 +15044,12 @@ async function loadExamResults(targetUserId = null) {
                 examResultsData[subject] = { exams: [], lastUpdated: null };
             }
         });
-        
+
         await Promise.all(loadPromises);
-        
+
         // Render exam results table (pass isViewingOtherUser flag to make it read-only for admins viewing other users)
         renderExamResultsTable(subjectsToShow, examResultsData, isViewingOtherUser);
-        
+
         loadingEl.classList.add('hidden');
         contentEl.classList.remove('hidden');
     } catch (error) {
@@ -15076,7 +15076,7 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
         contentEl = isAdmin ? document.getElementById('admin-exam-results-content') : document.getElementById('exam-results-content');
     }
     if (!contentEl) return;
-    
+
     // Find the maximum number of exams across all subjects
     let maxExams = 0;
     Object.values(examResultsData).forEach(data => {
@@ -15084,10 +15084,10 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
             maxExams = data.exams.length;
         }
     });
-    
+
     // Ensure at least 1 exam column
     if (maxExams === 0) maxExams = 1;
-    
+
     // Build table HTML
     let tableHTML = `
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -15118,14 +15118,14 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
                                         break;
                                     }
                                 }
-                                
+
                                 return `
                                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-200 min-w-[180px]">
                                     <div class="flex flex-col items-center gap-2">
                                         <span>Exam ${i + 1}</span>
-                                        <input type="date" 
-                                               id="exam-date-${i}" 
-                                               value="${examDate}" 
+                                        <input type="date"
+                                               id="exam-date-${i}"
+                                               value="${examDate}"
                                                class="text-xs px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                ${readOnly ? 'disabled' : ''}
                                                onchange="updateExamDate(${i}, this.value)">
@@ -15142,7 +15142,7 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
                         ${subjects.map((subject, subjectIdx) => {
                             const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
                             const subjectData = examResultsData[subject] || { exams: [] };
-                            
+
                             return `
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-4 py-3 font-semibold text-gray-800 sticky left-0 bg-white z-10 border-r border-gray-200">
@@ -15151,12 +15151,12 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
                                     ${Array.from({ length: maxExams }, (_, i) => {
                                         const exam = subjectData.exams?.[i] || { grade: '', date: '' };
                                         const gradeColor = getGradeColorClass(exam.grade);
-                                        
+
                                         return `
                                             <td class="px-4 py-3 text-center border-r border-gray-200">
-                                                <input type="text" 
-                                                       id="grade-${subjectIdx}-${i}" 
-                                                       value="${escapeHtml(exam.grade || '')}" 
+                                                <input type="text"
+                                                       id="grade-${subjectIdx}-${i}"
+                                                       value="${escapeHtml(exam.grade || '')}"
                                                        placeholder="Grade"
                                                        maxlength="1"
                                                        ${readOnly ? 'disabled readonly' : ''}
@@ -15198,14 +15198,14 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
             </div>
         </div>
     `;
-    
+
     contentEl.innerHTML = tableHTML;
-    
+
     // Store current exam count for reference
     window.currentExamCount = maxExams;
     window.examResultsData = examResultsData;
     window.examSubjects = subjects;
-    
+
     // Calculate and display APS for all exam columns
     updateAllAPS();
 }
@@ -15214,7 +15214,7 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
 function calculateAPS(examIndex) {
     const subjects = window.examSubjects || [];
     const grades = [];
-    
+
     // Collect all non-blank grades for this exam column
     subjects.forEach((subject, subjectIdx) => {
         const gradeInput = document.getElementById(`grade-${subjectIdx}-${examIndex}`);
@@ -15225,12 +15225,12 @@ function calculateAPS(examIndex) {
             }
         }
     });
-    
+
     // Calculate mean (APS)
     if (grades.length === 0) {
         return null; // No valid grades
     }
-    
+
     const sum = grades.reduce((acc, grade) => acc + grade, 0);
     return sum / grades.length;
 }
@@ -15238,24 +15238,24 @@ function calculateAPS(examIndex) {
 // Get color class for APS value
 function getAPSColorClass(aps) {
     if (aps === null || isNaN(aps)) return 'bg-gray-100 text-gray-600';
-    
+
     // APS 8.0-9.0: Green (excellent)
     if (aps >= 8.0) return 'bg-green-700 text-white font-semibold';
     if (aps >= 7.5) return 'bg-green-500 text-white font-semibold';
-    
+
     // APS 6.0-7.4: Amber (good)
     if (aps >= 7.0) return 'bg-amber-600 text-white font-semibold';
     if (aps >= 6.5) return 'bg-amber-500 text-white font-semibold';
     if (aps >= 6.0) return 'bg-amber-400 text-white font-semibold';
-    
+
     // APS 5.0-5.9: Light amber (passing)
     if (aps >= 5.5) return 'bg-amber-300 text-gray-800 font-semibold';
     if (aps >= 5.0) return 'bg-amber-200 text-gray-800 font-semibold';
-    
+
     // APS 4.0-4.9: Light red (below passing)
     if (aps >= 4.5) return 'bg-red-300 text-gray-800 font-semibold';
     if (aps >= 4.0) return 'bg-red-200 text-gray-800 font-semibold';
-    
+
     // APS below 4.0: Red (needs improvement)
     if (aps >= 3.0) return 'bg-red-500 text-white font-semibold';
     if (aps >= 2.0) return 'bg-red-600 text-white font-semibold';
@@ -15266,9 +15266,9 @@ function getAPSColorClass(aps) {
 function updateAPS(examIndex) {
     const apsElement = document.getElementById(`aps-${examIndex}`);
     if (!apsElement) return;
-    
+
     const aps = calculateAPS(examIndex);
-    
+
     if (aps === null) {
         apsElement.textContent = '-';
         apsElement.className = 'px-3 py-2 rounded-lg font-semibold text-sm bg-gray-100 text-gray-600';
@@ -15276,13 +15276,13 @@ function updateAPS(examIndex) {
         // Round to 1 decimal place
         const roundedAPS = Math.round(aps * 10) / 10;
         apsElement.textContent = roundedAPS.toFixed(1);
-        
+
         // Remove all color classes
-        apsElement.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400', 
-                                   'bg-amber-300', 'bg-amber-200', 'bg-red-500', 'bg-red-600', 'bg-red-700', 
+        apsElement.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400',
+                                   'bg-amber-300', 'bg-amber-200', 'bg-red-500', 'bg-red-600', 'bg-red-700',
                                    'bg-red-300', 'bg-red-200', 'bg-gray-100',
                                    'text-white', 'text-gray-600', 'text-gray-800', 'font-semibold');
-        
+
         // Add new color class
         const colorClass = getAPSColorClass(aps);
         const classes = colorClass.split(' ');
@@ -15302,16 +15302,16 @@ function updateAllAPS() {
 function updateGradeColor(input, subject, examIndex) {
     const grade = input.value.trim();
     const colorClass = getGradeColorClass(grade);
-    
+
     // Remove all color classes
-    input.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400', 
+    input.classList.remove('bg-green-700', 'bg-green-500', 'bg-amber-600', 'bg-amber-500', 'bg-amber-400',
                            'bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800', 'bg-gray-100',
                            'text-white', 'text-gray-600', 'font-semibold');
-    
+
     // Add new color class
     const classes = colorClass.split(' ');
     classes.forEach(cls => input.classList.add(cls));
-    
+
     // Update APS for this exam column in real-time
     updateAPS(examIndex);
 }
@@ -15320,11 +15320,11 @@ function updateGradeColor(input, subject, examIndex) {
 function addExamColumn() {
     const currentCount = window.currentExamCount || 1;
     window.currentExamCount = currentCount + 1;
-    
+
     // Reload the table with the new column
     const subjects = window.examSubjects || [];
     const examResultsData = window.examResultsData || {};
-    
+
     // Add empty exam entries for all subjects
     subjects.forEach(subject => {
         if (!examResultsData[subject]) {
@@ -15338,7 +15338,7 @@ function addExamColumn() {
             examResultsData[subject].exams.push({ grade: '', date: '' });
         }
     });
-    
+
     renderExamResultsTable(subjects, examResultsData);
 }
 
@@ -15347,17 +15347,17 @@ function removeExamColumn(examIndex) {
     if (!confirm(`Are you sure you want to remove Exam ${examIndex + 1}? All grades for this exam will be deleted.`)) {
         return;
     }
-    
+
     const subjects = window.examSubjects || [];
     const examResultsData = window.examResultsData || {};
-    
+
     // Remove exam at index for all subjects
     subjects.forEach(subject => {
         if (examResultsData[subject] && examResultsData[subject].exams) {
             examResultsData[subject].exams.splice(examIndex, 1);
         }
     });
-    
+
     window.currentExamCount = Math.max(1, (window.currentExamCount || 1) - 1);
     renderExamResultsTable(subjects, examResultsData);
 }
@@ -15367,7 +15367,7 @@ function updateExamDate(examIndex, date) {
     // Update date for all subjects in this exam
     const subjects = window.examSubjects || [];
     const examResultsData = window.examResultsData || {};
-    
+
     subjects.forEach(subject => {
         if (!examResultsData[subject]) {
             examResultsData[subject] = { exams: [], lastUpdated: null };
@@ -15380,7 +15380,7 @@ function updateExamDate(examIndex, date) {
         }
         examResultsData[subject].exams[examIndex].date = date;
     });
-    
+
     // Update all date inputs for this exam column
     document.querySelectorAll(`input[id^="exam-date-${examIndex}"]`).forEach(input => {
         if (input.id === `exam-date-${examIndex}`) {
@@ -15395,30 +15395,30 @@ async function saveExamResults() {
         showToast('You must be logged in to save exam results.', 'error');
         return;
     }
-    
+
     const subjects = window.examSubjects || [];
     const examCount = window.currentExamCount || 1;
-    
+
     try {
         const saveButton = event?.target || document.querySelector('button[onclick="saveExamResults()"]');
         if (saveButton) {
             saveButton.disabled = true;
             saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
-        
+
         const savePromises = subjects.map(async (subject) => {
             const subjectKey = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
             const exams = [];
-            
+
             // Collect grades for this subject
             const subjectIndex = subjects.indexOf(subject);
             for (let i = 0; i < examCount; i++) {
                 const gradeInput = document.getElementById(`grade-${subjectIndex}-${i}`);
                 const dateInput = document.getElementById(`exam-date-${i}`);
-                
+
                 const grade = gradeInput ? gradeInput.value.trim() : '';
                 const date = dateInput ? dateInput.value : '';
-                
+
                 // Validate grade - must be 1-9 if provided
                 if (grade) {
                     const numGrade = parseInt(grade);
@@ -15431,7 +15431,7 @@ async function saveExamResults() {
                         return; // Stop saving if invalid grade found
                     }
                 }
-                
+
                 // Only include exam if it has a grade or date
                 if (grade || date) {
                     exams.push({
@@ -15440,11 +15440,11 @@ async function saveExamResults() {
                     });
                 }
             }
-            
+
             // Save to Firebase
             const subjectRef = db.collection('userExamResults').doc(currentUser.uid)
                 .collection('subjects').doc(subjectKey);
-            
+
             if (exams.length > 0) {
                 await subjectRef.set({
                     exams: exams,
@@ -15455,9 +15455,9 @@ async function saveExamResults() {
                 await subjectRef.delete();
             }
         });
-        
+
         await Promise.all(savePromises);
-        
+
         // Update colors after save
         subjects.forEach((subject, subjectIdx) => {
             for (let i = 0; i < examCount; i++) {
@@ -15467,23 +15467,23 @@ async function saveExamResults() {
                 }
             }
         });
-        
+
         // Update all APS values after saving
         updateAllAPS();
-        
+
         showToast('Exam results saved successfully!', 'success');
-        
+
         if (saveButton) {
             saveButton.disabled = false;
             saveButton.innerHTML = '<i class="fas fa-save"></i> Save Results';
         }
-        
+
         // Reload to ensure sync
         await loadExamResults();
     } catch (error) {
         console.error('Error saving exam results:', error);
         showToast('Error saving exam results. Please try again.', 'error');
-        
+
         const saveButton = document.querySelector('button[onclick="saveExamResults()"]');
         if (saveButton) {
             saveButton.disabled = false;
@@ -15504,11 +15504,11 @@ function toggleFooter() {
     const footer = document.getElementById('page-footer');
     const toggleBtn = document.getElementById('footer-toggle-btn');
     const toggleText = document.getElementById('footer-toggle-text');
-    
+
     if (!footer || !toggleBtn || !toggleText) return;
-    
+
     const isHidden = footer.classList.contains('hidden');
-    
+
     if (isHidden) {
         footer.classList.remove('hidden');
         toggleText.textContent = 'Hide Footer';
@@ -15527,7 +15527,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const footerHidden = localStorage.getItem('footerHidden');
     const footer = document.getElementById('page-footer');
     const toggleText = document.getElementById('footer-toggle-text');
-    
+
     if (footerHidden === 'true' && footer) {
         footer.classList.add('hidden');
         if (toggleText) {
@@ -15535,5 +15535,1453 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DESIGN IMPROVEMENT #1: DARK MODE SUPPORT - FULL IMPLEMENTATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Initialize and manage dark mode theme
+ * @returns {void}
+ */
+function initTheme() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeIconMobile = document.getElementById('theme-icon-mobile');
+    const html = document.documentElement;
+
+    // Get saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    html.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme, themeIcon, themeIconMobile);
+
+    /**
+     * Toggle theme between light and dark
+     * @returns {void}
+     */
+    function toggleTheme() {
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme, themeIcon, themeIconMobile);
+
+        // Announce theme change for screen readers
+        announceToScreenReader(`Theme changed to ${newTheme} mode`);
+    }
+
+    /**
+     * Update theme icon based on current theme
+     * @param {string} theme - Current theme ('light' or 'dark')
+     * @param {HTMLElement} icon - Desktop icon element
+     * @param {HTMLElement} iconMobile - Mobile icon element
+     * @returns {void}
+     */
+    function updateThemeIcon(theme, icon, iconMobile) {
+        if (!icon || !iconMobile) return;
+        const iconClass = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+        icon.className = `fas ${iconClass} icon-md`;
+        iconMobile.className = `fas ${iconClass} icon-md`;
+    }
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        themeToggle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+    }
+
+    if (themeToggleMobile) {
+        themeToggleMobile.addEventListener('click', toggleTheme);
+        themeToggleMobile.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+    }
+}
+
+// Initialize theme on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTheme);
+} else {
+    initTheme();
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #2: KEYBOARD NAVIGATION ENHANCEMENT */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Implement focus trap in modals
+ * @param {HTMLElement} modal - Modal element to trap focus in
+ * @returns {Function} Cleanup function to remove trap
+ */
+function trapFocus(modal) {
+    const focusableElements = modal.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    let previousActiveElement = document.activeElement;
+
+    // Focus first element
+    if (firstElement) firstElement.focus();
+
+    /**
+     * Handle keyboard navigation in modal
+     * @param {KeyboardEvent} e - Keyboard event
+     * @returns {void}
+     */
+    function handleKeyDown(e) {
+        if (e.key !== 'Tab') return;
+
+        if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+                e.preventDefault();
+                lastElement?.focus();
+            }
+        } else {
+            if (document.activeElement === lastElement) {
+                e.preventDefault();
+                firstElement?.focus();
+            }
+        }
+    }
+
+    modal.addEventListener('keydown', handleKeyDown);
+
+    // Return cleanup function
+    return function cleanup() {
+        modal.removeEventListener('keydown', handleKeyDown);
+        previousActiveElement?.focus();
+    };
+}
+
+/**
+ * Enhanced keyboard shortcuts system
+ * @returns {void}
+ */
+function initKeyboardShortcuts() {
+    let keyBuffer = '';
+    let keyBufferTimeout;
+
+    document.addEventListener('keydown', (e) => {
+        // Don't trigger shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+
+        // Escape key - close modals
+        if (e.key === 'Escape') {
+            const openModals = document.querySelectorAll('[role="dialog"]:not(.hidden)');
+            openModals.forEach(modal => {
+                const closeBtn = modal.querySelector('[aria-label*="close" i], [aria-label*="Close" i]');
+                if (closeBtn) closeBtn.click();
+            });
+            return;
+        }
+
+        // Question mark - show help
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            showPage('help-page');
+            return;
+        }
+
+        // Slash - focus search
+        if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            const searchInput = document.querySelector('#file-search, #playlist-search, input[type="search"]');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+            return;
+        }
+
+        // G key navigation (g then letter)
+        if (e.key === 'g' && !e.ctrlKey && !e.metaKey) {
+            keyBuffer = 'g';
+            clearTimeout(keyBufferTimeout);
+            keyBufferTimeout = setTimeout(() => { keyBuffer = ''; }, 1000);
+            return;
+        }
+
+        if (keyBuffer === 'g') {
+            switch (e.key) {
+                case 'd':
+                    e.preventDefault();
+                    showPage('subject-dashboard-page');
+                    break;
+                case 'v':
+                    e.preventDefault();
+                    showPage('videos-page');
+                    break;
+                case 'b':
+                    e.preventDefault();
+                    showPage('blog-page');
+                    break;
+                case 'c':
+                    e.preventDefault();
+                    showPage('calendar-page');
+                    break;
+                case 't':
+                    e.preventDefault();
+                    if (currentUser && currentUser.tier === 'paid') {
+                        showPage('ai-tutor-page');
+                    }
+                    break;
+            }
+            keyBuffer = '';
+        }
+    });
+}
+
+// Initialize keyboard shortcuts
+initKeyboardShortcuts();
+
+/**
+ * Add skip links for main content areas
+ * @returns {void}
+ */
+function addSkipLinks() {
+    const skipLink = document.createElement('a');
+    skipLink.href = '#page-content';
+    skipLink.className = 'sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white';
+    skipLink.textContent = 'Skip to main content';
+    skipLink.setAttribute('aria-label', 'Skip to main content');
+    document.body.insertBefore(skipLink, document.body.firstChild);
+}
+
+addSkipLinks();
+
+/**
+ * Implement arrow key navigation in lists/grids
+ * @param {HTMLElement} container - Container element
+ * @returns {void}
+ */
+function enableArrowKeyNavigation(container) {
+    const focusableItems = Array.from(container.querySelectorAll(
+        'a, button, [tabindex]:not([tabindex="-1"])'
+    ));
+
+    container.addEventListener('keydown', (e) => {
+        const currentIndex = focusableItems.indexOf(document.activeElement);
+        if (currentIndex === -1) return;
+
+        let nextIndex = currentIndex;
+
+        switch (e.key) {
+            case 'ArrowDown':
+            case 'ArrowRight':
+                e.preventDefault();
+                nextIndex = (currentIndex + 1) % focusableItems.length;
+                break;
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                e.preventDefault();
+                nextIndex = currentIndex === 0 ? focusableItems.length - 1 : currentIndex - 1;
+                break;
+            case 'Home':
+                e.preventDefault();
+                nextIndex = 0;
+                break;
+            case 'End':
+                e.preventDefault();
+                nextIndex = focusableItems.length - 1;
+                break;
+            default:
+                return;
+        }
+
+        focusableItems[nextIndex]?.focus();
+    });
+}
+
+// Apply arrow key navigation to grids
+document.addEventListener('DOMContentLoaded', () => {
+    const grids = document.querySelectorAll('#subject-grid, #playlist-grid, #file-list .grid');
+    grids.forEach(grid => enableArrowKeyNavigation(grid));
+});
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #3: SCREEN READER OPTIMIZATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Announce message to screen readers
+ * @param {string} message - Message to announce
+ * @param {string} priority - Priority level ('polite' or 'assertive')
+ * @returns {void}
+ */
+function announceToScreenReader(message, priority = 'polite') {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('role', 'status');
+    announcement.setAttribute('aria-live', priority);
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    document.body.appendChild(announcement);
+
+    setTimeout(() => {
+        document.body.removeChild(announcement);
+    }, 1000);
+}
+
+/**
+ * Add ARIA labels to icon-only buttons
+ * @returns {void}
+ */
+function addAriaLabelsToIcons() {
+    document.querySelectorAll('button:not([aria-label]):has(i.fas):not(:has(span))').forEach(button => {
+        const icon = button.querySelector('i.fas');
+        if (icon) {
+            const iconClass = Array.from(icon.classList).find(c => c.startsWith('fa-'));
+            if (iconClass) {
+                const label = iconClass.replace('fa-', '').replace(/-/g, ' ');
+                button.setAttribute('aria-label', label.charAt(0).toUpperCase() + label.slice(1));
+            }
+        }
+    });
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addAriaLabelsToIcons);
+} else {
+    addAriaLabelsToIcons();
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #1: ADVANCED SEARCH FEATURES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Advanced search system with filters and history
+ */
+const AdvancedSearch = {
+    history: JSON.parse(localStorage.getItem('searchHistory') || '[]'),
+    savedSearches: JSON.parse(localStorage.getItem('savedSearches') || '[]'),
+
+    /**
+     * Perform full-text search
+     * @param {string} query - Search query
+     * @param {Object} filters - Search filters
+     * @returns {Array} Search results
+     */
+    search(query, filters = {}) {
+        if (!query.trim()) return [];
+
+        // Add to history
+        this.addToHistory(query);
+
+        // This would integrate with your existing search
+        // For now, it's a placeholder that can be extended
+        return [];
+    },
+
+    /**
+     * Add search to history
+     * @param {string} query - Search query
+     * @returns {void}
+     */
+    addToHistory(query) {
+        this.history = this.history.filter(q => q !== query);
+        this.history.unshift(query);
+        this.history = this.history.slice(0, 10); // Keep last 10
+        localStorage.setItem('searchHistory', JSON.stringify(this.history));
+    },
+
+    /**
+     * Save a search
+     * @param {string} query - Search query
+     * @param {Object} filters - Search filters
+     * @returns {void}
+     */
+    saveSearch(query, filters) {
+        this.savedSearches.push({ query, filters, date: new Date().toISOString() });
+        localStorage.setItem('savedSearches', JSON.stringify(this.savedSearches));
+    },
+
+    /**
+     * Get search suggestions
+     * @param {string} partial - Partial query
+     * @returns {Array} Suggestions
+     */
+    getSuggestions(partial) {
+        if (!partial) return this.history.slice(0, 5);
+        return this.history.filter(q => q.toLowerCase().includes(partial.toLowerCase())).slice(0, 5);
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #3: STUDY PROGRESS TRACKING */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Study progress tracking system
+ */
+const StudyProgress = {
+    sessionStartTime: null,
+    sessionTimer: null,
+
+    /**
+     * Start a study session
+     * @param {string} subject - Subject name
+     * @returns {void}
+     */
+    startSession(subject) {
+        this.sessionStartTime = Date.now();
+        this.sessionTimer = setInterval(() => {
+            this.updateSessionDisplay(subject);
+        }, 1000);
+
+        // Save session start
+        const sessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
+        sessions.push({
+            subject,
+            startTime: this.sessionStartTime,
+            endTime: null
+        });
+        localStorage.setItem('studySessions', JSON.stringify(sessions));
+    },
+
+    /**
+     * End current study session
+     * @returns {void}
+     */
+    endSession() {
+        if (this.sessionTimer) {
+            clearInterval(this.sessionTimer);
+            this.sessionTimer = null;
+        }
+
+        if (this.sessionStartTime) {
+            const sessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
+            if (sessions.length > 0) {
+                sessions[sessions.length - 1].endTime = Date.now();
+                localStorage.setItem('studySessions', JSON.stringify(sessions));
+            }
+            this.sessionStartTime = null;
+        }
+    },
+
+    /**
+     * Update session display
+     * @param {string} subject - Subject name
+     * @returns {void}
+     */
+    updateSessionDisplay(subject) {
+        if (!this.sessionStartTime) return;
+        const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 1000);
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+
+        const display = document.getElementById('study-timer-display');
+        if (display) {
+            display.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    },
+
+    /**
+     * Get study statistics
+     * @returns {Object} Statistics
+     */
+    getStatistics() {
+        const sessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
+        const totalTime = sessions.reduce((sum, session) => {
+            if (session.endTime) {
+                return sum + (session.endTime - session.startTime);
+            }
+            return sum;
+        }, 0);
+
+        const bySubject = {};
+        sessions.forEach(session => {
+            if (session.endTime) {
+                const time = session.endTime - session.startTime;
+                bySubject[session.subject] = (bySubject[session.subject] || 0) + time;
+            }
+        });
+
+        return {
+            totalSessions: sessions.length,
+            totalTime,
+            bySubject
+        };
+    },
+
+    /**
+     * Get study streak
+     * @returns {number} Current streak in days
+     */
+    getStreak() {
+        const sessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
+        if (sessions.length === 0) return 0;
+
+        let streak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 365; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - i);
+
+            const hasSession = sessions.some(session => {
+                const sessionDate = new Date(session.startTime);
+                sessionDate.setHours(0, 0, 0, 0);
+                return sessionDate.getTime() === checkDate.getTime();
+            });
+
+            if (hasSession) {
+                streak++;
+            } else if (i > 0) {
+                break;
+            }
+        }
+
+        return streak;
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #5: OFFLINE FUNCTIONALITY */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Service Worker registration for offline support
+ * @returns {void}
+ */
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('Service Worker registered:', registration);
+        }).catch(error => {
+            console.log('Service Worker registration failed:', error);
+        });
+    }
+}
+
+/**
+ * Check online/offline status
+ * @returns {void}
+ */
+function initOfflineDetection() {
+    const updateOnlineStatus = () => {
+        const isOnline = navigator.onLine;
+        const statusIndicator = document.querySelector('.online-status');
+        const statusText = document.querySelector('.online-text');
+
+        if (statusIndicator) {
+            statusIndicator.className = isOnline ? 'status-online' : 'status-offline';
+        }
+
+        if (statusText) {
+            statusText.textContent = isOnline ? 'Online' : 'Offline';
+        }
+
+        if (!isOnline) {
+            showToast('You are currently offline. Some features may be limited.', 'warning');
+        }
+    };
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+}
+
+// Initialize offline detection
+initOfflineDetection();
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #7: NOTIFICATION SYSTEM */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Notification system
+ */
+const NotificationSystem = {
+    notifications: [],
+
+    /**
+     * Show in-app notification
+     * @param {string} title - Notification title
+     * @param {string} message - Notification message
+     * @param {string} type - Notification type ('info', 'success', 'warning', 'error')
+     * @param {Object} options - Additional options
+     * @returns {void}
+     */
+    show(title, message, type = 'info', options = {}) {
+        const notification = {
+            id: Date.now(),
+            title,
+            message,
+            type,
+            timestamp: new Date(),
+            read: false,
+            ...options
+        };
+
+        this.notifications.unshift(notification);
+        this.notifications = this.notifications.slice(0, 50); // Keep last 50
+        this.render();
+        this.save();
+    },
+
+    /**
+     * Render notification center
+     * @returns {void}
+     */
+    render() {
+        let center = document.getElementById('notification-center');
+        if (!center) {
+            center = document.createElement('div');
+            center.id = 'notification-center';
+            center.className = 'fixed top-16 right-4 z-[10000] max-w-md w-full';
+            document.body.appendChild(center);
+        }
+
+        const unreadCount = this.notifications.filter(n => !n.read).length;
+        // Update notification badge if exists
+        const badge = document.getElementById('notification-badge');
+        if (badge) {
+            badge.textContent = unreadCount > 0 ? unreadCount : '';
+            badge.style.display = unreadCount > 0 ? 'block' : 'none';
+        }
+    },
+
+    /**
+     * Mark notification as read
+     * @param {number} id - Notification ID
+     * @returns {void}
+     */
+    markAsRead(id) {
+        const notification = this.notifications.find(n => n.id === id);
+        if (notification) {
+            notification.read = true;
+            this.save();
+            this.render();
+        }
+    },
+
+    /**
+     * Save notifications to localStorage
+     * @returns {void}
+     */
+    save() {
+        localStorage.setItem('notifications', JSON.stringify(this.notifications));
+    },
+
+    /**
+     * Load notifications from localStorage
+     * @returns {void}
+     */
+    load() {
+        const saved = localStorage.getItem('notifications');
+        if (saved) {
+            this.notifications = JSON.parse(saved);
+            this.render();
+        }
+    }
+};
+
+// Load notifications on init
+NotificationSystem.load();
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #10: PERFORMANCE OPTIMIZATIONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Lazy load images
+ * @returns {void}
+ */
+function initLazyLoading() {
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                        observer.unobserve(img);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
+}
+
+// Initialize lazy loading
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLazyLoading);
+} else {
+    initLazyLoading();
+}
+
+/**
+ * Debounce function for performance
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in ms
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+/**
+ * Throttle function for performance
+ * @param {Function} func - Function to throttle
+ * @param {number} limit - Time limit in ms
+ * @returns {Function} Throttled function
+ */
+function throttle(func, limit) {
+    let inThrottle;
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// Apply focus trap to all modals
+document.addEventListener('DOMContentLoaded', () => {
+    const modals = document.querySelectorAll('[role="dialog"]');
+    modals.forEach(modal => {
+        const observer = new MutationObserver(() => {
+            if (!modal.classList.contains('hidden')) {
+                trapFocus(modal);
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    });
+});
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #2: FILE MANAGEMENT ENHANCEMENTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * File management system with bulk operations
+ */
+const FileManager = {
+    selectedFiles: new Set(),
+
+    /**
+     * Toggle file selection
+     * @param {string} fileId - File ID
+     * @returns {void}
+     */
+    toggleSelection(fileId) {
+        if (this.selectedFiles.has(fileId)) {
+            this.selectedFiles.delete(fileId);
+        } else {
+            this.selectedFiles.add(fileId);
+        }
+        this.updateSelectionUI();
+    },
+
+    /**
+     * Select all files
+     * @returns {void}
+     */
+    selectAll() {
+        document.querySelectorAll('[data-file-id]').forEach(el => {
+            this.selectedFiles.add(el.dataset.fileId);
+        });
+        this.updateSelectionUI();
+    },
+
+    /**
+     * Clear selection
+     * @returns {void}
+     */
+    clearSelection() {
+        this.selectedFiles.clear();
+        this.updateSelectionUI();
+    },
+
+    /**
+     * Update selection UI
+     * @returns {void}
+     */
+    updateSelectionUI() {
+        const count = this.selectedFiles.size;
+        const indicator = document.getElementById('selection-indicator');
+        if (indicator) {
+            indicator.textContent = count > 0 ? `${count} selected` : '';
+            indicator.style.display = count > 0 ? 'block' : 'none';
+        }
+
+        // Update file checkboxes
+        document.querySelectorAll('[data-file-id]').forEach(el => {
+            if (this.selectedFiles.has(el.dataset.fileId)) {
+                el.classList.add('selected');
+            } else {
+                el.classList.remove('selected');
+            }
+        });
+    },
+
+    /**
+     * Delete selected files
+     * @returns {Promise<void>}
+     */
+    async deleteSelected() {
+        if (this.selectedFiles.size === 0) return;
+
+        const confirmed = await new Promise(resolve => {
+            showConfirmationModal(
+                `Delete ${this.selectedFiles.size} file(s)?`,
+                () => resolve(true),
+                () => resolve(false)
+            );
+        });
+
+        if (confirmed) {
+            // Implementation would delete files from Firebase
+            this.clearSelection();
+            showToast(`${this.selectedFiles.size} file(s) deleted`, 'success');
+        }
+    },
+
+    /**
+     * Add file tag
+     * @param {string} fileId - File ID
+     * @param {string} tag - Tag name
+     * @returns {void}
+     */
+    addTag(fileId, tag) {
+        const tags = JSON.parse(localStorage.getItem(`file-tags-${fileId}`) || '[]');
+        if (!tags.includes(tag)) {
+            tags.push(tag);
+            localStorage.setItem(`file-tags-${fileId}`, JSON.stringify(tags));
+        }
+    },
+
+    /**
+     * Get file tags
+     * @param {string} fileId - File ID
+     * @returns {Array<string>} Tags
+     */
+    getTags(fileId) {
+        return JSON.parse(localStorage.getItem(`file-tags-${fileId}`) || '[]');
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #4: COLLABORATION FEATURES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Collaboration system for study groups
+ */
+const Collaboration = {
+    /**
+     * Create a study group
+     * @param {string} name - Group name
+     * @param {Array<string>} members - Member email addresses
+     * @returns {Promise<string>} Group ID
+     */
+    async createStudyGroup(name, members) {
+        if (!currentUser) throw new Error('User not authenticated');
+
+        const groupData = {
+            name,
+            owner: currentUser.uid,
+            members: [currentUser.email, ...members],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        const docRef = await db.collection('studyGroups').add(groupData);
+        return docRef.id;
+    },
+
+    /**
+     * Share notes with group
+     * @param {string} groupId - Group ID
+     * @param {string} noteId - Note ID
+     * @returns {Promise<void>}
+     */
+    async shareNote(groupId, noteId) {
+        await db.collection('studyGroups').doc(groupId).collection('sharedNotes').add({
+            noteId,
+            sharedBy: currentUser.uid,
+            sharedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    /**
+     * Add comment to resource
+     * @param {string} resourceId - Resource ID
+     * @param {string} comment - Comment text
+     * @returns {Promise<void>}
+     */
+    async addComment(resourceId, comment) {
+        await db.collection('resources').doc(resourceId).collection('comments').add({
+            author: currentUser.uid,
+            authorName: currentUser.displayName,
+            comment,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    /**
+     * Get resource recommendations
+     * @param {string} subject - Subject name
+     * @returns {Promise<Array>} Recommended resources
+     */
+    async getRecommendations(subject) {
+        // Implementation would use collaborative filtering
+        // For now, return empty array
+        return [];
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #6: PERSONALIZATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Personalization system
+ */
+const Personalization = {
+    /**
+     * Get user preferences
+     * @returns {Object} User preferences
+     */
+    getPreferences() {
+        return JSON.parse(localStorage.getItem('userPreferences') || JSON.stringify({
+            theme: 'light',
+            layout: 'grid',
+            notifications: true,
+            favoriteSubjects: []
+        }));
+    },
+
+    /**
+     * Save user preferences
+     * @param {Object} preferences - Preferences object
+     * @returns {void}
+     */
+    savePreferences(preferences) {
+        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+    },
+
+    /**
+     * Add favorite subject
+     * @param {string} subject - Subject name
+     * @returns {void}
+     */
+    addFavoriteSubject(subject) {
+        const prefs = this.getPreferences();
+        if (!prefs.favoriteSubjects.includes(subject)) {
+            prefs.favoriteSubjects.push(subject);
+            this.savePreferences(prefs);
+        }
+    },
+
+    /**
+     * Get personalized recommendations
+     * @returns {Array} Recommended content
+     */
+    getPersonalizedContent() {
+        const prefs = this.getPreferences();
+        // Implementation would use user's study history and preferences
+        return [];
+    },
+
+    /**
+     * Create custom study plan
+     * @param {Object} plan - Study plan object
+     * @returns {void}
+     */
+    createStudyPlan(plan) {
+        const plans = JSON.parse(localStorage.getItem('studyPlans') || '[]');
+        plans.push({
+            ...plan,
+            id: Date.now(),
+            createdAt: new Date().toISOString()
+        });
+        localStorage.setItem('studyPlans', JSON.stringify(plans));
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #8: EXPORT & SHARING */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Export and sharing utilities
+ */
+const ExportSharing = {
+    /**
+     * Export notes as PDF
+     * @param {string} noteId - Note ID
+     * @returns {Promise<void>}
+     */
+    async exportNoteAsPDF(noteId) {
+        // This would use a PDF generation library like jsPDF
+        // For now, it's a placeholder
+        showToast('PDF export feature coming soon', 'info');
+    },
+
+    /**
+     * Share to social media
+     * @param {string} platform - Platform name ('twitter', 'facebook', etc.)
+     * @param {string} text - Text to share
+     * @param {string} url - URL to share
+     * @returns {void}
+     */
+    shareToSocial(platform, text, url) {
+        const shareUrls = {
+            twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+            linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+        };
+
+        if (shareUrls[platform]) {
+            window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+        }
+    },
+
+    /**
+     * Export study progress report
+     * @returns {Object} Progress report
+     */
+    exportProgressReport() {
+        const stats = StudyProgress.getStatistics();
+        const streak = StudyProgress.getStreak();
+
+        return {
+            totalSessions: stats.totalSessions,
+            totalTime: stats.totalTime,
+            averageTimePerSession: stats.totalSessions > 0 ? stats.totalTime / stats.totalSessions : 0,
+            streak: streak,
+            bySubject: stats.bySubject,
+            exportedAt: new Date().toISOString()
+        };
+    },
+
+    /**
+     * Print-friendly view
+     * @param {string} contentId - Content element ID
+     * @returns {void}
+     */
+    printContent(contentId) {
+        const content = document.getElementById(contentId);
+        if (!content) return;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print - GCSEMate</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>${content.innerHTML}</body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #9: ADVANCED AI TUTOR FEATURES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Enhanced AI Tutor features
+ */
+const AITutorEnhanced = {
+    conversationHistory: JSON.parse(localStorage.getItem('aiTutorHistory') || '[]'),
+
+    /**
+     * Save conversation to history
+     * @param {string} message - User message
+     * @param {string} response - AI response
+     * @param {string} subject - Subject context
+     * @returns {void}
+     */
+    saveToHistory(message, response, subject) {
+        this.conversationHistory.push({
+            message,
+            response,
+            subject,
+            timestamp: new Date().toISOString()
+        });
+
+        // Keep last 50 conversations
+        this.conversationHistory = this.conversationHistory.slice(-50);
+        localStorage.setItem('aiTutorHistory', JSON.stringify(this.conversationHistory));
+    },
+
+    /**
+     * Get conversation history
+     * @param {string} subject - Optional subject filter
+     * @returns {Array} Conversation history
+     */
+    getHistory(subject = null) {
+        if (subject) {
+            return this.conversationHistory.filter(c => c.subject === subject);
+        }
+        return this.conversationHistory;
+    },
+
+    /**
+     * Clear conversation history
+     * @returns {void}
+     */
+    clearHistory() {
+        this.conversationHistory = [];
+        localStorage.removeItem('aiTutorHistory');
+    },
+
+    /**
+     * Generate practice question
+     * @param {string} subject - Subject name
+     * @param {string} topic - Topic name
+     * @returns {Promise<string>} Practice question
+     */
+    async generatePracticeQuestion(subject, topic) {
+        // This would call the AI API with a specific prompt
+        // For now, return a placeholder
+        return `Generate a practice question for ${subject} - ${topic}`;
+    },
+
+    /**
+     * Get personalized learning path
+     * @param {string} subject - Subject name
+     * @returns {Promise<Array>} Learning path steps
+     */
+    async getLearningPath(subject) {
+        // Implementation would analyze user's progress and create a path
+        return [];
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #8: ALTERNATIVE TEXT & DESCRIPTIONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Add alternative text to images
+ * @returns {void}
+ */
+function addAlternativeText() {
+    document.querySelectorAll('img:not([alt])').forEach(img => {
+        const src = img.src || img.dataset.src || '';
+        const filename = src.split('/').pop().split('.')[0];
+        img.alt = filename || 'Image';
+    });
+
+    // Add longdesc for complex images
+    document.querySelectorAll('img[data-longdesc]').forEach(img => {
+        img.setAttribute('longdesc', img.dataset.longdesc);
+    });
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addAlternativeText);
+} else {
+    addAlternativeText();
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #9: LANGUAGE & I18N SUPPORT */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Language and internationalization support
+ */
+const I18n = {
+    currentLang: localStorage.getItem('language') || 'en-GB',
+    translations: {
+        'en-GB': {
+            // English translations would go here
+        }
+    },
+
+    /**
+     * Set language
+     * @param {string} lang - Language code
+     * @returns {void}
+     */
+    setLanguage(lang) {
+        this.currentLang = lang;
+        localStorage.setItem('language', lang);
+        document.documentElement.setAttribute('lang', lang);
+        this.updatePageLanguage();
+    },
+
+    /**
+     * Update page language
+     * @returns {void}
+     */
+    updatePageLanguage() {
+        document.documentElement.setAttribute('lang', this.currentLang);
+        // Update text direction if RTL
+        if (this.currentLang.startsWith('ar') || this.currentLang.startsWith('he')) {
+            document.documentElement.setAttribute('dir', 'rtl');
+        } else {
+            document.documentElement.setAttribute('dir', 'ltr');
+        }
+    },
+
+    /**
+     * Translate text
+     * @param {string} key - Translation key
+     * @returns {string} Translated text
+     */
+    t(key) {
+        return this.translations[this.currentLang]?.[key] || key;
+    }
+};
+
+// Initialize language
+I18n.updatePageLanguage();
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #10: ERROR HANDLING & ANNOUNCEMENTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Enhanced error handling with clear messages
+ * @param {Error} error - Error object
+ * @param {string} context - Error context
+ * @returns {void}
+ */
+function handleError(error, context = '') {
+    console.error(`Error in ${context}:`, error);
+
+    let userMessage = 'An error occurred. Please try again.';
+
+    if (error.message) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+            userMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('permission') || error.message.includes('auth')) {
+            userMessage = 'Permission denied. Please check your account access.';
+        } else if (error.message.includes('not found')) {
+            userMessage = 'The requested resource was not found.';
+        } else {
+            userMessage = error.message;
+        }
+    }
+
+    showToast(userMessage, 'error');
+    announceToScreenReader(`Error: ${userMessage}`, 'assertive');
+}
+
+/**
+ * Enhanced success confirmations
+ * @param {string} message - Success message
+ * @returns {void}
+ */
+function showSuccess(message) {
+    showToast(message, 'success');
+    announceToScreenReader(message, 'polite');
+
+    // Add success animation
+    const toast = document.querySelector('.toast-enter');
+    if (toast) {
+        toast.classList.add('success-animation');
+    }
+}
+
+/**
+ * Loading state announcements
+ * @param {string} message - Loading message
+ * @returns {void}
+ */
+function announceLoading(message) {
+    announceToScreenReader(message, 'polite');
+}
+
+/**
+ * Timeout warning
+ * @param {number} seconds - Seconds until timeout
+ * @returns {void}
+ */
+function showTimeoutWarning(seconds) {
+    if (seconds <= 10) {
+        showToast(`Session will timeout in ${seconds} seconds`, 'warning');
+        announceToScreenReader(`Warning: Session will timeout in ${seconds} seconds`, 'assertive');
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TOOLS IMPROVEMENT #5: PERFORMANCE MONITORING */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Performance monitoring system
+ */
+const PerformanceMonitor = {
+    /**
+     * Track Web Vitals
+     * @returns {void}
+     */
+    trackWebVitals() {
+        if ('PerformanceObserver' in window) {
+            // Largest Contentful Paint
+            try {
+                const lcpObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    const lastEntry = entries[entries.length - 1];
+                    console.log('LCP:', lastEntry.renderTime || lastEntry.loadTime);
+                });
+                lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+            } catch (e) {
+                console.warn('LCP tracking not supported');
+            }
+
+            // First Input Delay
+            try {
+                const fidObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    entries.forEach(entry => {
+                        console.log('FID:', entry.processingStart - entry.startTime);
+                    });
+                });
+                fidObserver.observe({ entryTypes: ['first-input'] });
+            } catch (e) {
+                console.warn('FID tracking not supported');
+            }
+
+            // Cumulative Layout Shift
+            try {
+                let clsValue = 0;
+                const clsObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    entries.forEach(entry => {
+                        if (!entry.hadRecentInput) {
+                            clsValue += entry.value;
+                        }
+                    });
+                    console.log('CLS:', clsValue);
+                });
+                clsObserver.observe({ entryTypes: ['layout-shift'] });
+            } catch (e) {
+                console.warn('CLS tracking not supported');
+            }
+        }
+    },
+
+    /**
+     * Track page load time
+     * @returns {void}
+     */
+    trackPageLoad() {
+        window.addEventListener('load', () => {
+            const perfData = performance.timing;
+            const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+            console.log('Page Load Time:', pageLoadTime, 'ms');
+        });
+    },
+
+    /**
+     * Track custom metrics
+     * @param {string} name - Metric name
+     * @param {number} value - Metric value
+     * @returns {void}
+     */
+    trackMetric(name, value) {
+        if ('Performance' in window && 'mark' in performance) {
+            performance.mark(`${name}-start`);
+            setTimeout(() => {
+                performance.mark(`${name}-end`);
+                performance.measure(name, `${name}-start`, `${name}-end`);
+            }, value);
+        }
+    }
+};
+
+// Initialize performance monitoring
+PerformanceMonitor.trackWebVitals();
+PerformanceMonitor.trackPageLoad();
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* TOOLS IMPROVEMENT #7: TYPE SAFETY - JSDOC TYPES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * @typedef {Object} User
+ * @property {string} uid - User ID
+ * @property {string} email - User email
+ * @property {string} displayName - User display name
+ * @property {string} tier - User tier ('free' | 'paid')
+ * @property {string} role - User role ('user' | 'admin')
+ */
+
+/**
+ * @typedef {Object} File
+ * @property {string} id - File ID
+ * @property {string} name - File name
+ * @property {string} mimeType - MIME type
+ * @property {string} webViewLink - Web view link
+ * @property {number} size - File size in bytes
+ */
+
+/**
+ * @typedef {Object} StudySession
+ * @property {string} subject - Subject name
+ * @property {number} startTime - Session start timestamp
+ * @property {number} endTime - Session end timestamp
+ */
+
+/**
+ * @typedef {Object} Notification
+ * @property {number} id - Notification ID
+ * @property {string} title - Notification title
+ * @property {string} message - Notification message
+ * @property {string} type - Notification type
+ * @property {Date} timestamp - Notification timestamp
+ * @property {boolean} read - Read status
+ */
+
+/**
+ * Type-safe utility functions
+ * @param {User} user - User object
+ * @returns {boolean} Whether user is admin
+ */
+function isAdmin(user) {
+    return user && user.role === 'admin';
+}
+
+/**
+ * Type-safe utility functions
+ * @param {User} user - User object
+ * @returns {boolean} Whether user is paid
+ */
+function isPaidUser(user) {
+    return user && user.tier === 'paid';
+}
 
 
