@@ -41,6 +41,35 @@
 --input-radius: 12px;
 --button-radius: 12px;
         }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* CRITICAL: FontAwesome icon fix - MUST be before body styles */
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* This ensures icons work even if other rules try to override */
+        i[class*="fa-"], 
+        [class*="fa-"],
+        i.fa, i.fas, i.far, i.fab, i.fal, i.fad,
+        .fa, .fas, .far, .fab, .fal, .fad {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "FontAwesome" !important;
+            font-style: normal !important;
+            font-weight: 900 !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+        }
+        
+        i[class*="far"], [class*="far"], i.far, .far {
+            font-weight: 400 !important;
+        }
+        
+        i[class*="fab"], [class*="fab"], i.fab, .fab {
+            font-family: "Font Awesome 6 Brands", "FontAwesome" !important;
+            font-weight: 400 !important;
+        }
+        
+        i[class*="fal"], [class*="fal"], i.fal, .fal {
+            font-weight: 300 !important;
+        }
+        
         /* Base styles - EdTech-inspired design */
         body {
 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -3497,8 +3526,14 @@ will-change: transform;
             font-weight: 900 !important;
         }
         
-        /* Ensure all text uses Inter font (except icons) - must come after icon rules */
-        *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not([class*="fa-"]):not(svg):not(code):not(pre):not(kbd):not(samp) {
+        /* Apply Inter font to specific elements only (not universal) */
+        body, p, h1, h2, h3, h4, h5, h6, 
+        div:not([class*="fa-"]):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad),
+        span:not([class*="fa-"]):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad),
+        a:not([class*="fa-"]):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad),
+        button:not([class*="fa-"]):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad),
+        input:not([class*="fa-"]), textarea:not([class*="fa-"]), select:not([class*="fa-"]),
+        label:not([class*="fa-"]), li:not([class*="fa-"]), td:not([class*="fa-"]), th:not([class*="fa-"]) {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         }
         
@@ -3563,10 +3598,11 @@ will-change: transform;
             font-weight: 300 !important;
         }
         
-        /* Ensure icon elements themselves use FontAwesome */
+        /* Ensure icon elements themselves use FontAwesome - MAXIMUM SPECIFICITY */
         i[class*="fa-"],
         i.fa, i.fas, i.far, i.fab, i.fal, i.fad,
-        .fa, .fas, .far, .fab, .fal, .fad {
+        .fa, .fas, .far, .fab, .fal, .fad,
+        [class*="fa-"] {
             font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "FontAwesome" !important;
             font-style: normal !important;
             font-variant: normal !important;
@@ -3577,24 +3613,69 @@ will-change: transform;
             -moz-osx-font-smoothing: grayscale !important;
         }
         
-        i.fas, .fas {
+        /* Specific weight rules for each icon type */
+        i.fas, .fas, i[class*="fas"] {
+            font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
         }
         
-        i.far, .far {
+        i.far, .far, i[class*="far"] {
+            font-family: "Font Awesome 6 Free" !important;
             font-weight: 400 !important;
         }
         
-        i.fab, .fab {
+        i.fab, .fab, i[class*="fab"] {
             font-family: "Font Awesome 6 Brands", "FontAwesome" !important;
             font-weight: 400 !important;
         }
         
-        i.fal, .fal {
+        i.fal, .fal, i[class*="fal"] {
+            font-family: "Font Awesome 6 Free" !important;
             font-weight: 300 !important;
         }
         
-        i.fad, .fad {
+        i.fad, .fad, i[class*="fad"] {
+            font-family: "Font Awesome 6 Free" !important;
             font-weight: 900 !important;
+        }
+        
+        /* CRITICAL OVERRIDE: Force FontAwesome on any element with fa- class */
+        [class*="fa-"] {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "FontAwesome" !important;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════ */
+        /* FINAL FONTAWESOME FIX - Must be at the very end to override all */
+        /* ═══════════════════════════════════════════════════════════════ */
+        
+        /* FontAwesome uses :before pseudo-elements - ensure they have correct font */
+        i.fas:before, i.far:before, i.fab:before, i.fal:before, i.fad:before,
+        .fas:before, .far:before, .fab:before, .fal:before, .fad:before {
+            font-family: "Font Awesome 6 Free" !important;
+        }
+        
+        .fab:before, i.fab:before {
+            font-family: "Font Awesome 6 Brands" !important;
+        }
+        
+        /* Ultimate override - any i element with fa- in class */
+        i[class*="fa-"] {
+            font-family: "Font Awesome 6 Free" !important;
+            font-style: normal !important;
+            font-weight: 900 !important;
+            -webkit-font-smoothing: antialiased !important;
+        }
+        
+        i[class*="far"] {
+            font-weight: 400 !important;
+        }
+        
+        i[class*="fab"] {
+            font-family: "Font Awesome 6 Brands" !important;
+            font-weight: 400 !important;
+        }
+        
+        i[class*="fal"] {
+            font-weight: 300 !important;
         }
         
