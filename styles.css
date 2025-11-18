@@ -3977,6 +3977,205 @@ will-change: transform;
             border-color: var(--border-color) !important;
         }
 
+        /* Comprehensive dark mode text color fixes */
+        [data-theme="dark"] .text-gray-400,
+        [data-theme="dark"] .text-gray-300 {
+            color: var(--text-light) !important;
+        }
+
+        [data-theme="dark"] .text-blue-800,
+        [data-theme="dark"] .text-blue-700,
+        [data-theme="dark"] .text-blue-600 {
+            color: #93C5FD !important;
+        }
+
+        [data-theme="dark"] .text-green-700,
+        [data-theme="dark"] .text-green-600 {
+            color: #6EE7B7 !important;
+        }
+
+        [data-theme="dark"] .bg-gray-50,
+        [data-theme="dark"] .bg-gray-100,
+        [data-theme="dark"] .bg-gray-200 {
+            background-color: var(--bg-card) !important;
+        }
+
+        [data-theme="dark"] .bg-blue-50,
+        [data-theme="dark"] .bg-blue-100,
+        [data-theme="dark"] .bg-indigo-50 {
+            background-color: rgba(30, 58, 138, 0.3) !important;
+        }
+
+        [data-theme="dark"] .bg-white\/70,
+        [data-theme="dark"] .bg-white\/60,
+        [data-theme="dark"] .bg-white\/50 {
+            background-color: rgba(30, 41, 59, 0.7) !important;
+        }
+
+        /* Dark mode table styles */
+        [data-theme="dark"] table,
+        [data-theme="dark"] thead,
+        [data-theme="dark"] tbody,
+        [data-theme="dark"] tr,
+        [data-theme="dark"] td,
+        [data-theme="dark"] th {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .divide-gray-100,
+        [data-theme="dark"] .divide-gray-200 {
+            border-color: var(--border-color) !important;
+        }
+
+        /* Dark mode playlist card fixes */
+        [data-theme="dark"] .playlist-card,
+        [data-theme="dark"] .playlist-card.bg-white {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        [data-theme="dark"] .playlist-card button.bg-white {
+            background-color: var(--bg-card-hover) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .playlist-card button.bg-white i {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .playlist-card button.text-red-600 {
+            color: #FCA5A5 !important;
+        }
+
+        [data-theme="dark"] .playlist-card button.text-red-600:hover {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        /* Dark mode icon alignment fixes */
+        [data-theme="dark"] i[class*="fa-"],
+        [data-theme="dark"] [class*="fa-"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            vertical-align: middle !important;
+        }
+
+        /* Ensure icons are visible in dark mode */
+        i[class*="fa-"],
+        [class*="fa-"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            vertical-align: middle !important;
+        }
+
+        /* Dark mode support for Tailwind dark: classes using data-theme */
+        [data-theme="dark"] .dark\:bg-gray-700,
+        [data-theme="dark"] .dark\:bg-gray-800 {
+            background-color: var(--bg-card) !important;
+        }
+
+        [data-theme="dark"] .dark\:bg-gray-600 {
+            background-color: var(--bg-card-hover) !important;
+        }
+
+        [data-theme="dark"] .dark\:text-gray-100,
+        [data-theme="dark"] .dark\:text-gray-200,
+        [data-theme="dark"] .dark\:text-gray-300,
+        [data-theme="dark"] .dark\:text-gray-400 {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] .dark\:text-gray-400 {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] .dark\:text-red-400 {
+            color: #FCA5A5 !important;
+        }
+
+        [data-theme="dark"] .dark\:text-blue-400 {
+            color: #93C5FD !important;
+        }
+
+        [data-theme="dark"] .dark\:border-gray-600,
+        [data-theme="dark"] .dark\:border-gray-700 {
+            border-color: var(--border-color) !important;
+        }
+
+        [data-theme="dark"] .dark\:ring-blue-500 {
+            --tw-ring-color: #3B82F6 !important;
+        }
+
+        [data-theme="dark"] .dark\:hover\:bg-gray-600:hover {
+            background-color: var(--bg-card-hover) !important;
+        }
+
+        [data-theme="dark"] .dark\:hover\:bg-red-900\/30:hover {
+            background-color: rgba(127, 29, 29, 0.3) !important;
+        }
+
+        [data-theme="dark"] .dark\:hover\:text-red-400:hover {
+            color: #FCA5A5 !important;
+        }
+
+        [data-theme="dark"] .dark\:text-red-400 {
+            color: #FCA5A5 !important;
+        }
+
+        /* Pricing page specific dark mode fixes */
+        [data-theme="dark"] #features-page h2,
+        [data-theme="dark"] #features-page h3,
+        [data-theme="dark"] #features-page .text-gray-800,
+        [data-theme="dark"] #features-page .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+
+        [data-theme="dark"] #features-page .text-gray-600,
+        [data-theme="dark"] #features-page .text-gray-700,
+        [data-theme="dark"] #features-page .text-gray-500 {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="dark"] #features-page .text-blue-800,
+        [data-theme="dark"] #features-page .text-blue-700 {
+            color: #93C5FD !important;
+        }
+
+        [data-theme="dark"] #features-page .bg-white\/70,
+        [data-theme="dark"] #features-page .bg-white\/60,
+        [data-theme="dark"] #features-page .bg-white\/50 {
+            background-color: rgba(30, 41, 59, 0.7) !important;
+        }
+
+        [data-theme="dark"] #features-page .bg-blue-50,
+        [data-theme="dark"] #features-page .bg-indigo-50 {
+            background-color: rgba(30, 58, 138, 0.3) !important;
+        }
+
+        [data-theme="dark"] #features-page .border-blue-200 {
+            border-color: rgba(59, 130, 246, 0.3) !important;
+        }
+
+        [data-theme="dark"] #features-page .text-green-700,
+        [data-theme="dark"] #features-page .text-green-600 {
+            color: #6EE7B7 !important;
+        }
+
+        [data-theme="dark"] #features-page .bg-gray-50\/70 {
+            background-color: rgba(30, 41, 59, 0.5) !important;
+        }
+
+        [data-theme="dark"] #features-page .border-white\/30 {
+            border-color: var(--border-color) !important;
+        }
+
+        [data-theme="dark"] #features-page .text-blue-100,
+        [data-theme="dark"] #features-page .text-blue-200 {
+            color: #DBEAFE !important;
+        }
+
         /* ═══════════════════════════════════════════════════════════════ */
         /* DESIGN IMPROVEMENT #2: MICRO-INTERACTIONS & ANIMATIONS */
         /* ═══════════════════════════════════════════════════════════════ */

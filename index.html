@@ -1180,10 +1180,18 @@
 
                     <!-- Recently Viewed Section -->
                     <div id="recently-viewed-section" class="mb-6 hidden">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <i class="fas fa-clock text-blue-600" aria-hidden="true"></i>
-                            Recently Viewed
-                        </h3>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                <i class="fas fa-clock text-blue-600 dark:text-blue-400" aria-hidden="true"></i>
+                                Recently Viewed
+                            </h3>
+                            <button onclick="clearRecentlyViewedPlaylists()"
+                                class="text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 transition-colors duration-200"
+                                aria-label="Clear recently viewed playlists">
+                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                <span>Clear</span>
+                            </button>
+                        </div>
                         <div id="recently-viewed-grid"
                             class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6"></div>
                     </div>

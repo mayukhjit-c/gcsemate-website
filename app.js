@@ -10034,7 +10034,7 @@ function copyToClipboard(text, playlistTitle) {
 // Render a single playlist card (EdTech-inspired design)
 function renderPlaylistCard(playlist, isRecent = false) {
     const card = document.createElement('div');
-    card.className = `relative group bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${isRecent ? 'ring-2 ring-blue-400' : ''}`;
+    card.className = `relative group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md hover:shadow-lg p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${isRecent ? 'ring-2 ring-blue-400 dark:ring-blue-500' : ''}`;
     card.classList.add('animate-fade-in-up', 'playlist-card');
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
@@ -10069,24 +10069,24 @@ function renderPlaylistCard(playlist, isRecent = false) {
     card.innerHTML = `
         <div class="flex-grow flex flex-col justify-center items-center text-center">
             ${thumbnailHtml}
-            <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 transition-colors duration-300" style="font-family: 'Inter', sans-serif;">${escapeHTML(playlist.title)}</h3>
+            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 transition-colors duration-300" style="font-family: 'Inter', sans-serif;">${escapeHTML(playlist.title)}</h3>
             ${category ? `<div class="mb-2">${category}</div>` : ''}
-            <div class="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                <i class="fab fa-youtube text-red-500"></i>
+            <div class="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <i class="fab fa-youtube text-red-500 dark:text-red-400"></i>
                 <span class="font-medium">YouTube Playlist</span>
-                ${videoCount ? `<span class="text-gray-400">•</span><span>${videoCount}</span>` : ''}
+                ${videoCount ? `<span class="text-gray-400 dark:text-gray-500">•</span><span>${videoCount}</span>` : ''}
             </div>
         </div>
-        <div class="mt-6 pt-5 border-t border-gray-200/70 flex gap-2">
+        <div class="mt-6 pt-5 border-t border-gray-200/70 dark:border-gray-700/70 flex gap-2">
             ${playlistUrl ? `
             <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="flex-1 px-4 py-3 text-white text-sm font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" style="background: var(--bg-secondary); font-family: 'Inter', sans-serif;" onmouseover="this.style.background='#1a2f4d'" onmouseout="this.style.background='var(--bg-secondary)'" data-tooltip="Open playlist in new tab">
                 <i class="fas fa-external-link-alt text-white"></i>
                 <span>Open</span>
             </button>
-            <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md" data-tooltip="Share playlist">
+            <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" data-tooltip="Share playlist">
                 <i class="fas fa-share-alt"></i>
             </button>
-            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="px-4 py-3 bg-white border border-gray-200 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md" data-tooltip="Delete playlist">
+            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" data-tooltip="Delete playlist">
                 <i class="fas fa-trash-alt"></i>
             </button>
             ` : `
@@ -10160,6 +10160,26 @@ function renderRecentlyViewed() {
         const card = renderPlaylistCard(playlist, true);
         grid.appendChild(card);
     });
+}
+
+// Clear recently viewed playlists
+function clearRecentlyViewedPlaylists() {
+    try {
+        localStorage.removeItem('gcsemate_recent_playlists');
+        const section = document.getElementById('recently-viewed-section');
+        const grid = document.getElementById('recently-viewed-grid');
+        if (section) {
+            section.classList.add('hidden');
+        }
+        if (grid) {
+            grid.innerHTML = '';
+        }
+        showToast('Recently viewed playlists cleared', 'success');
+        announceToScreenReader('Recently viewed playlists cleared');
+    } catch (error) {
+        console.error('Failed to clear recently viewed playlists:', error);
+        showToast('Failed to clear recently viewed playlists', 'error');
+    }
 }
 
 // Update category filter dropdown
@@ -15583,6 +15603,16 @@ function initTheme() {
         const iconClass = theme === 'dark' ? 'fa-sun' : 'fa-moon';
         icon.className = `fas ${iconClass} icon-md`;
         iconMobile.className = `fas ${iconClass} icon-md`;
+
+        // Update aria-pressed for accessibility
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        }
+        if (themeToggleMobile) {
+            themeToggleMobile.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        }
     }
 
     if (themeToggle) {
