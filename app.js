@@ -4580,15 +4580,31 @@ function setupRealtimeListeners() {
             renderUsefulLinks(links);
         }, err => logError(err, "Useful Links"));
         
-    // Listen for video playlists
+    // Show skeleton on initial load
+    generatePlaylistSkeletons(8);
+    
+    // Listen for video playlists with enhanced error handling
     unsubscribeVideoPlaylists = db.collection('videoPlaylists').orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
             const playlists = [];
             snapshot.forEach(doc => {
-                playlists.push({ id: doc.id, ...doc.data() });
+                const data = doc.data();
+                playlists.push({ 
+                    id: doc.id, 
+                    ...data,
+                    url: data.url || (data.playlistId ? `https://www.youtube.com/playlist?list=${data.playlistId}` : '')
+                });
             });
-            renderVideosPage(playlists);
-        }, err => logError(err, "Video Playlists"));
+            renderVideosPage(playlists, false);
+        }, err => {
+            logError(err, "Video Playlists");
+            renderVideosPage([], true);
+        });
+    
+    // Setup event handlers when page loads
+    setTimeout(() => {
+        setupPlaylistEventHandlers();
+    }, 500);
     // Lessons removed
     // Listen for blog posts
     unsubscribeBlogPosts = db.collection('blogPosts').orderBy('createdAt', 'desc')
@@ -8958,6 +8974,15 @@ function showPage(pageId) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
     
+    // Show skeleton when videos page is opened (if playlists not loaded yet)
+    if (pageId === 'videos-page' && allPlaylists.length === 0) {
+        const skeleton = document.getElementById('playlist-skeleton');
+        if (skeleton) {
+            skeleton.classList.remove('hidden');
+            generatePlaylistSkeletons(8);
+        }
+    }
+    
     // Initialize exam results when account settings page is shown
     if (pageId === 'account-settings-page') {
         setTimeout(() => {
@@ -9802,20 +9827,425 @@ function renderBreadcrumbs() {
 }
 
 // =================================================================================
-// VIDEOS LOGIC
+// VIDEOS LOGIC - Enhanced with all improvements
 // =================================================================================
-function renderVideosPage(playlists) {
-    const grid = document.getElementById('playlist-grid');
-    const adminForm = document.getElementById('add-playlist-form-container');
-    if (!grid || !adminForm) return;
-    // Show admin form if user is admin
-    adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-    grid.innerHTML = '';
-    if (!playlists || playlists.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Available Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for curated revision videos.</p></div>`;
+
+// Global playlist state
+let allPlaylists = [];
+let filteredPlaylists = [];
+let currentPlaylistPage = 1;
+let playlistsPerPage = 12;
+let playlistSortOrder = 'newest'; // 'newest', 'oldest', 'title-asc', 'title-desc'
+let playlistSearchQuery = '';
+let playlistCategoryFilter = 'all';
+
+// Recently viewed playlists storage
+function getRecentlyViewedPlaylists() {
+    try {
+        const stored = localStorage.getItem('gcsemate_recent_playlists');
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function addToRecentlyViewed(playlistId) {
+    try {
+        let recent = getRecentlyViewedPlaylists();
+        // Remove if already exists
+        recent = recent.filter(id => id !== playlistId);
+        // Add to front
+        recent.unshift(playlistId);
+        // Keep only last 8
+        recent = recent.slice(0, 8);
+        localStorage.setItem('gcsemate_recent_playlists', JSON.stringify(recent));
+    } catch (e) {
+        console.error('Failed to save recently viewed playlist', e);
+    }
+}
+
+// Get YouTube playlist thumbnail
+// Note: YouTube doesn't provide direct playlist thumbnails without API
+// This function attempts to get a thumbnail, but will fallback to icon
+function getPlaylistThumbnail(playlistUrl) {
+    try {
+        const parsed = parseYoutubeUrl(playlistUrl);
+        if (parsed && parsed.id && parsed.type === 'youtube_playlist') {
+            // For playlists, we'd need YouTube API to get the first video thumbnail
+            // For now, return null to use the icon fallback
+            // Future enhancement: Use YouTube Data API v3 to get playlist items and first video thumbnail
+            return null;
+        }
+    } catch (e) {
+        console.error('Failed to get playlist thumbnail', e);
+    }
+    return null;
+}
+
+// Generate skeleton loader cards
+function generatePlaylistSkeletons(count = 8) {
+    const skeleton = document.getElementById('playlist-skeleton');
+    if (!skeleton) return;
+    
+    skeleton.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const card = document.createElement('div');
+        card.className = 'bg-white/70 border border-gray-200/60 rounded-2xl p-6 sm:p-7 flex flex-col';
+        card.innerHTML = `
+            <div class="flex-grow flex flex-col justify-center items-center text-center">
+                <div class="skeleton w-20 h-20 rounded-2xl mb-4"></div>
+                <div class="skeleton w-full h-6 rounded-lg mb-2"></div>
+                <div class="skeleton w-3/4 h-4 rounded-lg mb-4"></div>
+                <div class="skeleton w-full h-10 rounded-xl mt-6"></div>
+            </div>
+        `;
+        skeleton.appendChild(card);
+    }
+    skeleton.classList.remove('hidden');
+}
+
+// Filter and sort playlists
+function filterAndSortPlaylists(playlists) {
+    let filtered = [...playlists];
+    
+    // Apply search filter
+    if (playlistSearchQuery.trim()) {
+        const query = playlistSearchQuery.toLowerCase();
+        filtered = filtered.filter(p => 
+            p.title.toLowerCase().includes(query) ||
+            (p.category && p.category.toLowerCase().includes(query))
+        );
+    }
+    
+    // Apply category filter
+    if (playlistCategoryFilter !== 'all') {
+        filtered = filtered.filter(p => 
+            p.category && p.category.toLowerCase() === playlistCategoryFilter.toLowerCase()
+        );
+    }
+    
+    // Apply sorting
+    switch (playlistSortOrder) {
+        case 'newest':
+            filtered.sort((a, b) => {
+                const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
+                const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
+                return bTime - aTime;
+            });
+            break;
+        case 'oldest':
+            filtered.sort((a, b) => {
+                const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
+                const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
+                return aTime - bTime;
+            });
+            break;
+        case 'title-asc':
+            filtered.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+        case 'title-desc':
+            filtered.sort((a, b) => b.title.localeCompare(a.title));
+            break;
+    }
+    
+    return filtered;
+}
+
+// Get paginated playlists
+function getPaginatedPlaylists(playlists) {
+    const start = (currentPlaylistPage - 1) * playlistsPerPage;
+    const end = start + playlistsPerPage;
+    return playlists.slice(start, end);
+}
+
+// Update pagination UI
+function updatePaginationUI(totalPlaylists) {
+    const pagination = document.getElementById('playlist-pagination');
+    const pageInfo = document.getElementById('playlist-page-info');
+    const prevBtn = document.getElementById('playlist-prev-btn');
+    const nextBtn = document.getElementById('playlist-next-btn');
+    
+    if (!pagination || !pageInfo) return;
+    
+    const totalPages = Math.ceil(totalPlaylists / playlistsPerPage);
+    
+    if (totalPages <= 1) {
+        pagination.classList.add('hidden');
         return;
     }
-    // Inject page-level JSON-LD for VideoGallery/ItemList
+    
+    pagination.classList.remove('hidden');
+    pageInfo.textContent = `Page ${currentPlaylistPage} of ${totalPages}`;
+    
+    if (prevBtn) {
+        prevBtn.disabled = currentPlaylistPage === 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentPlaylistPage >= totalPages;
+    }
+}
+
+// Share playlist functionality (global)
+window.sharePlaylist = function(playlistId, playlistTitle) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}#playlist-${playlistId}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: playlistTitle,
+            text: `Check out this playlist: ${playlistTitle}`,
+            url: shareUrl
+        }).catch(() => {
+            // Fallback to clipboard
+            copyToClipboard(shareUrl, playlistTitle);
+        });
+    } else {
+        copyToClipboard(shareUrl, playlistTitle);
+    }
+}
+
+function copyToClipboard(text, playlistTitle) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`Link to "${playlistTitle}" copied to clipboard!`, 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showToast(`Link to "${playlistTitle}" copied to clipboard!`, 'success');
+        } catch (e) {
+            showToast('Failed to copy link', 'error');
+        }
+        document.body.removeChild(textarea);
+    });
+}
+
+// Render a single playlist card
+function renderPlaylistCard(playlist, isRecent = false) {
+    const card = document.createElement('div');
+    card.className = `relative group bg-gradient-to-br from-white to-gray-50/80 border border-gray-200/60 backdrop-blur-lg rounded-2xl shadow-md hover:shadow-2xl p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-500 transform hover:scale-[1.03] hover:-translate-y-1 overflow-hidden ${isRecent ? 'ring-2 ring-blue-400' : ''}`;
+    card.classList.add('animate-fade-in-up');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `Open playlist: ${playlist.title}`);
+    
+    const playlistUrl = playlist.url || '';
+    const playlistId = playlist.id;
+    const thumbnailUrl = getPlaylistThumbnail(playlistUrl);
+    const parsed = parseYoutubeUrl(playlistUrl);
+    
+    // Format metadata
+    const videoCount = playlist.videoCount ? `${playlist.videoCount} videos` : '';
+    const category = playlist.category ? `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${escapeHTML(playlist.category)}</span>` : '';
+    
+    // Thumbnail or icon
+    const thumbnailHtml = thumbnailUrl ? `
+        <div class="relative mb-4 w-full aspect-video rounded-xl overflow-hidden bg-gray-200">
+            <img src="${thumbnailUrl}" alt="${escapeHTML(playlist.title)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-red-500/10\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' class=\\'h-12 w-12 text-red-600\\' fill=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path d=\\'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z\\'/></svg></div>'">
+        </div>
+    ` : `
+        <div class="relative mb-4 flex items-center justify-center">
+            <div class="absolute inset-0 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all duration-500"></div>
+            <div class="relative bg-red-500/10 group-hover:bg-red-500/20 rounded-2xl p-4 transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12 text-red-600 group-hover:text-red-700 transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+            </div>
+        </div>
+    `;
+    
+    card.innerHTML = `
+        <div class="flex-grow flex flex-col justify-center items-center text-center">
+            ${thumbnailHtml}
+            <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">${escapeHTML(playlist.title)}</h3>
+            ${category ? `<div class="mb-2">${category}</div>` : ''}
+            <div class="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                <i class="fab fa-youtube text-red-500"></i>
+                <span class="font-medium">YouTube Playlist</span>
+                ${videoCount ? `<span class="text-gray-400">•</span><span>${videoCount}</span>` : ''}
+            </div>
+        </div>
+        <div class="mt-6 pt-5 border-t border-gray-200/70 flex gap-2">
+            ${playlistUrl ? `
+            <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]" data-tooltip="Open playlist in new tab">
+                <i class="fas fa-external-link-alt"></i>
+                <span>Open</span>
+            </button>
+            <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-[1.02]" data-tooltip="Share playlist">
+                <i class="fas fa-share-alt"></i>
+            </button>
+            ` : `
+            <div class="w-full px-4 py-3 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl text-center cursor-not-allowed">
+                URL not available
+            </div>
+            `}
+        </div>
+        ${currentUser.role === 'admin' ? `
+        <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button onclick="event.stopPropagation(); editPlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="p-2 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Edit Playlist">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
+            </button>
+            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="p-2 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Delete Playlist">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+        </div>` : ''}
+    `;
+    
+    // Keyboard navigation
+    card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            card.click();
+        }
+    });
+    
+    // Click handler
+    if (playlistUrl) {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('.absolute')) {
+                return;
+            }
+            if (currentUser.tier === 'free') {
+                document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
+                document.getElementById('upgrade-modal').style.display = 'flex';
+                return;
+            }
+            addToRecentlyViewed(playlistId);
+            window.open(playlistUrl, '_blank', 'noopener,noreferrer');
+        });
+    }
+    
+    return card;
+}
+
+// Render recently viewed playlists
+function renderRecentlyViewed() {
+    const section = document.getElementById('recently-viewed-section');
+    const grid = document.getElementById('recently-viewed-grid');
+    if (!section || !grid) return;
+    
+    const recentIds = getRecentlyViewedPlaylists();
+    if (recentIds.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+    
+    const recentPlaylists = recentIds
+        .map(id => allPlaylists.find(p => p.id === id))
+        .filter(p => p !== undefined);
+    
+    if (recentPlaylists.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+    
+    section.classList.remove('hidden');
+    grid.innerHTML = '';
+    recentPlaylists.forEach(playlist => {
+        const card = renderPlaylistCard(playlist, true);
+        grid.appendChild(card);
+    });
+}
+
+// Update category filter dropdown
+function updateCategoryFilter(categories) {
+    const filter = document.getElementById('playlist-category-filter');
+    if (!filter) return;
+    
+    // Keep "All Categories" option
+    filter.innerHTML = '<option value="all">All Categories</option>';
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.toLowerCase();
+        option.textContent = category;
+        filter.appendChild(option);
+    });
+}
+
+// Main render function
+function renderVideosPage(playlists, showError = false) {
+    const grid = document.getElementById('playlist-grid');
+    const adminForm = document.getElementById('add-playlist-form-container');
+    const skeleton = document.getElementById('playlist-skeleton');
+    const errorContainer = document.getElementById('playlist-error-container');
+    const emptyState = document.getElementById('playlist-empty-state');
+    
+    if (!grid || !adminForm) return;
+    
+    // Hide skeleton
+    if (skeleton) skeleton.classList.add('hidden');
+    
+    // Show/hide error
+    if (errorContainer) {
+        if (showError) {
+            errorContainer.classList.remove('hidden');
+        } else {
+            errorContainer.classList.add('hidden');
+        }
+    }
+    
+    // Show admin form if user is admin
+    adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    
+    // Store all playlists globally
+    allPlaylists = playlists || [];
+    
+    // Extract categories
+    const categories = [...new Set(allPlaylists
+        .map(p => p.category)
+        .filter(c => c && c.trim())
+        .map(c => c.trim()))].sort();
+    updateCategoryFilter(categories);
+    
+    // Filter and sort
+    filteredPlaylists = filterAndSortPlaylists(allPlaylists);
+    
+    // Reset to page 1 when filtering
+    currentPlaylistPage = 1;
+    
+    // Get paginated results
+    const paginatedPlaylists = getPaginatedPlaylists(filteredPlaylists);
+    
+    // Update stats
+    const statsEl = document.getElementById('playlist-count-display');
+    if (statsEl) {
+        statsEl.textContent = `${filteredPlaylists.length} ${filteredPlaylists.length === 1 ? 'playlist' : 'playlists'}`;
+        document.getElementById('playlist-stats')?.classList.remove('hidden');
+    }
+    
+    // Clear grid
+    grid.innerHTML = '';
+    
+    // Show empty state if no playlists
+    if (filteredPlaylists.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        grid.classList.add('hidden');
+        updatePaginationUI(0);
+        renderRecentlyViewed();
+        return;
+    }
+    
+    if (emptyState) emptyState.classList.add('hidden');
+    grid.classList.remove('hidden');
+    
+    // Render playlists
+    paginatedPlaylists.forEach((playlist, index) => {
+        const card = renderPlaylistCard(playlist);
+        card.style.animationDelay = `${index * 50}ms`;
+        grid.appendChild(card);
+    });
+    
+    // Update pagination
+    updatePaginationUI(filteredPlaylists.length);
+    
+    // Render recently viewed
+    renderRecentlyViewed();
+    
+    // Inject JSON-LD for SEO
     try {
         const ldId = 'jsonld-videos';
         const existing = document.getElementById(ldId);
@@ -9823,7 +10253,7 @@ function renderVideosPage(playlists) {
             "@context": "https://schema.org",
             "@type": "ItemList",
             "name": "GCSEMate Video Playlists",
-            "itemListElement": (playlists||[]).map((p, idx) => ({
+            "itemListElement": filteredPlaylists.map((p, idx) => ({
                 "@type": "ListItem",
                 "position": idx+1,
                 "item": {
@@ -9839,76 +10269,134 @@ function renderVideosPage(playlists) {
         node.textContent = JSON.stringify(itemList);
         if (existing) { existing.replaceWith(node); } else { document.head.appendChild(node); }
     } catch(_){}
+}
 
-    playlists.forEach((playlist, index) => {
-        const card = document.createElement('div');
-        card.className = 'relative group bg-gradient-to-br from-white to-gray-50/80 border border-gray-200/60 backdrop-blur-lg rounded-2xl shadow-md hover:shadow-2xl p-6 sm:p-7 flex flex-col cursor-pointer transition-all duration-500 transform hover:scale-[1.03] hover:-translate-y-1 overflow-hidden';
-        card.style.animationDelay = `${index * 50}ms`;
-        card.classList.add('animate-fade-in-up');
-        const playlistUrl = playlist.url || '';
+// Setup playlist event handlers
+function setupPlaylistEventHandlers() {
+    // Search input
+    const searchInput = document.getElementById('playlist-search');
+    const searchClear = document.getElementById('playlist-search-clear');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            playlistSearchQuery = e.target.value;
+            if (searchClear) {
+                searchClear.classList.toggle('hidden', !playlistSearchQuery);
+            }
+            renderVideosPage(allPlaylists);
+        });
         
-        // Create YouTube icon with better styling
-        const youtubeIcon = `
-            <div class="relative mb-4 flex items-center justify-center">
-                <div class="absolute inset-0 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all duration-500"></div>
-                <div class="relative bg-red-500/10 group-hover:bg-red-500/20 rounded-2xl p-4 transition-all duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12 text-red-600 group-hover:text-red-700 transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                </div>
-            </div>
-        `;
-        
-        card.innerHTML = `
-            <div class="flex-grow flex flex-col justify-center items-center text-center">
-                ${youtubeIcon}
-                <h3 class="font-bold text-gray-900 text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">${playlist.title}</h3>
-                <div class="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
-                    <i class="fab fa-youtube text-red-500"></i>
-                    <span class="font-medium">YouTube Playlist</span>
-                </div>
-            </div>
-            <div class="mt-6 pt-5 border-t border-gray-200/70">
-                ${playlistUrl ? `
-                <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]" data-tooltip="Open playlist in new tab">
-                    <i class="fas fa-external-link-alt"></i>
-                    <span>Open Playlist</span>
-                </button>
-                ` : `
-                <div class="w-full px-4 py-3 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl text-center cursor-not-allowed">
-                    URL not available
-                </div>
-                `}
-            </div>
-            ${currentUser.role === 'admin' ? `
-            <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-2 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Edit Playlist">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
-                </button>
-                <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-2 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Delete Playlist">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-            </div>` : ''}
-        `;
-        
-        // Simplified click handler - just open YouTube link
-        if (playlistUrl) {
-            card.addEventListener('click', (e) => {
-                // Don't trigger if clicking on buttons or admin controls
-                if (e.target.closest('button') || e.target.closest('.absolute')) {
-                    return;
-                }
-                if (currentUser.tier === 'free') {
-                    document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
-                    document.getElementById('upgrade-modal').style.display = 'flex';
-                    return;
-                }
-                window.open(playlistUrl, '_blank', 'noopener,noreferrer');
-            });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                playlistSearchQuery = '';
+                if (searchClear) searchClear.classList.add('hidden');
+                renderVideosPage(allPlaylists);
+            }
+        });
+    }
+    
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                playlistSearchQuery = '';
+                searchClear.classList.add('hidden');
+                renderVideosPage(allPlaylists);
+            }
+        });
+    }
+    
+    // Category filter
+    const categoryFilter = document.getElementById('playlist-category-filter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+            playlistCategoryFilter = e.target.value;
+            renderVideosPage(allPlaylists);
+        });
+    }
+    
+    // Sort button
+    const sortBtn = document.getElementById('playlist-sort-btn');
+    if (sortBtn) {
+        sortBtn.addEventListener('click', () => {
+            const sortOptions = ['newest', 'oldest', 'title-asc', 'title-desc'];
+            const currentIndex = sortOptions.indexOf(playlistSortOrder);
+            playlistSortOrder = sortOptions[(currentIndex + 1) % sortOptions.length];
+            
+            const sortLabels = {
+                'newest': 'Newest',
+                'oldest': 'Oldest',
+                'title-asc': 'Title A-Z',
+                'title-desc': 'Title Z-A'
+            };
+            
+            sortBtn.innerHTML = `<i class="fas fa-sort"></i><span>${sortLabels[playlistSortOrder]}</span>`;
+            renderVideosPage(allPlaylists);
+        });
+    }
+    
+    // Pagination
+    const prevBtn = document.getElementById('playlist-prev-btn');
+    const nextBtn = document.getElementById('playlist-next-btn');
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPlaylistPage > 1) {
+                currentPlaylistPage--;
+                renderVideosPage(allPlaylists);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredPlaylists.length / playlistsPerPage);
+            if (currentPlaylistPage < totalPages) {
+                currentPlaylistPage++;
+                renderVideosPage(allPlaylists);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
+    
+    // Retry button
+    const retryBtn = document.getElementById('playlist-retry-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+            loadPlaylistsWithRetry();
+        });
+    }
+}
+
+// Load playlists with retry mechanism
+async function loadPlaylistsWithRetry() {
+    const skeleton = document.getElementById('playlist-skeleton');
+    const errorContainer = document.getElementById('playlist-error-container');
+    const errorMessage = document.getElementById('playlist-error-message');
+    
+    if (skeleton) {
+        skeleton.classList.remove('hidden');
+        generatePlaylistSkeletons(8);
+    }
+    if (errorContainer) errorContainer.classList.add('hidden');
+    
+    try {
+        const snapshot = await db.collection('videoPlaylists').orderBy('createdAt', 'desc').get();
+        const playlists = [];
+        snapshot.forEach(doc => {
+            playlists.push({ id: doc.id, ...doc.data() });
+        });
+        renderVideosPage(playlists, false);
+    } catch (error) {
+        console.error('Error loading playlists:', error);
+        if (errorMessage) {
+            errorMessage.textContent = error.message || 'An unexpected error occurred';
         }
-        
-        grid.appendChild(card);
-    });
+        if (errorContainer) errorContainer.classList.remove('hidden');
+        if (skeleton) skeleton.classList.add('hidden');
+    }
 }
 
 // =================================================================================
@@ -10037,10 +10525,13 @@ async function handleAddPlaylist() {
     const form = document.getElementById('add-playlist-form');
     const titleInput = document.getElementById('playlist-title');
     const urlInput = document.getElementById('playlist-url');
+    const categoryInput = document.getElementById('playlist-category');
     const messageEl = document.getElementById('add-playlist-message');
     
     const title = titleInput.value.trim();
     const url = urlInput.value.trim();
+    const category = categoryInput ? categoryInput.value.trim() : '';
+    
     if (!title || !url) {
         messageEl.textContent = 'Please fill in both title and URL.';
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
@@ -10055,7 +10546,9 @@ async function handleAddPlaylist() {
     try {
         const playlistData = {
             title: title,
+            url: url,
             playlistId: youtubeData.id,
+            category: category || null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         await db.collection('videoPlaylists').add(playlistData);
