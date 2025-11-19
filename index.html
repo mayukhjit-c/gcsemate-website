@@ -791,7 +791,8 @@
                     onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>
             <h2 id="form-title" class="text-center text-gray-700 mb-6 text-xl">Your Ultimate Revision Hub</h2>
-            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
+            <form id="login-form" class="space-y-4"
+                onsubmit="event.preventDefault(); if (typeof handleLogin === 'function') { handleLogin(); } else { const msgEl = document.getElementById('auth-error'); if (msgEl) { msgEl.textContent = 'System is still loading. Please wait a moment.'; msgEl.className = 'text-red-600 text-sm text-center h-4'; } }">
                 <!-- reCAPTCHA v3 runs invisibly; no widget needed -->
                 <div id="recaptcha-container" class="hidden"></div>
                 <div>
@@ -3423,22 +3424,63 @@
         // Initialize Firebase after scripts load
         function initFirebase() {
             if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
-                firebase.initializeApp(firebaseConfig);
-                window.auth = firebase.auth();
-                window.db = firebase.firestore();
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    window.auth = firebase.auth();
+                    window.db = firebase.firestore();
+                    window.firebaseInitialized = true;
+                    // Dispatch custom event to signal Firebase is ready
+                    window.dispatchEvent(new CustomEvent('firebase-ready'));
+                } catch (error) {
+                    console.error('Firebase initialization error:', error);
+                    // Retry after a delay
+                    setTimeout(initFirebase, 100);
+                }
             } else if (typeof firebase === 'undefined') {
                 // Retry if Firebase not loaded yet
                 setTimeout(initFirebase, 50);
+            } else if (firebase.apps.length > 0) {
+                // Already initialized
+                window.auth = firebase.auth();
+                window.db = firebase.firestore();
+                window.firebaseInitialized = true;
+                window.dispatchEvent(new CustomEvent('firebase-ready'));
             }
         }
 
         // Wait for DOM and Firebase scripts
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(initFirebase, 100);
+                // Wait for Firebase scripts to load, then initialize
+                let retries = 0;
+                const maxRetries = 20; // 2 seconds max wait
+                const checkFirebase = () => {
+                    if (typeof firebase !== 'undefined') {
+                        initFirebase();
+                    } else if (retries < maxRetries) {
+                        retries++;
+                        setTimeout(checkFirebase, 100);
+                    } else {
+                        console.error('Firebase scripts failed to load');
+                    }
+                };
+                checkFirebase();
             });
         } else {
-            setTimeout(initFirebase, 100);
+            // DOM already loaded
+            let retries = 0;
+            const maxRetries = 20;
+            const checkFirebase = () => {
+                if (typeof firebase !== 'undefined') {
+                    initFirebase();
+                } else if (retries < maxRetries) {
+                    retries++;
+                    setTimeout(checkFirebase, 100);
+                } else {
+                    console.error('Firebase scripts failed to load');
+                }
+            };
+            checkFirebase();
         }
     </script>
 

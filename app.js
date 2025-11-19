@@ -30,27 +30,37 @@ const isProduction = !isDevelopment;
 
 // Firebase helpers - safe access to Firebase services
 /**
- *
+ * Safely get Firestore instance, waiting for initialization if needed
  */
 function getFirestore() {
     if (window.db) {
         return window.db;
     }
-    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-        return firebase.firestore();
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+        window.db = firebase.firestore();
+        return window.db;
+    }
+    // Check if Firebase is still initializing
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
+        throw new Error('Firebase Firestore not initialized - please wait for initialization');
     }
     throw new Error('Firebase Firestore not initialized');
 }
 
 /**
- *
+ * Safely get Auth instance, waiting for initialization if needed
  */
 function getAuth() {
     if (window.auth) {
         return window.auth;
     }
-    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-        return firebase.auth();
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+        window.auth = firebase.auth();
+        return window.auth;
+    }
+    // Check if Firebase is still initializing
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
+        throw new Error('Firebase Auth not initialized - please wait for initialization');
     }
     throw new Error('Firebase Auth not initialized');
 }
@@ -6074,6 +6084,32 @@ async function handleRegister() {
  *
  */
 async function handleLogin() {
+    // Ensure RateLimiter is available
+    if (typeof RateLimiter === 'undefined') {
+        console.error('RateLimiter not available yet');
+        const messageEl = document.getElementById('auth-error');
+        if (messageEl) {
+            messageEl.textContent = 'System is still loading. Please wait a moment and try again.';
+            messageEl.className = 'text-red-600 text-sm text-center h-4';
+        }
+        return;
+    }
+
+    // Ensure Firebase is initialized
+    if (
+        !window.firebaseInitialized &&
+        typeof firebase !== 'undefined' &&
+        firebase.apps.length === 0
+    ) {
+        const messageEl = document.getElementById('auth-error');
+        if (messageEl) {
+            messageEl.textContent =
+                'Firebase is still initializing. Please wait a moment and try again.';
+            messageEl.className = 'text-red-600 text-sm text-center h-4';
+        }
+        return;
+    }
+
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
@@ -6082,26 +6118,40 @@ async function handleLogin() {
     const passwordErrorEl = document.getElementById('password-error');
 
     // Clear previous errors
-    messageEl.textContent = '';
-    emailErrorEl.textContent = '';
-    passwordErrorEl.textContent = '';
+    if (messageEl) {
+        messageEl.textContent = '';
+    }
+    if (emailErrorEl) {
+        emailErrorEl.textContent = '';
+    }
+    if (passwordErrorEl) {
+        passwordErrorEl.textContent = '';
+    }
 
     // Enhanced validation with detailed feedback
     const emailValidation = Validator.email(email);
     if (!emailValidation.valid) {
-        emailErrorEl.textContent = emailValidation.error;
+        if (emailErrorEl) {
+            emailErrorEl.textContent = emailValidation.error;
+        }
         const emailInput = document.getElementById('email');
-        emailInput.focus();
-        emailInput.classList.add('border-red-500', 'bg-red-50');
+        if (emailInput) {
+            emailInput.focus();
+            emailInput.classList.add('border-red-500', 'bg-red-50');
+        }
         return;
     }
 
     const passwordValidation = Validator.password(password, false);
     if (!passwordValidation.valid) {
-        passwordErrorEl.textContent = passwordValidation.error;
+        if (passwordErrorEl) {
+            passwordErrorEl.textContent = passwordValidation.error;
+        }
         const passwordInput = document.getElementById('password');
-        passwordInput.focus();
-        passwordInput.classList.add('border-red-500', 'bg-red-50');
+        if (passwordInput) {
+            passwordInput.focus();
+            passwordInput.classList.add('border-red-500', 'bg-red-50');
+        }
         return;
     }
 
@@ -6164,7 +6214,7 @@ async function handleLogin() {
             }
         }
 
-        const auth = firebase.auth();
+        const auth = getAuth();
         const persistence = rememberMe
             ? firebase.auth.Auth.Persistence.LOCAL
             : firebase.auth.Auth.Persistence.SESSION;
