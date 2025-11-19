@@ -5704,3 +5704,531 @@ html {
     outline: 3px solid var(--text-primary);
     outline-offset: 3px;
 }
+
+/* ============================================================================
+   DESIGN IMPROVEMENTS - All 10 Design Enhancements
+   ============================================================================ */
+
+/* 1. Enhanced Visual Hierarchy & Spacing */
+.page {
+    padding: var(--spacing-4) var(--spacing-6);
+}
+
+@media (min-width: 768px) {
+    .page {
+        padding: var(--spacing-6) var(--spacing-8);
+    }
+}
+
+/* Consistent spacing scale */
+.space-y-1 > * + * {
+    margin-top: var(--spacing-1);
+}
+.space-y-2 > * + * {
+    margin-top: var(--spacing-2);
+}
+.space-y-3 > * + * {
+    margin-top: var(--spacing-3);
+}
+.space-y-4 > * + * {
+    margin-top: var(--spacing-4);
+}
+.space-y-6 > * + * {
+    margin-top: var(--spacing-6);
+}
+.space-y-8 > * + * {
+    margin-top: var(--spacing-8);
+}
+
+/* Card elevation system (0-5 levels) */
+.card-elevation-0 {
+    box-shadow: none;
+}
+.card-elevation-1 {
+    box-shadow: var(--shadow-sm);
+}
+.card-elevation-2 {
+    box-shadow: var(--shadow-md);
+}
+.card-elevation-3 {
+    box-shadow: var(--shadow-lg);
+}
+.card-elevation-4 {
+    box-shadow: var(--shadow-xl);
+}
+.card-elevation-5 {
+    box-shadow: var(--shadow-2xl);
+}
+
+/* 2. Micro-interactions & Feedback */
+.hover-scale {
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.hover-scale:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Loading skeleton screens */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Ripple effect on button clicks */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition:
+        width 0.6s,
+        height 0.6s;
+}
+
+.ripple:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Success/Error state animations */
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-success,
+.toast-error,
+.toast-info,
+.toast-warning {
+    animation: slide-in 0.3s ease-out;
+}
+
+/* 3. Improved Color System */
+.color-hover:hover {
+    filter: brightness(1.1);
+    transition: filter 0.2s ease;
+}
+
+.color-active:active {
+    filter: brightness(0.9);
+}
+
+.color-disabled:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Gradient overlays for hero sections */
+.hero-gradient {
+    background: linear-gradient(135deg, var(--accent-600) 0%, var(--accent-700) 100%);
+}
+
+/* 4. Typography Enhancements */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Reading mode typography */
+.reading-mode {
+    max-width: 65ch;
+    line-height: 1.75;
+    font-size: 1.125rem;
+}
+
+/* 5. Card & Component Redesign */
+.card-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.card-glass:hover {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+/* Shimmer effect for loading */
+.shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* 6. Navigation & Menu Improvements */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.breadcrumb-item:not(:last-child)::after {
+    content: '/';
+    margin-left: var(--spacing-2);
+    color: var(--text-light);
+}
+
+/* Sticky navigation */
+.sticky-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Active state indicators */
+.nav-active {
+    position: relative;
+    color: var(--accent-600);
+    font-weight: 600;
+}
+
+.nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-600);
+}
+
+/* 7. Form Design Enhancements */
+.floating-label {
+    position: relative;
+}
+
+.floating-label input:focus + label,
+.floating-label input:not(:placeholder-shown) + label {
+    transform: translateY(-1.5rem) scale(0.85);
+    color: var(--accent-600);
+}
+
+.floating-label label {
+    position: absolute;
+    left: var(--spacing-3);
+    top: 50%;
+    transform: translateY(-50%);
+    transition: all 0.2s ease;
+    pointer-events: none;
+    color: var(--text-secondary);
+}
+
+/* Inline validation */
+.input-error {
+    border-color: var(--color-error);
+}
+
+.input-success {
+    border-color: var(--color-success);
+}
+
+.validation-icon {
+    position: absolute;
+    right: var(--spacing-3);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* 8. Data Visualization */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-card-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-500), var(--accent-600));
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+/* Heatmap visualization */
+.heatmap-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin: 2px;
+}
+
+.heatmap-cell[data-intensity='0'] {
+    background: #ebedf0;
+}
+.heatmap-cell[data-intensity='1'] {
+    background: #c6e48b;
+}
+.heatmap-cell[data-intensity='2'] {
+    background: #7bc96f;
+}
+.heatmap-cell[data-intensity='3'] {
+    background: #239a3b;
+}
+.heatmap-cell[data-intensity='4'] {
+    background: #196127;
+}
+
+/* 9. Empty States & Onboarding */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-12) var(--spacing-6);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--text-light);
+    margin-bottom: var(--spacing-4);
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-2);
+}
+
+.empty-state-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-6);
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--text-primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+}
+
+/* 10. Dark Mode Refinements */
+[data-theme='dark'] .card-glass {
+    background: rgba(31, 41, 55, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .skeleton {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200% 100%;
+}
+
+[data-theme='dark'] .sticky-nav {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth theme transitions */
+* {
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease;
+}
+
+/* Feature-specific styles */
+.flashcard-card {
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flashcard-flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.flashcard-back {
+    transform: rotateY(180deg);
+}
+
+/* Study planner styles */
+.goal-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-card-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
+    transition: width 0.5s ease;
+}
+
+/* Practice questions styles */
+.question-card {
+    border-left: 4px solid var(--accent-600);
+    padding-left: var(--spacing-4);
+}
+
+.answer-option {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.answer-option:hover {
+    background: var(--accent-50);
+    transform: translateX(4px);
+}
+
+.answer-option.correct {
+    background: var(--color-success-light);
+    border-color: var(--color-success);
+}
+
+.answer-option.incorrect {
+    background: var(--color-error-light);
+    border-color: var(--color-error);
+}
+
+/* Notes styles */
+.note-card {
+    transition: all 0.3s ease;
+}
+
+.note-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Study groups styles */
+.group-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.group-card:hover {
+    border-color: var(--accent-400);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Achievement badge */
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+    color: white;
+    border-radius: 9999px;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+    .page {
+        padding: var(--spacing-4);
+    }
+
+    .card-glass {
+        padding: var(--spacing-4);
+    }
+}

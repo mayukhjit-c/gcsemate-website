@@ -1005,6 +1005,46 @@
                         aria-hidden="true"></i>
                     AI Tutor
                 </a>
+                <a href="#" id="flashcards-nav"
+                    class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
+                    data-page="flashcards-page" data-tooltip="Digital flashcards with spaced repetition"
+                    aria-label="Navigate to flashcards page">
+                    <i class="fas fa-clone w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
+                        aria-hidden="true"></i>
+                    Flashcards
+                </a>
+                <a href="#" id="study-planner-nav"
+                    class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
+                    data-page="study-planner-page" data-tooltip="Plan your study schedule and set goals"
+                    aria-label="Navigate to study planner page">
+                    <i class="fas fa-calendar-check w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
+                        aria-hidden="true"></i>
+                    Study Planner
+                </a>
+                <a href="#" id="practice-questions-nav"
+                    class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
+                    data-page="practice-questions-page" data-tooltip="Practice questions and quizzes"
+                    aria-label="Navigate to practice questions page">
+                    <i class="fas fa-question-circle w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
+                        aria-hidden="true"></i>
+                    Practice
+                </a>
+                <a href="#" id="notes-nav"
+                    class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
+                    data-page="notes-page" data-tooltip="Your personal notes and annotations"
+                    aria-label="Navigate to notes page">
+                    <i class="fas fa-sticky-note w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
+                        aria-hidden="true"></i>
+                    Notes
+                </a>
+                <a href="#" id="study-groups-nav"
+                    class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
+                    data-page="study-groups-page" data-tooltip="Collaborate with study groups"
+                    aria-label="Navigate to study groups page">
+                    <i class="fas fa-users w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
+                        aria-hidden="true"></i>
+                    Study Groups
+                </a>
                 <a href="#"
                     class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
                     data-page="help-page" data-tooltip="Get help and see FAQs" aria-label="Navigate to help page">
@@ -2684,6 +2724,107 @@
                         </div>
                     </div>
                 </div>
+                <!-- Flashcards Page -->
+                <div id="flashcards-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                            Flashcards
+                        </h2>
+                        <button onclick="showCreateFlashcardDeckModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            New Deck
+                        </button>
+                    </div>
+                    <div id="flashcard-decks-grid"
+                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Flashcard decks will be rendered here -->
+                    </div>
+                    <div id="flashcard-study-area" class="hidden mt-8">
+                        <!-- Study area will be shown here -->
+                    </div>
+                </div>
+
+                <!-- Study Planner Page -->
+                <div id="study-planner-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                            Study Planner & Goals
+                        </h2>
+                        <button onclick="showCreateStudyPlanModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            New Plan
+                        </button>
+                    </div>
+                    <div id="study-planner-content" class="space-y-6">
+                        <!-- Study plans and goals will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Practice Questions Page -->
+                <div id="practice-questions-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                            Practice Questions
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="showPracticeQuestionGeneratorModal()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                                <i class="fas fa-magic"></i>
+                                Generate
+                            </button>
+                            <button onclick="startPracticeSession()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2">
+                                <i class="fas fa-play"></i>
+                                Start Session
+                            </button>
+                        </div>
+                    </div>
+                    <div id="practice-questions-content" class="space-y-6">
+                        <!-- Practice questions will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Notes Page -->
+                <div id="notes-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                            Notes & Annotations
+                        </h2>
+                        <button onclick="showCreateNoteModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            New Note
+                        </button>
+                    </div>
+                    <div id="notes-content" class="space-y-6">
+                        <!-- Notes will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Study Groups Page -->
+                <div id="study-groups-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                            Study Groups
+                        </h2>
+                        <button onclick="showCreateStudyGroupModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            Create Group
+                        </button>
+                    </div>
+                    <div id="study-groups-content" class="space-y-6">
+                        <!-- Study groups will be rendered here -->
+                    </div>
+                </div>
+
                 <div id="help-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
                     <div class="bg-white/60 border border-white/30 backdrop-blur-lg rounded-xl p-4 mb-4">
@@ -3148,6 +3289,38 @@
     <div id="event-modal"
         class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
     </div>
+
+    <!-- New Feature Modals -->
+    <div id="flashcard-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="study-plan-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="practice-question-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="note-editor-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="study-group-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="achievement-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="timetable-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="past-paper-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="voice-note-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
+    <div id="export-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]">
+    </div>
     <div id="confirmation-modal"
         class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]">
     </div>
@@ -3500,6 +3673,7 @@
 
     <!-- External JavaScript - Defer for better initial load -->
     <script defer src="app.js"></script>
+    <script defer src="app-features.js"></script>
 
     <!-- Developer Tools Enablement -->
     <script>

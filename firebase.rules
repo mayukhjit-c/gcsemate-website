@@ -362,6 +362,218 @@ service cloud.firestore {
       // Admins can write global stats
       allow write: if isAdmin();
     }
+
+    // AI Tutor Conversation History
+    match /aiTutorConversations/{uid} {
+      allow read, write: if false;
+      match /sessions/{sessionId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // FLASHCARDS SYSTEM
+    match /userFlashcards/{uid} {
+      allow read, write: if false;
+      match /decks/{deckId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+      match /cards/{cardId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // STUDY PLANNER & GOALS
+    match /userStudyPlans/{uid} {
+      allow read, write: if false;
+      match /plans/{planId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+    match /userGoals/{uid} {
+      allow read, write: if false;
+      match /goals/{goalId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // PRACTICE QUESTIONS
+    match /practiceQuestions/{questionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /userPracticeSessions/{uid} {
+      allow read, write: if false;
+      match /sessions/{sessionId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // NOTES & ANNOTATIONS (Enhanced)
+    match /userNotes/{uid} {
+      allow read, write: if false;
+      match /notes/{noteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // STUDY GROUPS & COLLABORATION
+    match /studyGroups/{groupId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() &&
+        (isAdmin() || resource.data.ownerId == request.auth.uid);
+      match /members/{memberId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+          (isAdmin() || resource.data.ownerId == request.auth.uid);
+        allow update, delete: if isSignedIn() &&
+          (isAdmin() || resource.data.ownerId == request.auth.uid || request.auth.uid == memberId);
+      }
+      match /sharedResources/{resourceId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() &&
+          (isAdmin() || resource.data.ownerId == request.auth.uid);
+      }
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() &&
+          (isAdmin() || resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    // ACHIEVEMENTS & GAMIFICATION
+    match /userAchievements/{uid} {
+      allow read, write: if false;
+      match /achievements/{achievementId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+    match /userXP/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+    }
+    match /leaderboards/{leaderboardId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // REVISION TIMETABLES
+    match /userTimetables/{uid} {
+      allow read, write: if false;
+      match /timetables/{timetableId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // PAST PAPER ANALYZER
+    match /userPastPapers/{uid} {
+      allow read, write: if false;
+      match /papers/{paperId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+      match /analyses/{analysisId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // VOICE NOTES & AUDIO
+    match /userVoiceNotes/{uid} {
+      allow read, write: if false;
+      match /notes/{noteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+    match /userAudioStudy/{uid} {
+      allow read, write: if false;
+      match /playlists/{playlistId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // EXPORTS & REPORTS
+    match /userExports/{uid} {
+      allow read, write: if false;
+      match /exports/{exportId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // ENHANCED SEARCH
+    match /userSearchHistory/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+    }
+    match /userSavedSearches/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+    }
+
+    // ENHANCED CALENDAR (Recurring Events)
+    match /userRecurringEvents/{uid} {
+      allow read, write: if false;
+      match /events/{eventId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // VIDEO PROGRESS TRACKING
+    match /userVideoProgress/{uid} {
+      allow read, write: if false;
+      match /videos/{videoId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+    match /userVideoNotes/{uid} {
+      allow read, write: if false;
+      match /notes/{noteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // BLOG ENHANCEMENTS
+    match /userBlogBookmarks/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+    }
+
+    // FILE COLLECTIONS
+    match /userFileCollections/{uid} {
+      allow read, write: if false;
+      match /collections/{collectionId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
+      }
+    }
+
+    // ADMIN ANALYTICS
+    match /adminAnalytics/{analyticsId} {
+      allow read, write: if isAdmin();
+    }
+    match /contentAnalytics/{analyticsId} {
+      allow read, write: if isAdmin();
+    }
+    match /automatedReports/{reportId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
 

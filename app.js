@@ -4052,6 +4052,15 @@ function initializeAppState() {
             );
             localStorage.setItem('notification_welcome_shown', String(Date.now()));
         }
+
+        // Initialize all new features
+        if (typeof initializeAllFeatures === 'function') {
+            setTimeout(() => {
+                initializeAllFeatures().catch(err => {
+                    logError(err, 'initializeAllFeatures');
+                });
+            }, 1000);
+        }
     }
 
     // Set up periodic subscription expiry check (every hour)
