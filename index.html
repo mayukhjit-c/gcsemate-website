@@ -3,8 +3,16 @@
 
 <head>
     <meta name="google-adsense-account" content="ca-pub-3142302168894001">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
-        crossorigin="anonymous"></script>
+    <!-- Load ads after page load for better performance -->
+    <script>
+        window.addEventListener('load', function () {
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001';
+            script.crossOrigin = 'anonymous';
+            document.head.appendChild(script);
+        });
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
@@ -60,14 +68,22 @@
 
     <link rel="icon" type="image/png" href="gcsemate favicon.png">
     <link rel="icon" type="image/png" href="https://placehold.co/32x32/3B82F6/FFFFFF?text=G" data-fallback-favicon>
-    <!-- FontAwesome Free Icons -->
+    <!-- FontAwesome Free Icons - Load after critical content -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- KaTeX for LaTeX rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
-        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </noscript>
+    <!-- KaTeX for LaTeX rendering - Defer loading -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+            integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    </noscript>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
         integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
         crossorigin="anonymous"></script>
@@ -403,8 +419,16 @@
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async
-        defer></script>
+    <!-- reCAPTCHA - Load after page load -->
+    <script>
+        window.addEventListener('load', function () {
+            const script = document.createElement('script');
+            script.src = 'https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk';
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        });
+    </script>
 
     <!-- External CSS -->
     <link rel="stylesheet" href="styles.css">
@@ -3373,13 +3397,17 @@
             </div>
         </div>
     </div>
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-    <script src="https://js.puter.com/v2/"
+    <!-- Defer non-critical scripts -->
+    <script data-cfasync="false" defer src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script defer src="https://js.puter.com/v2/"
         onerror="console.warn('Puter.js failed to load - AI fallback may not work')"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <!-- Firebase Storage removed - using Cloudinary for free image hosting (25GB free tier) -->
+
+    <!-- Firebase - Load with defer for better performance -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase initialization - Wait for scripts to load -->
     <script>
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -3392,18 +3420,30 @@
             measurementId: "G-NSRF8YLS2N"
         };
 
-        // Environment-based configuration
-        // Note: isDevelopment and isProduction are defined in app.js
+        // Initialize Firebase after scripts load
+        function initFirebase() {
+            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                firebase.initializeApp(firebaseConfig);
+                window.auth = firebase.auth();
+                window.db = firebase.firestore();
+            } else if (typeof firebase === 'undefined') {
+                // Retry if Firebase not loaded yet
+                setTimeout(initFirebase, 50);
+            }
+        }
 
-        // Enhanced error logging for production - moved to main script section
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        // Storage removed - using Cloudinary for free image hosting
+        // Wait for DOM and Firebase scripts
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(initFirebase, 100);
+            });
+        } else {
+            setTimeout(initFirebase, 100);
+        }
     </script>
-    <!-- External JavaScript -->
-    <script src="app.js"></script>
+
+    <!-- External JavaScript - Defer for better initial load -->
+    <script defer src="app.js"></script>
 
     <!-- Developer Tools Enablement -->
     <script>

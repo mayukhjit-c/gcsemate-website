@@ -28,6 +28,37 @@ const isProduction = !isDevelopment;
 // Global variable declarations (may be loaded from external scripts)
 /* global puter, renderMathInElement, gtag */
 
+// Firebase helpers - safe access to Firebase services
+/**
+ *
+ */
+function getFirestore() {
+    if (window.db) {
+        return window.db;
+    }
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        return firebase.firestore();
+    }
+    throw new Error('Firebase Firestore not initialized');
+}
+
+/**
+ *
+ */
+function getAuth() {
+    if (window.auth) {
+        return window.auth;
+    }
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        return firebase.auth();
+    }
+    throw new Error('Firebase Auth not initialized');
+}
+
+// Global db and auth references for backward compatibility
+let db;
+let auth;
+
 // Download rate limiting - 3 files per minute
 const DOWNLOAD_RATE_LIMIT = {
     maxDownloads: 3,
@@ -916,6 +947,7 @@ class WebsiteValidator {
         // Firebase Connection Test
         this.addTest('Firebase Connection', async () => {
             try {
+                const db = getFirestore();
                 await db.collection('test').limit(1).get();
                 return { passed: true, message: 'Firebase connection successful' };
             } catch (error) {
@@ -1093,6 +1125,7 @@ class HealthMonitor {
         // Firebase connection check
         this.addHealthCheck('Firebase Status', async () => {
             try {
+                const db = getFirestore();
                 await db.collection('health').limit(1).get();
                 return { healthy: true, value: 'Connected', warning: null };
             } catch (error) {
@@ -1558,29 +1591,114 @@ function safeGetElement(id) {
     return element;
 }
 
-// Safe Firebase operation wrapper
+// Enhanced Firebase operation wrapper with retry logic
 /**
- *
+ * Safely executes a Firebase operation with retry logic and comprehensive error handling
+ * @param {Function} operation - The Firebase operation to execute
+ * @param {string} context - Context description for error logging
+ * @param {object} options - Options for retry behavior
+ * @param {number} options.maxRetries - Maximum number of retries (default: 3)
+ * @param {number} options.retryDelay - Delay between retries in ms (default: 1000)
+ * @param {boolean} options.showUserError - Whether to show user-facing error (default: true)
+ * @returns {Promise<any>} - Result of the operation or null on failure
  */
-async function safeFirebaseOperation(operation, context = '') {
-    try {
-        return await operation();
-    } catch (error) {
-        logError(error, `Firebase Operation: ${context}`);
+async function safeFirebaseOperation(operation, context = '', options = {}) {
+    const { maxRetries = 3, retryDelay = 1000, showUserError = true } = options;
 
-        // Handle specific Firebase errors
-        if (error.code === 'permission-denied') {
-            showToast("You don't have permission to perform this action", 'error');
-        } else if (error.code === 'unavailable') {
-            showToast('Service temporarily unavailable. Please try again.', 'error');
-        } else if (error.code === 'deadline-exceeded') {
-            showToast('Request timed out. Please try again.', 'error');
-        } else {
-            showToast('An error occurred. Please try again.', 'error');
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const db = getFirestore();
+            if (!db) {
+                throw new Error('Firebase Firestore not initialized');
+            }
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            const errorCode = error?.code || error?.message || '';
+
+            // Don't retry on permission errors
+            if (errorCode === 'permission-denied' || errorCode.includes('permission')) {
+                logError(error, `Firebase Operation: ${context} - Permission Denied`);
+                if (showUserError) {
+                    showToast("You don't have permission to perform this action", 'error');
+                }
+                return null;
+            }
+
+            // Don't retry on invalid argument errors
+            if (errorCode === 'invalid-argument' || errorCode.includes('invalid')) {
+                logError(error, `Firebase Operation: ${context} - Invalid Argument`);
+                if (showUserError) {
+                    showToast('Invalid request. Please check your input and try again.', 'error');
+                }
+                return null;
+            }
+
+            // Retry on network/timeout errors
+            if (
+                attempt < maxRetries &&
+                (errorCode === 'unavailable' ||
+                    errorCode === 'deadline-exceeded' ||
+                    errorCode === 'aborted' ||
+                    errorCode.includes('network') ||
+                    errorCode.includes('timeout'))
+            ) {
+                const delay = retryDelay * Math.pow(2, attempt); // Exponential backoff
+                if (isDevelopment) {
+                    console.warn(
+                        `[${context}] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`
+                    );
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+
+            // Log error and show user message
+            logError(
+                error,
+                `Firebase Operation: ${context}${attempt > 0 ? ` (after ${attempt} retries)` : ''}`
+            );
+
+            if (showUserError) {
+                let userMessage = 'An error occurred. Please try again.';
+                if (errorCode === 'unavailable') {
+                    userMessage =
+                        'Service temporarily unavailable. Please check your connection and try again.';
+                } else if (errorCode === 'deadline-exceeded') {
+                    userMessage = 'Request timed out. Please try again.';
+                } else if (errorCode === 'not-found') {
+                    userMessage = 'The requested resource was not found.';
+                } else if (errorCode === 'already-exists') {
+                    userMessage = 'This item already exists.';
+                } else if (errorCode === 'resource-exhausted') {
+                    userMessage =
+                        'Service is temporarily overloaded. Please try again in a moment.';
+                } else if (errorCode === 'failed-precondition') {
+                    userMessage = 'Operation cannot be completed in the current state.';
+                } else if (errorCode === 'out-of-range') {
+                    userMessage = 'The request is out of valid range.';
+                } else if (errorCode === 'unimplemented') {
+                    userMessage = 'This feature is not yet implemented.';
+                } else if (errorCode === 'internal') {
+                    userMessage = 'An internal error occurred. Please try again later.';
+                } else if (errorCode === 'unauthenticated') {
+                    userMessage = 'Please sign in to continue.';
+                }
+                showToast(userMessage, 'error');
+            }
+
+            return null;
         }
-
-        return null;
     }
+
+    // Final fallback
+    logError(lastError, `Firebase Operation: ${context} - All retries exhausted`);
+    if (showUserError) {
+        showToast('Operation failed after multiple attempts. Please try again later.', 'error');
+    }
+    return null;
 }
 
 // User Tracking System
@@ -3395,7 +3513,14 @@ function ensureInitialView() {
         if (!anyVisible && landing) {
             landing.classList.remove('hidden');
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'ensureInitialView');
+        // Fallback: ensure landing page is visible
+        const landing = document.getElementById('landing-page');
+        if (landing) {
+            landing.classList.remove('hidden');
+        }
+    }
 }
 
 /**
@@ -3529,6 +3654,9 @@ document.addEventListener(
         // Initialize form validations
         initializeFormValidations();
 
+        // Initialize notification UI
+        initNotificationUI();
+
         // Use requestIdleCallback for better performance
         if ('requestIdleCallback' in window) {
             requestIdleCallback(
@@ -3609,192 +3737,249 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-firebase.auth().onAuthStateChanged(async user => {
-    // Detach old listeners to prevent memory leaks on re-login
-    if (unsubscribeUserManagement) {
-        unsubscribeUserManagement();
-    }
-    if (unsubscribeUsefulLinks) {
-        unsubscribeUsefulLinks();
-    }
-    if (unsubscribeVideoPlaylists) {
-        unsubscribeVideoPlaylists();
-    }
-    if (unsubscribeBlogPosts) {
-        unsubscribeBlogPosts();
-    }
-    if (unsubscribeUserEvents) {
-        unsubscribeUserEvents();
-    }
-    if (unsubscribeGlobalEvents) {
-        unsubscribeGlobalEvents();
-    }
-    if (unsubscribeAnnouncement) {
-        unsubscribeAnnouncement();
-    }
-    if (unsubscribeCurrentUserDoc) {
-        try {
-            unsubscribeCurrentUserDoc();
-        } catch (_) {}
-        unsubscribeCurrentUserDoc = null;
-    }
-    if (clockInterval) {
-        clearInterval(clockInterval);
-    }
-    if (serverTimeInterval) {
-        stopServerTimeUpdates();
-    }
-    if (user && user.emailVerified) {
-        // User is signed in AND verified.
-        try {
-            const profileDoc = await db.collection('users').doc(user.uid).get();
-            if (profileDoc.exists) {
-                currentUser = {
-                    uid: user.uid,
-                    email: user.email,
-                    emailVerified: user.emailVerified,
-                    ...profileDoc.data(),
-                };
-                initializeAppState();
-                hideAppLoading();
-                // Realtime listen to own profile for instant revoke/role changes
-                unsubscribeCurrentUserDoc = db
-                    .collection('users')
-                    .doc(user.uid)
-                    .onSnapshot(doc => {
-                        if (!doc.exists) {
-                            return;
-                        }
-                        const before = currentUser;
-                        const after = { ...before, ...doc.data() };
-                        const tierChanged = before?.tier !== after?.tier;
-                        const roleChanged = before?.role !== after?.role;
-                        currentUser = after;
-                        // Forced logout by admin
-                        try {
-                            const forceAt = after.forceLogoutAt?.toDate
-                                ? after.forceLogoutAt.toDate().getTime()
-                                : after.forceLogoutAt
-                                  ? new Date(after.forceLogoutAt).getTime()
-                                  : null;
-                            if (forceAt && (!lastForceLogoutAt || forceAt !== lastForceLogoutAt)) {
-                                lastForceLogoutAt = forceAt;
-                                handleLogout();
-                                return;
-                            }
-                        } catch (_) {}
-                        // If downgraded from paid->free or role lost, close gated views and prompt upgrade
-                        if (tierChanged && after.tier === 'free') {
-                            try {
-                                const gatedPages = [
-                                    'subject-dashboard-page',
-                                    'videos-page',
-                                    'blog-page',
-                                ];
-                                gatedPages.forEach(id => {
-                                    const el = document.getElementById(id);
-                                    if (el) {
-                                        el.classList.add('hidden');
-                                    }
-                                });
-                                const modal = document.getElementById('upgrade-modal');
-                                const msgEl = document.getElementById('upgrade-modal-message');
-                                if (msgEl) {
-                                    msgEl.textContent =
-                                        'Your access was changed. Upgrade to continue accessing premium content.';
-                                }
-                                if (modal) {
-                                    modal.style.display = 'flex';
-                                }
-                            } catch (_) {}
-                        }
-                        if (roleChanged) {
-                            // Re-render admin/user panels accordingly
-                            try {
-                                initializeAppState();
-                            } catch (_) {}
-                        }
-                        // Update AI Tutor navigation visibility
-                        updateAITutorNavVisibility();
-                    });
-            } else {
-                logError('User authenticated but no profile found in Firestore.', 'Auth');
-                await handleLogout();
-                hideAppLoading();
+// Wait for Firebase to be ready before setting up auth listener
+/**
+ *
+ */
+function initAuthListener() {
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        firebase.auth().onAuthStateChanged(async user => {
+            // Detach old listeners to prevent memory leaks on re-login
+            if (unsubscribeUserManagement) {
+                unsubscribeUserManagement();
             }
-        } catch (error) {
-            logError(error, 'User Profile Fetch');
-            showErrorPage(
-                'Login Error',
-                'Could not fetch your user profile. Please try again later.'
-            );
-            await handleLogout();
-            hideAppLoading();
-        }
-    } else if (user && !user.emailVerified) {
-        cleanupUserDataSync();
-        // User is signed in but NOT verified.
-        logError('User is not verified.', 'Auth');
-        showVerificationMessagePage(user.email);
-        hideAppLoading();
-    } else {
-        cleanupUserDataSync();
-        // User is signed out.
-        currentUser = null;
-        const mainApp = document.getElementById('main-app');
-        if (mainApp) {
-            mainApp.classList.add('hidden');
-            mainApp.style.display = 'none'; // ensure inline display doesn't override hidden
-        }
-        const loginPage = document.getElementById('login-page');
-        const verifyPage = document.getElementById('email-verify-page');
-        if (loginPage) {
-            loginPage.classList.add('hidden');
-        }
-        if (verifyPage) {
-            verifyPage.classList.add('hidden');
-        }
-        // Close any open modals and mobile menu
-        [
-            'mobile-menu',
-            'preview-modal',
-            'playlist-viewer-modal',
-            'blog-viewer-modal',
-            'dmca-modal',
-            'legal-modal',
-            'edit-user-modal',
-            'event-modal',
-            'confirmation-modal',
-            'upgrade-modal',
-        ].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.style.display = 'none';
-                if (!el.classList.contains('hidden')) {
-                    el.classList.add('hidden');
+            if (unsubscribeUsefulLinks) {
+                unsubscribeUsefulLinks();
+            }
+            if (unsubscribeVideoPlaylists) {
+                unsubscribeVideoPlaylists();
+            }
+            if (unsubscribeBlogPosts) {
+                unsubscribeBlogPosts();
+            }
+            if (unsubscribeUserEvents) {
+                unsubscribeUserEvents();
+            }
+            if (unsubscribeGlobalEvents) {
+                unsubscribeGlobalEvents();
+            }
+            if (unsubscribeAnnouncement) {
+                unsubscribeAnnouncement();
+            }
+            if (unsubscribeCurrentUserDoc) {
+                try {
+                    unsubscribeCurrentUserDoc();
+                } catch (error) {
+                    logError(error, 'Cleanup: unsubscribeCurrentUserDoc');
                 }
-                el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML;
+                unsubscribeCurrentUserDoc = null;
+            }
+            if (clockInterval) {
+                clearInterval(clockInterval);
+            }
+            if (serverTimeInterval) {
+                stopServerTimeUpdates();
+            }
+            if (user && user.emailVerified) {
+                // User is signed in AND verified.
+                try {
+                    const profileDoc = await db.collection('users').doc(user.uid).get();
+                    if (profileDoc.exists) {
+                        currentUser = {
+                            uid: user.uid,
+                            email: user.email,
+                            emailVerified: user.emailVerified,
+                            ...profileDoc.data(),
+                        };
+                        initializeAppState();
+                        hideAppLoading();
+                        // Realtime listen to own profile for instant revoke/role changes
+                        unsubscribeCurrentUserDoc = db
+                            .collection('users')
+                            .doc(user.uid)
+                            .onSnapshot(doc => {
+                                if (!doc.exists) {
+                                    return;
+                                }
+                                const before = currentUser;
+                                const after = { ...before, ...doc.data() };
+                                const tierChanged = before?.tier !== after?.tier;
+                                const roleChanged = before?.role !== after?.role;
+                                currentUser = after;
+                                // Forced logout by admin
+                                try {
+                                    const forceAt = after.forceLogoutAt?.toDate
+                                        ? after.forceLogoutAt.toDate().getTime()
+                                        : after.forceLogoutAt
+                                          ? new Date(after.forceLogoutAt).getTime()
+                                          : null;
+                                    if (
+                                        forceAt &&
+                                        (!lastForceLogoutAt || forceAt !== lastForceLogoutAt)
+                                    ) {
+                                        lastForceLogoutAt = forceAt;
+                                        handleLogout();
+                                        return;
+                                    }
+                                } catch (error) {
+                                    logError(error, 'User Profile: Force Logout Timestamp Check');
+                                }
+                                // If downgraded from paid->free or role lost, close gated views and prompt upgrade
+                                if (tierChanged && after.tier === 'free') {
+                                    try {
+                                        const gatedPages = [
+                                            'subject-dashboard-page',
+                                            'videos-page',
+                                            'blog-page',
+                                        ];
+                                        gatedPages.forEach(id => {
+                                            const el = document.getElementById(id);
+                                            if (el) {
+                                                el.classList.add('hidden');
+                                            }
+                                        });
+                                        const modal = document.getElementById('upgrade-modal');
+                                        const msgEl =
+                                            document.getElementById('upgrade-modal-message');
+                                        if (msgEl) {
+                                            msgEl.textContent =
+                                                'Your access was changed. Upgrade to continue accessing premium content.';
+                                        }
+                                        if (modal) {
+                                            modal.style.display = 'flex';
+                                        }
+                                    } catch (error) {
+                                        logError(error, 'User Profile: Force Logout Check');
+                                    }
+                                }
+                                if (roleChanged) {
+                                    // Re-render admin/user panels accordingly
+                                    try {
+                                        initializeAppState();
+                                    } catch (error) {
+                                        logError(
+                                            error,
+                                            'User Profile: Role Change Re-initialization'
+                                        );
+                                        showToast(
+                                            'Failed to update interface. Please refresh the page.',
+                                            'error'
+                                        );
+                                    }
+                                }
+                                // Update AI Tutor navigation visibility
+                                updateAITutorNavVisibility();
+                            });
+                    } else {
+                        logError('User authenticated but no profile found in Firestore.', 'Auth');
+                        await handleLogout();
+                        hideAppLoading();
+                    }
+                } catch (error) {
+                    logError(error, 'User Profile Fetch');
+                    showErrorPage(
+                        'Login Error',
+                        'Could not fetch your user profile. Please try again later.'
+                    );
+                    await handleLogout();
+                    hideAppLoading();
+                }
+            } else if (user && !user.emailVerified) {
+                cleanupUserDataSync();
+                // User is signed in but NOT verified.
+                logError('User is not verified.', 'Auth');
+                showVerificationMessagePage(user.email);
+                hideAppLoading();
+            } else {
+                cleanupUserDataSync();
+                // User is signed out.
+                currentUser = null;
+                const mainApp = document.getElementById('main-app');
+                if (mainApp) {
+                    mainApp.classList.add('hidden');
+                    mainApp.style.display = 'none'; // ensure inline display doesn't override hidden
+                }
+                const loginPage = document.getElementById('login-page');
+                const verifyPage = document.getElementById('email-verify-page');
+                if (loginPage) {
+                    loginPage.classList.add('hidden');
+                }
+                if (verifyPage) {
+                    verifyPage.classList.add('hidden');
+                }
+                // Close any open modals and mobile menu
+                [
+                    'mobile-menu',
+                    'preview-modal',
+                    'playlist-viewer-modal',
+                    'blog-viewer-modal',
+                    'dmca-modal',
+                    'legal-modal',
+                    'edit-user-modal',
+                    'event-modal',
+                    'confirmation-modal',
+                    'upgrade-modal',
+                ].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = 'none';
+                        if (!el.classList.contains('hidden')) {
+                            el.classList.add('hidden');
+                        }
+                        el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML;
+                    }
+                });
+                if (typeof unsubscribeBlogComments === 'function') {
+                    try {
+                        unsubscribeBlogComments();
+                    } catch (error) {
+                        logError(error, 'Cleanup: unsubscribeBlogComments');
+                    }
+                    unsubscribeBlogComments = null;
+                }
+                const landingPage = document.getElementById('landing-page');
+                if (landingPage) {
+                    landingPage.classList.remove('hidden');
+                    landingPage.classList.add('fade-in');
+                }
+                hideAppLoading();
             }
         });
-        if (typeof unsubscribeBlogComments === 'function') {
-            try {
-                unsubscribeBlogComments();
-            } catch (_) {}
-            unsubscribeBlogComments = null;
-        }
-        const landingPage = document.getElementById('landing-page');
-        if (landingPage) {
-            landingPage.classList.remove('hidden');
-            landingPage.classList.add('fade-in');
-        }
-        hideAppLoading();
+    } else {
+        // Retry if Firebase not ready yet
+        setTimeout(initAuthListener, 50);
     }
-});
+}
+
+// Initialize Firebase references and auth listener when ready
+/**
+ *
+ */
+function initFirebaseServices() {
+    try {
+        db = getFirestore();
+        auth = getAuth();
+        initAuthListener();
+    } catch (e) {
+        // Retry if Firebase not ready yet
+        setTimeout(initFirebaseServices, 50);
+    }
+}
+
+// Wait for DOM and Firebase to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initFirebaseServices, 100);
+    });
+} else {
+    setTimeout(initFirebaseServices, 100);
+}
 
 /**
  *
  */
 function initializeAppState() {
+    const db = getFirestore();
     // Check maintenance mode first (non-admin only), and subscribe to changes
     if (!unsubscribeMaintenance) {
         unsubscribeMaintenance = db
@@ -3846,6 +4031,17 @@ function initializeAppState() {
 
         // Check subscription expiry on login
         checkSubscriptionExpiry();
+
+        // Show welcome notification for new users
+        const lastWelcome = localStorage.getItem('notification_welcome_shown');
+        if (!lastWelcome || Date.now() - parseInt(lastWelcome) > 86400000) {
+            NotificationSystem.show(
+                'Welcome to GCSEMate!',
+                'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
+                'info'
+            );
+            localStorage.setItem('notification_welcome_shown', String(Date.now()));
+        }
     }
 
     // Set up periodic subscription expiry check (every hour)
@@ -3858,7 +4054,10 @@ function initializeAppState() {
         if (currentUser && !localStorage.getItem('gcsemate_tutorial_shown')) {
             showFirstTimeTutorial();
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'initializeAppState: First-time tutorial');
+        // Non-critical, continue execution
+    }
 
     // What's New banner (versioned, returning users only)
     try {
@@ -3873,7 +4072,10 @@ function initializeAppState() {
                 }
             );
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, "initializeAppState: What's New banner");
+        // Non-critical, continue execution
+    }
 
     // Restore accent from localStorage
     try {
@@ -3881,7 +4083,10 @@ function initializeAppState() {
         if (saved) {
             applyAccent(JSON.parse(saved));
         }
-    } catch (e) {}
+    } catch (error) {
+        logError(error, 'initializeAppState: Accent color restore');
+        // Non-critical, continue execution
+    }
 
     // Update AI Tutor navigation visibility
     updateAITutorNavVisibility();
@@ -5360,7 +5565,10 @@ function setupRealtimeListeners() {
                 }
             };
         });
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'setupRealtimeListeners: User management listener');
+        // Continue with other listeners
+    }
     // Admin listeners
     if (currentUser.role === 'admin') {
         document.getElementById('admin-panel').classList.remove('hidden');
@@ -6398,6 +6606,21 @@ function checkUserSubscriptionWarning(user) {
 
     if (warningDays.includes(daysUntilExpiry) && daysUntilExpiry !== lastWarningShown) {
         showSubscriptionRenewalOffer(daysUntilExpiry, expiryDate);
+
+        // Show notification
+        if (daysUntilExpiry === 0) {
+            NotificationSystem.show(
+                'Subscription Expired',
+                'Your subscription has expired. Renew now to continue enjoying premium features.',
+                'error'
+            );
+        } else {
+            NotificationSystem.show(
+                'Subscription Expiring Soon',
+                `Your subscription expires in ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'day' : 'days'}. Renew now to avoid interruption.`,
+                'warning'
+            );
+        }
 
         // Mark warning as shown
         db.collection('users')
@@ -7619,10 +7842,11 @@ async function bulkSendReset() {
             continue;
         }
         try {
-            const auth = firebase.auth();
+            const auth = getAuth();
             await auth.sendPasswordResetEmail(u.email);
             ok++;
-        } catch (_) {
+        } catch (error) {
+            logError(error, `Bulk Password Reset: ${u.email}`);
             fail++;
         }
         await new Promise(r => setTimeout(r, 200));
@@ -10887,7 +11111,10 @@ function showPage(pageId) {
         if (pageTitles[pageId]) {
             document.title = pageTitles[pageId];
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'showPage: Document title update');
+        // Non-critical, continue execution
+    }
     // Lessons removed
     // Close mobile menu on navigation
     const mobileMenu = document.getElementById('mobile-menu');
@@ -11413,7 +11640,12 @@ function timeAgo(date) {
             return rtf.format(-Math.floor(seconds / 2592000), 'month');
         }
         return rtf.format(-Math.floor(seconds / 31536000), 'year');
-    } catch (_) {
+    } catch (error) {
+        // Intl.RelativeTimeFormat may not be supported in all browsers
+        // Fallback to standard date formatting
+        if (isDevelopment) {
+            console.debug('RelativeTimeFormat not supported, using fallback:', error.message);
+        }
         return formatDateUK(date);
     }
 }
@@ -12340,7 +12572,10 @@ function renderVideosPage(playlists, showError = false) {
         } else {
             document.head.appendChild(node);
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'renderStructuredData: JSON-LD injection');
+        // Non-critical, continue execution
+    }
 }
 
 // Setup playlist event handlers
@@ -14027,7 +14262,10 @@ async function onMonthDrop(ev, newDateKey) {
         await rescheduleEvent(payload.eventId, newDateKey);
         renderCalendar(calendarUserEvents, calendarGlobalEvents);
         showToast('Event rescheduled', 'success');
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'onMonthDrop: Event reschedule');
+        showToast('Failed to reschedule event. Please try again.', 'error');
+    }
 }
 /**
  *
@@ -14045,7 +14283,10 @@ async function onAgendaDrop(ev, eventId) {
         await rescheduleEvent(eventId || payload.eventId, newKey);
         renderCalendar(calendarUserEvents, calendarGlobalEvents);
         showToast('Event rescheduled', 'success');
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'onAgendaDrop: Event reschedule');
+        showToast('Failed to reschedule event. Please try again.', 'error');
+    }
 }
 /**
  *
@@ -14194,9 +14435,15 @@ function renderBlogPage(posts) {
                         20 + i * 15
                     );
                 }
-            } catch (_) {}
+            } catch (error) {
+                logError(error, 'renderBlogPosts: Comment badge animation');
+                // Non-critical, continue execution
+            }
         });
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'renderBlogPosts: Main render');
+        showToast('Failed to render blog posts. Please refresh the page.', 'error');
+    }
     initializeTooltips();
 }
 
@@ -14313,7 +14560,13 @@ function updateToolbarState() {
         let isActive = false;
         try {
             isActive = document.queryCommandState(cmd);
-        } catch (_) {}
+        } catch (error) {
+            // queryCommandState may not be supported for all commands
+            // This is expected behavior, not an error
+            if (isDevelopment) {
+                console.debug(`queryCommandState not supported for: ${cmd}`);
+            }
+        }
         btn.classList.toggle('bg-blue-100', isActive);
         btn.classList.toggle('border-blue-500', isActive);
     });
@@ -15840,7 +16093,9 @@ function handleCloseBlogViewer() {
     if (unsubscribeBlogComments) {
         try {
             unsubscribeBlogComments();
-        } catch (_) {}
+        } catch (error) {
+            logError(error, 'closeBlogViewerModal: unsubscribeBlogComments');
+        }
         unsubscribeBlogComments = null;
     }
 }
@@ -15904,7 +16159,9 @@ function showBlogPostViewer(postId) {
     if (unsubscribeBlogComments) {
         try {
             unsubscribeBlogComments();
-        } catch (_) {}
+        } catch (error) {
+            logError(error, 'setupBlogViewer: unsubscribeBlogComments cleanup');
+        }
     }
     unsubscribeBlogComments = db
         .collection('blogPosts')
@@ -16083,12 +16340,20 @@ async function logClientAccess() {
         const getTraceText = async () => {
             try {
                 return await fetch('/cdn-cgi/trace', { cache: 'no-store' }).then(r => r.text());
-            } catch (_) {}
+            } catch (error) {
+                if (isDevelopment) {
+                    console.debug('Local trace endpoint not available:', error.message);
+                }
+            }
             try {
                 return await fetch('https://www.cloudflare.com/cdn-cgi/trace', {
                     cache: 'no-store',
                 }).then(r => r.text());
-            } catch (_) {}
+            } catch (error) {
+                if (isDevelopment) {
+                    console.debug('Cloudflare trace endpoint not available:', error.message);
+                }
+            }
             return '';
         };
         const txt = await getTraceText();
@@ -16125,10 +16390,17 @@ async function logClientAccess() {
             accessedAt: new Date().toISOString(),
         };
         try {
+            const db = getFirestore();
             await db.collection('accessLogs').add(payload);
-        } catch (_) {}
+        } catch (error) {
+            // Non-critical logging, don't show user error
+            if (isDevelopment) {
+                logError(error, 'logClientAccess: accessLogs');
+            }
+        }
         try {
             if (currentUser?.uid) {
+                const db = getFirestore();
                 await db
                     .collection('users')
                     .doc(currentUser.uid)
@@ -16137,7 +16409,12 @@ async function logClientAccess() {
                         { merge: true }
                     );
             }
-        } catch (_) {}
+        } catch (error) {
+            // Non-critical logging, don't show user error
+            if (isDevelopment) {
+                logError(error, 'logClientAccess: user lastAccess update');
+            }
+        }
     } catch (e) {
         console.warn('Access log failed', e);
     }
@@ -17156,7 +17433,10 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             io.observe(body);
         }
-    } catch (_) {}
+    } catch (error) {
+        logError(error, 'initLazyLoading: IntersectionObserver setup');
+        // Non-critical, continue execution
+    }
 
     // Setup nav links
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -17581,18 +17861,36 @@ window.addEventListener('error', e => {
 
     try {
         showToast('An unexpected error occurred. Please refresh the page.', 'error');
-    } catch (_) {
+    } catch (toastError) {
         // Fallback if toast system is not available
-        console.error('Error showing toast:', _);
+        console.error('Error showing toast:', toastError);
+        // Try to show alert as last resort
+        try {
+            alert('An unexpected error occurred. Please refresh the page.');
+        } catch (alertError) {
+            // Even alert failed, log to console only
+            console.error('Critical error - all error display methods failed:', alertError);
+        }
     }
 });
 
 window.addEventListener('unhandledrejection', e => {
-    console.error('Unhandled promise rejection:', e.reason);
+    const error = e.reason;
+    logError(
+        error instanceof Error ? error : new Error(String(error)),
+        'Unhandled Promise Rejection'
+    );
+    console.error('Unhandled promise rejection:', error);
     try {
         showToast('Something went wrong. Please try again.', 'error');
-    } catch (_) {
-        console.error('Error showing toast:', _);
+    } catch (toastError) {
+        console.error('Error showing toast:', toastError);
+        // Try alert as fallback
+        try {
+            alert('Something went wrong. Please try again.');
+        } catch (alertError) {
+            console.error('All error display methods failed:', alertError);
+        }
     }
 });
 
@@ -18995,6 +19293,11 @@ async function saveExamResults() {
         updateAllAPS();
 
         showToast('Exam results saved successfully!', 'success');
+        NotificationSystem.show(
+            'Exam results saved',
+            'Your exam grades have been saved successfully. View them anytime in your account settings.',
+            'success'
+        );
 
         if (saveButton) {
             saveButton.disabled = false;
@@ -19473,7 +19776,12 @@ const SearchPreferenceStore = {
     persistHistory(history) {
         try {
             localStorage.setItem('searchHistory', JSON.stringify(history));
-        } catch (_) {}
+        } catch (error) {
+            // localStorage may fail in private browsing mode
+            if (isDevelopment) {
+                logError(error, 'SearchPreferenceStore: persistHistory localStorage');
+            }
+        }
         if (!currentUser || !db) {
             return;
         }
@@ -19492,7 +19800,12 @@ const SearchPreferenceStore = {
     persistSavedSearches(savedSearches) {
         try {
             localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
-        } catch (_) {}
+        } catch (error) {
+            // localStorage may fail in private browsing mode
+            if (isDevelopment) {
+                logError(error, 'SearchPreferenceStore: persistSavedSearches localStorage');
+            }
+        }
         if (!currentUser || !db) {
             return;
         }
@@ -19629,12 +19942,20 @@ const AdvancedSearch = {
     load() {
         try {
             this.history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-        } catch (_) {
+        } catch (error) {
+            // localStorage may fail or contain invalid data
+            if (isDevelopment) {
+                logError(error, 'AdvancedSearch: load history');
+            }
             this.history = [];
         }
         try {
             this.savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
-        } catch (_) {
+        } catch (error) {
+            // localStorage may fail or contain invalid data
+            if (isDevelopment) {
+                logError(error, 'AdvancedSearch: load savedSearches');
+            }
             this.savedSearches = [];
         }
     },
@@ -20197,8 +20518,9 @@ function initOfflineDetection() {
                     mode: 'no-cors',
                 });
                 showToast('Connection check complete. Reloading data.', 'info');
-            } catch (_) {
-                showToast('Still offline. We’ll keep retrying.', 'error');
+            } catch (error) {
+                logError(error, 'checkConnection: Connection test');
+                showToast('Still offline. We will keep retrying.', 'error');
             } finally {
                 retryButton.disabled = false;
                 retryButton.textContent = 'Retry connection';
@@ -20361,8 +20683,14 @@ const NotificationSystem = {
         const unreadCount = this.notifications.filter(n => !n.read).length;
         const badge = document.getElementById('notification-badge');
         if (badge) {
-            badge.textContent = unreadCount > 0 ? unreadCount : '';
-            badge.style.display = unreadCount > 0 ? 'block' : 'none';
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+                badge.style.display = 'block';
+            } else {
+                badge.classList.add('hidden');
+                badge.style.display = 'none';
+            }
         }
 
         const list = document.getElementById('notification-list');
@@ -20371,7 +20699,7 @@ const NotificationSystem = {
         }
 
         if (!this.notifications.length) {
-            list.innerHTML = `<p class="px-4 py-6 text-sm text-gray-500 text-center">You're all caught up! We'll log new events that follow <span class="font-semibold">laravel-boost.mdc</span>.</p>`;
+            list.innerHTML = `<p class="px-4 py-6 text-sm text-gray-500 text-center">You're all caught up! We'll notify you about important updates.</p>`;
             return;
         }
 
@@ -20384,19 +20712,43 @@ const NotificationSystem = {
                     info: 'fa-info-circle text-blue-500',
                 };
                 const iconClass = iconMap[notification.type] || iconMap.info;
-                const readClasses = notification.read ? 'opacity-60' : '';
+                const readClasses = notification.read ? 'opacity-60 bg-gray-50' : 'bg-white';
                 const timestamp = timestampToDate(notification.timestamp) || new Date();
-                return `<article class="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${readClasses}">
-                <i class="fas ${iconClass} mt-0.5" aria-hidden="true"></i>
-                <div class="flex-1">
+                const timeAgo = this.getTimeAgo(timestamp);
+                return `<article class="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${readClasses} border-b border-gray-100">
+                <i class="fas ${iconClass} mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+                <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-gray-800">${escapeHTML(notification.title)}</p>
                     <p class="text-xs text-gray-600 mt-0.5">${escapeHTML(notification.message)}</p>
-                    <p class="text-[11px] text-gray-400 mt-1">${timestamp.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">${timeAgo}</p>
                 </div>
-                <button class="text-xs text-blue-600 hover:text-blue-800" data-mark-read="${notification.id}" type="button">Mark read</button>
+                ${!notification.read ? `<button class="text-xs text-blue-600 hover:text-blue-800 font-semibold flex-shrink-0" data-mark-read="${notification.id}" type="button">Mark read</button>` : '<span class="text-xs text-gray-400 flex-shrink-0">Read</span>'}
             </article>`;
             })
             .join('');
+    },
+
+    getTimeAgo(date) {
+        if (!date || !(date instanceof Date)) {
+            return 'Just now';
+        }
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) {
+            return 'Just now';
+        } else if (diffMins < 60) {
+            return `${diffMins}m ago`;
+        } else if (diffHours < 24) {
+            return `${diffHours}h ago`;
+        } else if (diffDays < 7) {
+            return `${diffDays}d ago`;
+        } else {
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        }
     },
 
     markAsRead(id) {
@@ -20443,8 +20795,12 @@ const NotificationSystem = {
                     timestampToDate(notification.timestamp || new Date())?.getTime() || Date.now(),
             }));
             localStorage.setItem('notifications', JSON.stringify(payload));
-        } catch (_) {
-            // ignore
+        } catch (error) {
+            // localStorage may fail in private browsing mode
+            if (isDevelopment) {
+                logError(error, 'NotificationSystem: save localStorage');
+            }
+            // Non-critical, continue execution
         }
     },
 
@@ -20456,16 +20812,32 @@ const NotificationSystem = {
                 timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
             }));
             this.render();
-        } catch (_) {
+        } catch (error) {
+            // localStorage may fail or contain invalid data
+            logError(error, 'NotificationSystem: load localStorage');
             this.notifications = [];
         }
     },
 
     hydrateFromServer(serverNotifications = []) {
-        this.notifications = serverNotifications.map(item => ({
-            ...item,
-            timestamp: item.timestamp || item.createdAt || new Date(),
-        }));
+        // Merge server notifications with local ones, avoiding duplicates
+        const serverIds = new Set(serverNotifications.map(n => String(n.id)));
+        const localOnly = this.notifications.filter(n => !serverIds.has(String(n.id)));
+
+        this.notifications = [
+            ...serverNotifications.map(item => ({
+                ...item,
+                timestamp: timestampToDate(item.timestamp || item.createdAt) || new Date(),
+            })),
+            ...localOnly,
+        ]
+            .sort((a, b) => {
+                const timeA = timestampToDate(a.timestamp) || new Date(0);
+                const timeB = timestampToDate(b.timestamp) || new Date(0);
+                return timeB - timeA;
+            })
+            .slice(0, 50);
+
         this.render();
         this.save();
     },

@@ -194,10 +194,19 @@ service cloud.firestore {
       allow read, write: if false;
       match /items/{notificationId} {
         allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+        // Users can create their own notifications
         allow create: if isSignedIn() &&
           request.auth.uid == uid &&
           allowedNotificationKeys(request.resource.data) &&
           request.resource.data.userId == request.auth.uid &&
+          request.resource.data.title is string &&
+          request.resource.data.message is string &&
+          request.resource.data.type is string &&
+          request.resource.data.read is bool;
+        // Admins can create notifications for any user
+        allow create: if isAdmin() &&
+          allowedNotificationKeys(request.resource.data) &&
+          request.resource.data.userId == uid &&
           request.resource.data.title is string &&
           request.resource.data.message is string &&
           request.resource.data.type is string &&
