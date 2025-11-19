@@ -30,6 +30,7 @@ const FlashcardSystem = {
 
         try {
             const db = getFirestore();
+            // Use correct Firebase structure based on rules
             const decksSnapshot = await db
                 .collection('userFlashcards')
                 .doc(currentUser.uid)
@@ -201,7 +202,7 @@ const FlashcardSystem = {
                         class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold">
                         <i class="fas fa-play mr-1"></i> Study
                     </button>
-                    <button onclick="event.stopPropagation(); FlashcardSystem.editDeck('${deck.id}')"
+                    <button onclick="event.stopPropagation(); FlashcardSystem.openDeck('${deck.id}')"
                         class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -653,7 +654,7 @@ const PracticeQuestions = {
     /**
      * Generate practice questions
      */
-    async generateQuestions(subject, topic, difficulty, count) {
+    async generateQuestions(subject, topic, count = 5, difficulty = 'medium') {
         if (!currentUser || !currentUser.uid) {
             showToast('You must be logged in', 'error');
             return;
@@ -769,8 +770,118 @@ const PracticeQuestions = {
      * Render practice session
      */
     renderSession() {
-        // Implementation for interactive practice session
-        showToast('Practice session started', 'success');
+        const content = document.getElementById('practice-questions-content');
+        if (!content || !this.currentSession) return;
+
+        const currentQuestionIndex = this.currentSession.answers.length;
+        const currentQuestion = this.currentSession.questions[currentQuestionIndex];
+
+        if (!currentQuestion) {
+            // Session complete
+            const score = this.currentSession.answers.filter(a => a.isCorrect).length;
+            const total = this.currentSession.questions.length;
+            content.innerHTML = `
+                <div class="bg-white/70 dark:bg-gray-800 backdrop-blur-lg rounded-xl p-6 shadow-lg text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Session Complete!</h3>
+                    <p class="text-lg text-gray-700 dark:text-gray-300 mb-2">Score: ${score} / ${total}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">${Math.round((score / total) * 100)}%</p>
+                    <button onclick="PracticeQuestions.resetSession()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Start New Session
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        content.innerHTML = `
+            <div class="bg-white/70 dark:bg-gray-800 backdrop-blur-lg rounded-xl p-6 shadow-lg">
+                <div class="mb-4 flex justify-between items-center">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                        Question ${currentQuestionIndex + 1} of ${this.currentSession.questions.length}
+                    </span>
+                    <button onclick="PracticeQuestions.endSession()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">${escapeHtml(currentQuestion.question || '')}</h3>
+                    <div class="space-y-2">
+                        ${(currentQuestion.options || []).map((option, idx) => `
+                            <button onclick="PracticeQuestions.answerQuestion(${idx})"
+                                class="w-full text-left p-4 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                                ${escapeHtml(option)}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Answer question
+     */
+    async answerQuestion(answerIndex) {
+        if (!this.currentSession) return;
+
+        const currentQuestionIndex = this.currentSession.answers.length;
+        const currentQuestion = this.currentSession.questions[currentQuestionIndex];
+        const isCorrect = answerIndex === currentQuestion.correctAnswer;
+
+        this.currentSession.answers.push({
+            questionId: currentQuestion.id,
+            answerIndex,
+            isCorrect,
+        });
+
+        if (isCorrect) {
+            this.currentSession.score++;
+        }
+
+        // Show feedback
+        showToast(isCorrect ? 'Correct!' : 'Incorrect', isCorrect ? 'success' : 'error');
+
+        // Move to next question after a brief delay
+        setTimeout(() => {
+            this.renderSession();
+        }, 1000);
+    },
+
+    /**
+     * End session
+     */
+    async endSession() {
+        if (!this.currentSession) return;
+
+        if (confirm('Are you sure you want to end this session?')) {
+            try {
+                const db = getFirestore();
+                await db
+                    .collection('userPracticeSessions')
+                    .doc(currentUser.uid)
+                    .collection('sessions')
+                    .doc(this.currentSession.id)
+                    .update({
+                        endTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'completed',
+                        score: this.currentSession.score,
+                        totalQuestions: this.currentSession.questions.length,
+                    });
+
+                this.currentSession = null;
+                this.renderQuestions();
+            } catch (error) {
+                logError(error, 'PracticeQuestions.endSession');
+            }
+        }
+    },
+
+    /**
+     * Reset session
+     */
+    resetSession() {
+        this.currentSession = null;
+        this.renderQuestions();
     },
 };
 
@@ -778,7 +889,80 @@ const PracticeQuestions = {
  * Show practice question generator modal
  */
 function showPracticeQuestionGeneratorModal() {
-    showToast('Question generator coming soon', 'info');
+    const modal = document.getElementById('practice-generator-modal') || createPracticeGeneratorModal();
+    modal.style.display = 'flex';
+}
+
+/**
+ * Create practice question generator modal
+ */
+function createPracticeGeneratorModal() {
+    const modal = document.createElement('div');
+    modal.id = 'practice-generator-modal';
+    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Generate Practice Questions</h3>
+            </div>
+            <form id="practice-generator-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); handleGenerateQuestions();">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject</label>
+                    <input type="text" id="practice-subject" required placeholder="e.g. Biology, Chemistry"
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Topic</label>
+                    <input type="text" id="practice-topic" required placeholder="e.g. Cell Structure, Atomic Structure"
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Number of Questions</label>
+                    <input type="number" id="practice-count" min="1" max="20" value="5" required
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Difficulty</label>
+                    <select id="practice-difficulty" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('practice-generator-modal').style.display='none'"
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
+                        Generate Questions
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+/**
+ * Handle generate questions
+ */
+async function handleGenerateQuestions() {
+    const subject = document.getElementById('practice-subject').value.trim();
+    const topic = document.getElementById('practice-topic').value.trim();
+    const count = parseInt(document.getElementById('practice-count').value) || 5;
+    const difficulty = document.getElementById('practice-difficulty').value;
+
+    if (!subject || !topic) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    await PracticeQuestions.generateQuestions(subject, topic, count, difficulty);
+    document.getElementById('practice-generator-modal').style.display = 'none';
+    document.getElementById('practice-generator-form').reset();
 }
 
 /**
@@ -896,10 +1080,114 @@ const NotesSystem = {
      */
     async openNote(noteId) {
         const note = this.notes.find(n => n.id === noteId);
-        if (!note) return;
+        if (!note) {
+            // Try loading from Firebase
+            try {
+                const db = getFirestore();
+                const noteDoc = await db
+                    .collection('userNotes')
+                    .doc(currentUser.uid)
+                    .collection('notes')
+                    .doc(noteId)
+                    .get();
 
-        // Show note editor modal
-        showToast('Note editor coming soon', 'info');
+                if (!noteDoc.exists) {
+                    showToast('Note not found', 'error');
+                    return;
+                }
+
+                const loadedNote = { id: noteId, ...noteDoc.data() };
+                this.showNoteEditor(loadedNote);
+            } catch (error) {
+                logError(error, 'NotesSystem.openNote');
+                showToast('Failed to load note', 'error');
+            }
+            return;
+        }
+
+        this.showNoteEditor(note);
+    },
+
+    /**
+     * Show note editor
+     */
+    showNoteEditor(note) {
+        const modal = document.getElementById('note-editor-modal') || createNoteModal();
+        modal.style.display = 'flex';
+
+        // Populate form
+        document.getElementById('note-title').value = note.title || '';
+        document.getElementById('note-subject').value = note.subject || '';
+        document.getElementById('note-content').value = note.content || '';
+
+        // Change form to update mode
+        const form = document.getElementById('create-note-form');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Update Note';
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            await this.updateNote(note.id);
+        };
+    },
+
+    /**
+     * Update note
+     */
+    async updateNote(noteId) {
+        const title = document.getElementById('note-title').value.trim();
+        const subject = document.getElementById('note-subject').value.trim();
+        const content = document.getElementById('note-content').value.trim();
+
+        if (!title || !content) {
+            showToast('Please fill in all required fields', 'error');
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userNotes')
+                .doc(currentUser.uid)
+                .collection('notes')
+                .doc(noteId)
+                .update({
+                    title,
+                    subject: subject || null,
+                    content,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+            showToast('Note updated successfully', 'success');
+            document.getElementById('note-editor-modal').style.display = 'none';
+            document.getElementById('create-note-form').reset();
+            await this.loadNotes();
+        } catch (error) {
+            logError(error, 'NotesSystem.updateNote');
+            showToast('Failed to update note', 'error');
+        }
+    },
+
+    /**
+     * Delete note
+     */
+    async deleteNote(noteId) {
+        if (!confirm('Are you sure you want to delete this note?')) return;
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userNotes')
+                .doc(currentUser.uid)
+                .collection('notes')
+                .doc(noteId)
+                .delete();
+
+            showToast('Note deleted successfully', 'success');
+            await this.loadNotes();
+        } catch (error) {
+            logError(error, 'NotesSystem.deleteNote');
+            showToast('Failed to delete note', 'error');
+        }
     },
 };
 
@@ -1083,7 +1371,104 @@ const StudyGroups = {
      * Open group
      */
     async openGroup(groupId) {
-        showToast('Study group view coming soon', 'info');
+        try {
+            const db = getFirestore();
+            const groupDoc = await db.collection('studyGroups').doc(groupId).get();
+
+            if (!groupDoc.exists) {
+                showToast('Group not found', 'error');
+                return;
+            }
+
+            const group = { id: groupId, ...groupDoc.data() };
+            this.showGroupView(group);
+        } catch (error) {
+            logError(error, 'StudyGroups.openGroup');
+            showToast('Failed to open group', 'error');
+        }
+    },
+
+    /**
+     * Show group view modal
+     */
+    showGroupView(group) {
+        const modal = document.getElementById('group-view-modal') || this.createGroupViewModal();
+        modal.style.display = 'flex';
+
+        document.getElementById('group-view-name').textContent = group.name || '';
+        document.getElementById('group-view-description').textContent = group.description || '';
+        document.getElementById('group-view-id').value = group.id;
+        document.getElementById('group-view-members').textContent = (group.members?.length || 0) + ' members';
+
+        // Load group messages if available
+        this.loadGroupMessages(group.id);
+    },
+
+    /**
+     * Create group view modal
+     */
+    createGroupViewModal() {
+        const modal = document.createElement('div');
+        modal.id = 'group-view-modal';
+        modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 id="group-view-name" class="text-xl font-bold text-gray-800 dark:text-gray-200"></h3>
+                    <button onclick="document.getElementById('group-view-modal').style.display='none'" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <input type="hidden" id="group-view-id">
+                    <p id="group-view-description" class="text-gray-600 dark:text-gray-400 mb-4"></p>
+                    <div class="mb-4">
+                        <span id="group-view-members" class="text-sm text-gray-500"></span>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Messages</h4>
+                        <div id="group-messages" class="space-y-2 max-h-64 overflow-y-auto">
+                            <p class="text-gray-500 text-sm">No messages yet</p>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <input type="text" id="group-message-input" placeholder="Type a message..." class="flex-1 p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                            <button onclick="StudyGroups.sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    },
+
+    /**
+     * Load group messages
+     */
+    async loadGroupMessages(groupId) {
+        // Implementation for loading messages
+        const container = document.getElementById('group-messages');
+        if (container) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Messages feature coming soon</p>';
+        }
+    },
+
+    /**
+     * Send message to group
+     */
+    async sendMessage() {
+        const groupId = document.getElementById('group-view-id').value;
+        const message = document.getElementById('group-message-input').value.trim();
+
+        if (!message) {
+            showToast('Please enter a message', 'error');
+            return;
+        }
+
+        showToast('Messaging feature coming soon', 'info');
+        document.getElementById('group-message-input').value = '';
     },
 };
 
@@ -2013,32 +2398,90 @@ function setupFeaturePageHandlers() {
     // Flashcards page
     const flashcardsPage = document.getElementById('flashcards-page');
     if (flashcardsPage) {
-        flashcardsPage.addEventListener('show', () => {
-            FlashcardSystem.loadDecks();
+        flashcardsPage.addEventListener('page-show', () => {
+            if (window.FlashcardSystem && typeof window.FlashcardSystem.loadDecks === 'function') {
+                window.FlashcardSystem.loadDecks();
+            }
         });
     }
 
     // Study planner page
     const studyPlannerPage = document.getElementById('study-planner-page');
     if (studyPlannerPage) {
-        studyPlannerPage.addEventListener('show', () => {
-            StudyPlanner.loadPlans();
+        studyPlannerPage.addEventListener('page-show', () => {
+            if (window.StudyPlanner && typeof window.StudyPlanner.loadPlans === 'function') {
+                window.StudyPlanner.loadPlans();
+            }
+        });
+    }
+
+    // Practice questions page
+    const practiceQuestionsPage = document.getElementById('practice-questions-page');
+    if (practiceQuestionsPage) {
+        practiceQuestionsPage.addEventListener('page-show', () => {
+            if (window.PracticeQuestions && typeof window.PracticeQuestions.loadQuestions === 'function') {
+                window.PracticeQuestions.loadQuestions();
+            }
         });
     }
 
     // Notes page
     const notesPage = document.getElementById('notes-page');
     if (notesPage) {
-        notesPage.addEventListener('show', () => {
-            NotesSystem.loadNotes();
+        notesPage.addEventListener('page-show', () => {
+            if (window.NotesSystem && typeof window.NotesSystem.loadNotes === 'function') {
+                window.NotesSystem.loadNotes();
+            }
         });
     }
 
     // Study groups page
     const studyGroupsPage = document.getElementById('study-groups-page');
     if (studyGroupsPage) {
-        studyGroupsPage.addEventListener('show', () => {
-            StudyGroups.loadGroups();
+        studyGroupsPage.addEventListener('page-show', () => {
+            if (window.StudyGroups && typeof window.StudyGroups.loadGroups === 'function') {
+                window.StudyGroups.loadGroups();
+            }
+        });
+    }
+
+    // Achievements page
+    const achievementsPage = document.getElementById('achievements-page');
+    if (achievementsPage) {
+        achievementsPage.addEventListener('page-show', () => {
+            if (window.AchievementSystem && typeof window.AchievementSystem.loadAchievements === 'function') {
+                window.AchievementSystem.loadAchievements();
+            }
+        });
+    }
+
+    // Timetable page
+    const timetablePage = document.getElementById('timetable-page');
+    if (timetablePage) {
+        timetablePage.addEventListener('page-show', () => {
+            if (window.TimetableGenerator && typeof window.TimetableGenerator.loadTimetables === 'function') {
+                window.TimetableGenerator.loadTimetables();
+            }
+        });
+    }
+
+    // Past papers page
+    const pastPapersPage = document.getElementById('past-papers-page');
+    if (pastPapersPage) {
+        pastPapersPage.addEventListener('page-show', () => {
+            if (window.PastPaperAnalyzer && typeof window.PastPaperAnalyzer.loadPapers === 'function') {
+                window.PastPaperAnalyzer.loadPapers();
+            }
+        });
+    }
+
+    // Voice notes page
+    const voiceNotesPage = document.getElementById('voice-notes-page');
+    if (voiceNotesPage) {
+        voiceNotesPage.addEventListener('page-show', () => {
+            if (window.VoiceNotes && typeof window.VoiceNotes.loadNotes === 'function') {
+                window.VoiceNotes.loadNotes();
+            }
         });
     }
 }

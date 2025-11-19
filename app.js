@@ -11091,6 +11091,77 @@ function showPage(pageId) {
         }, 100);
     }
 
+    // Initialize feature pages when shown
+    const featurePages = {
+        'flashcards-page': () => {
+            if (window.FlashcardSystem && typeof window.FlashcardSystem.loadDecks === 'function') {
+                window.FlashcardSystem.loadDecks();
+            }
+        },
+        'study-planner-page': () => {
+            if (window.StudyPlanner && typeof window.StudyPlanner.loadPlans === 'function') {
+                window.StudyPlanner.loadPlans();
+            }
+        },
+        'practice-questions-page': () => {
+            if (
+                window.PracticeQuestions &&
+                typeof window.PracticeQuestions.loadQuestions === 'function'
+            ) {
+                window.PracticeQuestions.loadQuestions();
+            }
+        },
+        'notes-page': () => {
+            if (window.NotesSystem && typeof window.NotesSystem.loadNotes === 'function') {
+                window.NotesSystem.loadNotes();
+            }
+        },
+        'study-groups-page': () => {
+            if (window.StudyGroups && typeof window.StudyGroups.loadGroups === 'function') {
+                window.StudyGroups.loadGroups();
+            }
+        },
+        'achievements-page': () => {
+            if (
+                window.AchievementSystem &&
+                typeof window.AchievementSystem.loadAchievements === 'function'
+            ) {
+                window.AchievementSystem.loadAchievements();
+            }
+        },
+        'timetable-page': () => {
+            if (
+                window.TimetableGenerator &&
+                typeof window.TimetableGenerator.loadTimetables === 'function'
+            ) {
+                window.TimetableGenerator.loadTimetables();
+            }
+        },
+        'past-papers-page': () => {
+            if (
+                window.PastPaperAnalyzer &&
+                typeof window.PastPaperAnalyzer.loadPapers === 'function'
+            ) {
+                window.PastPaperAnalyzer.loadPapers();
+            }
+        },
+        'voice-notes-page': () => {
+            if (window.VoiceNotes && typeof window.VoiceNotes.loadNotes === 'function') {
+                window.VoiceNotes.loadNotes();
+            }
+        },
+    };
+
+    if (featurePages[pageId]) {
+        setTimeout(featurePages[pageId], 100);
+    }
+
+    // Dispatch custom event for feature page handlers
+    const pageElement = document.getElementById(pageId);
+    if (pageElement) {
+        pageElement.dispatchEvent(new CustomEvent('page-show', { bubbles: true }));
+    }
+
     // Initialize AI Tutor when page is shown
     if (pageId === 'ai-tutor-page') {
         // Check access
