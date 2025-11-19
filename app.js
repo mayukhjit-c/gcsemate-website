@@ -18,6 +18,16 @@ const currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 
+// Environment detection
+const isDevelopment =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.includes('dev');
+const isProduction = !isDevelopment;
+
+// Global variable declarations (may be loaded from external scripts)
+/* global puter, renderMathInElement, gtag */
+
 // Download rate limiting - 3 files per minute
 const DOWNLOAD_RATE_LIMIT = {
     maxDownloads: 3,
@@ -916,6 +926,7 @@ class WebsiteValidator {
         // Authentication Test
         this.addTest('Authentication System', () => {
             const authMethods = ['signInWithEmailAndPassword', 'createUserWithEmailAndPassword'];
+            const auth = firebase.auth();
             const available = authMethods.filter(method => typeof auth[method] === 'function');
             return {
                 passed: available.length === authMethods.length,
@@ -925,6 +936,7 @@ class WebsiteValidator {
 
         // Storage Test
         this.addTest('Firebase Storage', () => {
+            const storage = firebase.storage();
             const hasStorage = typeof storage !== 'undefined' && storage.ref;
             return {
                 passed: hasStorage,
@@ -1210,7 +1222,7 @@ function showSystemHealthModal() {
         return;
     }
 
-    const healthData = getSystemHealth();
+    const healthData = window.getSystemHealth();
     const hasErrors = healthData.tests.failedTests.length > 0 || healthData.errors.totalErrors > 0;
     const allErrors = [
         ...healthData.tests.failedTests.map(
@@ -3597,7 +3609,7 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-auth.onAuthStateChanged(async user => {
+firebase.auth().onAuthStateChanged(async user => {
     // Detach old listeners to prevent memory leaks on re-login
     if (unsubscribeUserManagement) {
         unsubscribeUserManagement();
@@ -5770,6 +5782,7 @@ async function handleRegister() {
             registerButton.textContent = 'Creating Account...';
             registerButton.disabled = true;
 
+            const auth = firebase.auth();
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
@@ -5943,6 +5956,7 @@ async function handleLogin() {
             }
         }
 
+        const auth = firebase.auth();
         const persistence = rememberMe
             ? firebase.auth.Auth.Persistence.LOCAL
             : firebase.auth.Auth.Persistence.SESSION;
@@ -6021,6 +6035,7 @@ async function handleLogout() {
             recaptchaVerifier = null;
         }
 
+        const auth = firebase.auth();
         await auth.signOut();
         // onAuthStateChanged will handle UI changes
         path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
@@ -6036,6 +6051,7 @@ async function handleLogout() {
 async function resendVerificationEmail() {
     const button = document.getElementById('resend-verification-btn');
     const messageEl = document.getElementById('resend-message');
+    const auth = firebase.auth();
     if (auth.currentUser && !auth.currentUser.emailVerified) {
         try {
             button.disabled = true;
@@ -6544,7 +6560,7 @@ async function viewUserTracking(userId) {
                                                 ${activity.subject ? `<span class="text-gray-600"> - ${activity.subject}</span>` : ''}
                                                 ${activity.fileName ? `<span class="text-gray-600"> - ${activity.fileName}</span>` : ''}
                                             </div>
-                                            <span class="text-xs text-gray-500">${formatDate(activity.timestamp)}</span>
+                                            <span class="text-xs text-gray-500">${formatDateUK(activity.timestamp)}</span>
                                         </div>
                                         ${activity.viewDuration ? `<div class="text-xs text-gray-600 mt-1">Duration: ${Math.round(activity.viewDuration / 1000)}s</div>` : ''}
                                         ${activity.revisionDuration ? `<div class="text-xs text-gray-600 mt-1">Revision Time: ${Math.round(activity.revisionDuration / 1000)}s</div>` : ''}
@@ -6571,7 +6587,7 @@ async function viewUserTracking(userId) {
                                                 <div class="text-xs text-gray-600">${session.userAgent.substring(0, 50)}...</div>
                                             </div>
                                             <div class="text-right">
-                                                <div class="text-xs text-gray-500">${formatDate(session.lastSeen)}</div>
+                                                <div class="text-xs text-gray-500">${formatDateUK(session.lastSeen)}</div>
                                                 <span class="px-2 py-1 text-xs rounded-full ${session.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
                                                     ${session.isActive ? 'Active' : 'Inactive'}
                                                 </span>
@@ -7603,6 +7619,7 @@ async function bulkSendReset() {
             continue;
         }
         try {
+            const auth = firebase.auth();
             await auth.sendPasswordResetEmail(u.email);
             ok++;
         } catch (_) {
@@ -7684,6 +7701,7 @@ async function adminSendPasswordReset(email) {
     }
     try {
         // Admin functions bypass rate limits - no need to check or record
+        const auth = firebase.auth();
         await auth.sendPasswordResetEmail(email);
         showToast('Password reset email sent.', 'success');
     } catch (e) {
@@ -10093,9 +10111,23 @@ async function viewSystemLogs() {
             }
 
             if (action === 'dismiss') {
-                dismissLog(logId);
+                const logEntry = modal.querySelector(`[data-log-id="${logId}"]`);
+                if (logEntry) {
+                    logEntry.remove();
+                }
             } else if (action === 'copy') {
-                copyLogDetails(logId);
+                const logEntry = modal.querySelector(`[data-log-id="${logId}"]`);
+                if (logEntry) {
+                    const logText = logEntry.textContent || '';
+                    navigator.clipboard
+                        .writeText(logText)
+                        .then(() => {
+                            showToast('Log details copied to clipboard', 'success');
+                        })
+                        .catch(() => {
+                            showToast('Failed to copy log details', 'error');
+                        });
+                }
             }
         });
 
@@ -10380,6 +10412,7 @@ async function handleUpdateUserSettings() {
     try {
         // Update Firestore display name
         await db.collection('users').doc(currentUser.uid).update({ displayName });
+        const auth = firebase.auth();
         await auth.currentUser.updateProfile({ displayName: displayName });
 
         // Update password if provided
@@ -14505,7 +14538,18 @@ function showImageResizeControls(img) {
     deleteBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     deleteBtn.onclick = e => {
         e.stopPropagation();
-        removeImage();
+        if (resizeControls) {
+            const img = resizeControls.querySelector('img');
+            if (img && resizeControls.parentNode) {
+                resizeControls.parentNode.removeChild(resizeControls);
+            }
+            resizeControls = null;
+        }
+        if (currentResizingImage) {
+            currentResizingImage.style.outline = '';
+            currentResizingImage.style.outlineOffset = '';
+            currentResizingImage = null;
+        }
     };
     wrapper.appendChild(deleteBtn);
 
@@ -16417,6 +16461,7 @@ async function handleDeleteAccount() {
         // First delete Firestore document
         await db.collection('users').doc(userId).delete();
         // Then delete auth user
+        const auth = firebase.auth();
         await auth.currentUser.delete();
         showToast('Your account has been successfully deleted.', 'success');
         // onAuthStateChanged will handle the UI redirect
@@ -16620,6 +16665,7 @@ async function handleSendPasswordReset() {
     }
 
     try {
+        const auth = firebase.auth();
         await auth.sendPasswordResetEmail(email);
 
         // Record successful password reset attempt
