@@ -4782,6 +4782,9 @@ async function sendAIMessage(retryMessage = null) {
         // Update request count
         aiRequestCount = data.requestsUsed || 0;
         aiMaxRequests = data.maxRequests || 50;
+        // Sync to window for shared access with AI Quiz Maker
+        window.aiRequestCount = aiRequestCount;
+        window.aiMaxRequests = aiMaxRequests;
 
         // Write request count to Firestore if server says to increment
         const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
@@ -11325,11 +11328,6 @@ function showPage(pageId) {
         'notes-page': () => {
             if (window.NotesSystem && typeof window.NotesSystem.loadNotes === 'function') {
                 window.NotesSystem.loadNotes();
-            }
-        },
-        'study-groups-page': () => {
-            if (window.StudyGroups && typeof window.StudyGroups.loadGroups === 'function') {
-                window.StudyGroups.loadGroups();
             }
         },
         'achievements-page': () => {
@@ -19968,9 +19966,16 @@ function initTheme() {
         if (!icon || !iconMobile) {
             return;
         }
+        // Use Font Awesome sun/moon icons
         const iconClass = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-        icon.className = `fas ${iconClass} icon-md`;
-        iconMobile.className = `fas ${iconClass} icon-md`;
+        if (icon) {
+            icon.className = `fas ${iconClass} icon-md`;
+            icon.setAttribute('aria-hidden', 'true');
+        }
+        if (iconMobile) {
+            iconMobile.className = `fas ${iconClass} icon-md`;
+            iconMobile.setAttribute('aria-hidden', 'true');
+        }
 
         // Update aria-pressed for accessibility
         const themeToggle = document.getElementById('theme-toggle');

@@ -2,6 +2,8 @@
 // ENHANCED FEATURES - Flashcard UI, AI Quiz Maker, Video Playlist Editing
 // ============================================================================
 
+/* global FlashcardSystem, getFirestore, logError, escapeHtml, showPracticeQuestionGeneratorModal */
+
 /**
  * Enhanced Flashcard System with animations, filtering, tags, and saving
  */
@@ -312,44 +314,119 @@ const AIQuizMaker = {
             return;
         }
 
+        // Check if user is paid or admin (same check as AI Tutor)
+        if (
+            !currentUser ||
+            (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')
+        ) {
+            showToast(
+                'AI Quiz Maker is available for Pro users only. Please upgrade to access this feature.',
+                'error'
+            );
+            showPage('features-page');
+            return;
+        }
+
+        // Check AI request limits (shared with AI Tutor)
+        const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+        const currentRequestCount = window.aiRequestCount || 0;
+        const currentMaxRequests = window.aiMaxRequests || currentUser.aiMaxRequestsDaily || 50;
+        if (!isAdmin && currentRequestCount >= currentMaxRequests) {
+            showToast(
+                `You've reached your daily AI request limit (${currentMaxRequests}). Please try again tomorrow.`,
+                'error'
+            );
+            return;
+        }
+
         try {
             showToast('Generating quiz with AI...', 'info');
 
-            // Use AI Tutor to generate questions
-            const prompt = `Generate ${questionCount} ${difficulty} difficulty ${subject} questions about ${topic}. Format as JSON array with: question, options (array of 4), correctAnswer (0-3), explanation.`;
+            // Use AI Tutor API endpoint (shared limits)
+            const prompt = `Generate ${questionCount} ${difficulty} difficulty GCSE ${subject} questions about ${topic}. Return ONLY a valid JSON array with this exact structure:
+[
+  {
+    "question": "Question text here",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": 0,
+    "explanation": "Explanation of why the correct answer is right",
+    "wrongAnswerExplanations": {
+      "0": "Why option A is wrong (if 0 is not correct)",
+      "1": "Why option B is wrong (if 1 is not correct)",
+      "2": "Why option C is wrong (if 2 is not correct)",
+      "3": "Why option D is wrong (if 3 is not correct)"
+    }
+  }
+]
+Each question must have exactly 4 options. correctAnswer is 0-3 (index of correct option).
+For wrongAnswerExplanations, only include explanations for the 3 wrong options (exclude the correct one).
+Explain clearly why each wrong option is incorrect to help students learn from their mistakes.`;
 
-            // Call AI Tutor API
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            // Get Firebase Auth token for server-side verification
+            const idToken = await firebase.auth().currentUser.getIdToken();
+
+            const response = await fetch('/api/ai-tutor', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${AI_API_KEY}`, // You'll need to set this
+                    Authorization: `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.1-8b-instant',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are a GCSE quiz generator. Return only valid JSON.',
-                        },
-                        { role: 'user', content: prompt },
-                    ],
-                    temperature: 0.7,
+                    message: prompt,
+                    userId: currentUser.uid,
+                    conversationHistory: [],
+                    userSubjects: [subject],
+                    userData: {
+                        tier: currentUser.tier,
+                        role: currentUser.role,
+                        aiMaxRequestsDaily: currentUser.aiMaxRequestsDaily,
+                        aiAccessBlocked: currentUser.aiAccessBlocked,
+                    },
+                    currentRequestCount: currentRequestCount,
+                    aiType: 'general',
                 }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error('AI generation failed');
+                throw new Error(data.message || data.error || 'Failed to generate quiz');
             }
 
-            const data = await response.json();
-            const questions = JSON.parse(data.choices[0].message.content);
+            // Update request count (shared with AI Tutor)
+            if (window.aiRequestCount !== undefined) {
+                window.aiRequestCount = data.requestsUsed || currentRequestCount;
+            }
+            if (window.aiMaxRequests !== undefined) {
+                window.aiMaxRequests = data.maxRequests || currentMaxRequests;
+            }
+
+            // Parse AI response - try to extract JSON from markdown code blocks
+            let responseText = data.response || '';
+
+            // Try to extract JSON from code blocks
+            const jsonMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+            if (jsonMatch) {
+                responseText = jsonMatch[1];
+            } else {
+                // Try to find JSON array directly
+                const arrayMatch = responseText.match(/\[[\s\S]*?\]/);
+                if (arrayMatch) {
+                    responseText = arrayMatch[0];
+                }
+            }
+
+            const questions = JSON.parse(responseText);
+
+            if (!Array.isArray(questions) || questions.length === 0) {
+                throw new Error('Invalid quiz format received');
+            }
 
             this.currentQuiz = {
                 subject,
                 topic,
                 difficulty,
-                questions,
+                questions: questions.slice(0, questionCount), // Limit to requested count
                 startTime: new Date(),
             };
 
@@ -359,8 +436,10 @@ const AIQuizMaker = {
             this.showAnswers = false;
 
             this.renderQuiz();
+            showToast('Quiz generated successfully!', 'success');
         } catch (error) {
             logError(error, 'AIQuizMaker.generateQuiz');
+            showToast('Failed to generate quiz with AI. Using fallback questions.', 'warning');
             // Fallback to placeholder questions
             this.generatePlaceholderQuiz(subject, topic, difficulty, questionCount);
         }
@@ -374,12 +453,21 @@ const AIQuizMaker = {
             subject,
             topic,
             difficulty,
-            questions: Array.from({ length: questionCount }, (_, i) => ({
-                question: `Sample question ${i + 1} about ${topic} in ${subject}?`,
-                options: ['Option A', 'Option B', 'Option C', 'Option D'],
-                correctAnswer: i % 4,
-                explanation: `This is a sample explanation for question ${i + 1}`,
-            })),
+            questions: Array.from({ length: questionCount }, (_, i) => {
+                const correctIdx = i % 4;
+                const wrongIndices = [0, 1, 2, 3].filter(idx => idx !== correctIdx);
+                return {
+                    question: `Sample question ${i + 1} about ${topic} in ${subject}?`,
+                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                    correctAnswer: correctIdx,
+                    explanation: `This is a sample explanation for question ${i + 1}`,
+                    wrongAnswerExplanations: {
+                        [wrongIndices[0]]: `Option ${String.fromCharCode(65 + wrongIndices[0])} is incorrect because...`,
+                        [wrongIndices[1]]: `Option ${String.fromCharCode(65 + wrongIndices[1])} is incorrect because...`,
+                        [wrongIndices[2]]: `Option ${String.fromCharCode(65 + wrongIndices[2])} is incorrect because...`,
+                    },
+                };
+            }),
             startTime: new Date(),
         };
 
@@ -468,13 +556,61 @@ const AIQuizMaker = {
                 ${
                     isAnswered
                         ? `
-                    <div class="mb-6 p-4 rounded-lg ${isCorrect ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900'}">
-                        <p class="font-semibold ${isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'} mb-2">
-                            ${isCorrect ? '<i class="fas fa-check-circle mr-2"></i>Correct!' : '<i class="fas fa-times-circle mr-2"></i>Incorrect'}
-                        </p>
-                        <p class="text-sm ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}">
-                            ${escapeHtml(question.explanation)}
-                        </p>
+                    <div class="mb-6 space-y-4">
+                        ${
+                            isCorrect
+                                ? `
+                        <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900">
+                            <p class="font-semibold text-green-800 dark:text-green-200 mb-2">
+                                <i class="fas fa-check-circle mr-2"></i>Correct!
+                            </p>
+                            <p class="text-sm text-green-700 dark:text-green-300">
+                                ${escapeHtml(question.explanation || 'Well done!')}
+                            </p>
+                        </div>
+                        `
+                                : `
+                        <div class="p-4 rounded-lg bg-red-50 dark:bg-red-900">
+                            <p class="font-semibold text-red-800 dark:text-red-200 mb-2">
+                                <i class="fas fa-times-circle mr-2"></i>Incorrect
+                            </p>
+                            <p class="text-sm text-red-700 dark:text-red-300 mb-3">
+                                ${escapeHtml(question.explanation || "That's not quite right.")}
+                            </p>
+                            ${
+                                question.wrongAnswerExplanations &&
+                                (question.wrongAnswerExplanations[userAnswer] ||
+                                    question.wrongAnswerExplanations[String(userAnswer)])
+                                    ? `
+                            <div class="mt-3 pt-3 border-t border-red-200 dark:border-red-700">
+                                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">
+                                    Why "${escapeHtml(question.options[userAnswer])}" is wrong:
+                                </p>
+                                <p class="text-sm text-red-600 dark:text-red-300">
+                                    ${escapeHtml(
+                                        question.wrongAnswerExplanations[userAnswer] ||
+                                            question.wrongAnswerExplanations[String(userAnswer)] ||
+                                            ''
+                                    )}
+                                </p>
+                            </div>
+                            `
+                                    : ''
+                            }
+                        </div>
+                        <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900">
+                            <p class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                <i class="fas fa-lightbulb mr-2"></i>Correct Answer
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                                The correct answer is: <strong>${escapeHtml(question.options[question.correctAnswer])}</strong>
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-300">
+                                ${escapeHtml(question.explanation || '')}
+                            </p>
+                        </div>
+                        `
+                        }
                     </div>
                 `
                         : ''
@@ -794,9 +930,10 @@ const VideoPlaylistEditor = {
             // Refresh playlists if on videos page
             if (
                 document.getElementById('videos-page') &&
-                !document.getElementById('videos-page').classList.contains('hidden')
+                !document.getElementById('videos-page').classList.contains('hidden') &&
+                typeof window.renderVideosPage === 'function'
             ) {
-                renderVideosPage(allPlaylists);
+                window.renderVideosPage(window.allPlaylists || []);
             }
         } catch (error) {
             logError(error, 'VideoPlaylistEditor.savePlaylist');

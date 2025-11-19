@@ -2,6 +2,8 @@
 // NEW FEATURES IMPLEMENTATION - All 30 Improvements
 // ============================================================================
 
+/* global getFirestore, logError, escapeHtml, NotificationSystem */
+
 /**
  * Escape HTML to prevent XSS
  */
@@ -57,7 +59,7 @@ const FlashcardSystem = {
     /**
      * Create a new flashcard deck
      */
-    async createDeck(name, subject, description = '') {
+    async createDeck(name, subject, description = '', tags = []) {
         if (!currentUser || !currentUser.uid) {
             showToast('You must be logged in to create flashcard decks', 'error');
             return;
@@ -75,6 +77,7 @@ const FlashcardSystem = {
                 name,
                 subject,
                 description,
+                tags: Array.isArray(tags) ? tags : [],
                 cardCount: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -673,8 +676,152 @@ const StudyPlanner = {
  * Show create study plan modal
  */
 function showCreateStudyPlanModal() {
-    // Implementation similar to flashcard modal
-    showToast('Study plan creator coming soon', 'info');
+    const modal = document.getElementById('study-plan-modal');
+    if (!modal) {
+        showToast('Study plan modal not found', 'error');
+        return;
+    }
+
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Study Plan</h2>
+                <button onclick="document.getElementById('study-plan-modal').style.display='none'"
+                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="create-study-plan-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Plan Name *</label>
+                    <input type="text" id="plan-name" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Start Date *</label>
+                        <input type="date" id="plan-start-date" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">End Date *</label>
+                        <input type="date" id="plan-end-date" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subjects *</label>
+                    <div id="plan-subjects-container" class="space-y-2">
+                        <div class="flex gap-2">
+                            <select id="plan-subject-0" required
+                                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select subject...</option>
+                            </select>
+                            <button type="button" onclick="addPlanSubject()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Hours Per Week *</label>
+                    <input type="number" id="plan-hours" min="1" max="40" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                    <textarea id="plan-description" rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('study-plan-modal').style.display='none'"
+                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Create Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Populate subjects dropdown
+    const subjects = currentUser?.allowedSubjects || [];
+    const subjectSelects = modal.querySelectorAll('[id^="plan-subject-"]');
+    subjectSelects.forEach(select => {
+        subjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject;
+            option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+            select.appendChild(option);
+        });
+    });
+
+    modal.style.display = 'flex';
+    document.getElementById('create-study-plan-form').onsubmit = async e => {
+        e.preventDefault();
+        await handleCreateStudyPlan();
+    };
+}
+
+let planSubjectCount = 1;
+/**
+ *
+ */
+function addPlanSubject() {
+    const container = document.getElementById('plan-subjects-container');
+    const subjects = currentUser?.allowedSubjects || [];
+    const div = document.createElement('div');
+    div.className = 'flex gap-2';
+    div.innerHTML = `
+        <select id="plan-subject-${planSubjectCount}"
+            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select subject...</option>
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    const select = div.querySelector('select');
+    subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+        select.appendChild(option);
+    });
+    container.appendChild(div);
+    planSubjectCount++;
+}
+
+/**
+ *
+ */
+async function handleCreateStudyPlan() {
+    const name = document.getElementById('plan-name').value.trim();
+    const startDate = document.getElementById('plan-start-date').value;
+    const endDate = document.getElementById('plan-end-date').value;
+    const hoursPerWeek = parseInt(document.getElementById('plan-hours').value);
+    const description = document.getElementById('plan-description').value.trim();
+
+    if (!name || !startDate || !endDate || !hoursPerWeek) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    const subjectSelects = document.querySelectorAll('[id^="plan-subject-"]');
+    const subjects = Array.from(subjectSelects)
+        .map(select => select.value)
+        .filter(v => v);
+
+    if (subjects.length === 0) {
+        showToast('Please select at least one subject', 'error');
+        return;
+    }
+
+    await StudyPlanner.createPlan(name, startDate, endDate, subjects, hoursPerWeek);
+    document.getElementById('study-plan-modal').style.display = 'none';
 }
 
 // ============================================================================
@@ -960,9 +1107,11 @@ function createPracticeGeneratorModal() {
             </div>
             <form id="practice-generator-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); handleGenerateQuestions();">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject</label>
-                    <input type="text" id="practice-subject" required placeholder="e.g. Biology, Chemistry"
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject *</label>
+                    <select id="practice-subject" required
                         class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        <option value="">Select subject...</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Topic</label>
@@ -996,6 +1145,37 @@ function createPracticeGeneratorModal() {
         </div>
     `;
     document.body.appendChild(modal);
+
+    // Populate subjects dropdown
+    const subjects = currentUser?.allowedSubjects || [];
+    const subjectSelect = modal.querySelector('#practice-subject');
+    if (subjectSelect && subjects.length > 0) {
+        subjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject;
+            option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+            subjectSelect.appendChild(option);
+        });
+    } else if (subjectSelect) {
+        // Fallback to all subjects if no allowed subjects
+        const allSubjects = [
+            'biology',
+            'chemistry',
+            'physics',
+            'mathematics',
+            'english',
+            'history',
+            'geography',
+            'computer science',
+        ];
+        allSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject;
+            option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+            subjectSelect.appendChild(option);
+        });
+    }
+
     return modal;
 }
 

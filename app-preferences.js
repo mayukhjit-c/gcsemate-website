@@ -3,6 +3,8 @@
 // Migrates all localStorage to Firebase Firestore
 // ============================================================================
 
+/* global getFirestore, logError, updateThemeIcon, applyAccent */
+
 /**
  * Server-side preferences manager
  * Replaces all localStorage usage with Firebase

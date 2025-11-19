@@ -6243,6 +6243,67 @@ html {
     box-shadow: var(--shadow-xl);
 }
 
+/* Ensure all text and icons on dark blue backgrounds are white */
+[class*='bg-blue-600'],
+[class*='bg-blue-700'],
+[style*='background: var(--bg-secondary)'],
+[style*='background: #1E3A5F'],
+[style*='background: #1e3a5f'],
+[style*='background: #1a2f4d'] {
+    color: #ffffff !important;
+}
+
+[class*='bg-blue-600'] *,
+[class*='bg-blue-700'] *,
+[style*='background: var(--bg-secondary)'] *,
+[style*='background: #1E3A5F'] *,
+[style*='background: #1e3a5f'] *,
+[style*='background: #1a2f4d'] * {
+    color: #ffffff !important;
+}
+
+[class*='bg-blue-600'] i,
+[class*='bg-blue-700'] i,
+[style*='background: var(--bg-secondary)'] i,
+[style*='background: #1E3A5F'] i,
+[style*='background: #1e3a5f'] i,
+[style*='background: #1a2f4d'] i,
+[class*='bg-blue-600'] svg,
+[class*='bg-blue-700'] svg,
+[style*='background: var(--bg-secondary)'] svg,
+[style*='background: #1E3A5F'] svg,
+[style*='background: #1e3a5f'] svg,
+[style*='background: #1a2f4d'] svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
+/* Dark mode modals */
+[data-theme='dark'] .fixed.inset-0 {
+    background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+[data-theme='dark'] .bg-white\/90,
+[data-theme='dark'] .bg-white\/95,
+[data-theme='dark'] .bg-white\/80 {
+    background-color: rgba(30, 41, 59, 0.95) !important;
+    color: #ffffff !important;
+}
+
+[data-theme='dark'] .bg-white\/90 *,
+[data-theme='dark'] .bg-white\/95 *,
+[data-theme='dark'] .bg-white\/80 * {
+    color: #ffffff !important;
+}
+
+/* Smooth theme transition */
+* {
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease !important;
+}
+
 /* Study groups styles */
 .group-card {
     border: 2px solid transparent;
@@ -6491,7 +6552,7 @@ svg {
 
 /* Modal readability improvements */
 .modal,
-[class*="modal"],
+[class*='modal'],
 .bg-white,
 .bg-white\/70,
 .bg-white\/80,
@@ -6508,14 +6569,14 @@ svg {
 .modal input,
 .modal textarea,
 .modal select,
-[class*="modal"] h1,
-[class*="modal"] h2,
-[class*="modal"] h3,
-[class*="modal"] p,
-[class*="modal"] label,
-[class*="modal"] input,
-[class*="modal"] textarea,
-[class*="modal"] select {
+[class*='modal'] h1,
+[class*='modal'] h2,
+[class*='modal'] h3,
+[class*='modal'] p,
+[class*='modal'] label,
+[class*='modal'] input,
+[class*='modal'] textarea,
+[class*='modal'] select {
     color: var(--text-primary) !important;
 }
 
@@ -6524,7 +6585,7 @@ i.fa,
 i.fas,
 i.far,
 i.fab,
-[class*="fa-"] {
+[class*='fa-'] {
     color: inherit !important;
 }
 
