@@ -4,20 +4,30 @@
  */
 
 // Mock utility functions for testing
+/**
+ *
+ */
 function debounce(func, wait, immediate = false) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
             timeout = null;
-            if (!immediate) func(...args);
+            if (!immediate) {
+                func(...args);
+            }
         };
         const callNow = immediate && !timeout;
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-        if (callNow) func(...args);
+        if (callNow) {
+            func(...args);
+        }
     };
 }
 
+/**
+ *
+ */
 function throttle(func, limit) {
     let inThrottle;
     return function(...args) {
@@ -29,8 +39,13 @@ function throttle(func, limit) {
     };
 }
 
+/**
+ *
+ */
 function escapeHTML(str) {
-    if (!str) return '';
+    if (!str) {
+        return '';
+    }
     const map = {
         '&': '&amp;',
         '<': '&lt;',

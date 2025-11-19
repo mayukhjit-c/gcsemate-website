@@ -10,6 +10,12 @@
 // Note: Puter.js uses the "User-Pays" model and requires no API key.
 //       If backend services fail, client-side Puter.js fallback is used.
 
+/**
+ * Build JSON Response with shared CORS headers.
+ * @param {object} body - Payload to stringify.
+ * @param {number} [status=200] - HTTP status code.
+ * @returns {Response} JSON response instance.
+ */
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -34,15 +40,15 @@ async function firestoreGet(projectId, collection, docId, idToken) {
       'Content-Type': 'application/json'
     }
   });
-  
+
   if (response.status === 404) {
     return null; // Document doesn't exist
   }
-  
+
   if (!response.ok) {
     throw new Error(`Firestore error: ${response.status}`);
   }
-  
+
   const data = await response.json();
   // Convert Firestore format to simple object
   if (data.fields) {
@@ -58,7 +64,7 @@ async function firestoreGet(projectId, collection, docId, idToken) {
 // Firestore REST API helper - Create/Update document
 async function firestoreSet(projectId, collection, docId, data, idToken) {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collection}/${docId}`;
-  
+
   // Convert simple object to Firestore format
   const fields = {};
   for (const [key, value] of Object.entries(data)) {
@@ -72,7 +78,7 @@ async function firestoreSet(projectId, collection, docId, data, idToken) {
       fields[key] = { timestampValue: value.toISOString() };
     }
   }
-  
+
   const response = await fetch(url, {
     method: 'PATCH',
     headers: {
@@ -81,11 +87,11 @@ async function firestoreSet(projectId, collection, docId, data, idToken) {
     },
     body: JSON.stringify({ fields })
   });
-  
+
   if (!response.ok) {
     throw new Error(`Firestore error: ${response.status}`);
   }
-  
+
   return await response.json();
 }
 
@@ -140,14 +146,14 @@ async function incrementGlobalProviderCount(projectId, provider, dateStr, servic
     const docId = `${provider}_${dateStr}`;
     const current = await firestoreGet(projectId, 'aiTutorGlobalStats', docId, serviceToken);
     const newCount = (current?.count ? parseInt(current.count) : 0) + 1;
-    
+
     await firestoreSet(projectId, 'aiTutorGlobalStats', docId, {
       provider: provider,
       date: dateStr,
       count: String(newCount),
       lastRequestAt: new Date().toISOString()
     }, serviceToken);
-    
+
     return newCount;
       } catch (error) {
     console.error('Error incrementing global count:', error);
@@ -722,17 +728,17 @@ function buildSystemPrompt(userSubjects, subjectSummaries, subjectSpecifications
   if (aiType === 'english-literature-edexcel') {
     return buildEnglishLiteratureEdexcelPrompt();
   }
-  
+
   // Otherwise use the general prompt
   // Get current date for context
   const currentDate = new Date();
-  const dateStr = currentDate.toLocaleDateString('en-GB', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const dateStr = currentDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
-  
+
   let subjectsInfo = '';
   if (userSubjects && userSubjects.length > 0) {
     subjectsInfo = '\n\nYou have access to information about the following GCSE subjects:\n';
@@ -740,7 +746,7 @@ function buildSystemPrompt(userSubjects, subjectSummaries, subjectSpecifications
       const subjectLower = subject.toLowerCase();
       const summary = subjectSummaries[subjectLower];
       const specs = subjectSpecifications[subjectLower];
-      
+
       if (summary) {
         subjectsInfo += `\n- ${subject}: ${summary.description || summary.summary}`;
         if (specs) {
@@ -755,7 +761,7 @@ function buildSystemPrompt(userSubjects, subjectSummaries, subjectSpecifications
     // Free users - assume all subjects
     subjectsInfo = '\n\nYou have access to information about all GCSE subjects including: Biology, Chemistry, Physics, Mathematics, English Language (AQA), English Literature (Edexcel), History, Geography, Computing, German, Music, and Philosophy and Ethics.';
   }
-  
+
   return `You are GCSEMate AI, an intelligent tutoring assistant created by Mayukhjit Chakraborty for GCSE students in the UK.
 
 CURRENT DATE AND TIME: Today is ${dateStr}. Always use this date when answering questions about current events, exam dates, or time-sensitive information. Do not assume it is a different year or date.
@@ -893,7 +899,7 @@ async function callGroqAPI(apiKey, messages) {
     const errorText = await response.text();
     throw new Error(`Groq API error: ${response.status} - ${errorText}`);
   }
-  
+
   return await response.json();
 }
 
@@ -914,12 +920,12 @@ async function callOpenRouterAPI(apiKey, messages) {
       max_tokens: 2048
     })
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
   }
-  
+
   return await response.json();
 }
 
@@ -930,13 +936,13 @@ async function callPuterAPI(messages) {
   const systemMessage = messages.find(m => m.role === 'system');
   const userMessages = messages.filter(m => m.role === 'user');
   const assistantMessages = messages.filter(m => m.role === 'assistant');
-  
+
   // Build the prompt from conversation history
   let prompt = '';
   if (systemMessage) {
     prompt += systemMessage.content + '\n\n';
   }
-  
+
   // Build conversation context
   const conversationMessages = messages.filter(m => m.role !== 'system');
   for (let i = 0; i < conversationMessages.length; i++) {
@@ -947,7 +953,7 @@ async function callPuterAPI(messages) {
       prompt += `Assistant: ${msg.content}\n`;
     }
   }
-  
+
   // Use Puter's API endpoint (assuming they have one)
   // If Puter doesn't have a direct API, we'll need to use client-side integration
   // For now, try calling their API endpoint
@@ -966,12 +972,12 @@ async function callPuterAPI(messages) {
         max_tokens: 2048
       })
     });
-    
+
     if (!response.ok) {
       // If API endpoint doesn't exist, throw error to try alternative
       throw new Error(`Puter API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     // Return in OpenAI-compatible format
     return {
@@ -1004,7 +1010,7 @@ export async function onRequest(context) {
     const GROQ_API_KEY = env.GROQ_API_KEY;
     const OPENROUTER_API_KEY = env.OPENROUTER_API_KEY;
     const FIREBASE_PROJECT_ID = env.FIREBASE_PROJECT_ID;
-    
+
     if (!GROQ_API_KEY && !OPENROUTER_API_KEY) {
       return json({ error: 'No API keys configured' }, 500);
     }
@@ -1026,7 +1032,7 @@ export async function onRequest(context) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return json({ error: 'Missing or invalid authorization token' }, 401);
     }
-    
+
     const idToken = authHeader.replace('Bearer ', '');
 
     // Validate userData structure
@@ -1035,10 +1041,10 @@ export async function onRequest(context) {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Get user request count from Firestore (server-side verification)
     const userRequestCount = await getUserRequestCount(FIREBASE_PROJECT_ID, userId, today, idToken);
-    
+
     // Verify client's reported count is reasonable (within 1 of server count)
     if (currentRequestCount !== undefined && Math.abs(currentRequestCount - userRequestCount) > 1) {
       // Count mismatch - use server count
@@ -1055,29 +1061,29 @@ export async function onRequest(context) {
 
     const isAdmin = (userData.role || '').toLowerCase() === 'admin';
     const isPaid = userData.tier === 'paid';
-    
+
     // Free users cannot use AI
     if (!isPaid && !isAdmin) {
-      return json({ 
-        error: 'Access denied', 
-        message: 'AI Tutor is available for Pro users only. Please upgrade to access this feature.' 
+      return json({
+        error: 'Access denied',
+        message: 'AI Tutor is available for Pro users only. Please upgrade to access this feature.'
       }, 403);
     }
 
     // Check daily request limit (admins have unlimited)
     if (!isAdmin) {
       const maxRequests = await getUserMaxRequests(FIREBASE_PROJECT_ID, userId, idToken);
-      
+
       if (maxRequests === 0) {
-        return json({ 
-          error: 'Access blocked', 
-          message: 'AI Tutor access has been blocked for your account. Please contact support.' 
+        return json({
+          error: 'Access blocked',
+          message: 'AI Tutor access has been blocked for your account. Please contact support.'
         }, 403);
       }
-      
+
       if (userRequestCount >= maxRequests) {
-      return json({ 
-          error: 'Daily limit exceeded', 
+      return json({
+          error: 'Daily limit exceeded',
           message: `You have reached your daily limit of ${maxRequests} requests. Please try again tomorrow.`,
           requestsUsed: userRequestCount,
           requestsRemaining: 0,
@@ -1100,18 +1106,18 @@ export async function onRequest(context) {
     let aiResponse = null;
     let provider = null;
     let error = null;
-    
+
     const GROQ_DAILY_LIMIT = 14400;
-    
+
     if (GROQ_API_KEY) {
       try {
         const globalGroqCount = await getGlobalProviderCount(FIREBASE_PROJECT_ID, 'groq', today, idToken);
-        
+
         if (globalGroqCount < GROQ_DAILY_LIMIT) {
           const groqData = await callGroqAPI(GROQ_API_KEY, messages);
           aiResponse = groqData.choices[0]?.message?.content || null;
           provider = 'groq';
-          
+
           // Increment global Groq count (client will write via Firestore rules)
           // For now, we'll track it but client writes it
         } else {
@@ -1129,20 +1135,20 @@ export async function onRequest(context) {
       try {
         const OPENROUTER_DAILY_LIMIT = 50; // Total for all users
         const OPENROUTER_USER_LIMIT = 25; // Per user
-        
+
         const globalOpenRouterCount = await getGlobalProviderCount(FIREBASE_PROJECT_ID, 'openrouter', today, idToken);
         const userOpenRouterCount = await getUserRequestCount(FIREBASE_PROJECT_ID, `${userId}_openrouter`, today, idToken);
-        
+
         // Check global limit
         if (globalOpenRouterCount >= OPENROUTER_DAILY_LIMIT) {
           throw new Error('OpenRouter daily limit reached');
         }
-        
+
         // Check user limit (if not admin)
         if (!isAdmin && userOpenRouterCount >= OPENROUTER_USER_LIMIT) {
           throw new Error('OpenRouter user limit reached');
         }
-        
+
         const openRouterData = await callOpenRouterAPI(OPENROUTER_API_KEY, messages);
         aiResponse = openRouterData.choices[0]?.message?.content || null;
         provider = 'openrouter';
@@ -1166,8 +1172,8 @@ export async function onRequest(context) {
     }
 
     if (!aiResponse) {
-      return json({ 
-        error: 'AI service unavailable', 
+      return json({
+        error: 'AI service unavailable',
         message: 'All AI services are currently unavailable or have reached their limits. Please try again later.',
         details: error?.message || 'Unknown error'
       }, 503);
@@ -1189,8 +1195,8 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('AI Tutor function error:', error);
-    return json({ 
-      error: 'Internal server error', 
+    return json({
+      error: 'Internal server error',
       message: 'An unexpected error occurred. Please try again later.',
       details: error.message
     }, 500);

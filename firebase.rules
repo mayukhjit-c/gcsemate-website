@@ -12,6 +12,9 @@ service cloud.firestore {
     }
     function isAdmin() { return isSignedIn() && userDoc().role == 'admin'; }
     function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
+    function allowedNotificationKeys(data) {
+      return data.keys().hasOnly(['userId','title','message','type','timestamp','read','createdAt','updatedAt']);
+    }
 
     // Users collection
     match /users/{uid} {
@@ -144,16 +147,16 @@ service cloud.firestore {
       match /subjects/{subjectId} {
         // Allow read if user owns the data OR if admin is reading
         allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
-        
+
         // Allow create/update with validation
         allow create: if isSignedIn() && request.auth.uid == uid &&
           request.resource.data.keys().hasAll(['exams']) &&
           request.resource.data.exams is list;
-        
+
         allow update: if isSignedIn() && request.auth.uid == uid &&
           request.resource.data.keys().hasAll(['exams']) &&
           request.resource.data.exams is list;
-        
+
         // Allow delete if user owns the data
         allow delete: if isSignedIn() && request.auth.uid == uid;
       }
@@ -162,9 +165,53 @@ service cloud.firestore {
     // USER STUDY SESSIONS (analytics - created by the signed-in user, readable by admin)
     match /userStudySessions/{sessionId} {
       allow create: if isSignedIn() &&
-        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes']) &&
+        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes','createdAt','updatedAt']) &&
         request.resource.data.userId == request.auth.uid;
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes','createdAt','updatedAt']) &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+    }
+
+    match /userSearchPreferences/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['history','savedSearches','updatedAt']) &&
+        (
+          !request.resource.data.keys().hasAll(['history']) ||
+          (request.resource.data.history is list && request.resource.data.history.size() <= 20)
+        ) &&
+        (
+          !request.resource.data.keys().hasAll(['savedSearches']) ||
+          (request.resource.data.savedSearches is list && request.resource.data.savedSearches.size() <= 20)
+        );
+    }
+
+    match /userNotifications/{uid} {
+      allow read, write: if false;
+      match /items/{notificationId} {
+        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if isSignedIn() &&
+          request.auth.uid == uid &&
+          allowedNotificationKeys(request.resource.data) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.title is string &&
+          request.resource.data.message is string &&
+          request.resource.data.type is string &&
+          request.resource.data.read is bool;
+        allow update: if isSignedIn() &&
+          request.auth.uid == uid &&
+          allowedNotificationKeys(request.resource.data) &&
+          resource.data.userId == request.auth.uid &&
+          (
+            !request.resource.data.keys().hasAll(['userId']) ||
+            request.resource.data.userId == request.auth.uid
+          );
+        allow delete: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      }
     }
 
     // USER FILE VIEWS (analytics - created by the signed-in user, readable by admin)
@@ -290,7 +337,7 @@ service cloud.firestore {
       // Users can read their own request counts
       allow read: if isSignedIn() && requestId.matches(request.auth.uid + '_.*');
       // Users can write their own request counts (server validates, client writes)
-      allow create, update: if isSignedIn() && 
+      allow create, update: if isSignedIn() &&
         requestId.matches(request.auth.uid + '_.*') &&
         request.resource.data.keys().hasOnly(['userId','date','count','lastRequestAt']) &&
         request.resource.data.userId == request.auth.uid &&
