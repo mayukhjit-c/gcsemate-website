@@ -363,6 +363,30 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // USER PREFERENCES (migrated from localStorage - all client-side data now server-side)
+    match /userPreferences/{uid} {
+      // Users can only access their own preferences
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      // Admins can read for support
+      allow read: if isAdmin();
+
+      // Validation for preferences data - allow all preference fields
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // USER RATE LIMITER DATA (server-side rate limiting)
+    match /userRateLimiters/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+
+      // Validation
+      allow create, update: if isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly([
+          'signInAttempts', 'passwordResetAttempts', 'downloadAttempts',
+          'lastUpdated', 'createdAt'
+        ]);
+    }
+
     // AI Tutor Conversation History
     match /aiTutorConversations/{uid} {
       allow read, write: if false;

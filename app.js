@@ -4043,20 +4043,27 @@ function initializeAppState() {
         checkSubscriptionExpiry();
 
         // Show welcome notification for new users
-        const lastWelcome = localStorage.getItem('notification_welcome_shown');
+        const lastWelcome = window.ServerPreferences
+            ? window.ServerPreferences.get('notificationWelcomeShown')
+            : localStorage.getItem('notification_welcome_shown');
         if (!lastWelcome || Date.now() - parseInt(lastWelcome) > 86400000) {
             NotificationSystem.show(
                 'Welcome to GCSEMate!',
                 'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
                 'info'
             );
-            localStorage.setItem('notification_welcome_shown', String(Date.now()));
+            const timestamp = String(Date.now());
+            if (window.ServerPreferences) {
+                window.ServerPreferences.set('notificationWelcomeShown', timestamp).catch(() => {});
+            } else {
+                localStorage.setItem('notification_welcome_shown', timestamp);
+            }
         }
 
         // Initialize all new features
-        if (typeof initializeAllFeatures === 'function') {
+        if (typeof window.initializeAllFeatures === 'function') {
             setTimeout(() => {
-                initializeAllFeatures().catch(err => {
+                window.initializeAllFeatures().catch(err => {
                     logError(err, 'initializeAllFeatures');
                 });
             }, 1000);
@@ -4070,7 +4077,10 @@ function initializeAppState() {
 
     // First-time tutorial (skippable)
     try {
-        if (currentUser && !localStorage.getItem('gcsemate_tutorial_shown')) {
+        const tutorialShown = window.ServerPreferences
+            ? window.ServerPreferences.get('tutorialShown')
+            : localStorage.getItem('gcsemate_tutorial_shown');
+        if (currentUser && !tutorialShown) {
             showFirstTimeTutorial();
         }
     } catch (error) {
@@ -4082,12 +4092,20 @@ function initializeAppState() {
     try {
         const WHATS_NEW_VERSION = '2025-10-13-a';
         const key = 'gcsemate_whatsnew_seen:' + WHATS_NEW_VERSION;
-        const seen = localStorage.getItem(key);
+        const seen = window.ServerPreferences
+            ? window.ServerPreferences.get('whatsNewSeen')
+            : localStorage.getItem(key);
         if (!seen && currentUser) {
             showWhatsNewBanner(
                 'New: Structured data for Blog/Videos + instant access updates!',
                 () => {
-                    localStorage.setItem(key, '1');
+                    if (window.ServerPreferences) {
+                        window.ServerPreferences.set('whatsNewSeen', {
+                            [WHATS_NEW_VERSION]: '1',
+                        }).catch(() => {});
+                    } else {
+                        localStorage.setItem(key, '1');
+                    }
                 }
             );
         }
@@ -4159,8 +4177,26 @@ function cleanAIResponse(text) {
     text = text.replace(/[\u{1FA00}-\u{1FA6F}]/gu, ''); // Chess Symbols
     text = text.replace(/[\u{1FA70}-\u{1FAFF}]/gu, ''); // Symbols and Pictographs Extended-A
 
-    // Remove common emoji-like symbols
-    text = text.replace(/[✅❌⚠️⭐🌟💡📝📚🎓💯🔥💪👍👎]/g, '');
+    // Remove common emoji-like symbols (using Unicode escapes to avoid character class issues)
+    const emojiPatterns = [
+        /\u2705/g, // ✅
+        /\u274C/g, // ❌
+        /\u26A0\uFE0F/g, // ⚠️
+        /\u2B50/g, // ⭐
+        /\uD83C\uDF1F/g, // 🌟
+        /\uD83D\uDCA1/g, // 💡
+        /\u270F\uFE0F/g, // 📝
+        /\uD83D\uDCDA/g, // 📚
+        /\uD83C\uDF93/g, // 🎓
+        /\uD83D\uDCAF/g, // 💯
+        /\uD83D\uDD25/g, // 🔥
+        /\uD83D\uDCAA/g, // 💪
+        /\uD83D\uDC4D/g, // 👍
+        /\uD83D\uDC4E/g, // 👎
+    ];
+    emojiPatterns.forEach(pattern => {
+        text = text.replace(pattern, '');
+    });
 
     // Normalize line breaks - ensure proper spacing
     // Replace multiple consecutive newlines with double newline (for paragraph breaks)
@@ -4935,7 +4971,7 @@ function parseMarkdown(text) {
         }
 
         // Handle unordered lists (*, -, +)
-        const unorderedListMatch = line.match(/^[\*\-\+]\s+(.+)$/);
+        const unorderedListMatch = line.match(/^[*\-+]\s+(.+)$/);
         if (unorderedListMatch) {
             if (!inUnorderedList) {
                 // Close any open ordered list or blockquote
@@ -5534,7 +5570,11 @@ function showFirstTimeTutorial() {
         } else {
             overlay.style.display = 'none';
             overlay.classList.add('hidden');
-            localStorage.setItem('gcsemate_tutorial_shown', '1');
+            if (window.ServerPreferences) {
+                window.ServerPreferences.set('tutorialShown', '1').catch(() => {});
+            } else {
+                localStorage.setItem('gcsemate_tutorial_shown', '1');
+            }
         }
     };
     prev.onclick = () => {
@@ -6937,7 +6977,14 @@ async function uploadProfilePicture(file) {
     }
 
     // Open profile picture crop modal
-    openProfilePictureCropModal(file);
+    if (typeof window.openProfilePictureCropModal === 'function') {
+        window.openProfilePictureCropModal(file);
+    } else {
+        logError(
+            new Error('openProfilePictureCropModal not defined'),
+            'handleProfilePictureSelect'
+        );
+    }
 }
 
 // Profile picture crop modal with zoom functionality
@@ -7259,7 +7306,9 @@ window.applyProfilePictureCrop = async function () {
     // Further compress
     const compressedFile = await compressImage(croppedFile, { profilePicture: true });
 
-    closeProfilePictureCropModal();
+    if (typeof window.closeProfilePictureCropModal === 'function') {
+        window.closeProfilePictureCropModal();
+    }
 
     // Upload the cropped and compressed file
     return safeExecuteAsync(async () => {
@@ -11327,7 +11376,10 @@ async function renderDashboard() {
                     try {
                         const j = await res.json();
                         reason = j.error || reason;
-                    } catch {}
+                    } catch (error) {
+                        // Ignore JSON parse errors, use HTTP status as reason
+                        logError(error, 'fetchWithRetry: JSON parse');
+                    }
                     throw new Error(reason);
                 }
                 data = await res.json();
@@ -11618,7 +11670,10 @@ async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
                     try {
                         const j = await res.json();
                         reason = j.error || reason;
-                    } catch {}
+                    } catch (error) {
+                        // Ignore JSON parse errors, use HTTP status as reason
+                        logError(error, 'fetchWithRetry: JSON parse');
+                    }
                     throw new Error(reason);
                 }
                 data = await res.json();
@@ -14283,7 +14338,7 @@ function renderCalendarAgenda() {
                     <div class="font-semibold text-gray-800 flex items-center gap-2">
                         <span class="inline-block w-2.5 h-2.5 rounded" style="background:${eventColor}"></span>
                         <span>${e.title || 'Event'}</span>
-                        ${e.category ? `<span class=\"text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700\">${e.category}</span>` : ''}
+                        ${e.category ? `<span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">${e.category}</span>` : ''}
                     </div>
                     ${e.description ? `<div class="text-sm text-gray-600">${e.description}</div>` : ''}
                 </div>
@@ -14433,7 +14488,10 @@ function renderBlogPage(posts) {
         } else {
             document.head.appendChild(node);
         }
-    } catch (_) {}
+    } catch (error) {
+        // Ignore errors in structured data injection (non-critical)
+        logError(error, 'injectBlogStructuredData');
+    }
 
     posts.forEach(post => {
         const card = document.createElement('div');
@@ -15367,7 +15425,7 @@ function extractCloudinaryImageIds(htmlContent) {
             } catch (e) {
                 // Fallback regex pattern
                 const match = src.match(
-                    /\/upload\/(?:v\d+\/)?(?:[^\/]+\/)*([^\/]+)\.(jpg|jpeg|png|gif|webp)/i
+                    /\/upload\/(?:v\d+\/)?(?:[^/]+\/)*([^/]+)\.(jpg|jpeg|png|gif|webp)/i
                 );
                 if (match && match[1]) {
                     imageIds.push(match[1]);
@@ -15615,63 +15673,69 @@ window.handleImageFileSelect = function (event) {
         return;
     }
 
-    openImageCropModal(file);
+    if (typeof window.openImageCropModal === 'function') {
+        window.openImageCropModal(file);
+    } else {
+        logError(new Error('openImageCropModal not defined'), 'handleImageSelect');
+    }
     event.target.value = ''; // Reset input
 };
 
-window.openImageCropModal = function (file) {
-    cropState.originalFile = file;
-    const modal = document.getElementById('image-crop-modal');
-    const canvas = document.getElementById('crop-canvas');
-    const cropBox = document.getElementById('crop-box');
+window.openImageCropModal =
+    window.openImageCropModal ||
+    function (file) {
+        cropState.originalFile = file;
+        const modal = document.getElementById('image-crop-modal');
+        const canvas = document.getElementById('crop-canvas');
+        const cropBox = document.getElementById('crop-box');
 
-    if (!modal || !canvas || !cropBox) {
-        return;
-    }
-
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-
-    const img = new Image();
-    img.onload = () => {
-        const maxWidth = 800;
-        const maxHeight = 600;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width = width * ratio;
-            height = height * ratio;
+        if (!modal || !canvas || !cropBox) {
+            return;
         }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
 
-        cropState.image = img;
-        cropState.canvas = canvas;
-        cropState.ctx = ctx;
+        const img = new Image();
+        img.onload = () => {
+            const maxWidth = 800;
+            const maxHeight = 600;
+            let width = img.width;
+            let height = img.height;
 
-        // Initialize crop box (80% of image)
-        const cropWidth = width * 0.8;
-        const cropHeight = height * 0.8;
-        cropState.cropBox = {
-            x: (width - cropWidth) / 2,
-            y: (height - cropHeight) / 2,
-            width: cropWidth,
-            height: cropHeight,
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = width * ratio;
+                height = height * ratio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            cropState.image = img;
+            cropState.canvas = canvas;
+            cropState.ctx = ctx;
+
+            // Initialize crop box (80% of image)
+            const cropWidth = width * 0.8;
+            const cropHeight = height * 0.8;
+            cropState.cropBox = {
+                x: (width - cropWidth) / 2,
+                y: (height - cropHeight) / 2,
+                width: cropWidth,
+                height: cropHeight,
+            };
+
+            updateCropBox();
+            setupCropInteractions();
         };
 
-        updateCropBox();
-        setupCropInteractions();
+        const reader = new FileReader();
+        reader.onload = e => (img.src = e.target.result);
+        reader.readAsDataURL(file);
     };
-
-    const reader = new FileReader();
-    reader.onload = e => (img.src = e.target.result);
-    reader.readAsDataURL(file);
-};
 
 /**
  *
@@ -15912,7 +15976,9 @@ window.applyCropAndUpload = async function () {
         lastModified: Date.now(),
     });
 
-    closeImageCropModal();
+    if (typeof window.closeImageCropModal === 'function') {
+        window.closeImageCropModal();
+    }
     await insertBlogImageFromFile(croppedFile, 'crop');
 };
 
@@ -15972,14 +16038,22 @@ function handleBlogEditorKeydown(event) {
     // Handle Ctrl+? or Cmd+? for shortcuts
     if (modifierPressed && key === '?') {
         event.preventDefault();
-        showKeyboardShortcuts();
+        if (typeof window.showKeyboardShortcuts === 'function') {
+            window.showKeyboardShortcuts();
+        } else {
+            showPage('help-page');
+        }
         return;
     }
 
     // Handle Ctrl+Shift+I or Cmd+Shift+I for insert image
     if (modifierPressed && shift && key === 'i') {
         event.preventDefault();
-        openImagePicker();
+        if (typeof window.openImagePicker === 'function') {
+            window.openImagePicker();
+        } else {
+            logError(new Error('openImagePicker not defined'), 'handleBlogEditorKeyboard');
+        }
         return;
     }
 
@@ -16188,7 +16262,7 @@ function showBlogPostViewer(postId) {
                     <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
                     <div class="blog-content">${formatBlogLinks(sanitizeHTML(post.content))}</div>
                     <div class="mt-6 flex items-center gap-2">
-                        <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
+                        <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
                     </div>
                 </div>
                 <div class="px-8 pb-8">
@@ -17635,11 +17709,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const palette = generateAccentPalette(rgb);
             applyAccent(palette);
-            localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            // Save to server-side preferences
+            if (window.ServerPreferences) {
+                window.ServerPreferences.set('accentPalette', palette).catch(err => {
+                    logError(err, 'accent picker: ServerPreferences.set');
+                });
+            } else {
+                localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            }
         });
         // Initialize picker value based on current accent if stored
         try {
-            const saved = localStorage.getItem('gcsemate_accent');
+            const saved = window.ServerPreferences
+                ? window.ServerPreferences.get('accentPalette')
+                : (() => {
+                      try {
+                          return JSON.parse(localStorage.getItem('gcsemate_accent') || 'null');
+                      } catch {
+                          return null;
+                      }
+                  })();
             if (saved) {
                 const p = JSON.parse(saved);
                 const [r, g, b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
@@ -17648,7 +17737,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         '#' + p.fiveHundred.map(v => v.toString(16).padStart(2, '0')).join('');
                 }
             }
-        } catch {}
+        } catch (error) {
+            // Ignore errors in accent color loading (non-critical)
+            logError(error, 'loadAccentColor');
+        }
     }
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
@@ -17662,7 +17754,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 sevenHundred: [29, 78, 216],
             };
             applyAccent(def);
-            localStorage.removeItem('gcsemate_accent');
+            // Remove from server-side preferences
+            if (window.ServerPreferences) {
+                window.ServerPreferences.remove('accentPalette').catch(err => {
+                    logError(err, 'reset accent: ServerPreferences.remove');
+                });
+            } else {
+                localStorage.removeItem('gcsemate_accent');
+            }
             if (picker) {
                 picker.value = '#3b82f6';
             }
@@ -17680,7 +17779,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const palette = generateAccentPalette(rgb);
             applyAccent(palette);
-            localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            // Save to server-side preferences
+            if (window.ServerPreferences) {
+                window.ServerPreferences.set('accentPalette', palette).catch(err => {
+                    logError(err, 'accent picker: ServerPreferences.set');
+                });
+            } else {
+                localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            }
             // Sync with user picker if it exists
             if (picker) {
                 picker.value = adminPicker.value;
@@ -17696,7 +17802,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         '#' + p.fiveHundred.map(v => v.toString(16).padStart(2, '0')).join('');
                 }
             }
-        } catch {}
+        } catch (error) {
+            // Ignore errors in admin accent color loading (non-critical)
+            logError(error, 'loadAdminAccentColor');
+        }
     }
     if (adminResetBtn) {
         adminResetBtn.addEventListener('click', () => {
@@ -17710,7 +17819,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 sevenHundred: [29, 78, 216],
             };
             applyAccent(def);
-            localStorage.removeItem('gcsemate_accent');
+            // Remove from server-side preferences
+            if (window.ServerPreferences) {
+                window.ServerPreferences.remove('accentPalette').catch(err => {
+                    logError(err, 'reset accent: ServerPreferences.remove');
+                });
+            } else {
+                localStorage.removeItem('gcsemate_accent');
+            }
             if (picker) {
                 picker.value = '#3b82f6';
             }
@@ -17769,6 +17885,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileLogoutButton = document.getElementById('mobile-logout-button');
 
     if (hamburgerButton && mobileMenu && closeMenuButton) {
+        // Helper function to close mobile menu with animation
+        /**
+         * Closes the mobile menu with animation
+         */
+        const closeMobileMenu = function () {
+            // Animate out first, then hide
+            mobileMenu.style.transform = 'translateX(100%)';
+            mobileMenu.style.opacity = '0';
+            hamburgerButton.setAttribute('aria-expanded', 'false');
+
+            // Hide menu after animation completes
+            setTimeout(() => {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+                hamburgerButton.focus(); // Return focus to hamburger button
+            }, 300);
+        };
+
         hamburgerButton.addEventListener('click', () => {
             // Show menu first, then animate in
             mobileMenu.style.display = 'block';
@@ -17847,25 +17982,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 250)
         );
-
-        // Helper function to close mobile menu with animation
-        /**
-         *
-         */
-        function closeMobileMenu() {
-            // Animate out first, then hide
-            mobileMenu.style.transform = 'translateX(100%)';
-            mobileMenu.style.opacity = '0';
-            hamburgerButton.setAttribute('aria-expanded', 'false');
-
-            // Hide menu after animation completes
-            setTimeout(() => {
-                mobileMenu.classList.add('hidden');
-                mobileMenu.style.display = 'none';
-                document.body.style.overflow = ''; // Restore scrolling
-                hamburgerButton.focus(); // Return focus to hamburger button
-            }, 300);
-        }
     }
 
     // Initialize new features
@@ -18946,7 +19062,7 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
                                                        maxlength="1"
                                                        ${readOnly ? 'disabled readonly' : ''}
                                                        class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor} ${readOnly ? 'bg-gray-100 cursor-not-allowed' : ''}"
-                                                       ${!readOnly ? `oninput="updateGradeColor(this, '${subject}', ${i})" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace'"` : ''}>
+                                                       ${!readOnly ? `oninput="updateGradeColorRealTime(this)" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace' || event.key === 'Delete'"` : ''}>
                                             </td>
                                         `;
                                     }).join('')}
@@ -19142,37 +19258,67 @@ function updateAllAPS() {
     }
 }
 
-// Update grade color on input
+// Update grade color on input (real-time for all inputs)
 /**
- *
+ * Updates grade color in real-time as user types
+ * @param {HTMLInputElement} input - The grade input element
  */
-function updateGradeColor(input, subject, examIndex) {
+function updateGradeColorRealTime(input) {
     const grade = input.value.trim();
     const colorClass = getGradeColorClass(grade);
 
-    // Remove all color classes
+    // Remove all possible color classes
     input.classList.remove(
         'bg-green-700',
         'bg-green-500',
+        'bg-green-600',
         'bg-amber-600',
         'bg-amber-500',
         'bg-amber-400',
+        'bg-amber-300',
         'bg-red-500',
         'bg-red-600',
         'bg-red-700',
         'bg-red-800',
+        'bg-red-400',
         'bg-gray-100',
+        'bg-gray-200',
         'text-white',
         'text-gray-600',
-        'font-semibold'
+        'text-gray-700',
+        'text-gray-800',
+        'font-semibold',
+        'font-bold'
     );
 
     // Add new color class
     const classes = colorClass.split(' ');
-    classes.forEach(cls => input.classList.add(cls));
+    classes.forEach(cls => {
+        if (cls) {
+            input.classList.add(cls);
+        }
+    });
 
-    // Update APS for this exam column in real-time
-    updateAPS(examIndex);
+    // Extract exam index from input ID (format: grade-{subjectIdx}-{examIndex})
+    const idParts = input.id.split('-');
+    if (idParts.length >= 3) {
+        const examIndex = parseInt(idParts[2]);
+        if (!isNaN(examIndex)) {
+            // Update APS for this exam column in real-time
+            updateAPS(examIndex);
+        }
+    }
+}
+
+// Legacy function for backward compatibility
+/**
+ * @deprecated Use updateGradeColorRealTime instead
+ */
+function updateGradeColor(input, subject, examIndex) {
+    updateGradeColorRealTime(input);
+    if (typeof examIndex !== 'undefined' && !isNaN(examIndex)) {
+        updateAPS(examIndex);
+    }
 }
 
 // Add new exam column
@@ -19462,8 +19608,11 @@ function initTheme() {
     const themeIconMobile = document.getElementById('theme-icon-mobile');
     const html = document.documentElement;
 
-    // Get saved theme or default to light
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    // Get saved theme or default to light (from server-side preferences)
+    const savedTheme =
+        (window.ServerPreferences && window.ServerPreferences.get('theme')) ||
+        localStorage.getItem('theme') ||
+        'light';
     html.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme, themeIcon, themeIconMobile);
 
@@ -19481,7 +19630,14 @@ function initTheme() {
 
         // Apply theme with fade
         html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        // Save to server-side preferences
+        if (window.ServerPreferences) {
+            window.ServerPreferences.set('theme', newTheme).catch(err => {
+                logError(err, 'toggleTheme: ServerPreferences.set');
+            });
+        } else {
+            localStorage.setItem('theme', newTheme);
+        }
         updateThemeIcon(newTheme, themeIcon, themeIconMobile);
 
         // Announce theme change for screen readers
@@ -19928,15 +20084,27 @@ const StudyProgressStorage = {
         this.unsubscribe = db
             .collection('userStudySessions')
             .where('userId', '==', currentUser.uid)
-            .orderBy('startedAt', 'desc')
             .limit(100)
             .onSnapshot(
                 snapshot => {
-                    this.cachedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Sort client-side by startedAt descending to avoid index requirement
+                    const sessions = [];
+                    snapshot.forEach(doc => {
+                        sessions.push({ id: doc.id, ...doc.data() });
+                    });
+                    sessions.sort((a, b) => {
+                        const aTime = a.startedAt?.toMillis?.() || a.startedAt || 0;
+                        const bTime = b.startedAt?.toMillis?.() || b.startedAt || 0;
+                        return bTime - aTime; // Descending order (newest first)
+                    });
+                    this.cachedSessions = sessions;
                     renderStudyHistory();
                     renderStudyStats();
                 },
-                error => console.error('Failed to sync study sessions:', error)
+                error => {
+                    // Log error but don't show to user (non-critical)
+                    logError(error, 'StudyProgressStorage.init');
+                }
             );
     },
 
@@ -21670,6 +21838,7 @@ const PerformanceMonitor = {
             // Cumulative Layout Shift
             try {
                 let clsValue = 0;
+                let lastLoggedValue = 0;
                 const clsObserver = new PerformanceObserver(list => {
                     const entries = list.getEntries();
                     entries.forEach(entry => {
@@ -21677,11 +21846,16 @@ const PerformanceMonitor = {
                             clsValue += entry.value;
                         }
                     });
-                    console.log('CLS:', clsValue);
+                    // Only log CLS if it's significant (above 0.1) and has changed meaningfully
+                    // This reduces console noise while still tracking important shifts
+                    if (clsValue > 0.1 && Math.abs(clsValue - lastLoggedValue) > 0.01) {
+                        console.log('CLS:', clsValue.toFixed(6));
+                        lastLoggedValue = clsValue;
+                    }
                 });
                 clsObserver.observe({ entryTypes: ['layout-shift'] });
             } catch (e) {
-                console.warn('CLS tracking not supported');
+                // Silently fail - CLS tracking is non-critical
             }
         }
     },
@@ -21692,9 +21866,33 @@ const PerformanceMonitor = {
      */
     trackPageLoad() {
         window.addEventListener('load', () => {
-            const perfData = performance.timing;
-            const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-            console.log('Page Load Time:', pageLoadTime, 'ms');
+            try {
+                // Use PerformanceNavigationTiming API if available (more accurate)
+                if ('PerformanceNavigationTiming' in window) {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (perfData && perfData.loadEventEnd > 0) {
+                        const pageLoadTime = Math.round(
+                            perfData.loadEventEnd - perfData.fetchStart
+                        );
+                        if (pageLoadTime > 0) {
+                            console.log('Page Load Time:', pageLoadTime, 'ms');
+                        }
+                    }
+                } else if (performance.timing) {
+                    // Fallback to legacy API
+                    const perfData = performance.timing;
+                    if (perfData.loadEventEnd > 0 && perfData.navigationStart > 0) {
+                        const pageLoadTime = Math.round(
+                            perfData.loadEventEnd - perfData.navigationStart
+                        );
+                        if (pageLoadTime > 0) {
+                            console.log('Page Load Time:', pageLoadTime, 'ms');
+                        }
+                    }
+                }
+            } catch (error) {
+                // Silently fail - page load time tracking is non-critical
+            }
         });
     },
 
