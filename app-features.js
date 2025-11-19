@@ -6,7 +6,9 @@
  * Escape HTML to prevent XSS
  */
 function escapeHtml(text) {
-    if (typeof text !== 'string') return text;
+    if (typeof text !== 'string') {
+        return text;
+    }
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -26,7 +28,9 @@ const FlashcardSystem = {
      * Load all flashcard decks for current user
      */
     async loadDecks() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -88,7 +92,9 @@ const FlashcardSystem = {
      * Add card to deck
      */
     async addCard(deckId, front, back, imageUrl = null) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -153,7 +159,9 @@ const FlashcardSystem = {
 
         // Update ease factor
         card.easeFactor = card.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-        if (card.easeFactor < 1.3) card.easeFactor = 1.3;
+        if (card.easeFactor < 1.3) {
+            card.easeFactor = 1.3;
+        }
 
         // Calculate next review date
         const nextReviewDate = new Date();
@@ -171,7 +179,9 @@ const FlashcardSystem = {
      */
     renderDecks() {
         const grid = document.getElementById('flashcard-decks-grid');
-        if (!grid) return;
+        if (!grid) {
+            return;
+        }
 
         if (this.decks.length === 0) {
             grid.innerHTML = `
@@ -251,7 +261,9 @@ const FlashcardSystem = {
     showStudyArea() {
         const grid = document.getElementById('flashcard-decks-grid');
         const studyArea = document.getElementById('flashcard-study-area');
-        if (!grid || !studyArea) return;
+        if (!grid || !studyArea) {
+            return;
+        }
 
         grid.classList.add('hidden');
         studyArea.classList.remove('hidden');
@@ -263,10 +275,14 @@ const FlashcardSystem = {
      */
     renderCurrentCard() {
         const studyArea = document.getElementById('flashcard-study-area');
-        if (!studyArea || !this.currentDeck) return;
+        if (!studyArea || !this.currentDeck) {
+            return;
+        }
 
         const card = this.currentDeck.cards[this.currentCardIndex];
-        if (!card) return;
+        if (!card) {
+            return;
+        }
 
         studyArea.innerHTML = `
             <div class="max-w-2xl mx-auto">
@@ -306,7 +322,9 @@ const FlashcardSystem = {
     flipCard() {
         const front = document.getElementById('flashcard-front');
         const back = document.getElementById('flashcard-back');
-        if (!front || !back) return;
+        if (!front || !back) {
+            return;
+        }
 
         front.classList.toggle('hidden');
         back.classList.toggle('hidden');
@@ -316,7 +334,9 @@ const FlashcardSystem = {
      * Rate card (spaced repetition)
      */
     async rateCard(quality) {
-        if (!this.currentDeck) return;
+        if (!this.currentDeck) {
+            return;
+        }
 
         const card = this.currentDeck.cards[this.currentCardIndex];
         const reviewData = this.calculateNextReview(card, quality);
@@ -356,7 +376,9 @@ const FlashcardSystem = {
     closeStudyArea() {
         const grid = document.getElementById('flashcard-decks-grid');
         const studyArea = document.getElementById('flashcard-study-area');
-        if (!grid || !studyArea) return;
+        if (!grid || !studyArea) {
+            return;
+        }
 
         grid.classList.remove('hidden');
         studyArea.classList.add('hidden');
@@ -387,7 +409,8 @@ function showCreateFlashcardDeckModal() {
 function createFlashcardModal() {
     const modal = document.createElement('div');
     modal.id = 'flashcard-modal';
-    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -433,13 +456,18 @@ async function handleCreateFlashcardDeck() {
     const name = document.getElementById('deck-name').value.trim();
     const subject = document.getElementById('deck-subject').value.trim();
     const description = document.getElementById('deck-description').value.trim();
+    const tagsInput = document.getElementById('deck-tags')?.value.trim() || '';
+    const tags = tagsInput
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
 
     if (!name || !subject) {
         showToast('Please fill in all required fields', 'error');
         return;
     }
 
-    await FlashcardSystem.createDeck(name, subject, description);
+    await FlashcardSystem.createDeck(name, subject, description, tags);
     document.getElementById('flashcard-modal').style.display = 'none';
     document.getElementById('create-deck-form').reset();
 }
@@ -456,7 +484,9 @@ const StudyPlanner = {
      * Load study plans
      */
     async loadPlans() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -484,7 +514,9 @@ const StudyPlanner = {
      * Load goals
      */
     async loadGoals() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -582,7 +614,9 @@ const StudyPlanner = {
      */
     render() {
         const content = document.getElementById('study-planner-content');
-        if (!content) return;
+        if (!content) {
+            return;
+        }
 
         content.innerHTML = `
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -740,7 +774,9 @@ const PracticeQuestions = {
      */
     renderQuestions() {
         const content = document.getElementById('practice-questions-content');
-        if (!content) return;
+        if (!content) {
+            return;
+        }
 
         if (this.questions.length === 0) {
             content.innerHTML = '<p class="text-gray-500">No questions available</p>';
@@ -771,7 +807,9 @@ const PracticeQuestions = {
      */
     renderSession() {
         const content = document.getElementById('practice-questions-content');
-        if (!content || !this.currentSession) return;
+        if (!content || !this.currentSession) {
+            return;
+        }
 
         const currentQuestionIndex = this.currentSession.answers.length;
         const currentQuestion = this.currentSession.questions[currentQuestionIndex];
@@ -806,12 +844,16 @@ const PracticeQuestions = {
                 <div class="mb-6">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">${escapeHtml(currentQuestion.question || '')}</h3>
                     <div class="space-y-2">
-                        ${(currentQuestion.options || []).map((option, idx) => `
+                        ${(currentQuestion.options || [])
+                            .map(
+                                (option, idx) => `
                             <button onclick="PracticeQuestions.answerQuestion(${idx})"
                                 class="w-full text-left p-4 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
                                 ${escapeHtml(option)}
                             </button>
-                        `).join('')}
+                        `
+                            )
+                            .join('')}
                     </div>
                 </div>
             </div>
@@ -822,7 +864,9 @@ const PracticeQuestions = {
      * Answer question
      */
     async answerQuestion(answerIndex) {
-        if (!this.currentSession) return;
+        if (!this.currentSession) {
+            return;
+        }
 
         const currentQuestionIndex = this.currentSession.answers.length;
         const currentQuestion = this.currentSession.questions[currentQuestionIndex];
@@ -851,7 +895,9 @@ const PracticeQuestions = {
      * End session
      */
     async endSession() {
-        if (!this.currentSession) return;
+        if (!this.currentSession) {
+            return;
+        }
 
         if (confirm('Are you sure you want to end this session?')) {
             try {
@@ -889,8 +935,14 @@ const PracticeQuestions = {
  * Show practice question generator modal
  */
 function showPracticeQuestionGeneratorModal() {
-    const modal = document.getElementById('practice-generator-modal') || createPracticeGeneratorModal();
+    const modal =
+        document.getElementById('practice-generator-modal') || createPracticeGeneratorModal();
     modal.style.display = 'flex';
+
+    // Initialize AI Quiz Maker if available
+    if (window.AIQuizMaker) {
+        // Modal is ready
+    }
 }
 
 /**
@@ -899,7 +951,8 @@ function showPracticeQuestionGeneratorModal() {
 function createPracticeGeneratorModal() {
     const modal = document.createElement('div');
     modal.id = 'practice-generator-modal';
-    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -960,7 +1013,13 @@ async function handleGenerateQuestions() {
         return;
     }
 
-    await PracticeQuestions.generateQuestions(subject, topic, count, difficulty);
+    // Use AI Quiz Maker if available, otherwise fallback to PracticeQuestions
+    if (window.AIQuizMaker && typeof window.AIQuizMaker.generateQuiz === 'function') {
+        await window.AIQuizMaker.generateQuiz(subject, topic, difficulty, count);
+    } else {
+        await PracticeQuestions.generateQuestions(subject, topic, count, difficulty);
+    }
+
     document.getElementById('practice-generator-modal').style.display = 'none';
     document.getElementById('practice-generator-form').reset();
 }
@@ -983,7 +1042,9 @@ const NotesSystem = {
      * Load notes
      */
     async loadNotes() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1044,7 +1105,9 @@ const NotesSystem = {
      */
     render() {
         const content = document.getElementById('notes-content');
-        if (!content) return;
+        if (!content) {
+            return;
+        }
 
         if (this.notes.length === 0) {
             content.innerHTML = `
@@ -1124,7 +1187,7 @@ const NotesSystem = {
         const form = document.getElementById('create-note-form');
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.textContent = 'Update Note';
-        form.onsubmit = async (e) => {
+        form.onsubmit = async e => {
             e.preventDefault();
             await this.updateNote(note.id);
         };
@@ -1171,7 +1234,9 @@ const NotesSystem = {
      * Delete note
      */
     async deleteNote(noteId) {
-        if (!confirm('Are you sure you want to delete this note?')) return;
+        if (!confirm('Are you sure you want to delete this note?')) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1205,7 +1270,8 @@ function showCreateNoteModal() {
 function createNoteModal() {
     const modal = document.createElement('div');
     modal.id = 'note-editor-modal';
-    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -1273,7 +1339,9 @@ const StudyGroups = {
      * Load study groups
      */
     async loadGroups() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1331,7 +1399,9 @@ const StudyGroups = {
      */
     render() {
         const content = document.getElementById('study-groups-content');
-        if (!content) return;
+        if (!content) {
+            return;
+        }
 
         if (this.groups.length === 0) {
             content.innerHTML = `
@@ -1398,7 +1468,8 @@ const StudyGroups = {
         document.getElementById('group-view-name').textContent = group.name || '';
         document.getElementById('group-view-description').textContent = group.description || '';
         document.getElementById('group-view-id').value = group.id;
-        document.getElementById('group-view-members').textContent = (group.members?.length || 0) + ' members';
+        document.getElementById('group-view-members').textContent =
+            (group.members?.length || 0) + ' members';
 
         // Load group messages if available
         this.loadGroupMessages(group.id);
@@ -1410,7 +1481,8 @@ const StudyGroups = {
     createGroupViewModal() {
         const modal = document.createElement('div');
         modal.id = 'group-view-modal';
-        modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+        modal.className =
+            'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
         modal.innerHTML = `
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -1451,7 +1523,8 @@ const StudyGroups = {
         // Implementation for loading messages
         const container = document.getElementById('group-messages');
         if (container) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">Messages feature coming soon</p>';
+            container.innerHTML =
+                '<p class="text-gray-500 text-sm">Messages feature coming soon</p>';
         }
     },
 
@@ -1486,7 +1559,8 @@ function showCreateStudyGroupModal() {
 function createStudyGroupModal() {
     const modal = document.createElement('div');
     modal.id = 'study-group-modal';
-    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -1557,7 +1631,9 @@ const AchievementSystem = {
      * Load user achievements
      */
     async loadAchievements() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1583,7 +1659,9 @@ const AchievementSystem = {
      * Load user XP
      */
     async loadXP() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1609,7 +1687,9 @@ const AchievementSystem = {
      * Award XP
      */
     async awardXP(amount, reason) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1642,7 +1722,9 @@ const AchievementSystem = {
      * Unlock achievement
      */
     async unlockAchievement(achievementId, name, description, icon) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1653,7 +1735,9 @@ const AchievementSystem = {
                 .doc(achievementId);
 
             const exists = (await achievementRef.get()).exists;
-            if (exists) return; // Already unlocked
+            if (exists) {
+                return;
+            } // Already unlocked
 
             await achievementRef.set({
                 name,
@@ -1674,7 +1758,11 @@ const AchievementSystem = {
      */
     showLevelUp() {
         showToast(`Level Up! You're now level ${this.level}!`, 'success');
-        NotificationSystem.show('Level Up!', `Congratulations! You've reached level ${this.level}`, 'success');
+        NotificationSystem.show(
+            'Level Up!',
+            `Congratulations! You've reached level ${this.level}`,
+            'success'
+        );
     },
 
     /**
@@ -1711,7 +1799,8 @@ const AchievementSystem = {
 function createAchievementModal() {
     const modal = document.createElement('div');
     modal.id = 'achievement-modal';
-    modal.className = 'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     document.body.appendChild(modal);
     return modal;
 }
@@ -1800,7 +1889,9 @@ const TimetableGenerator = {
      * Load timetables
      */
     async loadTimetables() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -1884,14 +1975,30 @@ const PastPaperAnalyzer = {
      * Calculate grade
      */
     calculateGrade(percentage) {
-        if (percentage >= 90) return 9;
-        if (percentage >= 80) return 8;
-        if (percentage >= 70) return 7;
-        if (percentage >= 60) return 6;
-        if (percentage >= 50) return 5;
-        if (percentage >= 40) return 4;
-        if (percentage >= 30) return 3;
-        if (percentage >= 20) return 2;
+        if (percentage >= 90) {
+            return 9;
+        }
+        if (percentage >= 80) {
+            return 8;
+        }
+        if (percentage >= 70) {
+            return 7;
+        }
+        if (percentage >= 60) {
+            return 6;
+        }
+        if (percentage >= 50) {
+            return 5;
+        }
+        if (percentage >= 40) {
+            return 4;
+        }
+        if (percentage >= 30) {
+            return 3;
+        }
+        if (percentage >= 20) {
+            return 2;
+        }
         return 1;
     },
 
@@ -1978,7 +2085,9 @@ const VoiceNotes = {
      * Save recording
      */
     async saveRecording(blob) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const storage = firebase.storage();
@@ -1989,16 +2098,12 @@ const VoiceNotes = {
             const url = await storageRef.getDownloadURL();
 
             const db = getFirestore();
-            await db
-                .collection('userVoiceNotes')
-                .doc(currentUser.uid)
-                .collection('notes')
-                .add({
-                    audioUrl: url,
-                    fileName,
-                    duration: 0, // Calculate from blob if needed
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                });
+            await db.collection('userVoiceNotes').doc(currentUser.uid).collection('notes').add({
+                audioUrl: url,
+                fileName,
+                duration: 0, // Calculate from blob if needed
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
 
             showToast('Voice note saved successfully', 'success');
         } catch (error) {
@@ -2011,7 +2116,9 @@ const VoiceNotes = {
      * Load voice notes
      */
     async loadNotes() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2059,7 +2166,9 @@ const ExportSystem = {
      * Export exam results
      */
     async exportExamResults() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2116,7 +2225,9 @@ const EnhancedStudyProgress = {
      * Get detailed analytics
      */
     async getAnalytics() {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2156,7 +2267,9 @@ const EnhancedAITutor = {
      * Save conversation
      */
     async saveConversation(messages) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2179,7 +2292,9 @@ const EnhancedAITutor = {
      * Load conversation history
      */
     async loadHistory() {
-        if (!currentUser || !currentUser.uid) return [];
+        if (!currentUser || !currentUser.uid) {
+            return [];
+        }
 
         try {
             const db = getFirestore();
@@ -2256,7 +2371,9 @@ const EnhancedVideoProgress = {
      * Save video progress
      */
     async saveProgress(videoId, progress, duration) {
-        if (!currentUser || !currentUser.uid) return;
+        if (!currentUser || !currentUser.uid) {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2350,7 +2467,9 @@ const EnhancedAdminDashboard = {
      * Get user analytics
      */
     async getUserAnalytics() {
-        if (!currentUser || (currentUser.role || '').toLowerCase() !== 'admin') return;
+        if (!currentUser || (currentUser.role || '').toLowerCase() !== 'admin') {
+            return;
+        }
 
         try {
             const db = getFirestore();
@@ -2370,7 +2489,9 @@ const EnhancedAdminDashboard = {
  * Initialize all new features when user logs in
  */
 async function initializeAllFeatures() {
-    if (!currentUser || !currentUser.uid) return;
+    if (!currentUser || !currentUser.uid) {
+        return;
+    }
 
     try {
         // Load all feature data
@@ -2419,7 +2540,10 @@ function setupFeaturePageHandlers() {
     const practiceQuestionsPage = document.getElementById('practice-questions-page');
     if (practiceQuestionsPage) {
         practiceQuestionsPage.addEventListener('page-show', () => {
-            if (window.PracticeQuestions && typeof window.PracticeQuestions.loadQuestions === 'function') {
+            if (
+                window.PracticeQuestions &&
+                typeof window.PracticeQuestions.loadQuestions === 'function'
+            ) {
                 window.PracticeQuestions.loadQuestions();
             }
         });
@@ -2449,7 +2573,10 @@ function setupFeaturePageHandlers() {
     const achievementsPage = document.getElementById('achievements-page');
     if (achievementsPage) {
         achievementsPage.addEventListener('page-show', () => {
-            if (window.AchievementSystem && typeof window.AchievementSystem.loadAchievements === 'function') {
+            if (
+                window.AchievementSystem &&
+                typeof window.AchievementSystem.loadAchievements === 'function'
+            ) {
                 window.AchievementSystem.loadAchievements();
             }
         });
@@ -2459,7 +2586,10 @@ function setupFeaturePageHandlers() {
     const timetablePage = document.getElementById('timetable-page');
     if (timetablePage) {
         timetablePage.addEventListener('page-show', () => {
-            if (window.TimetableGenerator && typeof window.TimetableGenerator.loadTimetables === 'function') {
+            if (
+                window.TimetableGenerator &&
+                typeof window.TimetableGenerator.loadTimetables === 'function'
+            ) {
                 window.TimetableGenerator.loadTimetables();
             }
         });
@@ -2469,7 +2599,10 @@ function setupFeaturePageHandlers() {
     const pastPapersPage = document.getElementById('past-papers-page');
     if (pastPapersPage) {
         pastPapersPage.addEventListener('page-show', () => {
-            if (window.PastPaperAnalyzer && typeof window.PastPaperAnalyzer.loadPapers === 'function') {
+            if (
+                window.PastPaperAnalyzer &&
+                typeof window.PastPaperAnalyzer.loadPapers === 'function'
+            ) {
                 window.PastPaperAnalyzer.loadPapers();
             }
         });
@@ -2505,4 +2638,3 @@ window.EnhancedVideoProgress = EnhancedVideoProgress;
 window.EnhancedBlog = EnhancedBlog;
 window.EnhancedFileManagement = EnhancedFileManagement;
 window.EnhancedAdminDashboard = EnhancedAdminDashboard;
-

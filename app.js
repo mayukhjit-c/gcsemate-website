@@ -4042,23 +4042,60 @@ function initializeAppState() {
         // Check subscription expiry on login
         checkSubscriptionExpiry();
 
-        // Show welcome notification for new users
-        const lastWelcome = window.ServerPreferences
-            ? window.ServerPreferences.get('notificationWelcomeShown')
-            : localStorage.getItem('notification_welcome_shown');
-        if (!lastWelcome || Date.now() - parseInt(lastWelcome) > 86400000) {
-            NotificationSystem.show(
-                'Welcome to GCSEMate!',
-                'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
-                'info'
-            );
-            const timestamp = String(Date.now());
-            if (window.ServerPreferences) {
-                window.ServerPreferences.set('notificationWelcomeShown', timestamp).catch(() => {});
-            } else {
-                localStorage.setItem('notification_welcome_shown', timestamp);
+        // Show welcome notification for new users (only once ever)
+        // Wait for ServerPreferences to be initialized
+        const checkWelcomeNotification = async () => {
+            try {
+                let lastWelcome = null;
+
+                // Wait a bit for ServerPreferences to initialize
+                if (window.ServerPreferences) {
+                    // Check if initialized, if not wait a bit
+                    if (!window.ServerPreferences.initialized) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    lastWelcome = window.ServerPreferences.get('notificationWelcomeShown');
+                }
+
+                // Fallback to localStorage if ServerPreferences not available or not initialized
+                if (lastWelcome === null || lastWelcome === undefined) {
+                    try {
+                        lastWelcome = localStorage.getItem('notification_welcome_shown');
+                    } catch (e) {
+                        // Ignore localStorage errors
+                    }
+                }
+
+                // Only show if never shown before (not every 24 hours)
+                if (
+                    !lastWelcome ||
+                    lastWelcome === '' ||
+                    lastWelcome === 'null' ||
+                    lastWelcome === 'undefined'
+                ) {
+                    NotificationSystem.show(
+                        'Welcome to GCSEMate!',
+                        'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
+                        'info'
+                    );
+                    const timestamp = String(Date.now());
+                    if (window.ServerPreferences && window.ServerPreferences.initialized) {
+                        await window.ServerPreferences.set('notificationWelcomeShown', timestamp);
+                    } else {
+                        try {
+                            localStorage.setItem('notification_welcome_shown', timestamp);
+                        } catch (e) {
+                            // Ignore localStorage errors
+                        }
+                    }
+                }
+            } catch (error) {
+                logError(error, 'checkWelcomeNotification');
             }
-        }
+        };
+
+        // Run check after a short delay to ensure ServerPreferences is ready
+        setTimeout(checkWelcomeNotification, 1000);
 
         // Initialize all new features
         if (typeof window.initializeAllFeatures === 'function') {
@@ -4075,18 +4112,49 @@ function initializeAppState() {
         window.subscriptionExpiryInterval = setInterval(checkSubscriptionExpiry, 60 * 60 * 1000);
     }
 
-    // First-time tutorial (skippable)
-    try {
-        const tutorialShown = window.ServerPreferences
-            ? window.ServerPreferences.get('tutorialShown')
-            : localStorage.getItem('gcsemate_tutorial_shown');
-        if (currentUser && !tutorialShown) {
-            showFirstTimeTutorial();
+    // First-time tutorial (skippable) - only show once ever
+    const checkTutorial = async () => {
+        try {
+            if (!currentUser) {
+                return;
+            }
+
+            let tutorialShown = null;
+
+            // Wait for ServerPreferences to be initialized
+            if (window.ServerPreferences) {
+                if (!window.ServerPreferences.initialized) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                tutorialShown = window.ServerPreferences.get('tutorialShown');
+            }
+
+            // Fallback to localStorage
+            if (tutorialShown === null || tutorialShown === undefined) {
+                try {
+                    tutorialShown = localStorage.getItem('gcsemate_tutorial_shown');
+                } catch (e) {
+                    // Ignore localStorage errors
+                }
+            }
+
+            // Only show if never shown before
+            if (
+                !tutorialShown ||
+                tutorialShown === '' ||
+                tutorialShown === 'null' ||
+                tutorialShown === 'undefined'
+            ) {
+                // Don't show tutorial automatically - user can access it from help menu if needed
+                // showFirstTimeTutorial();
+            }
+        } catch (error) {
+            logError(error, 'checkTutorial');
         }
-    } catch (error) {
-        logError(error, 'initializeAppState: First-time tutorial');
-        // Non-critical, continue execution
-    }
+    };
+
+    // Run check after a short delay
+    setTimeout(checkTutorial, 1000);
 
     // What's New banner (versioned, returning users only)
     try {
@@ -4361,6 +4429,122 @@ function buildSystemPromptForPuter(
     subjectSpecifications,
     aiType = 'general'
 ) {
+    // If English Language AQA 8700, use the full examiner training prompt
+    if (aiType === 'english-language-aqa') {
+        return `AQA GCSE English Language (8700) — AI Examiner Training Prompt (2026 onwards)
+
+You are an AQA GCSE English Language (8700) AI Examiner. You know nothing else. Your sole role is to act exactly like a professional AQA examiner, examiner‑trainer, and senior moderator combined. You must:
+
+- Mark student responses strictly to the AQA 8700 specification and assessment objectives.
+- Apply mark schemes and band descriptors rigorously.
+- Provide AO breakdowns, raw marks, and band placement.
+- Deliver precise, actionable feedback (3–6 points, each with diagnosis, evidence, action, and a model sentence).
+- Generate Grade 9 model answers in exam‑realistic formats.
+- Be strict but constructive: penalise unsupported claims, vague analysis, and weak technical accuracy, while showing students exactly how to improve.
+- Begin every examiner output with: "AQA 8700 Examiner ready."
+
+Specification Facts
+
+Qualification structure:
+- Title: AQA GCSE English Language (8700).
+- Linear qualification: all exams taken at end of course (May/June; November resits for 16+).
+- All texts in exams are unseen.
+- Two equally weighted papers (50% each).
+- Spoken Language endorsement (AO7–AO9) reported separately, not contributing to GCSE grade.
+
+Paper 1: Explorations in Creative Reading and Writing (2026 onwards)
+- Duration: 1h 45m.
+- 80 marks (40 reading, 40 writing).
+- 50% of GCSE.
+
+Section A: Reading (one literature fiction text, 20th/21st century)
+- Q1 (4 marks): Changed. Now multiple choice (tick boxes). One correct answer per sub‑question (4 questions, 1 mark each). Skills tested: retrieval of explicit information (AO1). Mark strictly: only exact ticked correct answers earn credit.
+- Q2 (8 marks): No change. Language analysis.
+- Q3 (8 marks): Changed wording. Focus on how structure creates a specific effect (e.g., tension, surprise). Reward analysis of deliberate structural choices linked to the named effect.
+- Q4 (20 marks): Changed wording. Students are given a statement and asked to what extent they agree/disagree. Mark evaluation in relation to the statement, not general writer's methods.
+
+Section B: Writing
+- Q5 (40 marks: AO5 = 24, AO6 = 16): Changed slightly. Still two options + picture prompt. Picture is now explicitly a springboard for imagination — students do not need to describe it literally. Students may write the opening of a story rather than a whole story. Reward imaginative use of prompt, organisation, and narrative control.
+
+Paper 2: Writers' Viewpoints and Perspectives (2026 onwards)
+- Duration: 1h 45m.
+- 80 marks (40 reading, 40 writing).
+- 50% of GCSE.
+
+Section A: Reading (two linked texts: one non‑fiction, one literary non‑fiction)
+- Q1 (4 marks): No change. Short retrieval.
+- Q2 (8 marks): Changed wording. Now asks what you can infer about similarities/differences between texts. Still AO1 (synthesis). Mark as summary of inferences supported by evidence.
+- Q3 (12 marks): No change. Language analysis.
+- Q4 (16 marks): Changed wording. Focus on writers' viewpoints/perspectives. Students now "comment on" methods rather than "compare" them. Reward clear commentary on how viewpoints are conveyed.
+
+Section B: Writing
+- Q5 (40 marks: AO5 = 24, AO6 = 16): No change in task format. One extended writing task (viewpoint writing). Mark scheme updated: now includes "typical features" at each level to guide examiners. Apply descriptors strictly; use "typical features" as calibration.
+
+Assessment Objectives (AOs) and Weightings:
+- AO1: Identify/interpret explicit & implicit info; select/synthesise evidence — 10%.
+- AO2: Analyse language/structure; use subject terminology — 17.5%.
+- AO3: Compare/comment on writers' ideas/perspectives — 10%.
+- AO4: Evaluate texts critically with references — 12.5%.
+- AO5: Communicate clearly, effectively, imaginatively; organise ideas — 30%.
+- AO6: Range of vocabulary/sentence structures; accurate spelling/punctuation — 20%.
+- AO7–AO9: Spoken Language endorsement (0%).
+
+Examiner Algorithm (step‑by‑step marking):
+1. Identify task: Paper, Section, Question, AO targets.
+2. Evidence inventory: List quotations/examples used by student.
+3. Analyse moves: For each quotation, count analytic steps:
+   - Identify technique/feature.
+   - Explain effect.
+   - Link to meaning/reader/context.
+4. AO mapping:
+   - AO1: retrieval, inference, synthesis.
+   - AO2: language/structure analysis.
+   - AO3: viewpoints/perspectives commentary.
+   - AO4: evaluation linked to statement.
+   - AO5: clarity, organisation, imaginative language.
+   - AO6: technical accuracy.
+5. Band placement: Use AQA mark scheme descriptors (Levels 1–4).
+6. Feedback: Provide 3–6 numbered points (Diagnosis, Evidence, Action, Model sentence).
+7. Summative verdict: One sentence: "Next step: …" to reach next band.
+
+Model Answer Generation Rules (2026 onwards):
+- Paper 1 Q1: Multiple choice — model answers must show correct ticked options only.
+- Paper 1 Q3: Structure analysis must explicitly link to the named effect.
+- Paper 1 Q4: Model answers must evaluate in relation to the given statement.
+- Paper 1 Q5: Model answers may be story openings; imaginative use of picture prompt encouraged.
+- Paper 2 Q2: Model answers must infer similarities/differences, not just summarise.
+- Paper 2 Q4: Model answers must comment on viewpoints/perspectives; comparison optional.
+- Paper 2 Q5: Model answers must show "typical features" of high‑level writing (clear viewpoint, persuasive devices, organisation, technical accuracy).
+
+Feedback Templates:
+Always give feedback in this format:
+- Diagnosis — "You summarise but don't infer differences clearly."
+- Evidence — "In Q2 you wrote: 'Both trains are fast'."
+- Action — "Infer from evidence: one is modern, one is old."
+- Model sentence — "Source A shows the train is modern ('electric lights'), while Source B suggests it is old ('steam engine'). This difference highlights…"
+- Finish with: "Next step: Add precise inferences supported by evidence to move into Level 4."
+
+Safeguards:
+- Do not invent texts; all exam texts are unseen.
+- Do not reproduce long copyrighted extracts.
+- Only quote short snippets for analysis.
+- Always mark strictly to AO descriptors and weightings.
+
+Operational Checklist:
+For every marking/modeling task:
+- Confirm question type and AO targets.
+- List evidence used.
+- Count analytic moves.
+- Map to band descriptor.
+- Assign raw mark + AO split.
+- Give 3–6 feedback points with model sentences.
+- Provide one‑line next step.
+- If generating model answer, add examiner note.
+
+Confirmation:
+If ready, begin every examiner output with: "AQA 8700 Examiner ready."`;
+    }
+
     // If English Literature Edexcel, use a simplified version
     if (aiType === 'english-literature-edexcel') {
         return `You are GCSEMate AI, an intelligent tutoring assistant for GCSE English Literature (Edexcel). Help students with exam preparation, marking, and question generation.`;
@@ -5563,17 +5747,22 @@ function showFirstTimeTutorial() {
     overlay.classList.remove('hidden');
     overlay.style.display = 'flex';
     render();
-    next.onclick = () => {
+    next.onclick = async () => {
         if (i < steps.length - 1) {
             i++;
             render();
         } else {
             overlay.style.display = 'none';
             overlay.classList.add('hidden');
-            if (window.ServerPreferences) {
-                window.ServerPreferences.set('tutorialShown', '1').catch(() => {});
+            // Mark tutorial as shown
+            if (window.ServerPreferences && window.ServerPreferences.initialized) {
+                await window.ServerPreferences.set('tutorialShown', '1');
             } else {
-                localStorage.setItem('gcsemate_tutorial_shown', '1');
+                try {
+                    localStorage.setItem('gcsemate_tutorial_shown', '1');
+                } catch (e) {
+                    // Ignore localStorage errors
+                }
             }
         }
     };
@@ -5583,10 +5772,19 @@ function showFirstTimeTutorial() {
             render();
         }
     };
-    skip.onclick = () => {
+    skip.onclick = async () => {
         overlay.style.display = 'none';
         overlay.classList.add('hidden');
-        localStorage.setItem('gcsemate_tutorial_shown', '1');
+        // Mark tutorial as shown
+        if (window.ServerPreferences && window.ServerPreferences.initialized) {
+            await window.ServerPreferences.set('tutorialShown', '1');
+        } else {
+            try {
+                localStorage.setItem('gcsemate_tutorial_shown', '1');
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        }
     };
 }
 /**
@@ -11091,6 +11289,19 @@ function showPage(pageId) {
         }, 100);
     }
 
+    // Initialize study progress UI when dashboard page is shown
+    if (pageId === 'subject-dashboard-page') {
+        setTimeout(() => {
+            if (typeof initStudyProgressUI === 'function') {
+                initStudyProgressUI();
+            }
+            // Also ensure dashboard is rendered
+            if (typeof renderDashboard === 'function') {
+                renderDashboard();
+            }
+        }, 100);
+    }
+
     // Initialize feature pages when shown
     const featurePages = {
         'flashcards-page': () => {
@@ -11688,12 +11899,27 @@ async function renderDashboard() {
             }
             subjectGrid.appendChild(card);
         });
+
+        // Initialize study progress UI after dashboard is rendered
+        if (typeof initStudyProgressUI === 'function') {
+            // Use setTimeout to ensure DOM is fully ready
+            setTimeout(() => {
+                initStudyProgressUI();
+            }, 100);
+        }
     } catch (err) {
         renderError(
             subjectGrid,
             `Could not load subjects. ${err.message || ''} Please try again later.`
         );
         showToast(`Subjects failed to load: ${err.message}`, 'error');
+
+        // Still try to initialize study progress UI even if subjects fail
+        if (typeof initStudyProgressUI === 'function') {
+            setTimeout(() => {
+                initStudyProgressUI();
+            }, 100);
+        }
     }
 }
 /**
@@ -13418,6 +13644,16 @@ async function handleAddPlaylist() {
  *
  */
 function editPlaylist(id, currentTitle) {
+    // Use enhanced VideoPlaylistEditor if available
+    if (
+        window.VideoPlaylistEditor &&
+        typeof window.VideoPlaylistEditor.showEditModal === 'function'
+    ) {
+        window.VideoPlaylistEditor.showEditModal(id);
+        return;
+    }
+
+    // Fallback to original implementation
     if (currentUser.role !== 'admin') {
         return;
     }
@@ -20707,6 +20943,12 @@ function updateStudySessionStatus(message, state = 'idle') {
 /**
  *
  */
+// Track if study progress UI is initialized to prevent duplicate handlers
+let studyProgressUIInitialized = false;
+
+/**
+ *
+ */
 function initStudyProgressUI() {
     const startBtn = document.getElementById('study-start-btn');
     const stopBtn = document.getElementById('study-stop-btn');
@@ -20718,9 +20960,23 @@ function initStudyProgressUI() {
         return;
     }
 
+    // Prevent duplicate initialization
+    if (studyProgressUIInitialized) {
+        // Just refresh stats if already initialized
+        renderStudyStats();
+        renderStudyHistory();
+        return;
+    }
+
+    studyProgressUIInitialized = true;
+
     startBtn.addEventListener('click', () => {
         const subjectInput = document.getElementById('study-subject-input');
-        const subject = subjectInput?.value || 'General Study';
+        const subject = subjectInput?.value?.trim() || 'General Study';
+        if (!subject || subject === '') {
+            showToast('Please enter a subject name', 'error');
+            return;
+        }
         StudyProgress.startSession(subject);
         showToast(`Tracking study session for ${subject}`, 'success');
         announceToScreenReader(`Study session started for ${subject}`);
@@ -20753,9 +21009,36 @@ function initStudyProgressUI() {
         });
     }
 
+    // Add refresh button handler
+    const refreshBtn = document.getElementById('refresh-study-stats');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            renderStudyStats();
+            renderStudyHistory();
+            showToast('Study statistics refreshed', 'success');
+        });
+    }
+
+    // Initialize StudyProgressStorage if not already initialized
+    if (typeof StudyProgressStorage !== 'undefined' && StudyProgressStorage.init) {
+        try {
+            StudyProgressStorage.init();
+        } catch (err) {
+            logError(err, 'initStudyProgressUI: StudyProgressStorage.init');
+        }
+    }
+
     renderStudyStats();
     renderStudyHistory();
-    updateStudySessionStatus('No session running', 'idle');
+
+    // Check if there's an active session and restore it
+    if (StudyProgress && StudyProgress.sessionStartTime) {
+        const subject = StudyProgress.currentSubject || 'General Study';
+        StudyProgress.updateSessionDisplay(subject);
+        updateStudySessionStatus(`Tracking ${subject}`, 'active');
+    } else {
+        updateStudySessionStatus('No session running', 'idle');
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════ */

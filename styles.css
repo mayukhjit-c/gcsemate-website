@@ -6436,3 +6436,197 @@ svg {
 .text-gray-900 {
     color: var(--text-primary) !important;
 }
+
+/* Flashcard flip animation */
+#flashcard-card {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+#flashcard-front,
+#flashcard-back {
+    backface-visibility: hidden;
+    transition: transform 0.6s;
+}
+
+#flashcard-front {
+    transform: rotateY(0deg);
+}
+
+#flashcard-back {
+    transform: rotateY(180deg);
+}
+
+#flashcard-card.flipped #flashcard-front {
+    transform: rotateY(-180deg);
+}
+
+#flashcard-card.flipped #flashcard-back {
+    transform: rotateY(0deg);
+}
+
+/* Ensure flashcard text is readable */
+#flashcard-card,
+#flashcard-front,
+#flashcard-back {
+    color: var(--text-primary) !important;
+}
+
+#flashcard-card h3,
+#flashcard-card p {
+    color: var(--text-primary) !important;
+}
+
+/* Quiz UI readability */
+#practice-questions-content,
+#practice-questions-content * {
+    color: var(--text-primary) !important;
+}
+
+#practice-questions-content h3,
+#practice-questions-content p,
+#practice-questions-content label {
+    color: var(--text-primary) !important;
+}
+
+/* Modal readability improvements */
+.modal,
+[class*="modal"],
+.bg-white,
+.bg-white\/70,
+.bg-white\/80,
+.bg-white\/90,
+.bg-white\/95 {
+    color: var(--text-primary) !important;
+}
+
+.modal h1,
+.modal h2,
+.modal h3,
+.modal p,
+.modal label,
+.modal input,
+.modal textarea,
+.modal select,
+[class*="modal"] h1,
+[class*="modal"] h2,
+[class*="modal"] h3,
+[class*="modal"] p,
+[class*="modal"] label,
+[class*="modal"] input,
+[class*="modal"] textarea,
+[class*="modal"] select {
+    color: var(--text-primary) !important;
+}
+
+/* Ensure all icons are visible */
+i.fa,
+i.fas,
+i.far,
+i.fab,
+[class*="fa-"] {
+    color: inherit !important;
+}
+
+/* Button text readability */
+button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600):not(.bg-yellow-600) {
+    color: var(--text-primary) !important;
+}
+
+button.bg-blue-600,
+button.bg-blue-700,
+button.bg-red-600,
+button.bg-green-600,
+button.bg-yellow-600 {
+    color: #ffffff !important;
+}
+
+/* Input and form readability */
+input,
+textarea,
+select {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-light) !important;
+    opacity: 0.7;
+}
+
+/* Fix white text on light backgrounds - ensure proper contrast */
+.bg-white .text-white,
+.bg-white\/70 .text-white,
+.bg-white\/80 .text-white,
+.bg-white\/90 .text-white,
+.bg-white\/95 .text-white,
+[class*='bg-white'] .text-white,
+[style*='background: white'] .text-white,
+[style*='background: rgba(255'] .text-white {
+    color: var(--text-primary) !important;
+}
+
+/* Fix icons on light backgrounds */
+.bg-white i,
+.bg-white\/70 i,
+.bg-white\/80 i,
+.bg-white\/90 i,
+.bg-white\/95 i,
+[class*='bg-white'] i,
+[style*='background: white'] i {
+    color: var(--text-primary) !important;
+}
+
+/* Ensure modals have readable text */
+.modal,
+[class*='modal'],
+[class*='backdrop-blur'] {
+    color: var(--text-primary) !important;
+}
+
+.modal h1,
+.modal h2,
+.modal h3,
+.modal p,
+.modal label,
+[class*='modal'] h1,
+[class*='modal'] h2,
+[class*='modal'] h3,
+[class*='modal'] p,
+[class*='modal'] label {
+    color: var(--text-primary) !important;
+}
+
+/* Fix input text colors */
+input,
+textarea,
+select {
+    color: var(--text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-light) !important;
+    opacity: 0.7;
+}
+
+/* Ensure all cards have readable text */
+.card,
+[class*='card'],
+.bg-white\/70,
+.bg-white\/80,
+.bg-white\/90 {
+    color: var(--text-primary) !important;
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card p,
+[class*='card'] h1,
+[class*='card'] h2,
+[class*='card'] h3,
+[class*='card'] p {
+    color: var(--text-primary) !important;
+}
