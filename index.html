@@ -887,6 +887,24 @@
         </div>
         <div id="event-countdown-banner" class="hidden"></div>
         <div id="site-announcement-banner" class="hidden"></div>
+        <div id="offline-status-banner"
+            class="hidden px-4 py-3 bg-amber-50/90 border border-amber-200/70 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+            role="status" aria-live="polite">
+            <div class="flex items-start sm:items-center gap-3">
+                <span class="mt-1 sm:mt-0 inline-flex w-3 h-3 rounded-full bg-amber-500 animate-pulse"
+                    aria-hidden="true"></span>
+                <div>
+                    <p class="font-semibold">You're offline</p>
+                    <p class="text-sm text-amber-800">We’ll keep everything cached and sync changes once you’re back
+                        online.</p>
+                </div>
+            </div>
+            <button id="offline-retry-button"
+                class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold shadow-sm hover:bg-amber-700 transition-colors"
+                type="button">
+                Retry connection
+            </button>
+        </div>
 
         <header
             class="bg-white/90 backdrop-blur-xl p-3 sm:p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 relative shadow-sm"
@@ -971,6 +989,13 @@
                 </a>
             </nav>
             <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
+                <button id="notification-button"
+                    class="relative p-2 rounded-lg border border-gray-200/60 text-gray-600 hover:text-gray-900 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all"
+                    aria-label="Open notifications" aria-expanded="false">
+                    <i class="fas fa-bell text-lg" aria-hidden="true"></i>
+                    <span id="notification-badge"
+                        class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-600 text-white text-[10px] leading-[18px] rounded-full text-center font-bold"></span>
+                </button>
                 <button id="theme-toggle" class="mr-2" aria-label="Toggle dark mode" title="Toggle theme">
                     <i class="fas fa-moon icon-md" id="theme-icon"></i>
                 </button>
@@ -1008,6 +1033,24 @@
                             d="M4 6h16M4 12h16m-16 6h16"></path>
                     </svg>
                 </button>
+            </div>
+            <div id="notification-panel"
+                class="hidden absolute top-full right-4 mt-3 w-full max-w-sm bg-white/95 backdrop-blur-xl border border-gray-200/80 rounded-2xl shadow-2xl z-[2000]"
+                role="region" aria-label="Notifications">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Notifications</p>
+                        <p class="text-xs text-gray-500">Stay updated with system activity</p>
+                    </div>
+                    <button id="notification-mark-read"
+                        class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">Mark all
+                        read</button>
+                </div>
+                <div id="notification-list" class="max-h-96 overflow-y-auto divide-y divide-gray-100">
+                </div>
+                <div class="px-4 py-3 text-xs text-gray-500 text-center border-t border-gray-100">
+                    Tips follow <span class="font-semibold">laravel-boost.mdc</span> craft standard.
+                </div>
             </div>
         </header>
         <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain"
@@ -1140,6 +1183,103 @@
                             </p>
                         </div>
                     </div>
+                    <div id="study-tracker-grid"
+                        class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 transition-all duration-300">
+                        <div
+                            class="bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-5 shadow-lg flex flex-col gap-4">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active study
+                                        session</p>
+                                    <p id="study-timer-display"
+                                        class="mt-1 text-3xl sm:text-4xl font-mono font-bold text-gray-900">00:00:00</p>
+                                </div>
+                                <span id="study-streak-pill"
+                                    class="text-xs font-semibold inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                    <i class="fas fa-fire text-orange-500"></i>
+                                    <span id="study-streak-value">0-day streak</span>
+                                </span>
+                            </div>
+                            <label for="study-subject-input" class="text-sm font-semibold text-gray-700">Subject
+                                focus</label>
+                            <input id="study-subject-input" type="text" placeholder="E.g. AQA Biology"
+                                class="w-full rounded-xl border border-gray-200 bg-white/80 focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-3 text-sm"
+                                aria-label="Study subject">
+                            <div class="flex flex-wrap gap-2">
+                                <button id="study-start-btn"
+                                    class="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 text-white font-semibold shadow-sm hover:bg-green-700 transition-colors"
+                                    type="button">
+                                    <i class="fas fa-play"></i>
+                                    Start session
+                                </button>
+                                <button id="study-stop-btn"
+                                    class="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-200 text-gray-800 font-semibold shadow-sm hover:bg-gray-300 transition-colors"
+                                    type="button">
+                                    <i class="fas fa-stop-circle"></i>
+                                    Stop
+                                </button>
+                                <button id="study-history-toggle"
+                                    class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                    type="button">
+                                    <i class="fas fa-stream mr-2"></i>
+                                    View log
+                                </button>
+                            </div>
+                            <p id="study-session-status" class="text-xs text-gray-500" aria-live="polite"></p>
+                        </div>
+                        <div
+                            class="bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-5 shadow-lg flex flex-col gap-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Study
+                                        insights</p>
+                                    <p class="text-xs text-gray-500">Data stored locally for privacy</p>
+                                </div>
+                                <button id="refresh-study-stats"
+                                    class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors inline-flex items-center gap-1"
+                                    type="button">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                            <dl class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="flex flex-col rounded-2xl bg-blue-50/70 p-4 border border-blue-100">
+                                    <dt class="text-xs uppercase font-semibold text-blue-700">Total time</dt>
+                                    <dd id="study-total-time" class="text-2xl font-bold text-blue-900 mt-1">0h</dd>
+                                </div>
+                                <div class="flex flex-col rounded-2xl bg-purple-50/70 p-4 border border-purple-100">
+                                    <dt class="text-xs uppercase font-semibold text-purple-700">Sessions</dt>
+                                    <dd id="study-total-sessions" class="text-2xl font-bold text-purple-900 mt-1">0</dd>
+                                </div>
+                            </dl>
+                            <div class="rounded-2xl border border-gray-100 bg-white/70 p-4">
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Top focus
+                                    subjects</p>
+                                <div id="study-top-subjects" class="space-y-2 text-sm text-gray-700">
+                                    <p class="text-gray-400 text-xs">No data yet. Start a session!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="study-history-panel"
+                        class="hidden mb-8 bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl shadow-lg">
+                        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="fas fa-clipboard-list text-blue-600"></i>
+                                    Recent study sessions
+                                </p>
+                                <p class="text-xs text-gray-500">Locally stored for your privacy</p>
+                            </div>
+                            <button id="clear-study-history"
+                                class="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                                type="button">Clear log</button>
+                        </div>
+                        <div id="study-session-history" class="divide-y divide-gray-100 max-h-72 overflow-y-auto"
+                            aria-live="polite">
+                            <p class="text-sm text-gray-500 px-5 py-4">No sessions recorded yet.</p>
+                        </div>
+                    </div>
                     <div id="subject-grid"
                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6 lg:gap-7">
                     </div>
@@ -1154,28 +1294,86 @@
                     </div>
 
                     <!-- Search and Filter Bar -->
-                    <div class="mb-6 flex flex-col sm:flex-row gap-3">
-                        <div class="relative flex-1">
-                            <input id="playlist-search" type="search" placeholder="Search playlists..."
-                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                aria-label="Search playlists">
-                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                aria-hidden="true"></i>
-                            <button id="playlist-search-clear"
-                                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                aria-label="Clear search">
-                                <i class="fas fa-times" aria-hidden="true"></i>
+                    <div class="mb-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <input id="playlist-search" type="search" placeholder="Search playlists..."
+                                    class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    aria-label="Search playlists">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                    aria-hidden="true"></i>
+                                <button id="playlist-search-clear"
+                                    class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                    aria-label="Clear search">
+                                    <i class="fas fa-times" aria-hidden="true"></i>
+                                </button>
+                                <div id="playlist-search-suggestions"
+                                    class="hidden absolute z-30 left-0 right-0 top-[calc(100%+6px)] bg-white/95 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden text-sm"
+                                    role="listbox" aria-label="Search suggestions">
+                                </div>
+                            </div>
+                            <select id="playlist-category-filter"
+                                class="px-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <option value="all">All Categories</option>
+                            </select>
+                            <button id="playlist-sort-btn"
+                                class="px-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-colors flex items-center gap-2 text-sm font-medium">
+                                <i class="fas fa-sort" aria-hidden="true"></i>
+                                <span>Sort</span>
+                            </button>
+                            <button id="playlist-reset-btn"
+                                class="px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm font-semibold text-gray-600">
+                                <i class="fas fa-undo-alt" aria-hidden="true"></i>
+                                <span>Reset</span>
                             </button>
                         </div>
-                        <select id="playlist-category-filter"
-                            class="px-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                            <option value="all">All Categories</option>
-                        </select>
-                        <button id="playlist-sort-btn"
-                            class="px-4 py-3 rounded-xl border border-gray-300/70 bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-colors flex items-center gap-2 text-sm font-medium">
-                            <i class="fas fa-sort" aria-hidden="true"></i>
-                            <span>Sort</span>
-                        </button>
+                        <div class="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                            <div class="flex items-center gap-2">
+                                <button id="playlist-save-search"
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-colors"
+                                    type="button">
+                                    <i class="fas fa-bookmark" aria-hidden="true"></i>
+                                    Save search
+                                </button>
+                                <button id="playlist-history-toggle"
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+                                    type="button">
+                                    <i class="fas fa-history" aria-hidden="true"></i>
+                                    Recent searches
+                                </button>
+                            </div>
+                            <p class="text-gray-500 flex items-center gap-2">
+                                <i class="fas fa-lightbulb text-amber-500"></i>
+                                Search assistant follows <span class="font-semibold">laravel-boost.mdc</span>
+                            </p>
+                        </div>
+                        <div id="saved-searches-container"
+                            class="hidden bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="fas fa-bookmark text-blue-600"></i>
+                                    Saved searches
+                                </p>
+                                <button id="clear-saved-searches"
+                                    class="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                                    type="button">Clear saved</button>
+                            </div>
+                            <div id="saved-searches-chips" class="flex flex-wrap gap-2 text-sm"></div>
+                        </div>
+                        <div id="search-history-panel"
+                            class="hidden bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="fas fa-search text-purple-600"></i>
+                                    Recent searches
+                                </p>
+                                <button id="clear-search-history"
+                                    class="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                                    type="button">Clear history</button>
+                            </div>
+                            <div id="search-history-list" class="flex flex-wrap gap-2 text-sm min-h-[32px]"
+                                aria-live="polite"></div>
+                        </div>
                     </div>
 
                     <!-- Recently Viewed Section -->
@@ -1594,6 +1792,26 @@
                                     </svg>
                                 </button>
                             </div>
+                        </div>
+                        <div class="w-full sm:w-auto sm:ml-auto space-y-1">
+                            <div id="download-limit-indicator"
+                                class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-blue-100 bg-blue-50/80 text-sm text-blue-900 shadow-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"
+                                        data-limit-indicator aria-hidden="true"></span>
+                                    <span><strong data-limit-remaining>3</strong> downloads left</span>
+                                </div>
+                                <button id="download-limit-refresh"
+                                    class="text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
+                                    type="button">
+                                    Refresh
+                                </button>
+                            </div>
+                            <p id="download-limit-reset-text"
+                                class="text-[11px] text-blue-700 flex items-center gap-1 sm:justify-end">
+                                <i class="fas fa-clock text-[10px]" aria-hidden="true"></i>
+                                Resets soon
+                            </p>
                         </div>
                     </div>
                     <div id="file-list" class="p-4 overflow-y-auto flex-grow" aria-live="polite" aria-busy="false">
