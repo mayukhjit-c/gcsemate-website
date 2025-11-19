@@ -7678,8 +7678,8 @@ async function openEditUserModal(userId) {
             </div>
         `;
 
-        // Load exam results for this user
-        loadExamResults(user.id);
+        // Load exam results for this user (allow admin to edit)
+        loadExamResults(user.id, true);
         const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
         const userSubjects = user.allowedSubjects || [];
         SUBJECTS.forEach(subject => {
@@ -12369,8 +12369,8 @@ function renderPlaylistCard(playlist, isRecent = false) {
             <button onclick="event.stopPropagation(); sharePlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" data-tooltip="Share playlist">
                 <i class="fas fa-share-alt"></i>
             </button>
-            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" data-tooltip="Delete playlist">
-                <i class="fas fa-trash-alt"></i>
+            <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="px-4 py-3 bg-white dark:bg-gray-700 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md" data-tooltip="Delete playlist">
+                <i class="fas fa-trash-alt text-red-600 dark:text-red-400"></i>
             </button>
             `
                     : `
@@ -12385,10 +12385,10 @@ function renderPlaylistCard(playlist, isRecent = false) {
                 ? `
         <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <button onclick="event.stopPropagation(); editPlaylist('${playlistId}', '${escapeHTML(playlist.title.replace(/'/g, "\\'"))}')" class="p-2 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Edit Playlist">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
+                <i class="fas fa-pencil-alt text-white"></i>
             </button>
             <button onclick="event.stopPropagation(); deletePlaylist('${playlistId}')" class="p-2 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-110" data-tooltip="Delete Playlist">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <i class="fas fa-trash-alt text-white"></i>
             </button>
         </div>`
                 : ''
@@ -18683,7 +18683,7 @@ function getGradeColorClass(grade) {
 /**
  *
  */
-async function loadExamResults(targetUserId = null) {
+async function loadExamResults(targetUserId = null, allowEdit = false) {
     // If targetUserId is provided, it means an admin is viewing another user's results
     const viewingUserId = targetUserId || (currentUser ? currentUser.uid : null);
     if (!viewingUserId) {
@@ -18797,8 +18797,10 @@ async function loadExamResults(targetUserId = null) {
 
         await Promise.all(loadPromises);
 
-        // Render exam results table (pass isViewingOtherUser flag to make it read-only for admins viewing other users)
-        renderExamResultsTable(subjectsToShow, examResultsData, isViewingOtherUser);
+        // Render exam results table (pass isViewingOtherUser flag and targetUserId for admin editing)
+        // If admin and allowEdit is true, allow editing even when viewing other user
+        const shouldBeReadOnly = isViewingOtherUser && !allowEdit;
+        renderExamResultsTable(subjectsToShow, examResultsData, shouldBeReadOnly, viewingUserId);
 
         loadingEl.classList.add('hidden');
         contentEl.classList.remove('hidden');
@@ -18817,7 +18819,7 @@ async function loadExamResults(targetUserId = null) {
 /**
  *
  */
-function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
+function renderExamResultsTable(subjects, examResultsData, readOnly = false, targetUserId = null) {
     // Check if admin or user, and determine which content element to use
     const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
     let contentEl;
@@ -18968,11 +18970,11 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false) {
                 </div>
                 ${
                     !readOnly
-                        ? `<button onclick="saveExamResults()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
+                        ? `<button onclick="saveExamResults${targetUserId ? `('${targetUserId}')` : '()'}" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2">
                     <i class="fas fa-save"></i>
                     Save Results
                 </button>`
-                        : '<p class="text-sm text-gray-500 italic">View-only mode (Admin viewing user results)</p>'
+                        : '<p class="text-sm text-gray-500 italic">View-only mode</p>'
                 }
             </div>
         </div>
@@ -19254,11 +19256,19 @@ function updateExamDate(examIndex, date) {
 /**
  *
  */
-async function saveExamResults() {
+async function saveExamResults(targetUserId = null) {
     if (!currentUser || !currentUser.uid) {
         showToast('You must be logged in to save exam results.', 'error');
         return;
     }
+
+    // If targetUserId is provided and user is admin, save for that user
+    // Also check window.examResultsTargetUserId which is set when rendering
+    const finalTargetUserId = targetUserId || window.examResultsTargetUserId;
+    const userIdToSave =
+        finalTargetUserId && (currentUser.role || '').toLowerCase() === 'admin'
+            ? finalTargetUserId
+            : currentUser.uid;
 
     const subjects = window.examSubjects || [];
     const examCount = window.currentExamCount || 1;
@@ -19312,7 +19322,7 @@ async function saveExamResults() {
             // Save to Firebase
             const subjectRef = db
                 .collection('userExamResults')
-                .doc(currentUser.uid)
+                .doc(userIdToSave)
                 .collection('subjects')
                 .doc(subjectKey);
 
@@ -19355,7 +19365,15 @@ async function saveExamResults() {
         }
 
         // Reload to ensure sync
-        await loadExamResults();
+        const reloadTargetUserId =
+            finalTargetUserId && (currentUser.role || '').toLowerCase() === 'admin'
+                ? finalTargetUserId
+                : null;
+        if (reloadTargetUserId) {
+            await loadExamResults(reloadTargetUserId, true);
+        } else {
+            await loadExamResults();
+        }
     } catch (error) {
         console.error('Error saving exam results:', error);
         showToast('Error saving exam results. Please try again.', 'error');
@@ -19447,12 +19465,24 @@ function initTheme() {
     function toggleTheme() {
         const currentTheme = html.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        // Add smooth fade transition
+        html.style.transition = 'background-color 0.5s ease, color 0.5s ease';
+        document.body.style.transition = 'background-color 0.5s ease, color 0.5s ease';
+
+        // Apply theme with fade
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme, themeIcon, themeIconMobile);
 
         // Announce theme change for screen readers
         announceToScreenReader(`Theme changed to ${newTheme} mode`);
+
+        // Remove transition after animation completes to avoid performance issues
+        setTimeout(() => {
+            html.style.transition = '';
+            document.body.style.transition = '';
+        }, 500);
     }
 
     /**
