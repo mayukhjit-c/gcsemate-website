@@ -310,7 +310,7 @@ const FlashcardSystem = {
                         <div class="mt-6 flex gap-2 justify-center">
                             <button onclick="FlashcardSystem.rateCard(1)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Again</button>
                             <button onclick="FlashcardSystem.rateCard(3)" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Hard</button>
-                            <button onclick="FlashcardSystem.rateCard(4)" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Good</button>
+                            <button onclick="FlashcardSystem.rateCard(4)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Good</button>
                             <button onclick="FlashcardSystem.rateCard(5)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Easy</button>
                         </div>
                     </div>

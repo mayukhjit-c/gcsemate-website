@@ -528,7 +528,7 @@ Explain clearly why each wrong option is incorrect to help students learn from t
                             if (isAnswered) {
                                 if (idx === question.correctAnswer) {
                                     buttonClass +=
-                                        'bg-green-100 dark:bg-green-900 border-green-500 text-green-800 dark:text-green-200';
+                                        'bg-sky-100 dark:bg-blue-900 border-sky-500 text-sky-800 dark:text-sky-200';
                                     icon = '<i class="fas fa-check-circle mr-2"></i>';
                                 } else if (idx === userAnswer && !isCorrect) {
                                     buttonClass +=
@@ -560,11 +560,11 @@ Explain clearly why each wrong option is incorrect to help students learn from t
                         ${
                             isCorrect
                                 ? `
-                        <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900">
-                            <p class="font-semibold text-green-800 dark:text-green-200 mb-2">
+                        <div class="p-4 rounded-lg bg-sky-50 dark:bg-blue-900">
+                            <p class="font-semibold text-sky-800 dark:text-sky-200 mb-2">
                                 <i class="fas fa-check-circle mr-2"></i>Correct!
                             </p>
-                            <p class="text-sm text-green-700 dark:text-green-300">
+                            <p class="text-sm text-sky-700 dark:text-sky-300">
                                 ${escapeHtml(question.explanation || 'Well done!')}
                             </p>
                         </div>
@@ -740,7 +740,7 @@ Explain clearly why each wrong option is incorrect to help students learn from t
         content.innerHTML = `
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 text-center">
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Quiz Results</h2>
-                <div class="text-6xl font-bold mb-4 ${percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600'}">
+                <div class="text-6xl font-bold mb-4 ${percentage >= 70 ? 'text-sky-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600'}">
                     ${percentage}%
                 </div>
                 <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">
@@ -753,11 +753,11 @@ Explain clearly why each wrong option is incorrect to help students learn from t
                             const userAnswer = this.userAnswers[idx];
                             const isCorrect = userAnswer === q.correctAnswer;
                             return `
-                            <div class="p-4 rounded-lg ${isCorrect ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900'}">
-                                <p class="font-semibold ${isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'} mb-2">
+                            <div class="p-4 rounded-lg ${isCorrect ? 'bg-sky-50 dark:bg-blue-900' : 'bg-red-50 dark:bg-red-900'}">
+                                <p class="font-semibold ${isCorrect ? 'text-sky-800 dark:text-sky-200' : 'text-red-800 dark:text-red-200'} mb-2">
                                     Q${idx + 1}: ${escapeHtml(q.question)}
                                 </p>
-                                <p class="text-sm ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}">
+                                <p class="text-sm ${isCorrect ? 'text-sky-700 dark:text-sky-300' : 'text-red-700 dark:text-red-300'}">
                                     Your answer: ${escapeHtml(q.options[userAnswer] || 'Not answered')}
                                     ${!isCorrect ? `| Correct: ${escapeHtml(q.options[q.correctAnswer])}` : ''}
                                 </p>
@@ -773,7 +773,7 @@ Explain clearly why each wrong option is incorrect to help students learn from t
                         <i class="fas fa-redo mr-2"></i>Retake Quiz
                     </button>
                     <button onclick="AIQuizMaker.generateNewQuiz()"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
                         <i class="fas fa-plus mr-2"></i>New Quiz
                     </button>
                 </div>
