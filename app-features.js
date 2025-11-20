@@ -2,7 +2,7 @@
 // NEW FEATURES IMPLEMENTATION - All 30 Improvements
 // ============================================================================
 
-/* global getFirestore, logError, escapeHtml, NotificationSystem */
+/* global getFirestore, logError, NotificationSystem */
 
 /**
  * Escape HTML to prevent XSS
@@ -392,7 +392,7 @@ const FlashcardSystem = {
     /**
      * Open deck for editing
      */
-    async openDeck(deckId) {
+    async openDeck(_deckId) {
         // Implementation for editing deck
         showToast('Deck editor coming soon', 'info');
     },
@@ -803,7 +803,7 @@ async function handleCreateStudyPlan() {
     const startDate = document.getElementById('plan-start-date').value;
     const endDate = document.getElementById('plan-end-date').value;
     const hoursPerWeek = parseInt(document.getElementById('plan-hours').value);
-    const description = document.getElementById('plan-description').value.trim();
+    // const description = document.getElementById('plan-description').value.trim(); // Will be used when plan creation is fully implemented
 
     if (!name || !startDate || !endDate || !hoursPerWeek) {
         showToast('Please fill in all required fields', 'error');
@@ -872,7 +872,7 @@ const PracticeQuestions = {
     /**
      * Generate questions with AI
      */
-    async generateWithAI(subject, topic, difficulty, count) {
+    async generateWithAI(_subject, _topic, _difficulty, _count) {
         // Implementation using AI Tutor API
         showToast('AI question generation coming soon', 'info');
     },
@@ -1699,7 +1699,7 @@ const StudyGroups = {
     /**
      * Load group messages
      */
-    async loadGroupMessages(groupId) {
+    async loadGroupMessages(_groupId) {
         // Implementation for loading messages
         const container = document.getElementById('group-messages');
         if (container) {
@@ -1712,7 +1712,7 @@ const StudyGroups = {
      * Send message to group
      */
     async sendMessage() {
-        const groupId = document.getElementById('group-view-id').value;
+        // const groupId = document.getElementById('group-view-id').value; // Will be used when implemented
         const message = document.getElementById('group-message-input').value.trim();
 
         if (!message) {
@@ -2208,7 +2208,7 @@ const PastPaperAnalyzer = {
     /**
      * Show analysis
      */
-    showAnalysis(score, weakAreas, recommendations) {
+    showAnalysis(score, _weakAreas, _recommendations) {
         showToast(`Score: ${score.percentage}% (Grade ${score.grade})`, 'info');
     },
 };
@@ -2504,7 +2504,7 @@ const EnhancedSearch = {
     /**
      * Advanced search with filters
      */
-    async search(query, filters = {}) {
+    async search(query, _filters = {}) {
         // Implementation with filters (file type, date, subject)
         showToast('Enhanced search coming soon', 'info');
     },
@@ -2652,7 +2652,7 @@ const EnhancedAdminDashboard = {
         }
 
         try {
-            const db = getFirestore();
+            // const db = getFirestore(); // Will be used when implemented
             // Implementation for user analytics
             showToast('Analytics dashboard coming soon', 'info');
         } catch (error) {
@@ -2818,3 +2818,17 @@ window.EnhancedVideoProgress = EnhancedVideoProgress;
 window.EnhancedBlog = EnhancedBlog;
 window.EnhancedFileManagement = EnhancedFileManagement;
 window.EnhancedAdminDashboard = EnhancedAdminDashboard;
+
+// Expose modal functions globally
+window.showCreateNoteModal = showCreateNoteModal;
+window.showCreateFlashcardDeckModal = showCreateFlashcardDeckModal;
+window.handleCreateNote = handleCreateNote;
+window.handleCreateFlashcardDeck = handleCreateFlashcardDeck;
+window.showCreateStudyPlanModal = showCreateStudyPlanModal;
+window.addPlanSubject = addPlanSubject;
+window.showPracticeQuestionGeneratorModal = showPracticeQuestionGeneratorModal;
+window.handleGenerateQuestions = handleGenerateQuestions;
+window.startPracticeSession = startPracticeSession;
+window.showCreateStudyGroupModal = showCreateStudyGroupModal;
+window.handleCreateStudyGroup = handleCreateStudyGroup;
+window.initializeAllFeatures = initializeAllFeatures;
