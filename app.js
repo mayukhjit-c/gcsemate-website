@@ -19346,14 +19346,16 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
 
                                         return `
                                             <td class="px-4 py-3 text-center border-r border-gray-200">
-                                                <input type="text"
-                                                       id="grade-${subjectIdx}-${i}"
-                                                       value="${escapeHtml(exam.grade || '')}"
-                                                       placeholder="Grade"
-                                                       maxlength="1"
-                                                       ${readOnly ? 'disabled readonly' : ''}
-                                                       class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor} ${readOnly ? 'bg-gray-100 cursor-not-allowed' : ''}"
-                                                       ${!readOnly ? `oninput="updateGradeColorRealTime(this)" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace' || event.key === 'Delete'"` : ''}>
+                                                <div class="flex items-center justify-center">
+                                                    <input type="text"
+                                                           id="grade-${subjectIdx}-${i}"
+                                                           value="${escapeHtml(exam.grade || '')}"
+                                                           placeholder="-"
+                                                           maxlength="1"
+                                                           ${readOnly ? 'disabled readonly' : ''}
+                                                           class="w-16 px-3 py-2 rounded-lg border-2 border-transparent text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${gradeColor} ${readOnly ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'}"
+                                                           ${!readOnly ? `oninput="updateGradeColorRealTime(this)" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace' || event.key === 'Delete'"` : ''}>
+                                                </div>
                                             </td>
                                         `;
                                     }).join('')}
@@ -19362,14 +19364,19 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
                             })
                             .join('')}
                         <!-- APS Row -->
-                        <tr class="bg-gray-100 border-t-2 border-gray-300 font-bold">
-                            <td class="px-4 py-3 text-gray-800 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
-                                APS
+                        <tr class="bg-gradient-to-r from-gray-100 to-gray-50 border-t-4 border-blue-600 font-bold shadow-inner">
+                            <td class="px-4 py-4 text-gray-900 sticky left-0 bg-gradient-to-r from-gray-100 to-gray-50 z-10 border-r border-gray-300">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-blue-600"></i>
+                                    <span>Average Point Score (APS)</span>
+                                </div>
                             </td>
                             ${Array.from({ length: maxExams }, (_, i) => {
                                 return `
-                                    <td class="px-4 py-3 text-center border-r border-gray-200">
-                                        <span id="aps-${i}" class="px-3 py-2 rounded-lg font-semibold text-sm">-</span>
+                                    <td class="px-4 py-4 text-center border-r border-gray-300">
+                                        <div class="flex items-center justify-center">
+                                            <span id="aps-${i}" class="px-4 py-2 rounded-lg font-bold text-base shadow-sm transition-all duration-300 hover:scale-105">-</span>
+                                        </div>
                                     </td>
                                 `;
                             }).join('')}
