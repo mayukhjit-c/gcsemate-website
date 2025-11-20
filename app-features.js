@@ -415,33 +415,33 @@ function createFlashcardModal() {
     modal.className =
         'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md animate-fade-in">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Create Flashcard Deck</h3>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create Flashcard Deck</h3>
             </div>
             <form id="create-deck-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); handleCreateFlashcardDeck();">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deck Name</label>
                     <input type="text" id="deck-name" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject</label>
                     <input type="text" id="deck-subject" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description (optional)</label>
                     <textarea id="deck-description" rows="3"
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
                 </div>
-                <div class="flex justify-end gap-3 pt-4">
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
                     <button type="button" onclick="document.getElementById('flashcard-modal').style.display='none'"
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
+                        class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                         Create Deck
                     </button>
                 </div>
@@ -676,18 +676,24 @@ const StudyPlanner = {
  * Show create study plan modal
  */
 function showCreateStudyPlanModal() {
-    const modal = document.getElementById('study-plan-modal');
-    if (!modal) {
-        showToast('Study plan modal not found', 'error');
-        return;
-    }
+    const modal = document.getElementById('study-plan-modal') || createStudyPlanModal();
+    modal.style.display = 'flex';
+}
 
+/**
+ * Create study plan modal
+ */
+function createStudyPlanModal() {
+    const modal = document.createElement('div');
+    modal.id = 'study-plan-modal';
+    modal.className =
+        'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Study Plan</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create Study Plan</h2>
                 <button onclick="document.getElementById('study-plan-modal').style.display='none'"
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -695,18 +701,18 @@ function showCreateStudyPlanModal() {
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Plan Name *</label>
                     <input type="text" id="plan-name" required
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Start Date *</label>
                         <input type="date" id="plan-start-date" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">End Date *</label>
                         <input type="date" id="plan-end-date" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                 </div>
                 <div>
@@ -714,10 +720,10 @@ function showCreateStudyPlanModal() {
                     <div id="plan-subjects-container" class="space-y-2">
                         <div class="flex gap-2">
                             <select id="plan-subject-0" required
-                                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                                 <option value="">Select subject...</option>
                             </select>
-                            <button type="button" onclick="addPlanSubject()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <button type="button" onclick="addPlanSubject()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -726,26 +732,27 @@ function showCreateStudyPlanModal() {
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Hours Per Week *</label>
                     <input type="number" id="plan-hours" min="1" max="40" required
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</label>
                     <textarea id="plan-description" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"></textarea>
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
                 </div>
-                <div class="flex gap-3 pt-4">
+                <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
                     <button type="button" onclick="document.getElementById('study-plan-modal').style.display='none'"
-                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                         Create Plan
                     </button>
                 </div>
             </form>
         </div>
     `;
+    document.body.appendChild(modal);
 
     // Populate subjects dropdown
     const subjects = currentUser?.allowedSubjects || [];
@@ -759,11 +766,12 @@ function showCreateStudyPlanModal() {
         });
     });
 
-    modal.style.display = 'flex';
     document.getElementById('create-study-plan-form').onsubmit = async e => {
         e.preventDefault();
         await handleCreateStudyPlan();
     };
+
+    return modal;
 }
 
 let planSubjectCount = 1;
@@ -1196,8 +1204,18 @@ async function handleGenerateQuestions() {
     // Use AI Quiz Maker if available, otherwise fallback to PracticeQuestions
     if (window.AIQuizMaker && typeof window.AIQuizMaker.generateQuiz === 'function') {
         await window.AIQuizMaker.generateQuiz(subject, topic, difficulty, count);
+        NotificationSystem.show(
+            'Quiz Generated',
+            `Your ${difficulty} ${subject} quiz on "${topic}" is ready!`,
+            'success'
+        );
     } else {
         await PracticeQuestions.generateQuestions(subject, topic, count, difficulty);
+        NotificationSystem.show(
+            'Questions Ready',
+            `Generated ${count} practice questions for ${subject}.`,
+            'success'
+        );
     }
 
     document.getElementById('practice-generator-modal').style.display = 'none';
