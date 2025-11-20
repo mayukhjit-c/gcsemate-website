@@ -7,14 +7,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Modern Colorful Accent Palette - Vibrant but balanced */
-    --accent-50: 240 253 250;
-    --accent-100: 204 251 241;
-    --accent-300: 94 234 212;
-    --accent-400: 45 212 191;
-    --accent-500: 20 184 166;
-    --accent-600: 13 148 136;
-    --accent-700: 15 118 110;
+    /* Modern Professional Color Palette - Clean & Accessible */
+    --accent-50: 239 246 255;
+    --accent-100: 219 234 254;
+    --accent-300: 147 197 253;
+    --accent-400: 96 165 250;
+    --accent-500: 59 130 246;
+    --accent-600: 37 99 235;
+    --accent-700: 29 78 216;
     /* Secondary Accent Colors for variety */
     --accent-purple-400: 196 181 253;
     --accent-purple-500: 167 139 250;
@@ -28,15 +28,15 @@
     --accent-orange-400: 251 146 60;
     --accent-orange-500: 249 115 22;
     --accent-orange-600: 234 88 12;
-    /* Soft, warm backgrounds - Light Mode */
-    --bg-primary: #faf9f7;
-    --bg-secondary: #2d4a6b;
+    /* Clean, professional backgrounds - Light Mode */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #1e293b;
     --bg-card: #ffffff;
-    --bg-card-hover: #f8f7f5;
-    --bg-accent: #f0fdfa;
-    --text-primary: #1a1f2e;
-    --text-secondary: #4a5568;
-    --text-light: #718096;
+    --bg-card-hover: #f1f5f9;
+    --bg-accent: #eff6ff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-light: #64748b;
     --border-color: rgba(45, 74, 107, 0.12);
     --border-color-hover: rgba(45, 74, 107, 0.2);
     /* Vibrant Semantic Colors */
@@ -71,21 +71,24 @@
     --pastel-yellow: #fef3c7;
     --pastel-green: #d1fae5;
     --pastel-indigo: #e0e7ff;
-    /* Spacing Scale (Design Improvement #3) */
-    --spacing-1: 4px;
-    --spacing-2: 8px;
-    --spacing-3: 12px;
-    --spacing-4: 16px;
-    --spacing-5: 20px;
-    --spacing-6: 24px;
-    --spacing-8: 32px;
-    --spacing-10: 40px;
-    --spacing-12: 48px;
-    --spacing-16: 64px;
-    /* Performance optimizations */
+    /* Enhanced Spacing Scale for Perfect Harmony */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+    --spacing-20: 5rem;
+    --spacing-24: 6rem;
+    /* Buttery Smooth Animations */
     --animation-fast: 150ms;
-    --animation-normal: 300ms;
-    --animation-slow: 500ms;
+    --animation-normal: 250ms;
+    --animation-slow: 400ms;
+    --animation-lazy: 600ms;
     /* Modern UI enhancements */
     --backdrop-blur: blur(20px);
     --card-radius: 16px;
@@ -121,16 +124,16 @@
     --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* Dark Mode Variables - Softer, more colorful */
+/* Dark Mode Variables - Professional & Accessible */
 [data-theme='dark'] {
-    --bg-primary: #1a1f2e;
-    --bg-secondary: #2d4a6b;
-    --bg-card: #252b3a;
-    --bg-card-hover: #2f3647;
-    --bg-accent: #1e3a3a;
-    --text-primary: #f7fafc;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --bg-accent: #1e3a8a;
+    --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
-    --text-light: #a0aec0;
+    --text-light: #94a3b8;
     --border-color: rgba(255, 255, 255, 0.15);
     --border-color-hover: rgba(255, 255, 255, 0.25);
     --color-success-light: #064e3b;
@@ -328,9 +331,11 @@ div {
 .glass-card-premium:hover,
 .card-modern:hover,
 .modern-card:hover {
-    transform: translateY(-2px) translateZ(0);
-    box-shadow: var(--shadow-lg);
-    border-color: rgba(59, 130, 246, 0.15);
+    transform: translateY(-4px) translateZ(0);
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: rgb(var(--accent-400));
 }
 
 .glass-card-premium:active,
@@ -459,8 +464,8 @@ button[class*='bg-blue']::before,
 .btn-gradient:hover,
 button[class*='bg-blue']:hover,
 .btn-primary:hover {
-    transform: translateY(-1px) translateZ(0);
-    box-shadow: 0 6px 20px -4px rgba(var(--accent-500), 0.4);
+    transform: translateY(-2px) scale(1.02) translateZ(0);
+    box-shadow: 0 10px 30px -6px rgba(var(--accent-500), 0.5);
     background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
 }
 
@@ -667,19 +672,19 @@ select:focus-visible {
 /* ENHANCED PAGE LAYOUT - Optimal Spacing & Visual Flow */
 /* ═══════════════════════════════════════════════════════════════ */
 .page {
-    padding: 1.5rem 1rem;
-    animation: pageFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    padding: var(--spacing-6) var(--spacing-4);
+    animation: pageFadeIn var(--animation-normal) cubic-bezier(0.16, 1, 0.3, 1) forwards;
     opacity: 0;
 }
 
 @keyframes pageFadeIn {
     0% {
         opacity: 0;
-        transform: translateY(8px) translateZ(0);
+        transform: translateY(12px) scale(0.98) translateZ(0);
     }
     100% {
         opacity: 1;
-        transform: translateY(0) translateZ(0);
+        transform: translateY(0) scale(1) translateZ(0);
     }
 }
 
@@ -815,10 +820,10 @@ textarea:focus,
 select:focus {
     border-color: rgb(var(--accent-500));
     box-shadow:
-        0 0 0 4px rgba(var(--accent-500), 0.1),
-        0 2px 8px -2px rgba(var(--accent-500), 0.2);
+        0 0 0 3px rgba(var(--accent-500), 0.15),
+        0 4px 12px -2px rgba(var(--accent-500), 0.25);
     outline: none;
-    transform: translateY(-1px) translateZ(0);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
 }
 
 input:hover,

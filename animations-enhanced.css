@@ -1,0 +1,358 @@
+/* GCSEMate Animation Enhancements - Buttery Smooth Micro-interactions */
+
+/* ================================================================
+   SMOOTH ENTRANCE ANIMATIONS
+   ================================================================ */
+
+@keyframes smoothFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes smoothSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes smoothZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ================================================================
+   HOVER LIFT EFFECTS - Smooth and Natural
+   ================================================================ */
+
+.hover-lift-smooth {
+    transition:
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift-smooth:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* ================================================================
+   BUTTON RIPPLE EFFECT
+   ================================================================ */
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition:
+        width 0.6s,
+        height 0.6s;
+}
+
+.btn-ripple:active::after {
+    width: 100px;
+    height: 100px;
+    transition: 0s;
+}
+
+/* ================================================================
+   SMOOTH SKELETON LOADING
+   ================================================================ */
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+}
+
+/* ================================================================
+   FLOATING ANIMATION FOR ICONS
+   ================================================================ */
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* ================================================================
+   SMOOTH PROGRESS BAR
+   ================================================================ */
+
+@keyframes progressBar {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(100%);
+    }
+}
+
+.progress-bar-animated {
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-animated::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: progressBar 1.5s ease-in-out infinite;
+}
+
+/* ================================================================
+   SMOOTH MODAL ENTRANCE/EXIT
+   ================================================================ */
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+}
+
+.modal-enter {
+    animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-exit {
+    animation: modalFadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ================================================================
+   SMOOTH NOTIFICATION SLIDE
+   ================================================================ */
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.notification-enter {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-exit {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ================================================================
+   SMOOTH ACCORDION EXPAND/COLLAPSE
+   ================================================================ */
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
+    opacity: 0;
+}
+
+.accordion-content.active {
+    max-height: 1000px;
+    opacity: 1;
+}
+
+/* ================================================================
+   PULSE ANIMATION FOR ATTENTION
+   ================================================================ */
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.pulse-animation {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ================================================================
+   SMOOTH BORDER GLOW
+   ================================================================ */
+
+@keyframes borderGlow {
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    }
+    50% {
+        box-shadow:
+            0 0 20px rgba(59, 130, 246, 0.8),
+            0 0 30px rgba(59, 130, 246, 0.6);
+    }
+}
+
+.border-glow {
+    animation: borderGlow 2s ease-in-out infinite;
+}
+
+/* ================================================================
+   STAGGERED ENTRANCE FOR LISTS
+   ================================================================ */
+
+.stagger-entrance > * {
+    animation: smoothFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.stagger-entrance > *:nth-child(1) {
+    animation-delay: 0.05s;
+}
+.stagger-entrance > *:nth-child(2) {
+    animation-delay: 0.1s;
+}
+.stagger-entrance > *:nth-child(3) {
+    animation-delay: 0.15s;
+}
+.stagger-entrance > *:nth-child(4) {
+    animation-delay: 0.2s;
+}
+.stagger-entrance > *:nth-child(5) {
+    animation-delay: 0.25s;
+}
+.stagger-entrance > *:nth-child(6) {
+    animation-delay: 0.3s;
+}
+.stagger-entrance > *:nth-child(7) {
+    animation-delay: 0.35s;
+}
+.stagger-entrance > *:nth-child(8) {
+    animation-delay: 0.4s;
+}
+
+/* ================================================================
+   SMOOTH LOADING SPINNER
+   ================================================================ */
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* ================================================================
+   UTILITY CLASSES FOR EASY APPLICATION
+   ================================================================ */
+
+.animate-smooth-fade {
+    animation: smoothFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-smooth-slide {
+    animation: smoothSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-smooth-zoom {
+    animation: smoothZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
