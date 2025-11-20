@@ -7,47 +7,66 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* GCSEMate Brand Colors (adapted from EdTech design) */
-    --accent-50: 239 246 255;
-    --accent-100: 219 234 254;
-    --accent-300: 147 197 253;
-    --accent-400: 96 165 250;
-    --accent-500: 59 130 246;
-    --accent-600: 37 99 235;
-    --accent-700: 29 78 216;
-    /* EdTech-inspired color palette - Light Mode (Enhanced Contrast) */
-    --bg-primary: #ffffff;
-    --bg-secondary: #1e3a5f;
+    /* Modern Colorful Accent Palette - Vibrant but balanced */
+    --accent-50: 240 253 250;
+    --accent-100: 204 251 241;
+    --accent-300: 94 234 212;
+    --accent-400: 45 212 191;
+    --accent-500: 20 184 166;
+    --accent-600: 13 148 136;
+    --accent-700: 15 118 110;
+    /* Secondary Accent Colors for variety */
+    --accent-purple-400: 196 181 253;
+    --accent-purple-500: 167 139 250;
+    --accent-purple-600: 139 92 246;
+    --accent-pink-400: 251 113 133;
+    --accent-pink-500: 244 63 94;
+    --accent-pink-600: 225 29 72;
+    --accent-blue-400: 96 165 250;
+    --accent-blue-500: 59 130 246;
+    --accent-blue-600: 37 99 235;
+    --accent-orange-400: 251 146 60;
+    --accent-orange-500: 249 115 22;
+    --accent-orange-600: 234 88 12;
+    /* Soft, warm backgrounds - Light Mode */
+    --bg-primary: #faf9f7;
+    --bg-secondary: #2d4a6b;
     --bg-card: #ffffff;
-    --bg-card-hover: #f5f5f5;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-light: #64748b;
-    --border-color: rgba(0, 0, 0, 0.15);
-    --border-color-hover: rgba(0, 0, 0, 0.25);
-    /* Semantic Colors (Enhanced Contrast) */
-    --color-success: #059669;
+    --bg-card-hover: #f8f7f5;
+    --bg-accent: #f0fdfa;
+    --text-primary: #1a1f2e;
+    --text-secondary: #4a5568;
+    --text-light: #718096;
+    --border-color: rgba(45, 74, 107, 0.12);
+    --border-color-hover: rgba(45, 74, 107, 0.2);
+    /* Vibrant Semantic Colors */
+    --color-success: #10b981;
     --color-success-light: #d1fae5;
     --color-success-text: #065f46;
-    --color-warning: #d97706;
+    --color-warning: #f59e0b;
     --color-warning-light: #fef3c7;
     --color-warning-text: #92400e;
-    --color-error: #dc2626;
+    --color-error: #ef4444;
     --color-error-light: #fee2e2;
     --color-error-text: #991b1b;
-    --color-info: #2563eb;
+    --color-info: #3b82f6;
     --color-info-light: #dbeafe;
     --color-info-text: #1e40af;
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    /* Pastel colors for cards (EdTech style) */
+    /* Softer, more colorful shadows */
+    --shadow-sm: 0 1px 3px 0 rgba(45, 74, 107, 0.08);
+    --shadow-md: 0 4px 8px -2px rgba(45, 74, 107, 0.12), 0 2px 4px -1px rgba(var(--accent-500), 0.08);
+    --shadow-lg: 0 10px 20px -4px rgba(45, 74, 107, 0.15), 0 4px 8px -2px rgba(var(--accent-500), 0.1);
+    --shadow-xl: 0 20px 30px -6px rgba(45, 74, 107, 0.18), 0 10px 15px -4px rgba(var(--accent-500), 0.12);
+    --shadow-2xl: 0 25px 50px -12px rgba(45, 74, 107, 0.25), 0 15px 30px -8px rgba(var(--accent-500), 0.15);
+    /* Vibrant pastel colors for cards and accents */
     --pastel-pink: #fce7f3;
     --pastel-blue: #dbeafe;
     --pastel-purple: #e9d5ff;
+    --pastel-teal: #ccfbf1;
+    --pastel-orange: #fed7aa;
+    --pastel-yellow: #fef3c7;
+    --pastel-green: #d1fae5;
+    --pastel-indigo: #e0e7ff;
     /* Spacing Scale (Design Improvement #3) */
     --spacing-1: 4px;
     --spacing-2: 8px;
@@ -91,17 +110,18 @@
         background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, opacity 0.5s ease;
 }
 
-/* Dark Mode Variables (Enhanced Contrast) */
+/* Dark Mode Variables - Softer, more colorful */
 [data-theme='dark'] {
-    --bg-primary: #0a0e1a;
-    --bg-secondary: #1e293b;
-    --bg-card: #1e293b;
-    --bg-card-hover: #334155;
-    --text-primary: #ffffff;
-    --text-secondary: #e2e8f0;
-    --text-light: #cbd5e1;
-    --border-color: rgba(255, 255, 255, 0.2);
-    --border-color-hover: rgba(255, 255, 255, 0.3);
+    --bg-primary: #1a1f2e;
+    --bg-secondary: #2d4a6b;
+    --bg-card: #252b3a;
+    --bg-card-hover: #2f3647;
+    --bg-accent: #1e3a3a;
+    --text-primary: #f7fafc;
+    --text-secondary: #cbd5e1;
+    --text-light: #a0aec0;
+    --border-color: rgba(255, 255, 255, 0.15);
+    --border-color-hover: rgba(255, 255, 255, 0.25);
     --color-success-light: #064e3b;
     --color-success-text: #6ee7b7;
     --color-warning-light: #78350f;
@@ -110,13 +130,18 @@
     --color-error-text: #fca5a5;
     --color-info-light: #1e3a8a;
     --color-info-text: #93c5fd;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(var(--accent-500), 0.2);
+    --shadow-lg: 0 10px 20px -4px rgba(0, 0, 0, 0.4), 0 4px 8px -2px rgba(var(--accent-500), 0.25);
+    --shadow-xl: 0 20px 30px -6px rgba(0, 0, 0, 0.45), 0 10px 15px -4px rgba(var(--accent-500), 0.3);
     --pastel-pink: #7c2d12;
     --pastel-blue: #1e3a8a;
     --pastel-purple: #581c87;
+    --pastel-teal: #134e4a;
+    --pastel-orange: #7c2d12;
+    --pastel-yellow: #78350f;
+    --pastel-green: #064e3b;
+    --pastel-indigo: #312e81;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -303,20 +328,45 @@ div {
     box-shadow: var(--shadow-md);
 }
 
-/* EdTech-style pastel cards */
+/* Vibrant pastel cards with colorful accents */
 .card-pastel-pink {
-    background: var(--pastel-pink);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, var(--pastel-pink), #fdf2f8);
+    border: 1px solid rgba(244, 63, 94, 0.15);
 }
 
 .card-pastel-blue {
-    background: var(--pastel-blue);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, var(--pastel-blue), #eff6ff);
+    border: 1px solid rgba(59, 130, 246, 0.15);
 }
 
 .card-pastel-purple {
-    background: var(--pastel-purple);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, var(--pastel-purple), #f5f3ff);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.card-pastel-teal {
+    background: linear-gradient(135deg, var(--pastel-teal), #f0fdfa);
+    border: 1px solid rgba(20, 184, 166, 0.15);
+}
+
+.card-pastel-orange {
+    background: linear-gradient(135deg, var(--pastel-orange), #fff7ed);
+    border: 1px solid rgba(249, 115, 22, 0.15);
+}
+
+.card-pastel-yellow {
+    background: linear-gradient(135deg, var(--pastel-yellow), #fffbeb);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.card-pastel-green {
+    background: linear-gradient(135deg, var(--pastel-green), #f0fdf4);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.card-pastel-indigo {
+    background: linear-gradient(135deg, var(--pastel-indigo), #eef2ff);
+    border: 1px solid rgba(99, 102, 241, 0.15);
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -346,7 +396,7 @@ div {
 .btn-gradient,
 button[class*='bg-blue'],
 .btn-primary {
-    background: var(--bg-secondary);
+    background: linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--accent-600)));
     border: none;
     border-radius: var(--button-radius);
     color: #ffffff !important;
@@ -360,7 +410,7 @@ button[class*='bg-blue'],
     backface-visibility: hidden;
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 12px -2px rgba(var(--accent-500), 0.3);
     cursor: pointer;
 }
 
@@ -398,8 +448,8 @@ button[class*='bg-blue']::before,
 button[class*='bg-blue']:hover,
 .btn-primary:hover {
     transform: translateY(-1px) translateZ(0);
-    box-shadow: var(--shadow-md);
-    background: #1a2f4d;
+    box-shadow: 0 6px 20px -4px rgba(var(--accent-500), 0.4);
+    background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
 }
 
 .btn-gradient:hover::before,
@@ -2310,27 +2360,27 @@ a.nav-link:hover {
 /* IP Address and Location Highlighting */
 .ip-address {
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    background: linear-gradient(135deg, rgb(var(--accent-blue-500)), rgb(var(--accent-blue-600)));
     color: white;
     padding: 2px 8px;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 4px rgba(var(--accent-blue-500), 0.3);
     display: inline-block;
     margin: 2px;
 }
 
 .location-info {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--accent-600)));
     color: white;
     padding: 2px 8px;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 2px 4px rgba(var(--accent-500), 0.3);
     display: inline-block;
     margin: 2px;
 }
@@ -2341,29 +2391,29 @@ a.nav-link:hover {
 }
 
 .activity-item:hover {
-    background-color: #f8fafc;
-    border-left-color: #3b82f6;
+    background-color: var(--bg-accent);
+    border-left-color: rgb(var(--accent-500));
     transform: translateX(2px);
 }
 
 .activity-item.session-start {
-    border-left-color: #3b82f6;
+    border-left-color: rgb(var(--accent-blue-500));
 }
 
 .activity-item.subject-start {
-    border-left-color: #8b5cf6;
+    border-left-color: rgb(var(--accent-purple-500));
 }
 
 .activity-item.file-open {
-    border-left-color: #10b981;
+    border-left-color: rgb(var(--accent-500));
 }
 
 .activity-item.file-close {
-    border-left-color: #ef4444;
+    border-left-color: var(--color-error);
 }
 
 .activity-item.heartbeat {
-    border-left-color: #6b7280;
+    border-left-color: #8b8b9a;
 }
 
 /* Real-time Activity Dashboard */
@@ -2377,7 +2427,7 @@ a.nav-link:hover {
 }
 
 .activity-feed::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: var(--bg-card);
     border-radius: 3px;
 }
 
@@ -2412,12 +2462,12 @@ a.nav-link:hover {
 }
 
 .activity-table th {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border-bottom: 2px solid #e2e8f0;
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-card-hover));
+    border-bottom: 2px solid var(--border-color);
 }
 
 .activity-table tr:hover {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    background: linear-gradient(135deg, var(--bg-accent), var(--bg-card-hover));
 }
 
 .activity-table td {
@@ -2426,7 +2476,7 @@ a.nav-link:hover {
 
 /* Status indicators */
 .status-online {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--accent-600)));
     color: white;
     padding: 2px 8px;
     border-radius: 12px;
@@ -2435,7 +2485,7 @@ a.nav-link:hover {
 }
 
 .status-offline {
-    background: linear-gradient(135deg, #6b7280, #4b5563);
+    background: linear-gradient(135deg, #8b8b9a, #6b6b7a);
     color: white;
     padding: 2px 8px;
     border-radius: 12px;
@@ -2455,19 +2505,19 @@ a.nav-link:hover {
 }
 
 .calendar-day.has-activity {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--accent-600)));
     color: white;
     font-weight: 600;
 }
 
 .calendar-day.has-study {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    background: linear-gradient(135deg, rgb(var(--accent-blue-500)), rgb(var(--accent-blue-600)));
     color: white;
     font-weight: 600;
 }
 
 .calendar-day.has-both {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, rgb(var(--accent-purple-500)), rgb(var(--accent-purple-600)));
     color: white;
     font-weight: 600;
 }
@@ -2493,10 +2543,10 @@ a.nav-link:hover {
 
 /* Chart Styling */
 .chart-container {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-card-hover));
     border-radius: 12px;
     padding: 16px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-md);
 }
 
 .chart-bar {
@@ -2522,8 +2572,8 @@ a.nav-link:hover {
 
 /* Daily Details Styling */
 .daily-stat-card {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-card-hover));
+    border: 1px solid var(--border-color);
     transition: all 0.2s ease;
 }
 
@@ -2561,18 +2611,19 @@ a.nav-link:hover {
 
 /* Enhanced button styles inspired by modern design systems */
 .btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, rgb(var(--accent-500)) 0%, rgb(var(--accent-600)) 100%);
     border: none;
     border-radius: 12px;
     padding: 12px 24px;
     font-weight: 600;
     color: white;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--accent-500), 0.3);
 }
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 6px 20px rgba(var(--accent-500), 0.4);
+    background: linear-gradient(135deg, rgb(var(--accent-600)) 0%, rgb(var(--accent-700)) 100%);
 }
 .btn-primary:active {
     transform: translateY(0);
@@ -2582,8 +2633,8 @@ a.nav-link:hover {
 /* ENHANCED MODERN CARDS - Premium Hover Effects */
 /* ═══════════════════════════════════════════════════════════════ */
 .card-modern {
-    background: rgba(255, 255, 255, 1);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateZ(0);
@@ -2603,7 +2654,7 @@ a.nav-link:hover {
 
 /* Enhanced focus indicators for better accessibility */
 *:focus {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid rgb(var(--accent-500));
     outline-offset: 2px;
 }
 
