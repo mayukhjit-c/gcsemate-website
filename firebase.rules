@@ -128,8 +128,16 @@ service cloud.firestore {
     // USER STUDY PLANS
     match /userStudyPlans/{uid} {
       allow read, write: if false; // disallow direct doc ops at root
+
+      // Legacy subjects collection
       match /subjects/{subjectId} {
         allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // New plans collection
+      match /plans/{planId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin();
       }
     }
 
@@ -409,14 +417,9 @@ service cloud.firestore {
       }
     }
 
-    // STUDY PLANNER & GOALS
-    match /userStudyPlans/{uid} {
-      allow read, write: if false;
-      match /plans/{planId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
+    // STUDY PLANNER & GOALS (Merged into USER STUDY PLANS above)
+    // match /userStudyPlans/{uid} { ... } - REMOVED DUPLICATE
+
     match /userGoals/{uid} {
       allow read, write: if false;
       match /goals/{goalId} {

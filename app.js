@@ -1297,7 +1297,7 @@ function showSystemHealthModal() {
             <div class="flex justify-between items-center mb-6 flex-shrink-0">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-heartbeat ${hasErrors ? 'text-red-600' : 'text-sky-600'}"></i>
+                        <i class="fas fa-heartbeat ${hasErrors ? 'text-red-600' : 'text-green-600'}"></i>
                         System Health Dashboard
                     </h2>
                     <p class="text-sm text-gray-600 mt-1">Comprehensive system diagnostics and monitoring</p>
@@ -1310,15 +1310,15 @@ function showSystemHealthModal() {
             <div class="overflow-y-auto flex-1 pr-2">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <!-- Health Status -->
-                    <div class="bg-gradient-to-br ${hasErrors ? 'from-red-50 to-red-100' : 'from-sky-50 to-sky-100'} p-5 rounded-xl border-2 ${hasErrors ? 'border-red-200' : 'border-sky-200'}">
+                    <div class="bg-gradient-to-br ${hasErrors ? 'from-red-50 to-red-100' : 'from-green-50 to-green-100'} p-5 rounded-xl border-2 ${hasErrors ? 'border-red-200' : 'border-green-200'}">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="text-lg font-semibold text-gray-800">Health Status</h3>
-                            <i class="fas ${hasErrors ? 'fa-exclamation-triangle text-red-600' : 'fa-check-circle text-sky-600'} text-2xl"></i>
+                            <i class="fas ${hasErrors ? 'fa-exclamation-triangle text-red-600' : 'fa-check-circle text-green-600'} text-2xl"></i>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-700">Overall Status:</span>
-                                <span class="px-3 py-1 text-xs font-bold rounded-full ${hasErrors ? 'bg-red-200 text-red-800' : 'bg-sky-200 text-sky-800'}">
+                                <span class="px-3 py-1 text-xs font-bold rounded-full ${hasErrors ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}">
                                     ${hasErrors ? 'Issues Detected' : 'All Systems Healthy'}
                                 </span>
                             </div>
@@ -1338,11 +1338,11 @@ function showSystemHealthModal() {
                         <div class="space-y-2">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-700">Tests Passed:</span>
-                                <span class="font-bold text-lg ${healthData.tests.passed === healthData.tests.total ? 'text-sky-600' : 'text-orange-600'}">${healthData.tests.passed}/${healthData.tests.total}</span>
+                                <span class="font-bold text-lg ${healthData.tests.passed === healthData.tests.total ? 'text-green-600' : 'text-orange-600'}">${healthData.tests.passed}/${healthData.tests.total}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-700">Success Rate:</span>
-                                <span class="font-semibold ${healthData.tests.successRate >= 90 ? 'text-sky-600' : healthData.tests.successRate >= 70 ? 'text-orange-600' : 'text-red-600'}">${healthData.tests.successRate}%</span>
+                                <span class="font-semibold ${healthData.tests.successRate >= 90 ? 'text-green-600' : healthData.tests.successRate >= 70 ? 'text-orange-600' : 'text-red-600'}">${healthData.tests.successRate}%</span>
                             </div>
                             ${
                                 healthData.tests.failedTests.length > 0
@@ -1383,7 +1383,7 @@ function showSystemHealthModal() {
                         <div class="space-y-2">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-700">Total Errors:</span>
-                                <span class="px-3 py-1 text-sm font-bold rounded-full ${healthData.errors.totalErrors < 5 ? 'bg-sky-100 text-sky-800' : healthData.errors.totalErrors < 20 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}">${healthData.errors.totalErrors}</span>
+                                <span class="px-3 py-1 text-sm font-bold rounded-full ${healthData.errors.totalErrors < 5 ? 'bg-green-100 text-green-800' : healthData.errors.totalErrors < 20 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}">${healthData.errors.totalErrors}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-700">Error Types:</span>
@@ -1445,7 +1445,7 @@ function showSystemHealthModal() {
                 <button onclick="websiteValidator.runAllTests(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-vial"></i> Run Tests
                 </button>
-                <button onclick="checkSystemHealth(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                <button onclick="checkSystemHealth(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-stethoscope"></i> Full Diagnostics
                 </button>
                 <button onclick="viewSystemLogs()" class="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 flex items-center gap-2">
@@ -2433,7 +2433,7 @@ async function refreshOnlineStatus() {
             const isConnected = realtimeTracker.connectionStatus === 'connected';
             statusElements.forEach(element => {
                 if (isConnected) {
-                    element.className = 'w-2 h-2 bg-sky-400 rounded-full animate-pulse';
+                    element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
                 } else {
                     element.className = 'w-2 h-2 bg-red-500 rounded-full';
                 }
@@ -2450,7 +2450,7 @@ async function refreshOnlineStatus() {
 
         statusElements.forEach(element => {
             if (isConnected) {
-                element.className = 'w-2 h-2 bg-sky-400 rounded-full animate-pulse';
+                element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
             } else {
                 element.className = 'w-2 h-2 bg-red-500 rounded-full';
             }
@@ -2499,19 +2499,19 @@ async function updateSystemHealthRealtime() {
         const responseTimeEl = document.getElementById('avg-response-time');
         if (responseTimeEl) {
             responseTimeEl.textContent = '25ms';
-            responseTimeEl.className = 'font-medium text-sky-600';
+            responseTimeEl.className = 'font-medium text-green-600';
         }
 
         const errorRateEl = document.getElementById('error-rate');
         if (errorRateEl) {
             errorRateEl.textContent = '0.01%';
-            errorRateEl.className = 'font-medium text-sky-600';
+            errorRateEl.className = 'font-medium text-green-600';
         }
 
         const uptimeEl = document.getElementById('system-uptime');
         if (uptimeEl) {
             uptimeEl.textContent = '24/7';
-            uptimeEl.className = 'font-medium text-sky-600';
+            uptimeEl.className = 'font-medium text-green-600';
         }
     } catch (error) {
         console.error('System health update failed:', error);
@@ -2908,7 +2908,7 @@ function setupDiagnosticUI() {
                 <button onclick="runManualDiagnostics()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     Run Manual Test
                 </button>
-                <button onclick="exportDiagnosticData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button onclick="exportDiagnosticData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                     Export Data
                 </button>
                 <button onclick="clearDiagnosticLogs()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
@@ -3482,7 +3482,7 @@ const subjectSpecifications = {
 };
 const subjectIconMap = {
     // Biology: tree icon
-    biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-sky-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
+    biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
     // Physics: thunderbolt
     physics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l0-6z"/></svg>`,
     // Chemistry: conical flask
@@ -4046,57 +4046,33 @@ function initializeAppState() {
         // Wait for ServerPreferences to be initialized
         const checkWelcomeNotification = async () => {
             try {
-<<<<<<< HEAD
-<<<<<<< HEAD
-                if (!currentUser) {
-                    return;
-                }
-=======
-                let lastWelcome = null;
->>>>>>> parent of 5a480e7 (gemini)
-=======
-                let lastWelcome = null;
->>>>>>> parent of 5a480e7 (gemini)
+                if (!currentUser) return;
 
-                // Wait a bit for ServerPreferences to initialize
-                if (window.ServerPreferences) {
-                    // Check if initialized, if not wait a bit
-                    if (!window.ServerPreferences.initialized) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                    lastWelcome = window.ServerPreferences.get('notificationWelcomeShown');
-                }
+                // Check if user is new (created within last 5 minutes)
+                const creationTime = new Date(currentUser.metadata.creationTime).getTime();
+                const now = Date.now();
+                const isNewUser = now - creationTime < 5 * 60 * 1000;
 
-                // Fallback to localStorage if ServerPreferences not available or not initialized
-                if (lastWelcome === null || lastWelcome === undefined) {
-                    try {
-                        lastWelcome = localStorage.getItem('notification_welcome_shown');
-                    } catch (e) {
-                        // Ignore localStorage errors
-                    }
-                }
+                // Also check local storage to avoid showing it multiple times in the same session/browser
+                const hasSeenWelcome = localStorage.getItem('notification_welcome_shown');
 
-                // Only show if never shown before (not every 24 hours)
-                if (
-                    !lastWelcome ||
-                    lastWelcome === '' ||
-                    lastWelcome === 'null' ||
-                    lastWelcome === 'undefined'
-                ) {
+                if (isNewUser && !hasSeenWelcome) {
                     NotificationSystem.show(
                         'Welcome to GCSEMate!',
-                        'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
-                        'info'
+                        `Hi ${currentUser.displayName || 'Student'}! We're glad you're here. Start by exploring your subjects or creating a study plan.`,
+                        'success',
+                        10000
                     );
-                    const timestamp = String(Date.now());
-                    if (window.ServerPreferences && window.ServerPreferences.initialized) {
-                        await window.ServerPreferences.set('notificationWelcomeShown', timestamp);
-                    } else {
-                        try {
-                            localStorage.setItem('notification_welcome_shown', timestamp);
-                        } catch (e) {
-                            // Ignore localStorage errors
-                        }
+
+                    // Mark as seen
+                    localStorage.setItem('notification_welcome_shown', 'true');
+
+                    // Also try to save to server preferences if available
+                    if (window.ServerPreferences) {
+                        await window.ServerPreferences.set(
+                            'notificationWelcomeShown',
+                            new Date().toISOString()
+                        );
                     }
                 }
             } catch (error) {
@@ -4105,7 +4081,7 @@ function initializeAppState() {
         };
 
         // Run check after a short delay to ensure ServerPreferences is ready
-        setTimeout(checkWelcomeNotification, 1000);
+        setTimeout(checkWelcomeNotification, 2000);
 
         // Initialize all new features
         if (typeof window.initializeAllFeatures === 'function') {
@@ -4825,7 +4801,7 @@ async function sendAIMessage(retryMessage = null) {
                     'bg-yellow-50',
                     'border-yellow-200'
                 );
-                tokenUsageEl.classList.add('bg-sky-50', 'border-sky-200');
+                tokenUsageEl.classList.add('bg-green-50', 'border-green-200');
             } else {
                 tokenUsageEl.textContent = `Requests: ${aiRequestCount} / ${aiMaxRequests}`;
                 if (data.requestsRemaining === 0) {
@@ -5572,13 +5548,17 @@ function copyAIMessage(messageId) {
                 const originalTitle = copyBtn.getAttribute('title') || '';
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                 copyBtn.setAttribute('title', 'Copied to clipboard!');
-                copyBtn.classList.add('bg-sky-100', 'text-sky-700');
+                copyBtn.classList.add('bg-green-100', 'text-green-700');
                 copyBtn.classList.remove('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
-                copyBtn.classList.add('hover:bg-sky-200');
+                copyBtn.classList.add('hover:bg-green-200');
                 setTimeout(() => {
                     copyBtn.innerHTML = originalHTML;
                     copyBtn.setAttribute('title', originalTitle || 'Copy response');
-                    copyBtn.classList.remove('bg-sky-100', 'text-sky-700', 'hover:bg-sky-200');
+                    copyBtn.classList.remove(
+                        'bg-green-100',
+                        'text-green-700',
+                        'hover:bg-green-200'
+                    );
                     copyBtn.classList.add('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
                 }, 2000);
             }
@@ -6035,7 +6015,7 @@ function showMaintenancePage(message) {
                 <h1 class="text-2xl font-bold text-gray-800 mb-2">Under Maintenance</h1>
                 <p class="text-gray-600 mb-6">${message}</p>
                 <div class="flex justify-center">
-                    <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 w-auto">
+                    <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 w-auto" onerror="this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
                 </div>
             </div>
             <button onclick="location.reload()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
@@ -6704,13 +6684,13 @@ function renderUserManagementPanel(allUsers) {
                 <div class="flex items-start justify-between mb-2">
                     <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
                     <div class="flex gap-1">
-                        ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-800">Pro</span>' : ''}
+                        ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
                         ${user.role === 'admin' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>' : ''}
                     </div>
                 </div>
                 <p class="text-sm text-gray-500 mb-3">${user.email}</p>
                 <div class="flex gap-2 mb-3">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-sky-100 text-sky-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
                     <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
                 </div>
                 ${
@@ -6955,14 +6935,14 @@ function showSubscriptionRenewalOffer(daysLeft, expiryDate) {
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Expiring Soon!</h2>
                     <p id="renewal-message" class="text-gray-600 mb-4"></p>
-                    <div class="bg-blue-600 text-white p-4 rounded-lg mb-6">
+                    <div class="bg-green-600 text-white p-4 rounded-lg mb-6">
                         <p class="text-sm font-semibold mb-1">Renewal Pricing</p>
                         <p class="text-2xl font-bold">£1.00/month</p>
                         <p class="text-xs opacity-90">Standard monthly rate (including VAT)</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
                         <button onclick="document.getElementById('subscription-renewal-modal').classList.add('hidden')" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">Maybe Later</button>
-                        <button onclick="handleSubscriptionRenewal()" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Renew Now - £1/month</button>
+                        <button onclick="handleSubscriptionRenewal()" class="px-6 py-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-colors">Renew Now - £1/month</button>
                     </div>
                 </div>
             </div>
@@ -7117,7 +7097,7 @@ async function viewUserTracking(userId) {
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-xs text-gray-500">${formatDateUK(session.lastSeen)}</div>
-                                                <span class="px-2 py-1 text-xs rounded-full ${session.isActive ? 'bg-sky-100 text-sky-800' : 'bg-gray-100 text-gray-800'}">
+                                                <span class="px-2 py-1 text-xs rounded-full ${session.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
                                                     ${session.isActive ? 'Active' : 'Inactive'}
                                                 </span>
                                             </div>
@@ -7787,7 +7767,7 @@ function showProfilePictureUploadModal() {
         if (file) {
             fileInfo.innerHTML = `
                 <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
@@ -7921,7 +7901,7 @@ async function openEditUserModal(userId) {
                          </div>
                          <div class="flex justify-end gap-3 pt-4">
                              <button type="button" onclick="document.getElementById('edit-user-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
-                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Changes</button>
+                             <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
                          </div>
                      </form>
 
@@ -8842,7 +8822,8 @@ function updateSystemHealthUI(results) {
     // Update basic status indicators
     if (results.overallStatus === 'healthy') {
         dbStatus.textContent = 'Healthy';
-        dbStatus.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-800';
+        dbStatus.className =
+            'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
     } else if (results.overallStatus === 'warning') {
         dbStatus.textContent = 'Warning';
         dbStatus.className =
@@ -8888,7 +8869,7 @@ async function initializeMaintenanceStatus() {
         } else {
             statusEl.textContent = 'Disabled';
             statusEl.className =
-                'px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-800';
+                'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
             buttonEl.textContent = 'Enable Maintenance';
             buttonEl.className =
                 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
@@ -8939,7 +8920,7 @@ async function toggleMaintenanceMode() {
         } else {
             statusEl.textContent = 'Disabled';
             statusEl.className =
-                'px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-800';
+                'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
             buttonEl.textContent = 'Enable Maintenance';
             buttonEl.className =
                 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
@@ -9428,7 +9409,7 @@ function getActivityIcon(activityType) {
         subject_start:
             '<svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>',
         file_open:
-            '<svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>',
+            '<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>',
         file_close:
             '<svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
         heartbeat:
@@ -9688,9 +9669,9 @@ async function showDailyDetails(day) {
                     <h6 class="font-semibold text-blue-800">Login Count</h6>
                     <p class="text-2xl font-bold text-blue-900">${data.loginCount || 0}</p>
                 </div>
-                <div class="bg-sky-50 p-4 rounded-lg">
-                    <h6 class="font-semibold text-sky-800">Session Time</h6>
-                    <p class="text-2xl font-bold text-sky-900">${Math.round((data.totalSessionTime || 0) / 1000 / 60)}m</p>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h6 class="font-semibold text-green-800">Session Time</h6>
+                    <p class="text-2xl font-bold text-green-900">${Math.round((data.totalSessionTime || 0) / 1000 / 60)}m</p>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg">
                     <h6 class="font-semibold text-purple-800">Subjects Studied</h6>
@@ -9719,7 +9700,7 @@ async function showDailyDetails(day) {
                 data.filesAccessed.forEach(file => {
                     const badge = document.createElement('span');
                     badge.className =
-                        'px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium';
+                        'px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium';
                     badge.textContent = file;
                     filesList.appendChild(badge);
                 });
@@ -9916,10 +9897,10 @@ async function loadActivityHeatmap() {
                         .map((level, index) => {
                             const colors = [
                                 'bg-gray-200',
-                                'bg-sky-200',
-                                'bg-sky-400',
-                                'bg-blue-600',
-                                'bg-blue-800',
+                                'bg-green-200',
+                                'bg-green-400',
+                                'bg-green-600',
+                                'bg-green-800',
                             ];
                             return `<div class="w-4 h-4 ${colors[level]} rounded-sm" title="Day ${index + 1}: Level ${level}"></div>`;
                         })
@@ -10521,7 +10502,7 @@ async function viewSystemLogs() {
                         <input type="text" id="log-search-input" placeholder="Search logs..." class="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="exportSystemLogs()" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <button onclick="exportSystemLogs()" class="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
                             <i class="fas fa-download"></i> Export
                         </button>
                         <button onclick="copyAllLogsToClipboard()" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -10963,7 +10944,7 @@ async function handleUpdateUserSettings() {
         currentUser.displayName = displayName;
         updateWelcomeMessage();
         messageEl.textContent = 'Settings saved successfully!';
-        messageEl.className = 'text-sky-600 text-sm text-center h-4';
+        messageEl.className = 'text-green-600 text-sm text-center h-4';
         displayNameInput.classList.remove('border-red-500', 'bg-red-50');
         passwordInput.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => (messageEl.textContent = ''), 3000);
@@ -11037,7 +11018,7 @@ function showToast(message, type = 'info', duration = 4000) {
     const toast = document.createElement('div');
     const bgColor =
         {
-            success: 'bg-blue-600',
+            success: 'bg-green-600',
             error: 'bg-red-600',
             warning: 'bg-yellow-600',
             info: 'bg-blue-600',
@@ -11123,11 +11104,7 @@ function capitalizeFirstLetter(string) {
  */
 function generatePfpUrl(email) {
     const initial = (email ? email.charAt(0) : '?').toUpperCase();
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-        <rect width="40" height="40" fill="#3B82F6"/>
-        <text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="20" font-weight="bold">${initial}</text>
-    </svg>`;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
 }
 /**
  *
@@ -11415,7 +11392,7 @@ function showPage(pageId) {
                         'bg-yellow-50',
                         'border-yellow-200'
                     );
-                    tokenUsageEl.classList.add('bg-sky-50', 'border-sky-200');
+                    tokenUsageEl.classList.add('bg-green-50', 'border-green-200');
                 } else {
                     try {
                         const today = new Date().toISOString().split('T')[0];
@@ -13638,7 +13615,7 @@ async function handleAddPlaylist() {
         };
         await db.collection('videoPlaylists').add(playlistData);
         messageEl.textContent = 'Playlist added successfully!';
-        messageEl.className = 'text-sky-600 text-sm mt-2 h-4';
+        messageEl.className = 'text-green-600 text-sm mt-2 h-4';
         form.reset();
         setTimeout(() => (messageEl.textContent = ''), 3000);
     } catch (error) {
@@ -14088,7 +14065,7 @@ async function handleAddLink() {
         };
         await db.collection('usefulLinks').add(linkData);
         messageEl.textContent = 'Link added successfully!';
-        messageEl.className = 'text-sky-600 text-sm mt-2 h-4';
+        messageEl.className = 'text-green-600 text-sm mt-2 h-4';
         titleInput.value = '';
         urlInput.value = '';
         titleInput.classList.remove('border-red-500', 'bg-red-50');
@@ -14932,7 +14909,7 @@ async function handleSaveBlogPost() {
         }
         resetBlogPostForm();
         messageEl.textContent = 'Blog post saved successfully!';
-        messageEl.className = 'text-sky-600 text-sm mt-2 h-4';
+        messageEl.className = 'text-green-600 text-sm mt-2 h-4';
         setTimeout(() => (messageEl.textContent = ''), 3000);
     } catch (error) {
         console.error('Error saving blog post:', error);
@@ -16761,7 +16738,7 @@ function showBlogPostViewer(postId) {
                     });
                 textarea.value = '';
                 messageEl.textContent = 'Comment posted!';
-                messageEl.className = 'text-sky-600 text-sm h-4';
+                messageEl.className = 'text-green-600 text-sm h-4';
                 setTimeout(() => {
                     if (messageEl) {
                         messageEl.textContent = '';
@@ -17072,7 +17049,7 @@ function showSpecificationModal(pdfUrl, title) {
                     ${
                         isEdexcel
                             ? `
-                    <a href="${pdfUrl}" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-semibold">
+                    <a href="${pdfUrl}" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 font-semibold">
                         <i class="fas fa-external-link-alt"></i>
                         <span>Open in New Tab</span>
                     </a>
@@ -17098,7 +17075,7 @@ function showSpecificationModal(pdfUrl, title) {
                         <h4 class="text-xl font-semibold text-gray-800 mb-2">Edexcel PDF</h4>
                         <p class="text-gray-600 mb-6">This PDF cannot be displayed in the browser due to security restrictions. Please open it in a new tab or download it.</p>
                         <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                            <a href="${pdfUrl}" target="_blank" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-semibold">
+                            <a href="${pdfUrl}" target="_blank" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold">
                                 <i class="fas fa-external-link-alt"></i>
                                 <span>Open in New Tab</span>
                             </a>
@@ -17396,7 +17373,7 @@ async function handleSendPasswordReset() {
         RateLimiter.recordPasswordResetAttempt(email);
 
         messageEl.textContent = 'Reset link sent! Check your inbox.';
-        messageEl.className = 'text-sky-600 text-sm text-center h-4';
+        messageEl.className = 'text-green-600 text-sm text-center h-4';
         emailInput.disabled = true;
     } catch (error) {
         console.error('Password reset error:', error);
@@ -17492,7 +17469,7 @@ function showPreview(file) {
                                 Try Again
                             </button>
                             <div class="flex flex-col sm:flex-row gap-2">
-                                <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                                     </svg>
@@ -18646,7 +18623,7 @@ function openEventModal(date) {
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#x27;');
                 return `
-            <div class="p-3 rounded-lg ${event.isGlobal ? 'bg-sky-100' : 'bg-blue-100'}">
+            <div class="p-3 rounded-lg ${event.isGlobal ? 'bg-green-100' : 'bg-blue-100'}">
                 <p class="font-bold text-gray-800">${safeTitleHTML}</p>
                 <p class="text-sm text-gray-600">${safeDescHTML}</p>
                 <div class="text-right mt-2">
@@ -18704,7 +18681,7 @@ function openEventModal(date) {
                              userIsAdmin
                                  ? `
                              <label class="flex items-center text-sm text-gray-700 select-none">
-                                 <input id="event-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                 <input id="event-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
                                  <span class="ml-2 font-semibold">Sync to all users (Global Event)</span>
                              </label>
                          `
@@ -19082,12 +19059,12 @@ function getGradeColorClass(grade) {
 
     const numGrade = parseInt(grade);
 
-    // Grades 8-9: Blue (9 is darker)
+    // Grades 8-9: Green (9 is darker)
     if (numGrade === 9) {
-        return 'bg-blue-700 text-white font-semibold';
+        return 'bg-green-700 text-white font-semibold';
     }
     if (numGrade === 8) {
-        return 'bg-blue-500 text-white font-semibold';
+        return 'bg-green-500 text-white font-semibold';
     }
 
     // Grades 7-6-5: Amber (lighter as grade gets lower)
@@ -19369,16 +19346,14 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
 
                                         return `
                                             <td class="px-4 py-3 text-center border-r border-gray-200">
-                                                <div class="flex items-center justify-center">
-                                                    <input type="text"
-                                                           id="grade-${subjectIdx}-${i}"
-                                                           value="${escapeHtml(exam.grade || '')}"
-                                                           placeholder="-"
-                                                           maxlength="1"
-                                                           ${readOnly ? 'disabled readonly' : ''}
-                                                           class="w-16 px-3 py-2 rounded-lg border-2 border-transparent text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${gradeColor} ${readOnly ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'}"
-                                                           ${!readOnly ? `oninput="updateGradeColorRealTime(this)" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace' || event.key === 'Delete'"` : ''}>
-                                                </div>
+                                                <input type="text"
+                                                       id="grade-${subjectIdx}-${i}"
+                                                       value="${escapeHtml(exam.grade || '')}"
+                                                       placeholder="Grade"
+                                                       maxlength="1"
+                                                       ${readOnly ? 'disabled readonly' : ''}
+                                                       class="w-16 px-3 py-2 rounded-lg border border-gray-300 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${gradeColor} ${readOnly ? 'bg-gray-100 cursor-not-allowed' : ''}"
+                                                       ${!readOnly ? `oninput="updateGradeColorRealTime(this)" onkeypress="return /[1-9]/.test(event.key) || event.key === 'Backspace' || event.key === 'Delete'"` : ''}>
                                             </td>
                                         `;
                                     }).join('')}
@@ -19387,19 +19362,14 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
                             })
                             .join('')}
                         <!-- APS Row -->
-                        <tr class="bg-gradient-to-r from-gray-100 to-gray-50 border-t-4 border-blue-600 font-bold shadow-inner">
-                            <td class="px-4 py-4 text-gray-900 sticky left-0 bg-gradient-to-r from-gray-100 to-gray-50 z-10 border-r border-gray-300">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-chart-line text-blue-600"></i>
-                                    <span>Average Point Score (APS)</span>
-                                </div>
+                        <tr class="bg-gray-100 border-t-2 border-gray-300 font-bold">
+                            <td class="px-4 py-3 text-gray-800 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+                                APS
                             </td>
                             ${Array.from({ length: maxExams }, (_, i) => {
                                 return `
-                                    <td class="px-4 py-4 text-center border-r border-gray-300">
-                                        <div class="flex items-center justify-center">
-                                            <span id="aps-${i}" class="px-4 py-2 rounded-lg font-bold text-base shadow-sm transition-all duration-300 hover:scale-105">-</span>
-                                        </div>
+                                    <td class="px-4 py-3 text-center border-r border-gray-200">
+                                        <span id="aps-${i}" class="px-3 py-2 rounded-lg font-semibold text-sm">-</span>
                                     </td>
                                 `;
                             }).join('')}
@@ -19409,8 +19379,8 @@ function renderExamResultsTable(subjects, examResultsData, readOnly = false, tar
             </div>
             <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                 <div class="text-sm text-gray-600">
-                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-blue-700 rounded mr-2"></span> Grade 9</p>
-                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-blue-500 rounded mr-2"></span> Grade 8</p>
+                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-green-700 rounded mr-2"></span> Grade 9</p>
+                    <p class="mb-1"><span class="inline-block w-4 h-4 bg-green-500 rounded mr-2"></span> Grade 8</p>
                     <p class="mb-1"><span class="inline-block w-4 h-4 bg-amber-600 rounded mr-2"></span> Grades 7-5</p>
                     <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> Grades 4-1</p>
                 </div>
@@ -19474,12 +19444,12 @@ function getAPSColorClass(aps) {
         return 'bg-gray-100 text-gray-600';
     }
 
-    // APS 8.0-9.0: Blue (excellent)
+    // APS 8.0-9.0: Green (excellent)
     if (aps >= 8.0) {
-        return 'bg-blue-700 text-white font-semibold';
+        return 'bg-green-700 text-white font-semibold';
     }
     if (aps >= 7.5) {
-        return 'bg-blue-500 text-white font-semibold';
+        return 'bg-green-500 text-white font-semibold';
     }
 
     // APS 6.0-7.4: Amber (good)
@@ -19542,8 +19512,8 @@ function updateAPS(examIndex) {
 
         // Remove all color classes
         apsElement.classList.remove(
-            'bg-blue-700',
-            'bg-blue-500',
+            'bg-green-700',
+            'bg-green-500',
             'bg-amber-600',
             'bg-amber-500',
             'bg-amber-400',
@@ -19590,9 +19560,9 @@ function updateGradeColorRealTime(input) {
 
     // Remove all possible color classes
     input.classList.remove(
-        'bg-blue-700',
-        'bg-blue-500',
-        'bg-blue-600',
+        'bg-green-700',
+        'bg-green-500',
+        'bg-green-600',
         'bg-amber-600',
         'bg-amber-500',
         'bg-amber-400',
@@ -20958,7 +20928,7 @@ function updateStudySessionStatus(message, state = 'idle') {
         return;
     }
     statusEl.textContent = message;
-    statusEl.className = `text-xs ${state === 'active' ? 'text-sky-600' : 'text-gray-500'}`;
+    statusEl.className = `text-xs ${state === 'active' ? 'text-green-600' : 'text-gray-500'}`;
 }
 
 /**
@@ -21338,7 +21308,7 @@ const NotificationSystem = {
         list.innerHTML = this.notifications
             .map(notification => {
                 const iconMap = {
-                    success: 'fa-check-circle text-sky-500',
+                    success: 'fa-check-circle text-green-500',
                     warning: 'fa-exclamation-triangle text-amber-500',
                     error: 'fa-times-circle text-red-500',
                     info: 'fa-info-circle text-blue-500',
@@ -21358,6 +21328,26 @@ const NotificationSystem = {
             </article>`;
             })
             .join('');
+
+        // Add Clear All button at the bottom of the list if there are notifications
+        const clearBtnDiv = document.createElement('div');
+        clearBtnDiv.className = 'p-2 text-center border-t border-gray-100 bg-gray-50';
+        clearBtnDiv.innerHTML = `
+            <button onclick="NotificationSystem.clearAll()" class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors w-full py-1">
+                Clear All Notifications
+            </button>
+        `;
+        list.appendChild(clearBtnDiv);
+    },
+
+    /**
+     * Clear all notifications
+     */
+    clearAll() {
+        this.notifications = [];
+        this.save();
+        this.render();
+        showToast('Notifications cleared', 'success');
     },
 
     getTimeAgo(date) {
@@ -21773,6 +21763,87 @@ const Collaboration = {
             author: currentUser.uid,
             authorName: currentUser.displayName,
             comment,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+    },
+
+    /**
+     * Get resource recommendations
+     * @param {string} subject - Subject name
+     * @returns {Promise<Array>} Recommended resources
+     */
+    async getRecommendations(subject) {
+        // Implementation would use collaborative filtering
+        // For now, return empty array
+        return [];
+    },
+};
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* FUNCTIONALITY IMPROVEMENT #6: PERSONALIZATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Personalization system
+ */
+const Personalization = {
+    /**
+     * Get user preferences
+     * @returns {object} User preferences
+     */
+    getPreferences() {
+        return JSON.parse(
+            localStorage.getItem('userPreferences') ||
+                JSON.stringify({
+                    theme: 'light',
+                    layout: 'grid',
+                    notifications: true,
+                    favoriteSubjects: [],
+                })
+        );
+    },
+
+    /**
+     * Save user preferences
+     * @param {object} preferences - Preferences object
+     * @returns {void}
+     */
+    savePreferences(preferences) {
+        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+    },
+
+    /**
+     * Add favorite subject
+     * @param {string} subject - Subject name
+     * @returns {void}
+     */
+    addFavoriteSubject(subject) {
+        const prefs = this.getPreferences();
+        if (!prefs.favoriteSubjects.includes(subject)) {
+            prefs.favoriteSubjects.push(subject);
+            this.savePreferences(prefs);
+        }
+    },
+
+    /**
+     * Get personalized recommendations
+     * @returns {Array} Recommended content
+     */
+    getPersonalizedContent() {
+        const prefs = this.getPreferences();
+        // Implementation would use user's study history and preferences
+        return [];
+    },
+
+    /**
+     * Create custom study plan
+     * @param {object} plan - Study plan object
+     * @returns {void}
+     */
+    createStudyPlan(plan) {
+        const plans = JSON.parse(localStorage.getItem('studyPlans') || '[]');
+        plans.push({
+            ...plan,
             id: Date.now(),
             createdAt: new Date().toISOString(),
         });
@@ -21789,6 +21860,20 @@ const Collaboration = {
  */
 const ExportSharing = {
     /**
+     * Export notes as PDF
+     * @param {string} noteId - Note ID
+     * @returns {Promise<void>}
+     */
+    async exportNoteAsPDF(noteId) {
+        // This would use a PDF generation library like jsPDF
+        // For now, it's a placeholder
+        showToast('PDF export feature coming soon', 'info');
+    },
+
+    /**
+     * Share to social media
+     * @param {string} platform - Platform name ('twitter', 'facebook', etc.)
+     * @param {string} text - Text to share
      * @param {string} url - URL to share
      * @returns {void}
      */
@@ -21904,30 +21989,31 @@ const AITutorEnhanced = {
     },
 
     /**
-     * Generate a practice question
-     * @param {string} subject - Subject
-     * @param {string} topic - Topic
+     * Generate practice question
+     * @param {string} subject - Subject name
+     * @param {string} topic - Topic name
      * @returns {Promise<string>} Practice question
      */
     async generatePracticeQuestion(subject, topic) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return `Here is a practice question for ${subject} - ${topic}:\n\nExplain the key concepts of ${topic} and provide an example.`;
+        // This would call the AI API with a specific prompt
+        // For now, return a placeholder
+        return `Generate a practice question for ${subject} - ${topic}`;
     },
 
     /**
-     * Get learning path
-     * @param {string} subject - Subject
-     * @returns {Promise<Array>} Learning path
+     * Get personalized learning path
+     * @param {string} subject - Subject name
+     * @returns {Promise<Array>} Learning path steps
      */
     async getLearningPath(subject) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        return [
-            { title: `${subject} Basics`, completed: true },
-            { title: `Intermediate ${subject}`, completed: false },
-            { title: `Advanced ${subject}`, completed: false },
-        ];
+        // Implementation would analyze user's progress and create a path
+        return [];
     },
 };
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ACCESSIBILITY IMPROVEMENT #8: ALTERNATIVE TEXT & DESCRIPTIONS */
+/* ═══════════════════════════════════════════════════════════════ */
 
 /**
  * Add alternative text to images
