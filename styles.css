@@ -237,6 +237,73 @@ body {
     font-weight: 400;
 }
 
+/* ========================================== */
+/* CRITICAL: Color Contrast Fixes */
+/* ========================================== */
+
+/* Dark backgrounds need white text */
+.bg-slate-900,
+.bg-slate-800,
+.bg-gray-900,
+.bg-gray-800,
+.bg-blue-900,
+.bg-blue-800,
+.bg-indigo-900,
+.bg-indigo-800,
+.bg-purple-900,
+.bg-purple-800,
+.bg-navy-900,
+[class*="bg-slate-9"],
+[class*="bg-gray-9"],
+[class*="bg-navy-9"] {
+    color: #ffffff !important;
+}
+
+.bg-slate-900 *:not(button):not(a):not([class*="text-"]),
+.bg-slate-800 *:not(button):not(a):not([class*="text-"]),
+.bg-gray-900 *:not(button):not(a):not([class*="text-"]),
+.bg-gray-800 *:not(button):not(a):not([class*="text-"]),
+.bg-navy-900 *:not(button):not(a):not([class*="text-"]) {
+    color: #ffffff !important;
+}
+
+/* Ensure headings on dark backgrounds are white */
+.bg-slate-900 h1,
+.bg-slate-900 h2,
+.bg-slate-900 h3,
+.bg-slate-900 h4,
+.bg-slate-900 h5,
+.bg-slate-900 h6,
+.bg-gray-900 h1,
+.bg-gray-900 h2,
+.bg-gray-900 h3,
+.bg-gray-900 h4,
+.bg-gray-900 h5,
+.bg-gray-900 h6,
+.bg-navy-900 h1,
+.bg-navy-900 h2,
+.bg-navy-900 h3,
+.bg-navy-900 h4,
+.bg-navy-900 h5,
+.bg-navy-900 h6 {
+    color: #ffffff !important;
+}
+
+/* Light backgrounds need dark text */
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-blue-50,
+.bg-blue-100 {
+    color: #0f172a !important;
+}
+
+.bg-white *:not(button):not(a):not([class*="text-"]),
+.bg-gray-50 *:not(button):not(a):not([class*="text-"]),
+.bg-gray-100 *:not(button):not(a):not([class*="text-"]) {
+    color: #0f172a !important;
+}
+
 /* EdTech-inspired typography */
 h1,
 h2,
@@ -1547,6 +1614,9 @@ iframe {
     overflow: visible;
     will-change: transform, color;
     backface-visibility: hidden;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* Modern underline animation with gradient */
@@ -2227,6 +2297,35 @@ button,
 /* ═══════════════════════════════════════════════════════════════ */
 /* ENHANCED LOADING STATES - Modern, Smooth, Professional */
 /* ═══════════════════════════════════════════════════════════════ */
+/* ========================================== */
+/* Navigation Layout Fixes */
+/* ========================================== */
+
+/* Prevent navigation tabs from wrapping vertically */
+header nav {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+header nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ensure nav links stay inline */
+header nav a {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Fix for mobile menu nav links */
+#mobile-menu nav a {
+    width: 100%;
+    white-space: normal;
+}
+
 #page-loading-overlay {
     background: rgba(255, 255, 255, 0.95);
     opacity: 0;
@@ -2304,6 +2403,38 @@ button,
 .hover-tint:hover {
     background-color: rgba(var(--accent-50), 0.8);
 }
+
+/* ========================================== */
+/* Navigation Layout Fixes - CRITICAL */
+/* ========================================== */
+
+/* Prevent navigation tabs from wrapping vertically */
+header nav {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+header nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ensure nav links stay inline and don't wrap */
+header nav a {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-width: fit-content;
+}
+
+/* Fix for mobile menu nav links - allow wrapping in mobile */
+#mobile-menu nav a {
+    width: 100%;
+    white-space: normal;
+    flex-shrink: 1;
+}
+
 a.nav-link {
     transition:
         color 0.2s ease,
@@ -2311,9 +2442,71 @@ a.nav-link {
     border-radius: 0.5rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 a.nav-link:hover {
     background-color: rgba(var(--accent-50), 0.7);
+}
+
+/* ========================================== */
+/* Additional Color Contrast Fixes - CRITICAL */
+/* ========================================== */
+
+/* Ensure buttons have proper contrast */
+button:not([class*="bg-"]):not(.btn-secondary):not(.btn-ghost) {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+/* Text color utilities - enforce proper contrast */
+.text-gray-800 { color: #1e293b !important; }
+.text-gray-700 { color: #334155 !important; }
+.text-gray-600 { color: #475569 !important; }
+.text-gray-500 { color: #64748b !important; }
+.text-white { color: #ffffff !important; }
+
+/* Card text contrast */
+.card,
+[class*="card-"],
+.bg-white .prose,
+.bg-gray-50 .prose {
+    color: #0f172a;
+}
+
+.bg-slate-900 .prose,
+.bg-gray-900 .prose,
+.bg-navy-900 .prose {
+    color: #ffffff;
+}
+
+/* Form inputs contrast - ensure white background */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 2px solid #cbd5e1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* Ensure labels are readable */
+label {
+    color: #334155 !important;
+    font-weight: 500;
+}
+
+/* Link contrast */
+a:not(.nav-link):not(.btn):not([class*="bg-"]) {
+    color: #2563eb;
+}
+
+a:not(.nav-link):not(.btn):not([class*="bg-"]):hover {
+    color: #1d4ed8;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */

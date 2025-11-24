@@ -307,7 +307,11 @@
             const openModals = Array.from(document.querySelectorAll('.fixed:not(.hidden)'));
             const topModal = openModals[openModals.length - 1];
             if (topModal && topModal.id) {
-                enhancedCloseModal(topModal.id);
+                if (typeof window.closeModal === 'function') {
+                    window.closeModal(topModal.id);
+                } else if (typeof window.enhancedCloseModal === 'function') {
+                    window.enhancedCloseModal(topModal.id);
+                }
             }
         }
 
