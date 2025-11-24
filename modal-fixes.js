@@ -16,6 +16,7 @@
         modal.style.transform = 'scale(0.95)';
 
         setTimeout(() => {
+            modal.classList.add('hidden');
             modal.style.display = 'none';
             modal.style.opacity = '';
             modal.style.transform = '';
@@ -25,6 +26,33 @@
                 modal.innerHTML = '';
             }
         }, 250);
+    };
+
+    // Universal modal open function with content pre-load fix
+    window.openModal = function (modalId, contentCallback) {
+        const modal = document.getElementById(modalId);
+        if (!modal) {
+            return;
+        }
+
+        // Ensure content is loaded first before showing
+        if (contentCallback && typeof contentCallback === 'function') {
+            contentCallback(modal);
+        }
+
+        // Small delay to ensure content renders
+        requestAnimationFrame(() => {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            modal.style.opacity = '0';
+            modal.style.transform = 'scale(0.95)';
+
+            // Trigger animation after content is ready
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+            });
+        });
     };
 
     // Enhanced modal close with element removal
