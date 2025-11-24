@@ -6852,6 +6852,7 @@ textarea::placeholder {
 [class*='card'] p {
     color: var(--text-primary) !important;
 }
+<<<<<<< HEAD
 
 /* Dark Mode Text Overrides - Ensure readability */
 [data-theme='dark'] .text-gray-900,
@@ -7397,3 +7398,5 @@ select:focus-visible {
         transition: none !important;
     }
 }
+=======
+>>>>>>> parent of 5a480e7 (gemini)

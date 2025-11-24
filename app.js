@@ -4046,35 +4046,53 @@ function initializeAppState() {
         // Wait for ServerPreferences to be initialized
         const checkWelcomeNotification = async () => {
             try {
+<<<<<<< HEAD
                 if (!currentUser) {
                     return;
                 }
+=======
+                let lastWelcome = null;
+>>>>>>> parent of 5a480e7 (gemini)
 
-                // Check if user is new (created within last 5 minutes)
-                const creationTime = new Date(currentUser.metadata.creationTime).getTime();
-                const now = Date.now();
-                const isNewUser = now - creationTime < 5 * 60 * 1000;
+                // Wait a bit for ServerPreferences to initialize
+                if (window.ServerPreferences) {
+                    // Check if initialized, if not wait a bit
+                    if (!window.ServerPreferences.initialized) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    lastWelcome = window.ServerPreferences.get('notificationWelcomeShown');
+                }
 
-                // Also check local storage to avoid showing it multiple times in the same session/browser
-                const hasSeenWelcome = localStorage.getItem('notification_welcome_shown');
+                // Fallback to localStorage if ServerPreferences not available or not initialized
+                if (lastWelcome === null || lastWelcome === undefined) {
+                    try {
+                        lastWelcome = localStorage.getItem('notification_welcome_shown');
+                    } catch (e) {
+                        // Ignore localStorage errors
+                    }
+                }
 
-                if (isNewUser && !hasSeenWelcome) {
+                // Only show if never shown before (not every 24 hours)
+                if (
+                    !lastWelcome ||
+                    lastWelcome === '' ||
+                    lastWelcome === 'null' ||
+                    lastWelcome === 'undefined'
+                ) {
                     NotificationSystem.show(
                         'Welcome to GCSEMate!',
-                        `Hi ${currentUser.displayName || 'Student'}! We're glad you're here. Start by exploring your subjects or creating a study plan.`,
-                        'success',
-                        10000
+                        'Get started by exploring subjects, past papers, and study resources. Check your notifications here for important updates.',
+                        'info'
                     );
-
-                    // Mark as seen
-                    localStorage.setItem('notification_welcome_shown', 'true');
-
-                    // Also try to save to server preferences if available
-                    if (window.ServerPreferences) {
-                        await window.ServerPreferences.set(
-                            'notificationWelcomeShown',
-                            new Date().toISOString()
-                        );
+                    const timestamp = String(Date.now());
+                    if (window.ServerPreferences && window.ServerPreferences.initialized) {
+                        await window.ServerPreferences.set('notificationWelcomeShown', timestamp);
+                    } else {
+                        try {
+                            localStorage.setItem('notification_welcome_shown', timestamp);
+                        } catch (e) {
+                            // Ignore localStorage errors
+                        }
                     }
                 }
             } catch (error) {
@@ -4083,7 +4101,7 @@ function initializeAppState() {
         };
 
         // Run check after a short delay to ensure ServerPreferences is ready
-        setTimeout(checkWelcomeNotification, 2000);
+        setTimeout(checkWelcomeNotification, 1000);
 
         // Initialize all new features
         if (typeof window.initializeAllFeatures === 'function') {
@@ -21336,26 +21354,6 @@ const NotificationSystem = {
             </article>`;
             })
             .join('');
-
-        // Add Clear All button at the bottom of the list if there are notifications
-        const clearBtnDiv = document.createElement('div');
-        clearBtnDiv.className = 'p-2 text-center border-t border-gray-100 bg-gray-50';
-        clearBtnDiv.innerHTML = `
-            <button onclick="NotificationSystem.clearAll()" class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors w-full py-1">
-                Clear All Notifications
-            </button>
-        `;
-        list.appendChild(clearBtnDiv);
-    },
-
-    /**
-     * Clear all notifications
-     */
-    clearAll() {
-        this.notifications = [];
-        this.save();
-        this.render();
-        showToast('Notifications cleared', 'success');
     },
 
     getTimeAgo(date) {
