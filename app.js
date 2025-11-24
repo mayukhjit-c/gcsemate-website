@@ -4047,9 +4047,13 @@ function initializeAppState() {
         const checkWelcomeNotification = async () => {
             try {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 if (!currentUser) {
                     return;
                 }
+=======
+                let lastWelcome = null;
+>>>>>>> parent of 5a480e7 (gemini)
 =======
                 let lastWelcome = null;
 >>>>>>> parent of 5a480e7 (gemini)
