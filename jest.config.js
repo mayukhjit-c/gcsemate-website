@@ -7,7 +7,6 @@ module.exports = {
     testEnvironment: 'jsdom',
     roots: ['<rootDir>'],
     testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
-    testPathIgnorePatterns: ['/node_modules/', '/tests/e2e/'],
     collectCoverageFrom: [
         'app.js',
         '**/*.js',
@@ -15,7 +14,7 @@ module.exports = {
         '!**/dist/**',
         '!**/build/**',
         '!jest.config.js',
-        '!sw.js',
+        '!sw.js'
     ],
     // Coverage thresholds disabled for now - will be enabled as tests are added
     // coverageThreshold: {
@@ -28,7 +27,8 @@ module.exports = {
     // },
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleNameMapper: {
-        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
     },
-    testTimeout: 10000,
+    testTimeout: 10000
 };
+
