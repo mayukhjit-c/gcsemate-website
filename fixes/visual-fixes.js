@@ -485,6 +485,73 @@
             0% { background-position: 100% 0; }
             100% { background-position: -100% 0; }
         }
+
+        /* ========================================
+           AI TUTOR PAGE WHITESPACE FIX
+           ======================================== */
+
+        /* Reduce whitespace on AI tutor page */
+        #ai-tutor-page {
+            padding: 0.75rem !important;
+            padding-top: 0.5rem !important;
+            gap: 0.5rem;
+        }
+
+        #ai-tutor-page > .mb-4 {
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* Compact header on AI tutor */
+        #ai-tutor-page h2 {
+            font-size: 1.5rem !important;
+        }
+
+        /* Compact disclaimers */
+        #ai-tutor-page .bg-amber-50 {
+            padding: 0.5rem 0.75rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        #ai-tutor-page .bg-amber-50 ul {
+            font-size: 0.75rem !important;
+        }
+
+        /* Maximize chat container height */
+        #ai-tutor-page .flex-1.flex.flex-col {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #ai-chat-messages {
+            max-height: none !important;
+            flex: 1;
+            min-height: 200px;
+        }
+
+        /* Page content area - remove extra padding for full-height pages */
+        main#page-content {
+            padding: 0 !important;
+        }
+
+        /* The pages themselves handle their own padding */
+        #page-content > #page-container {
+            height: 100%;
+        }
+
+        /* Mobile: even more compact */
+        @media (max-width: 640px) {
+            #ai-tutor-page {
+                padding: 0.5rem !important;
+            }
+
+            #ai-tutor-page h2 {
+                font-size: 1.25rem !important;
+            }
+
+            #ai-tutor-page .bg-amber-50 {
+                padding: 0.375rem 0.5rem !important;
+            }
+        }
     `;
 
     document.head.appendChild(layoutFixes);
@@ -1963,6 +2030,413 @@
         }
     `;
     document.head.appendChild(darkModeContrastFix);
+
+    // ================================================
+    // REMOVE DARK MODE FEATURE ENTIRELY
+    // ================================================
+
+    const removeDarkMode = document.createElement('style');
+    removeDarkMode.id = 'remove-dark-mode';
+    removeDarkMode.textContent = `
+        /* Hide all dark mode toggles */
+        #theme-toggle,
+        #theme-toggle-mobile,
+        [id*="theme-toggle"],
+        button[aria-label*="dark mode"],
+        button[title*="Toggle theme"] {
+            display: none !important;
+        }
+
+        /* Force light mode on all dark mode elements */
+        .dark,
+        [data-theme="dark"],
+        body.dark-mode {
+            --bg-primary: #f8fafc !important;
+            --bg-card: #ffffff !important;
+            --text-primary: #1f2937 !important;
+            --text-secondary: #4b5563 !important;
+            color-scheme: light !important;
+        }
+
+        /* Override any dark:* Tailwind classes */
+        .dark\\:bg-gray-800,
+        .dark\\:bg-gray-900,
+        .dark\\:bg-slate-800,
+        .dark\\:bg-slate-900 {
+            background-color: #ffffff !important;
+        }
+
+        .dark\\:text-white,
+        .dark\\:text-gray-100,
+        .dark\\:text-gray-200,
+        .dark\\:text-gray-300 {
+            color: #1f2937 !important;
+        }
+
+        .dark\\:border-gray-600,
+        .dark\\:border-gray-700 {
+            border-color: #e5e7eb !important;
+        }
+    `;
+    document.head.appendChild(removeDarkMode);
+
+    // Remove dark mode from body if present
+    function enforceLightMode() {
+        document.body.classList.remove('dark', 'dark-mode');
+        document.documentElement.classList.remove('dark', 'dark-mode');
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('darkMode');
+    }
+
+    enforceLightMode();
+
+    // Also observe for any dark mode additions
+    const darkModeObserver = new MutationObserver(() => {
+        if (
+            document.body.classList.contains('dark') ||
+            document.documentElement.classList.contains('dark') ||
+            document.documentElement.getAttribute('data-theme') === 'dark'
+        ) {
+            enforceLightMode();
+        }
+    });
+    darkModeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'data-theme'],
+    });
+    darkModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    // ================================================
+    // LIGHT MODE FLASHCARD & STUDY PLANNER MODALS
+    // ================================================
+
+    const lightModeModals = document.createElement('style');
+    lightModeModals.id = 'light-mode-modals';
+    lightModeModals.textContent = `
+        /* Flashcard Modal - Light Mode */
+        #flashcard-modal > div,
+        #flashcard-modal .bg-gray-800,
+        #flashcard-modal [class*="dark:bg-gray-"] {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #flashcard-modal input,
+        #flashcard-modal textarea,
+        #flashcard-modal select {
+            background-color: #ffffff !important;
+            color: #1f2937 !important;
+            border-color: #d1d5db !important;
+        }
+
+        #flashcard-modal input:focus,
+        #flashcard-modal textarea:focus,
+        #flashcard-modal select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+
+        #flashcard-modal label,
+        #flashcard-modal h3,
+        #flashcard-modal .text-gray-300,
+        #flashcard-modal .text-gray-400 {
+            color: #374151 !important;
+        }
+
+        #flashcard-modal .border-gray-700,
+        #flashcard-modal .border-gray-600 {
+            border-color: #e5e7eb !important;
+        }
+
+        /* Study Plan Modal - Light Mode */
+        #study-plan-modal > div,
+        #study-plan-modal .bg-gray-800,
+        #study-plan-modal [class*="dark:bg-gray-"] {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #study-plan-modal input,
+        #study-plan-modal textarea,
+        #study-plan-modal select {
+            background-color: #ffffff !important;
+            color: #1f2937 !important;
+            border-color: #d1d5db !important;
+        }
+
+        #study-plan-modal input:focus,
+        #study-plan-modal textarea:focus,
+        #study-plan-modal select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+
+        #study-plan-modal label,
+        #study-plan-modal h2,
+        #study-plan-modal h3,
+        #study-plan-modal .text-gray-300,
+        #study-plan-modal .text-gray-400 {
+            color: #374151 !important;
+        }
+
+        #study-plan-modal .border-gray-700,
+        #study-plan-modal .border-gray-600 {
+            border-color: #e5e7eb !important;
+        }
+
+        #study-plan-modal .bg-gray-700 {
+            background-color: #f3f4f6 !important;
+            color: #374151 !important;
+        }
+
+        #study-plan-modal .bg-gray-700:hover {
+            background-color: #e5e7eb !important;
+        }
+
+        /* Practice Question Modal - Light Mode */
+        #practice-question-modal > div,
+        #practice-question-modal .bg-gray-800 {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+        }
+
+        /* All feature modals - consistent light mode */
+        #note-editor-modal > div,
+        #study-group-modal > div,
+        #achievement-modal > div,
+        #timetable-modal > div,
+        #past-paper-modal > div,
+        #voice-note-modal > div,
+        #export-modal > div {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+        }
+    `;
+    document.head.appendChild(lightModeModals);
+
+    // ================================================
+    // BLOG POST RIBBON BUTTONS FIX
+    // ================================================
+
+    const blogRibbonFix = document.createElement('style');
+    blogRibbonFix.id = 'blog-ribbon-fix';
+    blogRibbonFix.textContent = `
+        /* Blog viewer toolbar/ribbon - consistent button styling */
+        #blog-viewer-modal .flex.items-center.gap-2 button,
+        #blog-viewer-modal [class*="flex"] > button {
+            min-width: 80px !important;
+            min-height: 36px !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            border-radius: 0.5rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+        /* Primary action buttons */
+        #blog-viewer-modal button.bg-blue-600,
+        #blog-viewer-modal button[class*="bg-blue"] {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        #blog-viewer-modal button.bg-blue-600:hover,
+        #blog-viewer-modal button[class*="bg-blue"]:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* Secondary/gray buttons */
+        #blog-viewer-modal button.bg-gray-100,
+        #blog-viewer-modal button.bg-gray-200,
+        #blog-viewer-modal button[class*="bg-gray-1"],
+        #blog-viewer-modal button[class*="bg-gray-2"] {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb) !important;
+            color: #374151 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        #blog-viewer-modal button.bg-gray-100:hover,
+        #blog-viewer-modal button.bg-gray-200:hover {
+            background: linear-gradient(135deg, #e5e7eb, #d1d5db) !important;
+            border-color: #9ca3af !important;
+        }
+
+        /* Close button styling */
+        #blog-viewer-modal button[onclick*="Close"],
+        #blog-viewer-modal .text-2xl.font-bold {
+            min-width: 36px !important;
+            min-height: 36px !important;
+            padding: 0.25rem !important;
+            border-radius: 50% !important;
+            background: #f3f4f6 !important;
+            color: #6b7280 !important;
+            font-size: 1.25rem !important;
+            border: 1px solid #e5e7eb !important;
+        }
+
+        #blog-viewer-modal button[onclick*="Close"]:hover,
+        #blog-viewer-modal .text-2xl.font-bold:hover {
+            background: #e5e7eb !important;
+            color: #1f2937 !important;
+        }
+
+        /* Button row alignment */
+        #blog-viewer-modal .flex.items-center.gap-2 {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 0.75rem !important;
+            flex-wrap: wrap !important;
+        }
+    `;
+    document.head.appendChild(blogRibbonFix);
+
+    // ================================================
+    // SEARCH ICONS ALIGNMENT FIX
+    // ================================================
+
+    const searchIconsFix = document.createElement('style');
+    searchIconsFix.id = 'search-icons-fix';
+    searchIconsFix.textContent = `
+        /* Links search icon alignment */
+        #links-search-input {
+            padding-left: 2.5rem !important;
+        }
+
+        .relative:has(#links-search-input) .fa-search,
+        .relative:has(#links-search-input) i.fa-search {
+            position: absolute !important;
+            left: 0.75rem !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            pointer-events: none !important;
+            z-index: 1 !important;
+        }
+
+        /* File browser search icon alignment */
+        #file-search-input {
+            padding-left: 2.75rem !important;
+        }
+
+        #file-browser-controls .relative svg,
+        .relative:has(#file-search-input) svg {
+            position: absolute !important;
+            left: 0.875rem !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            pointer-events: none !important;
+            z-index: 1 !important;
+        }
+
+        /* Ensure relative container is properly positioned */
+        .relative:has(input[type="search"]),
+        .relative:has(#links-search-input),
+        .relative:has(#file-search-input) {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        /* Consistent search input styling */
+        #links-search-input,
+        #file-search-input {
+            height: 40px !important;
+            line-height: 40px !important;
+        }
+    `;
+    document.head.appendChild(searchIconsFix);
+
+    // ================================================
+    // PRACTICE QUESTIONS PAGE - LIGHT MODE UI
+    // ================================================
+
+    const practiceQuestionsStyles = document.createElement('style');
+    practiceQuestionsStyles.id = 'practice-questions-styles';
+    practiceQuestionsStyles.textContent = `
+        /* Practice Questions Page - Light Mode Styling */
+        #practice-questions-page {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        }
+
+        #practice-questions-page .bg-gray-800,
+        #practice-questions-page [class*="dark:bg-gray-"] {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+        }
+
+        #practice-questions-page h2,
+        #practice-questions-page h3,
+        #practice-questions-page h4,
+        #practice-questions-page .text-gray-100,
+        #practice-questions-page .text-gray-200,
+        #practice-questions-page [class*="dark:text-gray-"] {
+            color: #1f2937 !important;
+        }
+
+        #practice-questions-page p,
+        #practice-questions-page span,
+        #practice-questions-page .text-gray-300,
+        #practice-questions-page .text-gray-400 {
+            color: #4b5563 !important;
+        }
+
+        #practice-questions-page input,
+        #practice-questions-page select,
+        #practice-questions-page textarea {
+            background-color: #ffffff !important;
+            color: #1f2937 !important;
+            border-color: #d1d5db !important;
+        }
+
+        #practice-questions-page .border-gray-600,
+        #practice-questions-page .border-gray-700 {
+            border-color: #e5e7eb !important;
+        }
+
+        /* Question cards */
+        #practice-questions-content .border {
+            background: #ffffff !important;
+            border-color: #e5e7eb !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Answer buttons */
+        #practice-questions-content button[onclick*="answerQuestion"] {
+            background: #ffffff !important;
+            color: #374151 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        #practice-questions-content button[onclick*="answerQuestion"]:hover {
+            background: #eff6ff !important;
+            border-color: #3b82f6 !important;
+        }
+
+        /* Practice questions empty state */
+        #practice-questions-content:empty::after {
+            content: "Generate questions to start practicing!";
+            display: block;
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+            font-size: 1rem;
+        }
+    `;
+    document.head.appendChild(practiceQuestionsStyles);
 
     console.log('✅ Visual & UI Fixes loaded successfully!');
 })();

@@ -774,29 +774,29 @@ function createFlashcardModal() {
     modal.className =
         'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md animate-fade-in">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create Flashcard Deck</h3>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md animate-fade-in border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900">Create Flashcard Deck</h3>
             </div>
             <form id="create-deck-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); handleCreateFlashcardDeck();">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Deck Name</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Deck Name</label>
                     <input type="text" id="deck-name" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
                     <input type="text" id="deck-subject" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description (optional)</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description (optional)</label>
                     <textarea id="deck-description" rows="3"
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
                 </div>
-                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
                     <button type="button" onclick="document.getElementById('flashcard-modal').style.display='none'"
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
@@ -1048,38 +1048,38 @@ function createStudyPlanModal() {
     modal.className =
         'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create Study Plan</h2>
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in border border-gray-200">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-2xl font-bold text-gray-900">Create Study Plan</h2>
                 <button onclick="document.getElementById('study-plan-modal').style.display='none'"
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    class="text-gray-500 hover:text-gray-700 transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             <form id="create-study-plan-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Plan Name *</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Plan Name *</label>
                     <input type="text" id="plan-name" required
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Start Date *</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date *</label>
                         <input type="date" id="plan-start-date" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">End Date *</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">End Date *</label>
                         <input type="date" id="plan-end-date" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subjects *</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subjects *</label>
                     <div id="plan-subjects-container" class="space-y-2">
                         <div class="flex gap-2">
                             <select id="plan-subject-0" required
-                                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                                 <option value="">Select subject...</option>
                             </select>
                             <button type="button" onclick="addPlanSubject()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
@@ -1089,18 +1089,18 @@ function createStudyPlanModal() {
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Hours Per Week *</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Hours Per Week *</label>
                     <input type="number" id="plan-hours" min="1" max="40" required
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                     <textarea id="plan-description" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></textarea>
                 </div>
-                <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
+                <div class="flex gap-3 pt-4 border-t border-gray-200 mt-6">
                     <button type="button" onclick="document.getElementById('study-plan-modal').style.display='none'"
-                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                        class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
                         Cancel
                     </button>
                     <button type="submit"
@@ -1144,7 +1144,7 @@ function addPlanSubject() {
     div.className = 'flex gap-2';
     div.innerHTML = `
         <select id="plan-subject-${planSubjectCount}"
-            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500">
             <option value="">Select subject...</option>
         </select>
         <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
@@ -1298,15 +1298,15 @@ const PracticeQuestions = {
         }
 
         content.innerHTML = `
-            <div class="bg-white/70 dark:bg-gray-800 backdrop-blur-lg rounded-xl p-6 shadow-lg">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Generated Questions</h3>
+            <div class="bg-white backdrop-blur-lg rounded-xl p-6 shadow-lg border border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Generated Questions</h3>
                 <div class="space-y-4">
                     ${this.questions
                         .map(
                             (q, idx) => `
-                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            <p class="font-semibold text-gray-900 dark:text-gray-100">Question ${idx + 1}</p>
-                            <p class="text-gray-700 dark:text-gray-300 mt-2">${escapeHtml(q.question)}</p>
+                        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="font-semibold text-gray-900">Question ${idx + 1}</p>
+                            <p class="text-gray-700 mt-2">${escapeHtml(q.question)}</p>
                         </div>
                     `
                         )
@@ -1333,10 +1333,10 @@ const PracticeQuestions = {
             const score = this.currentSession.answers.filter(a => a.isCorrect).length;
             const total = this.currentSession.questions.length;
             content.innerHTML = `
-                <div class="bg-white/70 dark:bg-gray-800 backdrop-blur-lg rounded-xl p-6 shadow-lg text-center">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Session Complete!</h3>
-                    <p class="text-lg text-gray-700 dark:text-gray-300 mb-2">Score: ${score} / ${total}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">${Math.round((score / total) * 100)}%</p>
+                <div class="bg-white backdrop-blur-lg rounded-xl p-6 shadow-lg text-center border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Session Complete!</h3>
+                    <p class="text-lg text-gray-700 mb-2">Score: ${score} / ${total}</p>
+                    <p class="text-sm text-gray-600 mb-6">${Math.round((score / total) * 100)}%</p>
                     <button onclick="PracticeQuestions.resetSession()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         Start New Session
                     </button>
@@ -1346,23 +1346,23 @@ const PracticeQuestions = {
         }
 
         content.innerHTML = `
-            <div class="bg-white/70 dark:bg-gray-800 backdrop-blur-lg rounded-xl p-6 shadow-lg">
+            <div class="bg-white backdrop-blur-lg rounded-xl p-6 shadow-lg border border-gray-200">
                 <div class="mb-4 flex justify-between items-center">
-                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="text-sm text-gray-600">
                         Question ${currentQuestionIndex + 1} of ${this.currentSession.questions.length}
                     </span>
-                    <button onclick="PracticeQuestions.endSession()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <button onclick="PracticeQuestions.endSession()" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="mb-6">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">${escapeHtml(currentQuestion.question || '')}</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">${escapeHtml(currentQuestion.question || '')}</h3>
                     <div class="space-y-2">
                         ${(currentQuestion.options || [])
                             .map(
                                 (option, idx) => `
                             <button onclick="PracticeQuestions.answerQuestion(${idx})"
-                                class="w-full text-left p-4 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                                class="w-full text-left p-4 rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-blue-50 hover:border-blue-300 transition-colors">
                                 ${escapeHtml(option)}
                             </button>
                         `
@@ -1468,31 +1468,31 @@ function createPracticeGeneratorModal() {
     modal.className =
         'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Generate Practice Questions</h3>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">Generate Practice Questions</h3>
             </div>
             <form id="practice-generator-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); handleGenerateQuestions();">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Subject *</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
                     <select id="practice-subject" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800">
                         <option value="">Select subject...</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Topic</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Topic</label>
                     <input type="text" id="practice-topic" required placeholder="e.g. Cell Structure, Atomic Structure"
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Number of Questions</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Number of Questions</label>
                     <input type="number" id="practice-count" min="1" max="20" value="5" required
-                        class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Difficulty</label>
-                    <select id="practice-difficulty" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Difficulty</label>
+                    <select id="practice-difficulty" class="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-800">
                         <option value="easy">Easy</option>
                         <option value="medium" selected>Medium</option>
                         <option value="hard">Hard</option>
@@ -1500,7 +1500,7 @@ function createPracticeGeneratorModal() {
                 </div>
                 <div class="flex justify-end gap-3 pt-4">
                     <button type="button" onclick="document.getElementById('practice-generator-modal').style.display='none'"
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                        class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200">
                         Cancel
                     </button>
                     <button type="submit"

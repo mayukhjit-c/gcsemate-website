@@ -19663,6 +19663,22 @@ function updateAllAPS() {
     for (let i = 0; i < maxExams; i++) {
         updateAPS(i);
     }
+    // Also update all grade input colors
+    updateAllGradeColors();
+}
+
+/**
+ * Updates all grade input colors to reflect their current values
+ * This ensures colors are applied on page load and after any changes
+ */
+function updateAllGradeColors() {
+    const gradeInputs = document.querySelectorAll('input[id^="grade-"]');
+    gradeInputs.forEach(input => {
+        const grade = input.value.trim();
+        if (grade) {
+            updateGradeColorRealTime(input);
+        }
+    });
 }
 
 // Update grade color on input (real-time for all inputs)

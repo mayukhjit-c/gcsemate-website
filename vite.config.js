@@ -11,6 +11,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     root: '.',
+    publicDir: 'public',
     build: {
         outDir: 'dist',
         assetsDir: 'assets',
@@ -32,9 +33,16 @@ export default defineConfig({
         port: 3000,
         open: true,
         cors: true,
+        // Properly serve static files
+        fs: {
+            strict: false,
+            allow: ['.'],
+        },
     },
     preview: {
         port: 3000,
         open: true,
     },
+    // Ensure proper MIME types
+    assetsInclude: ['**/*.js', '**/*.css'],
 });

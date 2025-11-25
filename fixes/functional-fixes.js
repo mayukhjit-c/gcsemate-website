@@ -1073,7 +1073,7 @@
             /* ═══════════════════════════════════════════════════════════════ */
             /* ENHANCED MODERN ANIMATIONS & POLISH */
             /* ═══════════════════════════════════════════════════════════════ */
-            
+
             /* Smooth page transitions */
             .page {
                 animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -1096,7 +1096,7 @@
             [class*="rounded-2xl"] {
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            
+
             .bg-white\\/70:hover,
             .shadow-lg:hover {
                 transform: translateY(-2px);
@@ -1107,7 +1107,7 @@
             button, .btn, [role="button"] {
                 transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            
+
             button:active:not(:disabled),
             .btn:active:not(:disabled) {
                 transform: scale(0.98);
@@ -1128,7 +1128,7 @@
             input, textarea, select {
                 transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
             }
-            
+
             input:focus, textarea:focus, select:focus {
                 border-color: #0ea5e9 !important;
                 box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
@@ -1139,7 +1139,7 @@
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
-            
+
             .animate-spin, [class*="fa-spinner"], [class*="fa-circle-notch"] {
                 animation: modernSpin 0.8s linear infinite;
             }
@@ -1148,7 +1148,7 @@
             i[class*="fa-"], svg {
                 transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s;
             }
-            
+
             button:hover i[class*="fa-"],
             a:hover i[class*="fa-"] {
                 transform: scale(1.1);
@@ -1231,7 +1231,7 @@
             /* Professional shadow on hover for cards */
             .hover\\:shadow-xl:hover,
             .hover\\:shadow-lg:hover {
-                box-shadow: 
+                box-shadow:
                     0 25px 50px -12px rgba(0, 0, 0, 0.15),
                     0 0 0 1px rgba(0, 0, 0, 0.05);
             }
