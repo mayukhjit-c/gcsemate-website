@@ -10,8 +10,8 @@
     // Debug logging - silent in production
     const DEBUG = false;
     const log = DEBUG
-        ? Function.prototype.bind.call(console.log, console, '🔒 [Security]')
-        : () => {}; // eslint-disable-line no-console
+        ? Function.prototype.bind.call(console.log, console, '🔒 [Security]') // eslint-disable-line no-console
+        : () => {};
 
     /**
      * S-001: Content Security Policy Management
@@ -128,10 +128,10 @@
     // Note: patchInnerHTML is available but disabled by default as it can cause
     // compatibility issues. Uncomment the call in init() to enable.
     // Patches Element.innerHTML to warn about potentially dangerous content
-    /* eslint-disable-next-line no-unused-vars */
     /**
-     *
+     * Patches innerHTML to warn about dangerous content (opt-in)
      */
+    // eslint-disable-next-line no-unused-vars
     function patchInnerHTML() {
         const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
 

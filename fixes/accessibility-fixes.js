@@ -10,8 +10,8 @@
     // Debug logging - silent in production
     const DEBUG = false;
     const log = DEBUG
-        ? Function.prototype.bind.call(console.log, console, '♿ [Accessibility]')
-        : () => {}; // eslint-disable-line no-console
+        ? Function.prototype.bind.call(console.log, console, '♿ [Accessibility]') // eslint-disable-line no-console
+        : () => {};
 
     log('Loading Accessibility Fixes...');
 

@@ -1465,6 +1465,94 @@ function showSystemHealthModal() {
     document.body.appendChild(modal);
 }
 
+/**
+ * Show Send Notification Modal (Admin only)
+ */
+function showSendNotificationModal() {
+    if (currentUser?.role !== 'admin') {
+        showToast('Admin access required', 'error');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className =
+        'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-bell text-indigo-600"></i>
+                    Send Notification
+                </h2>
+                <button onclick="this.closest('.fixed').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="send-notification-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" id="notif-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Notification title" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea id="notif-message" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Notification message" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select id="notif-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="info">Info</option>
+                        <option value="success">Success</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Handle form submission
+    document.getElementById('send-notification-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = document.getElementById('notif-title').value.trim();
+        const message = document.getElementById('notif-message').value.trim();
+        const type = document.getElementById('notif-type').value;
+
+        if (!title || !message) {
+            showToast('Please fill in all fields', 'error');
+            return;
+        }
+
+        try {
+            // Store notification in Firestore for all users
+            const db = getFirestore();
+            await db.collection('notifications').add({
+                title,
+                message,
+                type,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: currentUser.uid,
+                read: [],
+            });
+
+            showToast('Notification sent successfully', 'success');
+            modal.remove();
+        } catch (error) {
+            logError(error, 'showSendNotificationModal');
+            showToast('Failed to send notification', 'error');
+        }
+    });
+}
+
 // Copy error functions
 window.copyErrorsToClipboard = function () {
     const failedTests = window.currentHealthData?.tests?.failedTests || [];

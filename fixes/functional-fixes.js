@@ -1003,9 +1003,148 @@
                 background-color: var(--primary-500, #6366f1);
                 color: white;
             }
+
+            /* HIDE orphaned notes-content section */
+            body > #notes-content,
+            #page-content > #notes-content,
+            #page-container > #notes-content,
+            #notes-content:not(.inside-tools-page) {
+                display: none !important;
+            }
         `;
         document.head.appendChild(style);
     }
+
+    // =====================================================================
+    // FIX: Study Session Timer - Ensure it starts properly
+    // =====================================================================
+
+    /**
+     * Enhanced Study Session Timer Fix
+     */
+    const StudySessionFix = {
+        init() {
+            // Wait for DOM to be ready
+            const startBtn = document.getElementById('study-start-btn');
+            const stopBtn = document.getElementById('study-stop-btn');
+            const timerDisplay = document.getElementById('study-timer-display');
+
+            if (!startBtn) {
+                return;
+            }
+
+            // Ensure the timer display exists
+            if (!timerDisplay) {
+                // Create timer display if missing
+                const sessionContainer =
+                    startBtn.closest('.bg-white\\/70') || startBtn.parentElement;
+                if (sessionContainer) {
+                    const existingTimer = sessionContainer.querySelector('#study-timer-display');
+                    if (!existingTimer) {
+                        const timerEl = document.createElement('div');
+                        timerEl.id = 'study-timer-display';
+                        timerEl.className =
+                            'text-3xl font-mono font-bold text-gray-900 dark:text-white text-center my-4';
+                        timerEl.textContent = '00:00:00';
+                        const buttonsDiv =
+                            sessionContainer.querySelector('.flex.gap-3') || startBtn.parentElement;
+                        if (buttonsDiv) {
+                            buttonsDiv.parentElement.insertBefore(timerEl, buttonsDiv);
+                        }
+                    }
+                }
+            }
+
+            // Add click handler to ensure StudyProgress is properly called
+            startBtn.addEventListener(
+                'click',
+                () => {
+                    // Ensure StudyProgress exists
+                    if (typeof window.StudyProgress === 'undefined') {
+                        console.warn('StudyProgress not initialized');
+                        return;
+                    }
+
+                    const subjectInput = document.getElementById('study-subject-input');
+                    const subject = subjectInput?.value?.trim() || 'General Study';
+
+                    // Clear any existing timer
+                    if (window.StudyProgress.sessionTimer) {
+                        clearInterval(window.StudyProgress.sessionTimer);
+                    }
+
+                    // Start the session
+                    window.StudyProgress.sessionStartTime = Date.now();
+                    window.StudyProgress.currentSubject = subject;
+
+                    // Create the timer interval
+                    window.StudyProgress.sessionTimer = setInterval(() => {
+                        const elapsed = Math.floor(
+                            (Date.now() - window.StudyProgress.sessionStartTime) / 1000
+                        );
+                        const hours = Math.floor(elapsed / 3600);
+                        const minutes = Math.floor((elapsed % 3600) / 60);
+                        const seconds = elapsed % 60;
+
+                        const display = document.getElementById('study-timer-display');
+                        if (display) {
+                            display.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        }
+                    }, 1000);
+
+                    // Update UI
+                    startBtn.classList.add('hidden');
+                    if (stopBtn) {
+                        stopBtn.classList.remove('hidden');
+                    }
+
+                    // Show initial time
+                    const display = document.getElementById('study-timer-display');
+                    if (display) {
+                        display.textContent = '00:00:00';
+                    }
+
+                    if (typeof showToast === 'function') {
+                        showToast(`Tracking study session for ${subject}`, 'success');
+                    }
+                },
+                { capture: true }
+            );
+
+            // Handle stop button
+            if (stopBtn) {
+                stopBtn.addEventListener(
+                    'click',
+                    () => {
+                        if (window.StudyProgress?.sessionTimer) {
+                            clearInterval(window.StudyProgress.sessionTimer);
+                            window.StudyProgress.sessionTimer = null;
+                        }
+
+                        // Calculate duration
+                        if (window.StudyProgress?.sessionStartTime) {
+                            const durationMs = Date.now() - window.StudyProgress.sessionStartTime;
+                            const minutes = Math.floor(durationMs / 60000);
+
+                            if (typeof showToast === 'function') {
+                                showToast(`Study session saved (${minutes} minutes)`, 'success');
+                            }
+
+                            window.StudyProgress.sessionStartTime = null;
+                            window.StudyProgress.currentSubject = null;
+                        }
+
+                        // Update UI
+                        if (startBtn) {
+                            startBtn.classList.remove('hidden');
+                        }
+                        stopBtn.classList.add('hidden');
+                    },
+                    { capture: true }
+                );
+            }
+        },
+    };
 
     // =====================================================================
     // Initialize all functional fixes
@@ -1027,6 +1166,7 @@
         FAQSearchHighlighter.init();
         CalendarTimeFix.init();
         ProfilePicturePreview.init();
+        StudySessionFix.init();
 
         // Expose utilities globally for other modules
         window.GCSEMateFunctionalFixes = {
@@ -1036,6 +1176,7 @@
             FAQSearchHighlighter,
             CalendarTimeFix,
             ProfilePicturePreview,
+            StudySessionFix,
             debounce,
         };
     }

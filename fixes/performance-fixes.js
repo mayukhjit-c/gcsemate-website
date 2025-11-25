@@ -102,10 +102,10 @@
 
     // Optimize scroll handlers - disabled by default as it modifies prototype
     // Enable by calling window.GCSEMatePerformance.optimizeScrollHandlers()
-    /* eslint-disable-next-line no-unused-vars */
     /**
-     *
+     * Optimizes scroll/resize handlers with RAF throttling (opt-in)
      */
+    // eslint-disable-next-line no-unused-vars
     function optimizeScrollHandlers() {
         const originalAddEventListener = EventTarget.prototype.addEventListener;
 

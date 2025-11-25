@@ -1413,7 +1413,7 @@
                                     Start session
                                 </button>
                                 <button id="study-stop-btn"
-                                    class="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-200 text-gray-800 font-semibold shadow-sm hover:bg-gray-300 transition-colors"
+                                    class="hidden flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold shadow-sm hover:bg-red-600 transition-colors"
                                     type="button">
                                     <i class="fas fa-stop-circle"></i>
                                     Stop
@@ -3138,9 +3138,7 @@
                 </div>
 
             </div>
-            <div id="notes-content" class="space-y-6">
-                <!-- Notes will be rendered here -->
-            </div>
+            <!-- Notes content moved/removed - was causing scroll issues -->
     </div>
 
     <div id="help-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
@@ -4149,6 +4147,7 @@
     <script defer src="fixes/code-quality-fixes.js"></script>
     <script defer src="fixes/missing-features.js"></script>
     <script defer src="fixes/functional-fixes.js"></script>
+    <script defer src="fixes/enhancements.js"></script>
 
     <!-- Developer Tools Enablement -->
     <script>

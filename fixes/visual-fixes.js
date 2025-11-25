@@ -490,10 +490,16 @@
     document.head.appendChild(layoutFixes);
 
     // ================================================
-    // STUDY SESSION BUTTON MERGE
+    // STUDY SESSION BUTTON MERGE (Disabled - handled by functional-fixes.js)
     // ================================================
 
+    // This function was causing conflicts with the StudyProgress system
+    // The buttons now work via functional-fixes.js StudySessionFix
     function mergeStudyButtons() {
+        // Disabled - functionality moved to functional-fixes.js
+        return;
+
+        /* Original code disabled
         const startBtn = document.getElementById('study-start-btn');
         const stopBtn = document.getElementById('study-stop-btn');
 
@@ -602,6 +608,7 @@
 
             observer.observe(timerDisplay, { childList: true, characterData: true, subtree: true });
         }
+        End of original code */
     }
 
     // ================================================
@@ -1780,6 +1787,182 @@
     });
 
     themeObserver.observe(document.documentElement, { attributes: true });
+
+    // ================================================
+    // FIX: SCROLL TO TOP BUTTON - Make it small and circular
+    // ================================================
+
+    const scrollTopFix = document.createElement('style');
+    scrollTopFix.id = 'scroll-top-fix';
+    scrollTopFix.textContent = `
+        #scroll-top {
+            /* Override to be a small circular button */
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            max-width: 44px !important;
+            max-height: 44px !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            opacity: 0.9;
+            transition: opacity 0.2s, transform 0.2s !important;
+        }
+
+        #scroll-top:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        #scroll-top svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        @media (max-width: 640px) {
+            #scroll-top {
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                max-width: 40px !important;
+                max-height: 40px !important;
+                bottom: 16px !important;
+                right: 16px !important;
+            }
+
+            #scroll-top svg {
+                width: 18px !important;
+                height: 18px !important;
+            }
+        }
+    `;
+    document.head.appendChild(scrollTopFix);
+
+    // ================================================
+    // FIX: HEADER LOGO OVERLAP
+    // ================================================
+
+    const headerLogoFix = document.createElement('style');
+    headerLogoFix.id = 'header-logo-fix';
+    headerLogoFix.textContent = `
+        /* Prevent logo from overlapping header elements */
+        header .flex-shrink-0 {
+            z-index: 1;
+            position: relative;
+        }
+
+        header .flex-shrink-0 img {
+            max-width: 100px !important;
+            height: auto !important;
+            max-height: 36px !important;
+        }
+
+        @media (min-width: 640px) {
+            header .flex-shrink-0 img {
+                max-width: 120px !important;
+                max-height: 40px !important;
+            }
+        }
+
+        /* Ensure nav doesn't get covered */
+        header nav {
+            z-index: 2;
+            position: relative;
+        }
+
+        /* Ensure header items are properly spaced */
+        header {
+            gap: 8px !important;
+        }
+
+        @media (min-width: 640px) {
+            header {
+                gap: 12px !important;
+            }
+        }
+    `;
+    document.head.appendChild(headerLogoFix);
+
+    // ================================================
+    // FIX: DARK MODE TEXT CONTRAST
+    // ================================================
+
+    const darkModeContrastFix = document.createElement('style');
+    darkModeContrastFix.id = 'dark-mode-contrast-fix';
+    darkModeContrastFix.textContent = `
+        /* Ensure text is always readable on dark backgrounds */
+        [data-theme="dark"] .text-black,
+        [data-theme="dark"] .text-gray-900,
+        [data-theme="dark"] .text-gray-800,
+        [data-theme="dark"] .text-gray-700,
+        .dark .text-black,
+        .dark .text-gray-900,
+        .dark .text-gray-800,
+        .dark .text-gray-700 {
+            color: #f3f4f6 !important;
+        }
+
+        [data-theme="dark"] .text-gray-600,
+        .dark .text-gray-600 {
+            color: #d1d5db !important;
+        }
+
+        [data-theme="dark"] .text-gray-500,
+        .dark .text-gray-500 {
+            color: #9ca3af !important;
+        }
+
+        /* Dark backgrounds should have white/light text */
+        .bg-gray-800 *,
+        .bg-gray-900 *,
+        .bg-slate-800 *,
+        .bg-slate-900 *,
+        [class*="bg-gray-8"] *,
+        [class*="bg-gray-9"] *,
+        [class*="bg-slate-8"] *,
+        [class*="bg-slate-9"] * {
+            color: inherit;
+        }
+
+        .bg-gray-800,
+        .bg-gray-900,
+        .bg-slate-800,
+        .bg-slate-900 {
+            color: #f9fafb !important;
+        }
+
+        .bg-gray-800 .text-gray-900,
+        .bg-gray-800 .text-gray-800,
+        .bg-gray-800 .text-black,
+        .bg-gray-900 .text-gray-900,
+        .bg-gray-900 .text-gray-800,
+        .bg-gray-900 .text-black {
+            color: #f3f4f6 !important;
+        }
+
+        /* Fix cards in dark mode */
+        [data-theme="dark"] .bg-white\\/70,
+        [data-theme="dark"] .bg-white,
+        .dark .bg-white\\/70,
+        .dark .bg-white {
+            background-color: rgba(31, 41, 55, 0.9) !important;
+            color: #f3f4f6 !important;
+        }
+
+        /* Ensure modals have proper contrast */
+        [data-theme="dark"] .modal-content,
+        [data-theme="dark"] [class*="modal"] > div,
+        .dark .modal-content,
+        .dark [class*="modal"] > div {
+            color: #f3f4f6;
+        }
+    `;
+    document.head.appendChild(darkModeContrastFix);
 
     console.log('✅ Visual & UI Fixes loaded successfully!');
 })();
