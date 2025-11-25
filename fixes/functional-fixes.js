@@ -1037,17 +1037,227 @@
                 max-height: none;
             }
 
-            /* FIX: AI Tutor page spacing - remove blank space above */
+            /* FIX: AI Tutor page spacing - AGGRESSIVELY remove blank space above */
             #ai-tutor-page {
-                padding-top: 0.5rem !important;
+                padding-top: 0 !important;
                 margin-top: 0 !important;
+                position: relative !important;
+                top: 0 !important;
             }
-            #ai-tutor-page > .flex:first-child {
+            #ai-tutor-page.page {
+                padding-top: 0.5rem !important;
+            }
+            #ai-tutor-page > *:first-child {
                 margin-top: 0 !important;
                 padding-top: 0 !important;
             }
-            #ai-tutor-page .mb-4:first-of-type {
+            #ai-tutor-page .flex:first-child,
+            #ai-tutor-page > .flex.flex-col:first-child,
+            #ai-tutor-page > div:first-child {
                 margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            /* Remove any spacing that might be above AI tutor page container */
+            #page-container > #ai-tutor-page {
+                margin-top: 0 !important;
+            }
+            /* Ensure no gap between nav and content */
+            #page-content {
+                padding-top: 0 !important;
+            }
+            #page-container {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }
+
+            /* ═══════════════════════════════════════════════════════════════ */
+            /* ENHANCED MODERN ANIMATIONS & POLISH */
+            /* ═══════════════════════════════════════════════════════════════ */
+            
+            /* Smooth page transitions */
+            .page {
+                animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            @keyframes pageEnter {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Modern card hover effects */
+            .bg-white\\/70,
+            .bg-white,
+            [class*="rounded-xl"],
+            [class*="rounded-2xl"] {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .bg-white\\/70:hover,
+            .shadow-lg:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            }
+
+            /* Smooth button interactions */
+            button, .btn, [role="button"] {
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            button:active:not(:disabled),
+            .btn:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+
+            /* Modern focus states */
+            button:focus-visible,
+            a:focus-visible,
+            input:focus-visible,
+            textarea:focus-visible,
+            select:focus-visible {
+                outline: 2px solid #0ea5e9;
+                outline-offset: 2px;
+                border-radius: 4px;
+            }
+
+            /* Smooth input transitions */
+            input, textarea, select {
+                transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+            }
+            
+            input:focus, textarea:focus, select:focus {
+                border-color: #0ea5e9 !important;
+                box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
+            }
+
+            /* Modern loading spinner */
+            @keyframes modernSpin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .animate-spin, [class*="fa-spinner"], [class*="fa-circle-notch"] {
+                animation: modernSpin 0.8s linear infinite;
+            }
+
+            /* Smooth icon animations */
+            i[class*="fa-"], svg {
+                transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s;
+            }
+            
+            button:hover i[class*="fa-"],
+            a:hover i[class*="fa-"] {
+                transform: scale(1.1);
+            }
+
+            /* Modal entrance animation */
+            .fixed.inset-0[class*="z-"] > div {
+                animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            @keyframes modalEnter {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95) translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+
+            /* Smooth dropdown animations */
+            .dropdown-menu, [id*="-panel"]:not(.hidden), [id*="-dropdown"]:not(.hidden) {
+                animation: dropdownEnter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            @keyframes dropdownEnter {
+                from {
+                    opacity: 0;
+                    transform: translateY(-8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Toast notification animation */
+            .toast, [class*="toast"], #toast-container > * {
+                animation: toastSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            @keyframes toastSlide {
+                from {
+                    opacity: 0;
+                    transform: translateX(100%) scale(0.9);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0) scale(1);
+                }
+            }
+
+            /* Polished scrollbar */
+            ::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+            ::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 10px;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: linear-gradient(180deg, #0ea5e9, #0284c7);
+                border-radius: 10px;
+                border: 2px solid transparent;
+                background-clip: padding-box;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: linear-gradient(180deg, #0284c7, #0369a1);
+                background-clip: padding-box;
+            }
+
+            /* Smooth skeleton loading */
+            @keyframes skeletonPulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            .skeleton, .animate-pulse {
+                animation: skeletonPulse 1.5s ease-in-out infinite;
+            }
+
+            /* Professional shadow on hover for cards */
+            .hover\\:shadow-xl:hover,
+            .hover\\:shadow-lg:hover {
+                box-shadow: 
+                    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(0, 0, 0, 0.05);
+            }
+
+            /* Glassmorphism polish */
+            .backdrop-blur-lg {
+                backdrop-filter: blur(20px) saturate(180%);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+            }
+
+            /* Better text selection */
+            ::selection {
+                background: rgba(14, 165, 233, 0.3);
+                color: inherit;
+            }
+
+            /* Smooth nav link transitions */
+            .nav-link {
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .nav-link:hover {
+                transform: translateX(2px);
+            }
+            .nav-link.active {
+                background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(14, 165, 233, 0.05));
+                border-left: 3px solid #0ea5e9;
             }
 
             /* FIX: Study timer stop button - ensure proper visibility */
