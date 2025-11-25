@@ -16,29 +16,37 @@
     function addCSPMeta() {
         const existingCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
         if (existingCSP) {
+            // Remove existing CSP if it's causing issues - let server handle it
+            // existingCSP.remove();
             return;
         }
 
+        // NOTE: CSP via meta tag is limited and can cause issues.
+        // For production, configure CSP via server headers instead.
+        // Skipping CSP meta tag injection to avoid blocking legitimate resources.
+        // If you need client-side CSP, uncomment below with appropriate values.
+
+        /*
         const cspMeta = document.createElement('meta');
         cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
-        // Permissive CSP that allows necessary functionality
         cspMeta.setAttribute(
             'content',
             [
-                "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.gstatic.com https://*.firebase*.com https://*.cloudflare*.com https://*.google.com",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.cloudflare*.com",
-                "font-src 'self' https://fonts.gstatic.com https://*.cloudflare*.com data:",
-                "img-src 'self' data: blob: https://*.googleapis.com https://*.googleusercontent.com https://*.gstatic.com",
-                "connect-src 'self' https://*.googleapis.com https://*.firebase*.com https://*.cloudfunctions.net wss://*.firebase*.com",
-                "frame-src 'self' https://*.google.com https://*.firebase*.com",
+                "default-src 'self' https: data: blob:",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+                "style-src 'self' 'unsafe-inline' https:",
+                "font-src 'self' https: data:",
+                "img-src 'self' data: blob: https: http:",
+                "connect-src 'self' https: wss:",
+                "frame-src 'self' https:",
                 "object-src 'none'",
                 "base-uri 'self'",
             ].join('; ')
         );
-
         document.head.insertBefore(cspMeta, document.head.firstChild);
-        console.log('✓ S-001: CSP meta tag added');
+        */
+
+        console.log('✓ S-001: CSP should be configured via server headers for production');
     }
 
     /**

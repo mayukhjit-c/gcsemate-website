@@ -31,8 +31,13 @@
     let scrollbarWidth = 0;
 
     // Calculate scrollbar width once
+    /**
+     *
+     */
     function getScrollbarWidth() {
-        if (scrollbarWidth > 0) return scrollbarWidth;
+        if (scrollbarWidth > 0) {
+            return scrollbarWidth;
+        }
         const outer = document.createElement('div');
         outer.style.cssText =
             'visibility:hidden;overflow:scroll;position:absolute;top:-9999px;width:100px;';
@@ -42,30 +47,31 @@
         return scrollbarWidth;
     }
 
-    // Lock body scroll when modal opens
+    // Lock body scroll when modal opens - simplified version that doesn't break layout
+    /**
+     *
+     */
     function lockBodyScroll() {
-        const scrollY = window.scrollY;
         document.body.style.overflow = 'hidden';
         document.body.style.paddingRight = `${getScrollbarWidth()}px`;
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = '100%';
-        document.body.dataset.scrollY = scrollY;
         document.body.classList.add('modal-open');
+        // Store scroll position without using position:fixed (which breaks layout)
+        document.body.dataset.scrollY = window.scrollY;
     }
 
     // Unlock body scroll when modal closes
+    /**
+     *
+     */
     function unlockBodyScroll() {
-        if (modalStack.length > 0) return; // Don't unlock if other modals are open
+        if (modalStack.length > 0) {
+            return;
+        } // Don't unlock if other modals are open
 
-        const scrollY = document.body.dataset.scrollY || 0;
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
         document.body.classList.remove('modal-open');
-        window.scrollTo(0, parseInt(scrollY));
+        // No need to restore scroll position since we didn't use position:fixed
     }
 
     // Enhanced modal open with proper animations and accessibility
@@ -77,7 +83,9 @@
         }
 
         // Prevent duplicate opens
-        if (modalStack.includes(modalId)) return false;
+        if (modalStack.includes(modalId)) {
+            return false;
+        }
 
         // Load content first if callback provided
         if (contentCallback && typeof contentCallback === 'function') {
@@ -140,7 +148,9 @@
     // Enhanced modal close with animations
     window.safeCloseModal = function (modalId) {
         const modal = typeof modalId === 'string' ? document.getElementById(modalId) : modalId;
-        if (!modal) return false;
+        if (!modal) {
+            return false;
+        }
 
         const id = modal.id;
 
@@ -154,7 +164,11 @@
         modal.style.transition = `opacity ${CONFIG.MODAL_ANIMATION_MS}ms ease-out`;
         modal.style.opacity = '0';
 
-        const modalContent = modal.querySelector('.modal-content, > div:not(.fixed)');
+        // Find modal content - try common patterns
+        const modalContent =
+            modal.querySelector('.modal-content') ||
+            modal.querySelector('[role="document"]') ||
+            modal.querySelector('.bg-white, .bg-gray-800, [class*="bg-"]');
         if (modalContent) {
             modalContent.style.transform = 'scale(0.95) translateY(-10px)';
         }
@@ -174,7 +188,9 @@
             const triggerId = modal.dataset.triggeredBy;
             if (triggerId) {
                 const trigger = document.getElementById(triggerId);
-                if (trigger) trigger.focus();
+                if (trigger) {
+                    trigger.focus();
+                }
             }
 
             // Unlock scroll if no more modals
@@ -186,7 +202,9 @@
 
     // Close topmost modal
     window.closeTopmostModal = function () {
-        if (modalStack.length === 0) return false;
+        if (modalStack.length === 0) {
+            return false;
+        }
         const topModalId = modalStack[modalStack.length - 1];
         return window.safeCloseModal(topModalId);
     };
@@ -290,7 +308,9 @@
         const element =
             typeof formOrButton === 'string' ? document.getElementById(formOrButton) : formOrButton;
 
-        if (!element) return Promise.reject(new Error('Element not found'));
+        if (!element) {
+            return Promise.reject(new Error('Element not found'));
+        }
 
         const id = element.id || element.name || 'form';
 
@@ -329,7 +349,9 @@
     // Auto-prevent double submit on all forms
     document.addEventListener('submit', function (e) {
         const form = e.target;
-        if (form.dataset.preventDoubleSubmit === 'false') return;
+        if (form.dataset.preventDoubleSubmit === 'false') {
+            return;
+        }
 
         const submitBtn = form.querySelector('button[type="submit"], button:not([type])');
         if (submitBtn && !submitBtn.disabled) {
@@ -478,15 +500,25 @@
         '[tabindex]:not([tabindex="-1"])',
     ].join(', ');
 
+    /**
+     *
+     */
     function trapFocus(modal) {
         const focusableElements = modal.querySelectorAll(FOCUSABLE_SELECTORS);
         const firstFocusable = focusableElements[0];
         const lastFocusable = focusableElements[focusableElements.length - 1];
 
-        if (!firstFocusable) return;
+        if (!firstFocusable) {
+            return;
+        }
 
+        /**
+         *
+         */
         function handleTabKey(e) {
-            if (e.key !== 'Tab') return;
+            if (e.key !== 'Tab') {
+                return;
+            }
 
             if (e.shiftKey) {
                 if (document.activeElement === firstFocusable) {
@@ -556,13 +588,20 @@
     // Apply close buttons to existing modals
     // ================================================
 
+    /**
+     *
+     */
     function ensureModalCloseButton(modal) {
         // Check if modal already has a close button
-        if (modal.querySelector('[data-modal-close]')) return;
+        if (modal.querySelector('[data-modal-close]')) {
+            return;
+        }
 
         // Find the modal content container
         const content = modal.querySelector('.modal-content, > div:first-child, > div.bg-white');
-        if (!content) return;
+        if (!content) {
+            return;
+        }
 
         // Check if there's already a close button
         const existingClose = content.querySelector(
