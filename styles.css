@@ -253,17 +253,17 @@ body {
 .bg-purple-900,
 .bg-purple-800,
 .bg-navy-900,
-[class*="bg-slate-9"],
-[class*="bg-gray-9"],
-[class*="bg-navy-9"] {
+[class*='bg-slate-9'],
+[class*='bg-gray-9'],
+[class*='bg-navy-9'] {
     color: #ffffff !important;
 }
 
-.bg-slate-900 *:not(button):not(a):not([class*="text-"]),
-.bg-slate-800 *:not(button):not(a):not([class*="text-"]),
-.bg-gray-900 *:not(button):not(a):not([class*="text-"]),
-.bg-gray-800 *:not(button):not(a):not([class*="text-"]),
-.bg-navy-900 *:not(button):not(a):not([class*="text-"]) {
+.bg-slate-900 *:not(button):not(a):not([class*='text-']),
+.bg-slate-800 *:not(button):not(a):not([class*='text-']),
+.bg-gray-900 *:not(button):not(a):not([class*='text-']),
+.bg-gray-800 *:not(button):not(a):not([class*='text-']),
+.bg-navy-900 *:not(button):not(a):not([class*='text-']) {
     color: #ffffff !important;
 }
 
@@ -298,9 +298,9 @@ body {
     color: #0f172a !important;
 }
 
-.bg-white *:not(button):not(a):not([class*="text-"]),
-.bg-gray-50 *:not(button):not(a):not([class*="text-"]),
-.bg-gray-100 *:not(button):not(a):not([class*="text-"]) {
+.bg-white *:not(button):not(a):not([class*='text-']),
+.bg-gray-50 *:not(button):not(a):not([class*='text-']),
+.bg-gray-100 *:not(button):not(a):not([class*='text-']) {
     color: #0f172a !important;
 }
 
@@ -2454,21 +2454,31 @@ a.nav-link:hover {
 /* ========================================== */
 
 /* Ensure buttons have proper contrast */
-button:not([class*="bg-"]):not(.btn-secondary):not(.btn-ghost) {
+button:not([class*='bg-']):not(.btn-secondary):not(.btn-ghost) {
     background-color: #3b82f6;
     color: #ffffff;
 }
 
 /* Text color utilities - enforce proper contrast */
-.text-gray-800 { color: #1e293b !important; }
-.text-gray-700 { color: #334155 !important; }
-.text-gray-600 { color: #475569 !important; }
-.text-gray-500 { color: #64748b !important; }
-.text-white { color: #ffffff !important; }
+.text-gray-800 {
+    color: #1e293b !important;
+}
+.text-gray-700 {
+    color: #334155 !important;
+}
+.text-gray-600 {
+    color: #475569 !important;
+}
+.text-gray-500 {
+    color: #64748b !important;
+}
+.text-white {
+    color: #ffffff !important;
+}
 
 /* Card text contrast */
 .card,
-[class*="card-"],
+[class*='card-'],
 .bg-white .prose,
 .bg-gray-50 .prose {
     color: #0f172a;
@@ -2481,7 +2491,7 @@ button:not([class*="bg-"]):not(.btn-secondary):not(.btn-ghost) {
 }
 
 /* Form inputs contrast - ensure white background */
-input:not([type="checkbox"]):not([type="radio"]),
+input:not([type='checkbox']):not([type='radio']),
 textarea,
 select {
     background-color: #ffffff !important;
@@ -2501,11 +2511,11 @@ label {
 }
 
 /* Link contrast */
-a:not(.nav-link):not(.btn):not([class*="bg-"]) {
+a:not(.nav-link):not(.btn):not([class*='bg-']) {
     color: #2563eb;
 }
 
-a:not(.nav-link):not(.btn):not([class*="bg-"]):hover {
+a:not(.nav-link):not(.btn):not([class*='bg-']):hover {
     color: #1d4ed8;
 }
 
@@ -7000,4 +7010,3 @@ textarea::placeholder {
 [data-theme='dark'] textarea::placeholder {
     color: var(--text-light);
 }
-
