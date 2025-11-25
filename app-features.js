@@ -1566,14 +1566,30 @@ async function handleGenerateQuestions() {
         NotificationSystem.show(
             'Quiz Generated',
             `Your ${difficulty} ${subject} quiz on "${topic}" is ready!`,
-            'success'
+            'success',
+            {
+                action: {
+                    label: 'Open quiz',
+                    intent: 'navigate',
+                    target: 'practice-questions-page',
+                    payload: { focusSelector: '#practice-questions-content' },
+                },
+            }
         );
     } else {
         await PracticeQuestions.generateQuestions(subject, topic, count, difficulty);
         NotificationSystem.show(
             'Questions Ready',
             `Generated ${count} practice questions for ${subject}.`,
-            'success'
+            'success',
+            {
+                action: {
+                    label: 'Open practice',
+                    intent: 'navigate',
+                    target: 'practice-questions-page',
+                    payload: { focusSelector: '#practice-questions-content' },
+                },
+            }
         );
     }
 

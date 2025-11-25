@@ -21314,6 +21314,7 @@ const NotificationSync = {
                             type: data.type || 'info',
                             read: !!data.read,
                             timestamp: data.timestamp || data.createdAt || new Date(),
+                            action: data.action || null,
                         };
                     });
                     NotificationSystem.hydrateFromServer(items);
@@ -21345,6 +21346,7 @@ const NotificationSync = {
                     title: notification.title,
                     message: notification.message,
                     type: notification.type,
+                    action: notification.action || null,
                     read: false,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -21414,6 +21416,12 @@ const NotificationSystem = {
     isOpen: false,
 
     show(title, message, type = 'info', options = {}) {
+        if (typeof options === 'number') {
+            options = { duration: options };
+        }
+        const normalizedAction = this.normalizeAction(options.action);
+        const extraOptions = { ...options };
+        delete extraOptions.action;
         const notification = {
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             title,
@@ -21421,7 +21429,9 @@ const NotificationSystem = {
             type,
             timestamp: new Date(),
             read: false,
-            ...options,
+            duration: options?.duration || null,
+            action: normalizedAction,
+            ...extraOptions,
         };
 
         this.notifications.unshift(notification);
@@ -21475,7 +21485,14 @@ const NotificationSystem = {
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-gray-800">${escapeHTML(notification.title)}</p>
                     <p class="text-xs text-gray-600 mt-0.5">${escapeHTML(notification.message)}</p>
-                    <p class="text-[11px] text-gray-400 mt-1">${timeAgo}</p>
+                    <div class="mt-2 flex items-center gap-3">
+                        ${
+                            notification.action
+                                ? `<button class="text-xs font-semibold text-blue-600 hover:text-blue-800" data-notification-action="${notification.id}" type="button">${escapeHTML(notification.action.label || 'Open')}</button>`
+                                : ''
+                        }
+                        <p class="text-[11px] text-gray-400">${timeAgo}</p>
+                    </div>
                 </div>
                 ${!notification.read ? `<button class="text-xs text-blue-600 hover:text-blue-800 font-semibold flex-shrink-0" data-mark-read="${notification.id}" type="button">Mark read</button>` : '<span class="text-xs text-gray-400 flex-shrink-0">Read</span>'}
             </article>`;
@@ -21534,6 +21551,48 @@ const NotificationSystem = {
         NotificationSync.markAllRead();
     },
 
+    handleAction(id) {
+        const notification = this.notifications.find(n => String(n.id) === String(id));
+        if (!notification || !notification.action) {
+            return;
+        }
+
+        const { intent, target, payload } = notification.action;
+        if (intent === 'navigate' && typeof target === 'string') {
+            showPage(target);
+            if (payload?.focusSelector) {
+                const focusEl = document.querySelector(payload.focusSelector);
+                if (focusEl) {
+                    focusEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        } else if (intent === 'open-quiz') {
+            showPage('practice-questions-page');
+        }
+
+        this.markAsRead(notification.id);
+        this.togglePanel(false);
+    },
+
+    normalizeAction(action) {
+        if (!action || typeof action !== 'object') {
+            return null;
+        }
+
+        const normalized = {
+            label: action.label || action.text || 'View',
+            intent: action.intent || action.type || 'navigate',
+            target: action.target || action.page || null,
+            payload: action.payload || null,
+        };
+
+        if (normalized.intent === 'navigate' && !normalized.target) {
+            return null;
+        }
+
+        return normalized;
+    },
+
     togglePanel(forceOpen) {
         const panel = document.getElementById('notification-panel');
         const trigger = document.getElementById('notification-button');
@@ -21576,6 +21635,7 @@ const NotificationSystem = {
             this.notifications = saved.map(item => ({
                 ...item,
                 timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+                action: this.normalizeAction(item.action),
             }));
             this.render();
         } catch (error) {
@@ -21594,6 +21654,7 @@ const NotificationSystem = {
             ...serverNotifications.map(item => ({
                 ...item,
                 timestamp: timestampToDate(item.timestamp || item.createdAt) || new Date(),
+                action: this.normalizeAction(item.action),
             })),
             ...localOnly,
         ]
@@ -21662,11 +21723,17 @@ function initNotificationUI() {
     if (list) {
         list.addEventListener('click', event => {
             const button = event.target.closest('[data-mark-read]');
-            if (!button) {
+            if (button) {
+                const id = button.getAttribute('data-mark-read');
+                NotificationSystem.markAsRead(id);
                 return;
             }
-            const id = button.getAttribute('data-mark-read');
-            NotificationSystem.markAsRead(id);
+
+            const actionButton = event.target.closest('[data-notification-action]');
+            if (actionButton) {
+                const id = actionButton.getAttribute('data-notification-action');
+                NotificationSystem.handleAction(id);
+            }
         });
     }
 

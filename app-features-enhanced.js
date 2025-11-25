@@ -304,6 +304,17 @@ const AIQuizMaker = {
     currentQuestionIndex: 0,
     retryCount: {},
     showAnswers: false,
+    isGenerating: false,
+    loadingInterval: null,
+    loadingTipIndex: 0,
+    loadingTips: [
+        'Warming up the AI engine...',
+        'Reviewing GCSE mark schemes...',
+        'Picking exam-board grade boundaries...',
+        'Crafting clear explanations...',
+        'Double-checking distractor options...',
+        'Building your personalised quiz...',
+    ],
 
     /**
      * Generate quiz using AI
@@ -341,6 +352,7 @@ const AIQuizMaker = {
 
         try {
             showToast('Generating quiz with AI...', 'info');
+            this.showLoadingState(subject, topic);
 
             // Use AI Tutor API endpoint (shared limits)
             const prompt = `Generate ${questionCount} ${difficulty} difficulty GCSE ${subject} questions about ${topic}. Return ONLY a valid JSON array with this exact structure:
@@ -435,11 +447,13 @@ Explain clearly why each wrong option is incorrect to help students learn from t
             this.retryCount = {};
             this.showAnswers = false;
 
+            this.clearLoadingState();
             this.renderQuiz();
             showToast('Quiz generated successfully!', 'success');
         } catch (error) {
             logError(error, 'AIQuizMaker.generateQuiz');
             showToast('Failed to generate quiz with AI. Using fallback questions.', 'warning');
+            this.clearLoadingState();
             // Fallback to placeholder questions
             this.generatePlaceholderQuiz(subject, topic, difficulty, questionCount);
         }
@@ -476,6 +490,7 @@ Explain clearly why each wrong option is incorrect to help students learn from t
         this.retryCount = {};
         this.showAnswers = false;
 
+        this.clearLoadingState();
         this.renderQuiz();
     },
 
@@ -488,181 +503,164 @@ Explain clearly why each wrong option is incorrect to help students learn from t
             return;
         }
 
+        this.clearLoadingState();
+
         const question = this.currentQuiz.questions[this.currentQuestionIndex];
         const userAnswer = this.userAnswers[this.currentQuestionIndex];
         const isAnswered = userAnswer !== undefined;
         const isCorrect = isAnswered && userAnswer === question.correctAnswer;
         const retries = this.retryCount[this.currentQuestionIndex] || 0;
+        const progress = Math.round(
+            (this.currentQuestionIndex / this.currentQuiz.questions.length) * 100
+        );
+
+        const optionButtons = question.options
+            .map((option, idx) => {
+                const classes = ['quiz-option'];
+                let icon = '';
+
+                if (isAnswered) {
+                    classes.push('is-disabled');
+                    if (idx === question.correctAnswer) {
+                        classes.push('is-correct');
+                        icon = '<i class="fas fa-check"></i>';
+                    } else if (idx === userAnswer && !isCorrect) {
+                        classes.push('is-incorrect');
+                        icon = '<i class="fas fa-times"></i>';
+                    }
+                }
+
+                return `
+                    <button
+                        class="${classes.join(' ')}"
+                        ${isAnswered ? 'disabled' : `onclick="AIQuizMaker.answerQuestion(${idx})"`}
+                    >
+                        <span class="quiz-option__icon">${icon}</span>
+                        <span>${escapeHtml(option)}</span>
+                    </button>
+                `;
+            })
+            .join('');
+
+        const feedback = isAnswered
+            ? `
+                <div class="quiz-feedback ${isCorrect ? 'is-correct' : 'is-incorrect'}">
+                    <div class="quiz-feedback__status">
+                        <span class="quiz-pill ${isCorrect ? 'quiz-pill--success' : 'quiz-pill--error'}">
+                            ${isCorrect ? 'Correct' : 'Keep trying'}
+                        </span>
+                        <p>${escapeHtml(question.explanation || (isCorrect ? 'Nice work!' : "That's not quite right yet."))}</p>
+                    </div>
+                    ${
+                        !isCorrect
+                            ? `
+                                <div class="quiz-feedback__detail">
+                                    <h4>Why your choice was off</h4>
+                                    <p>${escapeHtml(
+                                        question.wrongAnswerExplanations?.[userAnswer] ||
+                                            question.wrongAnswerExplanations?.[
+                                                String(userAnswer)
+                                            ] ||
+                                            ''
+                                    )}</p>
+                                    <div class="quiz-feedback__answer">
+                                        <span>Correct answer</span>
+                                        <strong>${escapeHtml(
+                                            question.options[question.correctAnswer]
+                                        )}</strong>
+                                    </div>
+                                </div>
+                            `
+                            : ''
+                    }
+                </div>
+            `
+            : '';
 
         content.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 mb-6">
-                <div class="mb-4 flex justify-between items-center">
-                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                        Question ${this.currentQuestionIndex + 1} of ${this.currentQuiz.questions.length}
-                    </span>
-                    <div class="flex gap-2">
-                        <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                            ${this.currentQuiz.difficulty}
-                        </span>
-                        ${
-                            retries > 0
-                                ? `<span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded">
-                            Retries: ${retries}
-                        </span>`
-                                : ''
-                        }
-                    </div>
-                </div>
-
-                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-                    ${escapeHtml(question.question)}
-                </h3>
-
-                <div class="space-y-3 mb-6">
-                    ${question.options
-                        .map((option, idx) => {
-                            let buttonClass =
-                                'w-full text-left p-4 rounded-lg border-2 transition-all ';
-                            let icon = '';
-
-                            if (isAnswered) {
-                                if (idx === question.correctAnswer) {
-                                    buttonClass +=
-                                        'bg-green-100 dark:bg-green-900 border-green-500 text-green-800 dark:text-green-200';
-                                    icon = '<i class="fas fa-check-circle mr-2"></i>';
-                                } else if (idx === userAnswer && !isCorrect) {
-                                    buttonClass +=
-                                        'bg-red-100 dark:bg-red-900 border-red-500 text-red-800 dark:text-red-200';
-                                    icon = '<i class="fas fa-times-circle mr-2"></i>';
-                                } else {
-                                    buttonClass +=
-                                        'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400';
-                                }
-                            } else {
-                                buttonClass +=
-                                    'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 text-gray-800 dark:text-gray-200 cursor-pointer';
-                            }
-
-                            return `
-                            <button ${isAnswered ? 'disabled' : `onclick="AIQuizMaker.answerQuestion(${idx})"`}
-                                class="${buttonClass}">
-                                ${icon}${escapeHtml(option)}
-                            </button>
-                        `;
-                        })
-                        .join('')}
-                </div>
-
-                ${
-                    isAnswered
-                        ? `
-                    <div class="mb-6 space-y-4">
-                        ${
-                            isCorrect
-                                ? `
-                        <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900">
-                            <p class="font-semibold text-green-800 dark:text-green-200 mb-2">
-                                <i class="fas fa-check-circle mr-2"></i>Correct!
-                            </p>
-                            <p class="text-sm text-green-700 dark:text-green-300">
-                                ${escapeHtml(question.explanation || 'Well done!')}
-                            </p>
-                        </div>
-                        `
-                                : `
-                        <div class="p-4 rounded-lg bg-red-50 dark:bg-red-900">
-                            <p class="font-semibold text-red-800 dark:text-red-200 mb-2">
-                                <i class="fas fa-times-circle mr-2"></i>Incorrect
-                            </p>
-                            <p class="text-sm text-red-700 dark:text-red-300 mb-3">
-                                ${escapeHtml(question.explanation || "That's not quite right.")}
-                            </p>
+            <div class="quiz-shell">
+                <div class="quiz-progress">
+                    <div class="quiz-progress__meta">
+                        <span>Question ${this.currentQuestionIndex + 1} of ${
+                            this.currentQuiz.questions.length
+                        }</span>
+                        <div class="quiz-badges">
+                            <span class="quiz-pill quiz-pill--primary">${escapeHtml(
+                                this.currentQuiz.difficulty
+                            )}</span>
                             ${
-                                question.wrongAnswerExplanations &&
-                                (question.wrongAnswerExplanations[userAnswer] ||
-                                    question.wrongAnswerExplanations[String(userAnswer)])
-                                    ? `
-                            <div class="mt-3 pt-3 border-t border-red-200 dark:border-red-700">
-                                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">
-                                    Why "${escapeHtml(question.options[userAnswer])}" is wrong:
-                                </p>
-                                <p class="text-sm text-red-600 dark:text-red-300">
-                                    ${escapeHtml(
-                                        question.wrongAnswerExplanations[userAnswer] ||
-                                            question.wrongAnswerExplanations[String(userAnswer)] ||
-                                            ''
-                                    )}
-                                </p>
-                            </div>
-                            `
+                                retries > 0
+                                    ? `<span class="quiz-pill quiz-pill--warning">Retries: ${retries}</span>`
                                     : ''
                             }
                         </div>
-                        <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900">
-                            <p class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                                <i class="fas fa-lightbulb mr-2"></i>Correct Answer
-                            </p>
-                            <p class="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                                The correct answer is: <strong>${escapeHtml(question.options[question.correctAnswer])}</strong>
-                            </p>
-                            <p class="text-sm text-blue-700 dark:text-blue-300">
-                                ${escapeHtml(question.explanation || '')}
-                            </p>
-                        </div>
-                        `
-                        }
                     </div>
-                `
+                    <div class="quiz-progress__bar">
+                        <div style="width: ${progress}%"></div>
+                    </div>
+                </div>
+
+                <article class="quiz-card">
+                    <header class="quiz-card__header">
+                        <p class="quiz-overline">${escapeHtml(this.currentQuiz.subject)} - ${escapeHtml(
+                            this.currentQuiz.topic
+                        )}</p>
+                        <h3 class="quiz-question">${escapeHtml(question.question)}</h3>
+                    </header>
+
+                    <div class="quiz-options">
+                        ${optionButtons}
+                    </div>
+
+                    ${feedback}
+
+                    <div class="quiz-controls">
+                        <button class="quiz-button quiz-button--ghost" onclick="AIQuizMaker.previousQuestion()" ${
+                            this.currentQuestionIndex === 0 ? 'disabled' : ''
+                        }>
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+                        <div class="quiz-controls__actions">
+                            ${
+                                !isCorrect && isAnswered
+                                    ? `
+                                        <button class="quiz-button quiz-button--warning" onclick="AIQuizMaker.retryQuestion()">
+                                            <i class="fas fa-redo"></i>
+                                            Retry
+                                        </button>
+                                    `
+                                    : ''
+                            }
+                            ${
+                                isAnswered
+                                    ? `
+                                        <button class="quiz-button" onclick="AIQuizMaker.nextQuestion()">
+                                            Next
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    `
+                                    : ''
+                            }
+                        </div>
+                    </div>
+                </article>
+
+                ${
+                    this.currentQuestionIndex === this.currentQuiz.questions.length - 1 &&
+                    Object.keys(this.userAnswers).length === this.currentQuiz.questions.length
+                        ? `
+                        <div class="quiz-card quiz-card--secondary text-center">
+                            <h3>Quiz Complete</h3>
+                            <p>Great work! Ready to see how you did?</p>
+                            <button class="quiz-button" onclick="AIQuizMaker.showResults()">
+                                View Results
+                            </button>
+                        </div>
+                    `
                         : ''
                 }
-
-                <div class="flex gap-2 justify-between">
-                    <button onclick="AIQuizMaker.previousQuestion()"
-                        ${this.currentQuestionIndex === 0 ? 'disabled' : ''}
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50">
-                        <i class="fas fa-chevron-left mr-2"></i>Previous
-                    </button>
-
-                    <div class="flex gap-2">
-                        ${
-                            !isCorrect && isAnswered
-                                ? `
-                            <button onclick="AIQuizMaker.retryQuestion()"
-                                class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                                <i class="fas fa-redo mr-2"></i>Retry
-                            </button>
-                        `
-                                : ''
-                        }
-
-                        ${
-                            isAnswered
-                                ? `
-                            <button onclick="AIQuizMaker.nextQuestion()"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                Next<i class="fas fa-chevron-right ml-2"></i>
-                            </button>
-                        `
-                                : ''
-                        }
-                    </div>
-                </div>
             </div>
-
-            ${
-                this.currentQuestionIndex === this.currentQuiz.questions.length - 1 &&
-                Object.keys(this.userAnswers).length === this.currentQuiz.questions.length
-                    ? `
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 text-center">
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Quiz Complete!</h3>
-                    <button onclick="AIQuizMaker.showResults()"
-                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
-                        View Results
-                    </button>
-                </div>
-            `
-                    : ''
-            }
         `;
     },
 
@@ -738,44 +736,51 @@ Explain clearly why each wrong option is incorrect to help students learn from t
         }
 
         content.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 text-center">
-                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Quiz Results</h2>
-                <div class="text-6xl font-bold mb-4 ${percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600'}">
-                    ${percentage}%
-                </div>
-                <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                    You got ${correct} out of ${total} questions correct
-                </p>
+            <div class="quiz-shell">
+                <div class="quiz-card quiz-card--results text-center">
+                    <p class="quiz-overline">Quiz summary</p>
+                    <h2 class="quiz-question">${percentage}% accuracy</h2>
+                    <p class="quiz-results__meta">${correct} correct answers out of ${total}</p>
 
-                <div class="space-y-4 mb-6">
-                    ${this.currentQuiz.questions
-                        .map((q, idx) => {
-                            const userAnswer = this.userAnswers[idx];
-                            const isCorrect = userAnswer === q.correctAnswer;
-                            return `
-                            <div class="p-4 rounded-lg ${isCorrect ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900'}">
-                                <p class="font-semibold ${isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'} mb-2">
-                                    Q${idx + 1}: ${escapeHtml(q.question)}
-                                </p>
-                                <p class="text-sm ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}">
-                                    Your answer: ${escapeHtml(q.options[userAnswer] || 'Not answered')}
-                                    ${!isCorrect ? `| Correct: ${escapeHtml(q.options[q.correctAnswer])}` : ''}
-                                </p>
-                            </div>
-                        `;
-                        })
-                        .join('')}
-                </div>
+                    <div class="quiz-results__breakdown">
+                        ${this.currentQuiz.questions
+                            .map((q, idx) => {
+                                const userAnswer = this.userAnswers[idx];
+                                const answeredCorrectly = userAnswer === q.correctAnswer;
+                                return `
+                                    <div class="quiz-results__item ${
+                                        answeredCorrectly ? 'is-correct' : 'is-incorrect'
+                                    }">
+                                        <span class="quiz-results__badge">Q${idx + 1}</span>
+                                        <p>${escapeHtml(q.question)}</p>
+                                        <small>
+                                            Your answer: ${escapeHtml(
+                                                q.options[userAnswer] || 'Not answered'
+                                            )}
+                                            ${
+                                                !answeredCorrectly
+                                                    ? ` • Correct: ${escapeHtml(
+                                                          q.options[q.correctAnswer]
+                                                      )}`
+                                                    : ''
+                                            }
+                                        </small>
+                                    </div>
+                                `;
+                            })
+                            .join('')}
+                    </div>
 
-                <div class="flex gap-2 justify-center">
-                    <button onclick="AIQuizMaker.restartQuiz()"
-                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
-                        <i class="fas fa-redo mr-2"></i>Retake Quiz
-                    </button>
-                    <button onclick="AIQuizMaker.generateNewQuiz()"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
-                        <i class="fas fa-plus mr-2"></i>New Quiz
-                    </button>
+                    <div class="quiz-results__actions">
+                        <button class="quiz-button" onclick="AIQuizMaker.restartQuiz()">
+                            <i class="fas fa-redo"></i>
+                            Retake Quiz
+                        </button>
+                        <button class="quiz-button quiz-button--success" onclick="AIQuizMaker.generateNewQuiz()">
+                            <i class="fas fa-plus"></i>
+                            New Quiz
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -799,6 +804,47 @@ Explain clearly why each wrong option is incorrect to help students learn from t
      */
     generateNewQuiz() {
         showPracticeQuestionGeneratorModal();
+    },
+
+    showLoadingState(subject, topic) {
+        const content = document.getElementById('practice-questions-content');
+        if (!content) {
+            return;
+        }
+
+        this.isGenerating = true;
+        this.loadingTipIndex = 0;
+        const tip = this.loadingTips[this.loadingTipIndex];
+
+        content.innerHTML = `
+            <div class="quiz-shell">
+                <div class="quiz-card quiz-card--loading">
+                    <div class="quiz-loader">
+                        <span class="quiz-loader__spinner"></span>
+                        <p class="quiz-overline">Building your ${escapeHtml(subject)} quiz</p>
+                        <h3 class="quiz-question">${escapeHtml(topic)}</h3>
+                        <p class="quiz-loader__tip" data-quiz-tip>${tip}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        clearInterval(this.loadingInterval);
+        this.loadingInterval = setInterval(() => {
+            this.loadingTipIndex = (this.loadingTipIndex + 1) % this.loadingTips.length;
+            const tipEl = document.querySelector('[data-quiz-tip]');
+            if (tipEl) {
+                tipEl.textContent = this.loadingTips[this.loadingTipIndex];
+            }
+        }, 2200);
+    },
+
+    clearLoadingState() {
+        if (this.loadingInterval) {
+            clearInterval(this.loadingInterval);
+            this.loadingInterval = null;
+        }
+        this.isGenerating = false;
     },
 };
 

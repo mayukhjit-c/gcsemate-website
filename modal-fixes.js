@@ -28,6 +28,40 @@
         }, 250);
     };
 
+    function activateModal(modal) {
+        if (!modal) {
+            return;
+        }
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        requestAnimationFrame(() => {
+            modal.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+        });
+    }
+
+    function setModalLoading(modal, isLoading) {
+        if (!modal) {
+            return;
+        }
+        let overlay = modal.querySelector('.modal-loading-state');
+        if (isLoading) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'modal-loading-state';
+                overlay.innerHTML = '<div class="modal-loading-spinner" aria-hidden="true"></div>';
+                modal.appendChild(overlay);
+            }
+            overlay.classList.remove('hidden');
+            modal.setAttribute('aria-busy', 'true');
+        } else if (overlay) {
+            overlay.classList.add('hidden');
+            modal.removeAttribute('aria-busy');
+        }
+    }
+
     // Universal modal open function with content pre-load fix
     window.openModal = function (modalId, contentCallback) {
         const modal = document.getElementById(modalId);
@@ -35,24 +69,27 @@
             return;
         }
 
-        // Ensure content is loaded first before showing
+        let callbackResult = null;
         if (contentCallback && typeof contentCallback === 'function') {
-            contentCallback(modal);
+            try {
+                callbackResult = contentCallback(modal);
+            } catch (error) {
+                console.error('Modal content failed to load:', error);
+            }
         }
 
-        // Small delay to ensure content renders
-        requestAnimationFrame(() => {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            modal.style.opacity = '0';
-            modal.style.transform = 'scale(0.95)';
-
-            // Trigger animation after content is ready
-            requestAnimationFrame(() => {
-                modal.style.opacity = '1';
-                modal.style.transform = 'scale(1)';
-            });
-        });
+        if (callbackResult && typeof callbackResult.then === 'function') {
+            setModalLoading(modal, true);
+            activateModal(modal);
+            callbackResult
+                .catch(error => console.error('Modal async content failed:', error))
+                .finally(() => {
+                    setModalLoading(modal, false);
+                });
+        } else {
+            setModalLoading(modal, false);
+            activateModal(modal);
+        }
     };
 
     // Enhanced modal close with element removal
@@ -120,6 +157,36 @@
         .modal-backdrop {
             backdrop-filter: blur(8px);
             transition: backdrop-filter 0.3s ease;
+        }
+
+        .modal-loading-state {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .modal-loading-state.hidden {
+            display: none !important;
+        }
+
+        .modal-loading-spinner {
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            animation: modalLoadingSpin 0.9s linear infinite;
+        }
+
+        @keyframes modalLoadingSpin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     `;
     document.head.appendChild(style);
