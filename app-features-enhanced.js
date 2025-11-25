@@ -438,7 +438,7 @@ Explain clearly why each wrong option is incorrect to help students learn from t
                 subject,
                 topic,
                 difficulty,
-                questions: questions.slice(0, questionCount), // Limit to requested count
+                questions: this.prepareQuizQuestions(questions, questionCount),
                 startTime: new Date(),
             };
 
@@ -463,25 +463,27 @@ Explain clearly why each wrong option is incorrect to help students learn from t
      * Generate placeholder quiz (fallback)
      */
     generatePlaceholderQuiz(subject, topic, difficulty, questionCount) {
+        const placeholderQuestions = Array.from({ length: questionCount }, (_, i) => {
+            const correctIdx = i % 4;
+            const wrongIndices = [0, 1, 2, 3].filter(idx => idx !== correctIdx);
+            return {
+                question: `Sample question ${i + 1} about ${topic} in ${subject}?`,
+                options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                correctAnswer: correctIdx,
+                explanation: `This is a sample explanation for question ${i + 1}`,
+                wrongAnswerExplanations: {
+                    [wrongIndices[0]]: `Option ${String.fromCharCode(65 + wrongIndices[0])} is incorrect because...`,
+                    [wrongIndices[1]]: `Option ${String.fromCharCode(65 + wrongIndices[1])} is incorrect because...`,
+                    [wrongIndices[2]]: `Option ${String.fromCharCode(65 + wrongIndices[2])} is incorrect because...`,
+                },
+            };
+        });
+
         this.currentQuiz = {
             subject,
             topic,
             difficulty,
-            questions: Array.from({ length: questionCount }, (_, i) => {
-                const correctIdx = i % 4;
-                const wrongIndices = [0, 1, 2, 3].filter(idx => idx !== correctIdx);
-                return {
-                    question: `Sample question ${i + 1} about ${topic} in ${subject}?`,
-                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
-                    correctAnswer: correctIdx,
-                    explanation: `This is a sample explanation for question ${i + 1}`,
-                    wrongAnswerExplanations: {
-                        [wrongIndices[0]]: `Option ${String.fromCharCode(65 + wrongIndices[0])} is incorrect because...`,
-                        [wrongIndices[1]]: `Option ${String.fromCharCode(65 + wrongIndices[1])} is incorrect because...`,
-                        [wrongIndices[2]]: `Option ${String.fromCharCode(65 + wrongIndices[2])} is incorrect because...`,
-                    },
-                };
-            }),
+            questions: this.prepareQuizQuestions(placeholderQuestions, questionCount),
             startTime: new Date(),
         };
 
@@ -804,6 +806,64 @@ Explain clearly why each wrong option is incorrect to help students learn from t
      */
     generateNewQuiz() {
         showPracticeQuestionGeneratorModal();
+    },
+
+    /**
+     * Limit and randomize quiz questions for consistent UX
+     */
+    prepareQuizQuestions(questions, questionCount) {
+        if (!Array.isArray(questions)) {
+            return [];
+        }
+
+        return questions
+            .slice(0, questionCount)
+            .map(question => this.shuffleQuestionOptions(question));
+    },
+
+    /**
+     * Shuffle options while keeping the correct answer and explanations aligned
+     */
+    shuffleQuestionOptions(question) {
+        if (!question || !Array.isArray(question.options) || question.options.length < 2) {
+            return question;
+        }
+
+        const optionMetadata = question.options.map((text, idx) => ({
+            text,
+            isCorrect: idx === question.correctAnswer,
+            wrongExplanation:
+                question.wrongAnswerExplanations?.[idx] ??
+                question.wrongAnswerExplanations?.[String(idx)] ??
+                '',
+        }));
+
+        const shuffledOptions = this.shuffleArray(optionMetadata);
+        const wrongAnswerExplanations = {};
+
+        shuffledOptions.forEach((option, idx) => {
+            if (!option.isCorrect && option.wrongExplanation) {
+                wrongAnswerExplanations[idx] = option.wrongExplanation;
+            }
+        });
+
+        const correctIndex = shuffledOptions.findIndex(option => option.isCorrect);
+
+        return {
+            ...question,
+            options: shuffledOptions.map(option => option.text),
+            correctAnswer: correctIndex >= 0 ? correctIndex : 0,
+            wrongAnswerExplanations,
+        };
+    },
+
+    shuffleArray(items) {
+        const array = items.slice();
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     },
 
     showLoadingState(subject, topic) {

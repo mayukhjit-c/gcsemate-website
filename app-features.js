@@ -1113,17 +1113,9 @@ function createStudyPlanModal() {
     `;
     document.body.appendChild(modal);
 
-    // Populate subjects dropdown
-    const subjects = currentUser?.allowedSubjects || [];
+    const subjects = getPlannerSubjects();
     const subjectSelects = modal.querySelectorAll('[id^="plan-subject-"]');
-    subjectSelects.forEach(select => {
-        subjects.forEach(subject => {
-            const option = document.createElement('option');
-            option.value = subject;
-            option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
-            select.appendChild(option);
-        });
-    });
+    subjectSelects.forEach(select => populateSubjectOptions(select, subjects));
 
     document.getElementById('create-study-plan-form').onsubmit = async e => {
         e.preventDefault();
@@ -1134,12 +1126,56 @@ function createStudyPlanModal() {
 }
 
 let planSubjectCount = 1;
+
+function getPlannerSubjects() {
+    const allowed = Array.isArray(currentUser?.allowedSubjects)
+        ? currentUser.allowedSubjects.filter(Boolean)
+        : [];
+    if (allowed.length > 0) {
+        return [...new Set(allowed)];
+    }
+    return [
+        'biology',
+        'chemistry',
+        'physics',
+        'mathematics',
+        'english language',
+        'english literature',
+        'history',
+        'geography',
+        'computer science',
+        'business studies',
+        'economics',
+        'religious studies',
+    ];
+}
+
+function populateSubjectOptions(selectEl, subjects) {
+    if (!selectEl) {
+        return;
+    }
+    selectEl.innerHTML = '<option value="">Select subject...</option>';
+    subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = formatSubjectLabel(subject);
+        selectEl.appendChild(option);
+    });
+}
+
+function formatSubjectLabel(subject = '') {
+    return subject
+        .split(' ')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+        .trim();
+}
 /**
  *
  */
 function addPlanSubject() {
     const container = document.getElementById('plan-subjects-container');
-    const subjects = currentUser?.allowedSubjects || [];
+    const subjects = getPlannerSubjects();
     const div = document.createElement('div');
     div.className = 'flex gap-2';
     div.innerHTML = `
@@ -1152,12 +1188,7 @@ function addPlanSubject() {
         </button>
     `;
     const select = div.querySelector('select');
-    subjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject;
-        option.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
-        select.appendChild(option);
-    });
+    populateSubjectOptions(select, subjects);
     container.appendChild(div);
     planSubjectCount++;
 }

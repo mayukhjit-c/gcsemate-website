@@ -110,7 +110,7 @@
                 "educationalCredentialAwarded": "GCSE",
                 "teaches": [
                     "GCSE Mathematics",
-                    "GCSE Science",
+                            <div class="text-sm text-gray-600">Access your revision materials</div>
                     "GCSE English",
                     "GCSE History",
                     "GCSE Geography",
@@ -119,18 +119,27 @@
                     "GCSE Philosophy and Ethics"
                 ],
                 "publisher": {
-                    "@type": "Organization",
+                            <div class="text-sm text-gray-600">
                     "name": "GCSEMate",
                     "founder": {
                         "@type": "Person",
                         "name": "Mayukhjit Chakraborty"
+                    <a href="#"
+                        class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        data-page="practice-questions-page" tabindex="0" aria-label="Navigate to quizzes page">
+                        <span class="text-2xl mr-3" aria-hidden="true">🧠</span>
+                        <div>
+                            <div class="font-semibold">Quizzes</div>
+                            <div class="text-sm text-gray-600">Practice questions & rapid checks</div>
+                        </div>
+                    </a>
                     },
                     "logo": {
                         "@type": "ImageObject",
                         "url": "https://gcsemate.com/gcsemate%20new.png",
                         "width": 512,
                         "height": 512
-                    }
+                            <div class="text-sm text-gray-600">Study tips & latest news</div>
                 },
                 "potentialAction": {
                     "@type": "SearchAction",
@@ -139,7 +148,7 @@
                 },
                 "sameAs": ["https://gcsemate.com/"]
             }
-        </script>
+                            <div class="text-sm text-gray-600">Track deadlines & events</div>
     <script type="application/ld+json">
             {
                 "@context": "https://schema.org",
@@ -148,7 +157,7 @@
                 "url": "https://gcsemate.com/",
                 "description": "Free GCSE revision platform with organized notes, past papers, videos, and study guides",
                 "inLanguage": "en-GB",
-                "potentialAction": {
+                            <div class="text-sm text-gray-600">Quick access resources</div>
                     "@type": "SearchAction",
                     "target": "https://gcsemate.com/?search={search_term_string}",
                     "query-input": "required name=search_term_string"
@@ -157,7 +166,7 @@
         </script>
     <script type="application/ld+json">
             {
-                "@context": "https://schema.org",
+                            <div class="text-sm text-gray-600">Our story & mission</div>
                 "@type": "BreadcrumbList",
                 "itemListElement": [
                     {
@@ -166,7 +175,7 @@
                         "name": "Home",
                         "item": "https://gcsemate.com/"
                     }
-                ]
+                            <div class="text-sm text-gray-600">See what's included</div>
             }
         </script>
     <script>
@@ -175,7 +184,7 @@
                 var primary = 'gcsemate favicon.png';
                 var img = new Image();
                 img.onerror = function () {
-                    var alt = document.querySelector('link[data-fallback-favicon]');
+                            <div class="text-sm text-gray-600">Get AI-powered help</div>
                     if (!alt) return;
                     document.querySelectorAll('link[rel="icon"]').forEach(function (n) {
                         n.parentNode.removeChild(n);
@@ -184,7 +193,7 @@
                 };
                 img.src = primary;
             } catch (_) { }
-        })();
+                            <div class="text-sm text-gray-600">Get support & answers</div>
     </script>
     <script>
         // Enhanced tooltip system with smart positioning
@@ -583,7 +592,7 @@
                 </h1>
             </div>
             <div class="animate-hero-subtitle">
-                <p class="mt-6 sm:mt-8 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 px-4">
+                <p class="mt-6 sm:mt-8 max-w-2xl mx-auto text-lg sm:text-xl text-gray-700 px-4">
                     Join 50+ students who've transformed their revision with GCSEMate. Get
                     instant access to organized notes, past papers, and everything you need to
                     achieve top grades—all in one place.
@@ -602,7 +611,7 @@
                 </button>
             </div>
             <div class="mt-6 sm:mt-8 text-center px-4">
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-gray-700">
                     No credit card required • Join in 30 seconds
                 </p>
             </div>
@@ -610,7 +619,7 @@
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">
                     Why 50+ Students Choose GCSEMate
                 </h2>
-                <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg">
+                <p class="mt-4 sm:mt-6 text-gray-700 text-base sm:text-lg">
                     Stop wasting time searching for resources. Start achieving the grades you
                     deserve.
                 </p>
@@ -847,11 +856,11 @@
                     </div>
                 </div>
                 <div class="border-t border-gray-200 pt-8 text-center">
-                    <p class="text-sm text-gray-500">
+                    <p class="text-sm text-gray-700">
                         © <span id="landing-copyright-year"></span> GCSEMate. All Rights
                         Reserved.
                     </p>
-                    <p class="text-xs text-gray-400 mt-2">
+                    <p class="text-xs text-gray-600 mt-2">
                         This site is protected by reCAPTCHA and the Google
                         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener"
                             class="underline">Privacy Policy</a>
@@ -1065,7 +1074,7 @@
         </div>
 
         <header
-            class="bg-white/90 backdrop-blur-xl p-3 sm:p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 relative shadow-sm"
+            class="bg-white/90 backdrop-blur-xl px-3 sm:px-4 py-4 sm:py-6 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 relative shadow-sm"
             role="banner">
             <div class="flex-shrink-0">
                 <a href="#" onclick="event.preventDefault(); showPage('subject-dashboard-page');"
@@ -1161,7 +1170,7 @@
                     aria-label="Navigate to practice questions page">
                     <i class="fas fa-question-circle w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
                         aria-hidden="true"></i>
-                    Practice
+                    Quizzes
                 </a>
                 <a href="#" id="notes-nav"
                     class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center"
@@ -1239,7 +1248,7 @@
                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <div>
                         <p class="text-sm font-semibold text-gray-800">Notifications</p>
-                        <p class="text-xs text-gray-500">Stay updated with system activity</p>
+                        <p class="text-xs text-gray-600">Stay updated with system activity</p>
                     </div>
                     <button id="notification-mark-read"
                         class="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
@@ -1247,7 +1256,7 @@
                     </button>
                 </div>
                 <div id="notification-list" class="max-h-96 overflow-y-auto divide-y divide-gray-100"></div>
-                <div class="px-4 py-3 text-xs text-gray-500 text-center border-t border-gray-100">
+                <div class="px-4 py-3 text-xs text-gray-700 text-center border-t border-gray-100">
                     Tips follow <span class="font-semibold">laravel-boost.mdc</span> craft
                     standard.
                 </div>
@@ -1275,7 +1284,7 @@
                     <span class="text-2xl mr-3" aria-hidden="true"></span>
                     <div>
                         <div class="font-semibold">Subjects</div>
-                        <div class="text-sm text-gray-500">Access your revision materials</div>
+                        <div class="text-sm text-gray-600">Access your revision materials</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1284,7 +1293,7 @@
                     <span class="text-2xl mr-3" aria-hidden="true">🎥</span>
                     <div>
                         <div class="font-semibold">Videos</div>
-                        <div class="text-sm text-gray-500">
+                        <div class="text-sm text-gray-600">
                             Educational playlists & tutorials
                         </div>
                     </div>
@@ -1295,7 +1304,7 @@
                     <span class="text-2xl mr-3" aria-hidden="true"></span>
                     <div>
                         <div class="font-semibold">Blog</div>
-                        <div class="text-sm text-gray-500">Study tips & latest news</div>
+                        <div class="text-sm text-gray-600">Study tips & latest news</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1304,7 +1313,7 @@
                     <i class="fas fa-calendar-alt text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Calendar</div>
-                        <div class="text-sm text-gray-500">Track deadlines & events</div>
+                        <div class="text-sm text-gray-600">Track deadlines & events</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1313,7 +1322,7 @@
                     <i class="fas fa-link text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Useful Links</div>
-                        <div class="text-sm text-gray-500">Quick access resources</div>
+                        <div class="text-sm text-gray-600">Quick access resources</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1322,7 +1331,7 @@
                     <i class="fas fa-info-circle text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">About Us</div>
-                        <div class="text-sm text-gray-500">Our story & mission</div>
+                        <div class="text-sm text-gray-600">Our story & mission</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1331,7 +1340,7 @@
                     <i class="fas fa-star text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Features & Pricing</div>
-                        <div class="text-sm text-gray-500">See what's included</div>
+                        <div class="text-sm text-gray-600">See what's included</div>
                     </div>
                 </a>
                 <a href="#" id="ai-tutor-nav-mobile"
@@ -1340,7 +1349,7 @@
                     <i class="fas fa-robot text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">AI Tutor</div>
-                        <div class="text-sm text-gray-500">Get AI-powered help</div>
+                        <div class="text-sm text-gray-600">Get AI-powered help</div>
                     </div>
                 </a>
                 <a href="#"
@@ -1349,7 +1358,7 @@
                     <span class="text-2xl mr-3">❓</span>
                     <div>
                         <div class="font-semibold">Help & FAQ</div>
-                        <div class="text-sm text-gray-500">Get support & answers</div>
+                        <div class="text-sm text-gray-600">Get support & answers</div>
                     </div>
                 </a>
             </nav>
@@ -1375,16 +1384,71 @@
             </button>
             <div id="page-container" class="relative">
                 <div id="subject-dashboard-page" class="page p-5 sm:p-6 lg:p-8 xl:p-10 max-w-7xl mx-auto">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
-                        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                            Your Subjects
-                        </h2>
-                        <div id="dashboard-clock"
-                            class="bg-white/70 backdrop-blur-lg p-4 sm:p-5 rounded-xl shadow-md border border-gray-200/60 text-center min-w-[140px]">
-                            <p id="clock-time" class="text-xl sm:text-2xl font-bold text-gray-900 tracking-wider"></p>
-                            <p id="clock-date"
-                                class="text-[10px] sm:text-xs text-gray-600 font-semibold uppercase tracking-widest mt-1">
-                            </p>
+                    <div class="page-section" data-animate="fade-up">
+                        <div class="page-section__header">
+                            <div class="space-y-2">
+                                <span class="page-section__eyebrow">Dashboard Overview</span>
+                                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                                    Your Subjects
+                                </h2>
+                                <p class="page-section__subtitle">
+                                    Track study time, jump into tools, and keep every subject organised from one place.
+                                </p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <span class="utility-chip"><i class="fas fa-signal" aria-hidden="true"></i> Live workspace</span>
+                                <div id="dashboard-clock"
+                                    class="bg-white/70 backdrop-blur-lg p-4 sm:p-5 rounded-xl shadow-md border border-gray-200/60 text-center min-w-[160px]">
+                                    <p id="clock-time"
+                                        class="text-xl sm:text-2xl font-bold text-gray-900 tracking-wider"></p>
+                                    <p id="clock-date"
+                                        class="text-[10px] sm:text-xs text-gray-600 font-semibold uppercase tracking-widest mt-1">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="page-section__actions">
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                                onclick="showPage('study-planner-page')">
+                                Open study planner
+                            </button>
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                onclick="showPage('notes-page')">
+                                Review notes
+                            </button>
+                        </div>
+                    </div>
+                    <div class="utility-toolbar mb-8" data-animate="fade-up">
+                        <div class="utility-toolbar__grid">
+                            <button type="button" class="quick-action-card" onclick="showPage('practice-questions-page')"
+                                aria-label="Open quizzes">
+                                <span class="quick-action-card__icon"><i class="fas fa-question-circle"
+                                        aria-hidden="true"></i></span>
+                                <span class="quick-action-card__title">Quizzes & Practice</span>
+                                <p class="quick-action-card__desc">Generate AI-marked questions with instant feedback.</p>
+                            </button>
+                            <button type="button" class="quick-action-card" onclick="showPage('ai-tutor-page')"
+                                aria-label="Open AI Tutor">
+                                <span class="quick-action-card__icon"><i class="fas fa-robot" aria-hidden="true"></i></span>
+                                <span class="quick-action-card__title">AI Tutor</span>
+                                <p class="quick-action-card__desc">Get tailored explanations, hints, and study prompts.</p>
+                            </button>
+                            <button type="button" class="quick-action-card" onclick="showPage('study-planner-page')"
+                                aria-label="Open Study Planner">
+                                <span class="quick-action-card__icon"><i class="fas fa-calendar-check"
+                                    aria-hidden="true"></i></span>
+                                <span class="quick-action-card__title">Study Planner</span>
+                                <p class="quick-action-card__desc">Schedule revision blocks and keep goals on track.</p>
+                            </button>
+                            <button type="button" class="quick-action-card" onclick="showPage('flashcards-page')"
+                                aria-label="Open Flashcards">
+                                <span class="quick-action-card__icon"><i class="fas fa-layer-group"
+                                    aria-hidden="true"></i></span>
+                                <span class="quick-action-card__title">Flashcards</span>
+                                <p class="quick-action-card__desc">Spaced repetition decks to lock topics into memory.</p>
+                            </button>
                         </div>
                     </div>
                     <div id="study-tracker-grid"
@@ -1512,12 +1576,32 @@
                     </div>
                 </div>
                 <div id="videos-page" class="page hidden p-5 sm:p-6 lg:p-8 xl:p-10 max-w-7xl mx-auto">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                            Revision Video Playlists
-                        </h2>
-                        <div id="playlist-stats" class="text-sm text-gray-600 hidden">
-                            <span id="playlist-count-display">0 playlists</span>
+                    <div class="page-section" data-animate="fade-up">
+                        <div class="page-section__header">
+                            <div class="space-y-2">
+                                <span class="page-section__eyebrow">Video Library</span>
+                                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                                    Revision Video Playlists
+                                </h2>
+                                <p class="page-section__subtitle">
+                                    Hand-picked playlists from trusted educators, curated for every GCSE subject.
+                                </p>
+                            </div>
+                            <div id="playlist-stats" class="text-sm text-gray-600 hidden">
+                                <span id="playlist-count-display">0 playlists</span>
+                            </div>
+                        </div>
+                        <div class="page-section__actions">
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                                onclick="const input=document.getElementById('playlist-search'); if(input){input.focus();input.select();}">
+                                Search playlists
+                            </button>
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                onclick="const btn=document.getElementById('playlist-history-toggle'); if(btn){btn.click();}">
+                                Toggle history
+                            </button>
                         </div>
                     </div>
 
@@ -1709,7 +1793,30 @@
                     </div>
                 </div>
                 <div id="blog-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
+                    <div class="page-section" data-animate="fade-up">
+                        <div class="page-section__header">
+                            <div class="space-y-2">
+                                <span class="page-section__eyebrow">Blog & Updates</span>
+                                <h2 class="text-3xl font-bold text-gray-800">The GCSEMate Blog</h2>
+                                <p class="page-section__subtitle">
+                                    Product updates, study tips, and platform news—crafted for GCSE students and guardians.
+                                </p>
+                            </div>
+                            <span class="utility-chip"><i class="fas fa-bullhorn" aria-hidden="true"></i> Fresh content</span>
+                        </div>
+                        <div class="page-section__actions">
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                                onclick="const form=document.getElementById('add-blog-post-form-container'); if(form){form.classList.toggle('hidden');}">
+                                Toggle post editor
+                            </button>
+                            <button type="button"
+                                class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                onclick="const grid=document.getElementById('blog-post-grid'); if(grid){grid.scrollIntoView({behavior:'smooth'});}">
+                                Jump to posts
+                            </button>
+                        </div>
+                    </div>
                     <div id="add-blog-post-form-container"
                         class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
                         <h3 id="blog-form-title" class="text-xl font-semibold mb-4">

@@ -18076,6 +18076,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a: 'about-page',
                 f: 'features-page',
                 h: 'help-page',
+                q: 'practice-questions-page',
                 t: 'ai-tutor-page', // AI Tutor (Pro only)
             };
             const target = map[k];
