@@ -292,18 +292,17 @@
 
     /**
      * Additional Security: Clickjacking Protection
+     * Note: X-Frame-Options must be set via HTTP headers, not meta tags
      */
     function addClickjackingProtection() {
-        // Add X-Frame-Options meta
-        const xfo = document.createElement('meta');
-        xfo.setAttribute('http-equiv', 'X-Frame-Options');
-        xfo.setAttribute('content', 'SAMEORIGIN');
-        document.head.appendChild(xfo);
+        // X-Frame-Options can only be set via HTTP headers, not meta tags
+        // The server (Cloudflare/Firebase hosting) should set this header
+        // Attempting to set via meta tag causes browser warning
 
-        // Framebusting code
+        // Framebusting code as client-side fallback
         if (window.self !== window.top) {
-            console.warn('⚠️ Page is being framed - potential clickjacking attempt');
-            // Optionally break out of frame
+            log('⚠️ Page is being framed - potential clickjacking attempt');
+            // Optionally break out of frame (disabled by default)
             // window.top.location = window.self.location;
         }
     }

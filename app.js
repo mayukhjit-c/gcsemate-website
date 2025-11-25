@@ -3802,7 +3802,33 @@ window.addEventListener(
         setTimeout(() => {
             ensureInitialView();
             hideAppLoading();
-        }, 1200);
+        }, 800); // Reduced from 1200ms for faster load
+    },
+    { once: true }
+);
+
+// CRITICAL: Aggressive fallback - ensure page loads even if other scripts fail
+// This handles the "need to double-click" issue
+setTimeout(() => {
+    const overlay = document.getElementById('app-loading');
+    if (overlay && overlay.style.display !== 'none' && overlay.style.opacity !== '0') {
+        console.warn('Forcing page load after timeout');
+        ensureInitialView();
+        hideAppLoading();
+    }
+}, 3000); // Force load after 3 seconds no matter what
+
+// Another click-anywhere fallback for edge cases
+document.addEventListener(
+    'click',
+    function forceLoadOnClick() {
+        const overlay = document.getElementById('app-loading');
+        if (overlay && overlay.style.display !== 'none' && overlay.style.opacity !== '0') {
+            ensureInitialView();
+            hideAppLoading();
+        }
+        // Remove after first use - only needed as emergency fallback
+        document.removeEventListener('click', forceLoadOnClick);
     },
     { once: true }
 );
@@ -17529,6 +17555,8 @@ function getPreviewEmbedUrl(file) {
 function showPreview(file) {
     const modal = document.getElementById('preview-modal');
     const embedUrl = getPreviewEmbedUrl(file);
+    const logoFallback = 'https://i.imghippo.com/files/IxF8202tcg.jpg';
+    const logoSrc = 'gcsemate%20new.png';
     let content = '';
     if (embedUrl) {
         const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
@@ -17537,7 +17565,7 @@ function showPreview(file) {
                 <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div class="dots-spinner"><i></i><i></i><i></i></div>
                     <span class="ml-2 text-white font-semibold">Loading preview…</span>
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90">
+                    <img src="${logoSrc}" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90" onerror="this.onerror=null; this.src='${logoFallback}';">
                 </div>
                 <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
@@ -17581,7 +17609,7 @@ function showPreview(file) {
                 <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
                 <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
                 <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-5 w-5">
+                    <img src="${logoSrc}" alt="GCSEMate" class="h-5 w-5" onerror="this.onerror=null; this.src='${logoFallback}';">
                     Open in Google Drive
                 </a>
             </div>
@@ -17592,7 +17620,7 @@ function showPreview(file) {
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center min-w-0 gap-2">
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
+                    <img src="${logoSrc}" alt="GCSEMate" class="h-6 w-auto hidden sm:block" onerror="this.onerror=null; this.src='${logoFallback}';">
                     <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
                 </div>
                 <div class="flex items-center gap-2">
