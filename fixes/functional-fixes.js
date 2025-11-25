@@ -1011,6 +1011,56 @@
             #notes-content:not(.inside-tools-page) {
                 display: none !important;
             }
+
+            /* FIX: Double scrollbar - only one scrollbar on body */
+            html {
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            body {
+                overflow: hidden;
+                height: 100vh;
+            }
+            #page-content,
+            main,
+            .main-content {
+                overflow-y: auto;
+                overflow-x: hidden;
+                height: calc(100vh - 64px);
+            }
+            .page {
+                overflow: visible;
+            }
+            /* Prevent nested scrollbars */
+            .page .overflow-y-auto,
+            .page .overflow-auto {
+                max-height: none;
+            }
+
+            /* FIX: AI Tutor page spacing - remove blank space above */
+            #ai-tutor-page {
+                padding-top: 0.5rem !important;
+                margin-top: 0 !important;
+            }
+            #ai-tutor-page > .flex:first-child {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            #ai-tutor-page .mb-4:first-of-type {
+                margin-top: 0 !important;
+            }
+
+            /* FIX: Study timer stop button - ensure proper visibility */
+            #study-stop-btn {
+                display: none;
+            }
+            #study-stop-btn.visible,
+            body.study-session-active #study-stop-btn {
+                display: inline-flex !important;
+            }
+            body.study-session-active #study-start-btn {
+                display: none !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -1096,7 +1146,9 @@
                     startBtn.classList.add('hidden');
                     if (stopBtn) {
                         stopBtn.classList.remove('hidden');
+                        stopBtn.classList.add('visible');
                     }
+                    document.body.classList.add('study-session-active');
 
                     // Show initial time
                     const display = document.getElementById('study-timer-display');
@@ -1139,6 +1191,8 @@
                             startBtn.classList.remove('hidden');
                         }
                         stopBtn.classList.add('hidden');
+                        stopBtn.classList.remove('visible');
+                        document.body.classList.remove('study-session-active');
                     },
                     { capture: true }
                 );

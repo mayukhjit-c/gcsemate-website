@@ -392,9 +392,368 @@ const FlashcardSystem = {
     /**
      * Open deck for editing
      */
-    async openDeck(_deckId) {
-        // Implementation for editing deck
-        showToast('Deck editor coming soon', 'info');
+    async openDeck(deckId) {
+        if (!currentUser || !currentUser.uid) {
+            showToast('You must be logged in', 'error');
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+
+            // Get deck info
+            const deckDoc = await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('decks')
+                .doc(deckId)
+                .get();
+
+            if (!deckDoc.exists) {
+                showToast('Deck not found', 'error');
+                return;
+            }
+
+            const deck = { id: deckDoc.id, ...deckDoc.data() };
+
+            // Get cards for this deck
+            const cardsSnapshot = await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('cards')
+                .where('deckId', '==', deckId)
+                .orderBy('createdAt', 'desc')
+                .get();
+
+            const cards = [];
+            cardsSnapshot.forEach(doc => {
+                cards.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Show deck editor modal
+            this.showDeckEditorModal(deck, cards);
+        } catch (error) {
+            logError(error, 'FlashcardSystem.openDeck');
+            showToast('Failed to open deck', 'error');
+        }
+    },
+
+    /**
+     * Show deck editor modal
+     */
+    showDeckEditorModal(deck, cards) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('deck-editor-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'deck-editor-modal';
+        modal.className =
+            'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-fade-in flex flex-col">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Edit Deck: ${escapeHtml(deck.name)}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${deck.subject} • ${cards.length} cards</p>
+                    </div>
+                    <button onclick="document.getElementById('deck-editor-modal').remove()"
+                        class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <i class="fas fa-times text-gray-500"></i>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6">
+                    <!-- Deck Info Section -->
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">Deck Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deck Name</label>
+                                <input type="text" id="edit-deck-name" value="${escapeHtml(deck.name)}"
+                                    class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                                <input type="text" id="edit-deck-subject" value="${escapeHtml(deck.subject || '')}"
+                                    class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                            <textarea id="edit-deck-description" rows="2"
+                                class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">${escapeHtml(deck.description || '')}</textarea>
+                        </div>
+                        <button onclick="FlashcardSystem.updateDeckInfo('${deck.id}')"
+                            class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold">
+                            <i class="fas fa-save mr-1"></i> Save Deck Info
+                        </button>
+                    </div>
+
+                    <!-- Add Card Section -->
+                    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-3">
+                            <i class="fas fa-plus-circle mr-2"></i>Add New Card
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Front (Question)</label>
+                                <textarea id="new-card-front" rows="3" placeholder="Enter the question or term..."
+                                    class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Back (Answer)</label>
+                                <textarea id="new-card-back" rows="3" placeholder="Enter the answer or definition..."
+                                    class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                        </div>
+                        <button onclick="FlashcardSystem.addCardFromEditor('${deck.id}')"
+                            class="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-semibold">
+                            <i class="fas fa-plus mr-1"></i> Add Card
+                        </button>
+                    </div>
+
+                    <!-- Cards List -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                            <i class="fas fa-layer-group mr-2"></i>Cards (${cards.length})
+                        </h4>
+                        <div id="deck-cards-list" class="space-y-3">
+                            ${
+                                cards.length === 0
+                                    ? `
+                                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p>No cards yet. Add your first card above!</p>
+                                </div>
+                            `
+                                    : cards
+                                          .map(
+                                              (card, index) => `
+                                <div class="p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm" data-card-id="${card.id}">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Front</label>
+                                                <textarea class="card-front-input w-full p-2 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2">${escapeHtml(card.front)}</textarea>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Back</label>
+                                                <textarea class="card-back-input w-full p-2 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2">${escapeHtml(card.back)}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <button onclick="FlashcardSystem.updateCard('${card.id}')" title="Save changes"
+                                                class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">
+                                                <i class="fas fa-save"></i>
+                                            </button>
+                                            <button onclick="FlashcardSystem.deleteCard('${card.id}', '${deck.id}')" title="Delete card"
+                                                class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-400">
+                                        Card #${index + 1} • Reviewed ${card.reviewCount || 0} times
+                                    </div>
+                                </div>
+                            `
+                                          )
+                                          .join('')
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between">
+                    <button onclick="FlashcardSystem.deleteDeck('${deck.id}')"
+                        class="px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-semibold">
+                        <i class="fas fa-trash mr-1"></i> Delete Deck
+                    </button>
+                    <button onclick="document.getElementById('deck-editor-modal').remove()"
+                        class="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-semibold">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    },
+
+    /**
+     * Update deck info
+     */
+    async updateDeckInfo(deckId) {
+        const name = document.getElementById('edit-deck-name')?.value?.trim();
+        const subject = document.getElementById('edit-deck-subject')?.value?.trim();
+        const description = document.getElementById('edit-deck-description')?.value?.trim();
+
+        if (!name) {
+            showToast('Deck name is required', 'error');
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('decks')
+                .doc(deckId)
+                .update({
+                    name,
+                    subject,
+                    description,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+            showToast('Deck updated successfully', 'success');
+            await this.loadDecks();
+        } catch (error) {
+            logError(error, 'FlashcardSystem.updateDeckInfo');
+            showToast('Failed to update deck', 'error');
+        }
+    },
+
+    /**
+     * Add card from editor modal
+     */
+    async addCardFromEditor(deckId) {
+        const front = document.getElementById('new-card-front')?.value?.trim();
+        const back = document.getElementById('new-card-back')?.value?.trim();
+
+        if (!front || !back) {
+            showToast('Both front and back are required', 'error');
+            return;
+        }
+
+        await this.addCard(deckId, front, back);
+
+        // Clear inputs
+        document.getElementById('new-card-front').value = '';
+        document.getElementById('new-card-back').value = '';
+
+        // Refresh the editor
+        await this.openDeck(deckId);
+    },
+
+    /**
+     * Update a card
+     */
+    async updateCard(cardId) {
+        const cardDiv = document.querySelector(`[data-card-id="${cardId}"]`);
+        if (!cardDiv) return;
+
+        const front = cardDiv.querySelector('.card-front-input')?.value?.trim();
+        const back = cardDiv.querySelector('.card-back-input')?.value?.trim();
+
+        if (!front || !back) {
+            showToast('Both front and back are required', 'error');
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('cards')
+                .doc(cardId)
+                .update({
+                    front,
+                    back,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+            showToast('Card updated successfully', 'success');
+        } catch (error) {
+            logError(error, 'FlashcardSystem.updateCard');
+            showToast('Failed to update card', 'error');
+        }
+    },
+
+    /**
+     * Delete a card
+     */
+    async deleteCard(cardId, deckId) {
+        if (!confirm('Are you sure you want to delete this card?')) return;
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('cards')
+                .doc(cardId)
+                .delete();
+
+            // Update deck card count
+            await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('decks')
+                .doc(deckId)
+                .update({
+                    cardCount: firebase.firestore.FieldValue.increment(-1),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+            showToast('Card deleted successfully', 'success');
+
+            // Refresh the editor
+            await this.openDeck(deckId);
+            await this.loadDecks();
+        } catch (error) {
+            logError(error, 'FlashcardSystem.deleteCard');
+            showToast('Failed to delete card', 'error');
+        }
+    },
+
+    /**
+     * Delete entire deck
+     */
+    async deleteDeck(deckId) {
+        if (
+            !confirm(
+                'Are you sure you want to delete this deck and all its cards? This cannot be undone.'
+            )
+        )
+            return;
+
+        try {
+            const db = getFirestore();
+
+            // Delete all cards in the deck first
+            const cardsSnapshot = await db
+                .collection('userFlashcards')
+                .doc(currentUser.uid)
+                .collection('cards')
+                .where('deckId', '==', deckId)
+                .get();
+
+            const batch = db.batch();
+            cardsSnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            // Delete the deck
+            batch.delete(
+                db.collection('userFlashcards').doc(currentUser.uid).collection('decks').doc(deckId)
+            );
+
+            await batch.commit();
+
+            showToast('Deck deleted successfully', 'success');
+
+            // Close modal and refresh
+            document.getElementById('deck-editor-modal')?.remove();
+            await this.loadDecks();
+        } catch (error) {
+            logError(error, 'FlashcardSystem.deleteDeck');
+            showToast('Failed to delete deck', 'error');
+        }
     },
 };
 
