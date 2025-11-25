@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('🔧 GCSEMate Code Quality Fixes Loading...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '🔧 [Quality]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('GCSEMate Code Quality Fixes Loading...');
 
     /**
      * CQ-002: Error Boundary Pattern
@@ -22,11 +28,11 @@
         }
 
         defaultErrorHandler(error, context) {
-            console.error(`[${this.name}] Error in ${context}:`, error);
+            console.error(`[${this.name}] Error in ${context}:`, error); // eslint-disable-line no-console
 
             // Report to analytics if available
-            if (typeof gtag === 'function') {
-                gtag('event', 'exception', {
+            if (typeof window.gtag === 'function') {
+                window.gtag('event', 'exception', {
                     description: `${context}: ${error.message}`,
                     fatal: false,
                 });
@@ -219,7 +225,7 @@
             this.modules.set(name, module);
             this.dependencies.set(name, dependencies);
 
-            console.log(`📦 Module registered: ${name}`);
+            log(`📦 Module registered: ${name}`);
         }
 
         // Get a module
@@ -250,7 +256,7 @@
             }
 
             this.initialized.add(name);
-            console.log(`✅ Module initialized: ${name}`);
+            log(`✅ Module initialized: ${name}`);
 
             return module;
         }
@@ -423,7 +429,8 @@
                 this.history.shift();
             }
 
-            // Output
+            // Output - intentionally using console methods for logging utility
+            /* eslint-disable no-console */
             switch (level) {
                 case Logger.LEVELS.DEBUG:
                     console.debug(prefix, ...msgArgs);
@@ -438,6 +445,7 @@
                     console.error(prefix, ...msgArgs);
                     break;
             }
+            /* eslint-enable no-console */
         }
 
         debug(...args) {
@@ -552,7 +560,7 @@
             });
         }
 
-        console.log('✅ GCSEMate Code Quality Fixes Applied');
+        log('GCSEMate Code Quality Fixes Applied');
     }
 
     // Run on DOM ready

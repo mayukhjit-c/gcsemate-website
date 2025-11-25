@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('♿ Loading Accessibility Fixes...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '♿ [Accessibility]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('Loading Accessibility Fixes...');
 
     // ================================================
     // A-001: ADD ARIA LABELS TO INTERACTIVE ELEMENTS
@@ -573,5 +579,5 @@
 
     accessibilityObserver.observe(document.body, { childList: true, subtree: true });
 
-    console.log('✅ Accessibility Fixes loaded successfully!');
+    log('Accessibility Fixes loaded successfully!');
 })();

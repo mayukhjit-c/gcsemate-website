@@ -21,6 +21,7 @@ All identified issues have been addressed through modular fix files in the `/fix
 | `performance-fixes.js`   | P-001 to P-005                   | ✅ Complete |
 | `code-quality-fixes.js`  | CQ-001 to CQ-005                 | ✅ Complete |
 | `missing-features.js`    | MF-001 to MF-008                 | ✅ Complete |
+| `functional-fixes.js`    | FI-001 to FI-008                 | ✅ Complete |
 
 ---
 

@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('🎬 Loading Animation Fixes...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '🎬 [Animation]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('Loading Animation Fixes...');
 
     const animationStyles = document.createElement('style');
     animationStyles.id = 'animation-fixes';
@@ -537,5 +543,5 @@
         initScrollAnimations();
     }
 
-    console.log('✅ Animation Fixes loaded successfully!');
+    log('Animation Fixes loaded successfully!');
 })();

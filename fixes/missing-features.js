@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('➕ Loading Missing Features...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '➕ [Features]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('Loading Missing Features...');
 
     // ================================================
     // MF-001: PROMINENT DARK MODE TOGGLE
@@ -682,5 +688,5 @@
     // Make resetSessionTimeout globally available
     window.resetSessionTimeout = resetSessionTimeout;
 
-    console.log('✅ Missing Features loaded successfully!');
+    log('Missing Features loaded successfully!');
 })();

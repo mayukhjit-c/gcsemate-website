@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('🔴 Loading Critical Fixes...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '🔴 [Critical]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('Loading Critical Fixes...');
 
     // ================================================
     // CONFIGURATION
@@ -113,7 +119,13 @@
         // Initial state for animation
         modal.style.opacity = '0';
 
-        const modalContent = modal.querySelector('.modal-content, > div:not(.fixed)');
+        // Find modal content - use :scope for child selectors
+        const modalContent =
+            modal.querySelector('.modal-content') ||
+            modal.querySelector('[role="document"]') ||
+            modal.querySelector('.bg-white') ||
+            modal.querySelector('.bg-gray-800') ||
+            Array.from(modal.children).find(child => !child.classList.contains('fixed'));
         if (modalContent) {
             modalContent.style.transform = 'scale(0.95) translateY(-10px)';
             modalContent.style.transition = `transform ${CONFIG.MODAL_ANIMATION_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${CONFIG.MODAL_ANIMATION_MS}ms ease-out`;
@@ -381,7 +393,7 @@
             this.listeners.set(name, unsubscribeFn);
             this.unsubscribers.add(unsubscribeFn);
 
-            console.log(`Registered listener: ${name}`);
+            log(`Registered listener: ${name}`);
         }
 
         unregisterFirestoreListener(name) {
@@ -389,9 +401,9 @@
             if (unsubscribe && typeof unsubscribe === 'function') {
                 try {
                     unsubscribe();
-                    console.log(`Unregistered listener: ${name}`);
+                    log(`Unregistered listener: ${name}`);
                 } catch (error) {
-                    console.warn(`Error unregistering listener ${name}:`, error);
+                    log(`Error unregistering listener ${name}:`, error);
                 }
             }
             this.listeners.delete(name);
@@ -399,7 +411,7 @@
         }
 
         cleanupAll() {
-            console.log(`Cleaning up ${this.listeners.size} listeners...`);
+            log(`Cleaning up ${this.listeners.size} listeners...`);
 
             this.listeners.forEach((unsubscribe, name) => {
                 try {
@@ -407,14 +419,14 @@
                         unsubscribe();
                     }
                 } catch (error) {
-                    console.warn(`Error cleaning up listener ${name}:`, error);
+                    log(`Error cleaning up listener ${name}:`, error);
                 }
             });
 
             this.listeners.clear();
             this.unsubscribers.clear();
 
-            console.log('All listeners cleaned up');
+            log('All listeners cleaned up');
         }
 
         getActiveListeners() {
@@ -436,7 +448,7 @@
             hiddenTime = Date.now();
         } else if (hiddenTime && Date.now() - hiddenTime > 30 * 60 * 1000) {
             // If hidden for more than 30 minutes, cleanup and refresh
-            console.log('Page was hidden for long time, refreshing listeners...');
+            log('Page was hidden for long time, refreshing listeners...');
             // Could trigger refresh here if needed
         }
     });
@@ -597,8 +609,12 @@
             return;
         }
 
-        // Find the modal content container
-        const content = modal.querySelector('.modal-content, > div:first-child, > div.bg-white');
+        // Find the modal content container - avoid invalid selectors with combinators
+        const content =
+            modal.querySelector('.modal-content') ||
+            modal.querySelector('.bg-white') ||
+            modal.querySelector('.bg-gray-800') ||
+            modal.children[0];
         if (!content) {
             return;
         }
@@ -648,10 +664,11 @@
     // ================================================
 
     setInterval(function () {
-        if (typeof updateDownloadLimitIndicator === 'function') {
-            updateDownloadLimitIndicator();
+        // Use global function from functional-fixes.js if available
+        if (typeof window.updateDownloadLimitIndicator === 'function') {
+            window.updateDownloadLimitIndicator();
         }
     }, 1000);
 
-    console.log('✅ Critical Fixes loaded successfully!');
+    log('Critical Fixes loaded successfully!');
 })();

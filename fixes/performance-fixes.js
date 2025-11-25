@@ -7,7 +7,9 @@
 (function () {
     'use strict';
 
-    console.log('⚡ GCSEMate Performance Fixes Loading...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG ? Function.prototype.bind.call(console.log, console, '⚡ [Perf]') : () => {}; // eslint-disable-line no-console
 
     /**
      * P-001: Image Lazy Loading
@@ -47,7 +49,7 @@
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
-        console.log('✓ P-001: Image lazy loading enabled');
+        log('P-001: Image lazy loading enabled');
     }
 
     /**
@@ -98,7 +100,9 @@
         },
     };
 
-    // Optimize scroll handlers
+    // Optimize scroll handlers - disabled by default as it modifies prototype
+    // Enable by calling window.GCSEMatePerformance.optimizeScrollHandlers()
+    /* eslint-disable-next-line no-unused-vars */
     /**
      *
      */
@@ -113,7 +117,7 @@
             return originalAddEventListener.call(this, type, listener, options);
         };
 
-        console.log('✓ P-002: Scroll/resize handlers optimized');
+        log('P-002: Scroll/resize handlers optimized');
     }
 
     /**
@@ -169,7 +173,7 @@
             }
         });
 
-        console.log('✓ P-003: Resource preloading configured');
+        log('P-003: Resource preloading configured');
     }
 
     /**
@@ -507,8 +511,8 @@
             }
         });
 
-        console.log(`Above-fold elements: ${aboveFoldElements.length}`);
-        console.log('Run this on page load to identify critical CSS needs');
+        log(`Above-fold elements: ${aboveFoldElements.length}`);
+        log('Run this on page load to identify critical CSS needs');
     }
 
     // Export for use by other modules
@@ -536,7 +540,7 @@
             window.identifyCriticalCSS = identifyCriticalCSS;
         }
 
-        console.log('✅ GCSEMate Performance Fixes Applied');
+        log('GCSEMate Performance Fixes Applied');
     }
 
     // Run on DOM ready

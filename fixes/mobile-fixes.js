@@ -7,7 +7,13 @@
 (function () {
     'use strict';
 
-    console.log('📱 Loading Mobile & Responsive Fixes...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '📱 [Mobile]')
+        : () => {}; // eslint-disable-line no-console
+
+    log('Loading Mobile & Responsive Fixes...');
 
     const mobileStyles = document.createElement('style');
     mobileStyles.id = 'mobile-responsive-fixes';
@@ -695,5 +701,5 @@
 
     mobileObserver.observe(document.body, { childList: true, subtree: true });
 
-    console.log('✅ Mobile & Responsive Fixes loaded successfully!');
+    log('Mobile & Responsive Fixes loaded successfully!');
 })();

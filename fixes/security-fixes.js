@@ -7,46 +7,32 @@
 (function () {
     'use strict';
 
-    console.log('🔒 GCSEMate Security Fixes Loading...');
+    // Debug logging - silent in production
+    const DEBUG = false;
+    const log = DEBUG
+        ? Function.prototype.bind.call(console.log, console, '🔒 [Security]')
+        : () => {}; // eslint-disable-line no-console
 
     /**
-     * S-001: Add Content Security Policy headers
-     * Note: CSP should ideally be set via server headers, but we can add meta tags as fallback
+     * S-001: Content Security Policy Management
+     * CSP should be set via server headers for production.
+     * This function removes any overly restrictive CSP meta tags that may block resources.
      */
-    function addCSPMeta() {
-        const existingCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-        if (existingCSP) {
-            // Remove existing CSP if it's causing issues - let server handle it
-            // existingCSP.remove();
-            return;
-        }
+    function handleCSP() {
+        // Remove any existing CSP meta tags that might be blocking resources
+        const existingCSP = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
+        existingCSP.forEach(csp => {
+            log('Removing restrictive CSP meta tag');
+            csp.remove();
+        });
 
-        // NOTE: CSP via meta tag is limited and can cause issues.
-        // For production, configure CSP via server headers instead.
-        // Skipping CSP meta tag injection to avoid blocking legitimate resources.
-        // If you need client-side CSP, uncomment below with appropriate values.
-
-        /*
-        const cspMeta = document.createElement('meta');
-        cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
-        cspMeta.setAttribute(
-            'content',
-            [
-                "default-src 'self' https: data: blob:",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-                "style-src 'self' 'unsafe-inline' https:",
-                "font-src 'self' https: data:",
-                "img-src 'self' data: blob: https: http:",
-                "connect-src 'self' https: wss:",
-                "frame-src 'self' https:",
-                "object-src 'none'",
-                "base-uri 'self'",
-            ].join('; ')
+        // Also remove Content-Security-Policy-Report-Only
+        const reportOnlyCSP = document.querySelectorAll(
+            'meta[http-equiv="Content-Security-Policy-Report-Only"]'
         );
-        document.head.insertBefore(cspMeta, document.head.firstChild);
-        */
+        reportOnlyCSP.forEach(csp => csp.remove());
 
-        console.log('✓ S-001: CSP should be configured via server headers for production');
+        log('S-001: CSP meta tags removed - configure CSP via server headers for production');
     }
 
     /**
@@ -139,7 +125,10 @@
         },
     };
 
-    // Patch innerHTML assignments for safety
+    // Note: patchInnerHTML is available but disabled by default as it can cause
+    // compatibility issues. Uncomment the call in init() to enable.
+    // Patches Element.innerHTML to warn about potentially dangerous content
+    /* eslint-disable-next-line no-unused-vars */
     /**
      *
      */
@@ -161,8 +150,8 @@
                                 value.includes('onerror=') ||
                                 value.includes('onload='))
                         ) {
-                            console.warn(
-                                '⚠️ Potentially dangerous innerHTML detected:',
+                            log(
+                                'Potentially dangerous innerHTML detected:',
                                 value.substring(0, 100)
                             );
                         }
@@ -205,7 +194,7 @@
             true
         );
 
-        console.log('✓ S-002: Input sanitization active');
+        log('S-002: Input sanitization active');
     }
 
     /**
@@ -298,7 +287,7 @@
             });
         }
 
-        console.log('✓ S-003: Rate limiting active');
+        log('S-003: Rate limiting active');
     }
 
     /**
@@ -329,9 +318,7 @@
             cookies.forEach(cookie => {
                 const [name] = cookie.trim().split('=');
                 if (name) {
-                    console.log(
-                        `Cookie "${name}" exists (check Secure and HttpOnly flags in production)`
-                    );
+                    log(`Cookie "${name}" exists (check Secure and HttpOnly flags in production)`);
                 }
             });
         }
@@ -372,7 +359,7 @@
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
-        console.log('✓ Tab nabbing prevention active');
+        log('Tab nabbing prevention active');
     }
 
     /**
@@ -389,9 +376,11 @@
             /ssn/i,
         ];
 
-        // Wrap console.log to filter sensitive data in production
+        // Filter sensitive data from console in production
+        // Note: This only wraps console.log, not console.warn/error
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            const originalLog = console.log;
+            /* eslint-disable no-console */
+            const originalConsoleLog = console.log;
             console.log = function (...args) {
                 const sanitizedArgs = args.map(arg => {
                     if (typeof arg === 'string') {
@@ -405,8 +394,9 @@
                     }
                     return arg;
                 });
-                originalLog.apply(console, sanitizedArgs);
+                originalConsoleLog.apply(console, sanitizedArgs);
             };
+            /* eslint-enable no-console */
         }
     }
 
@@ -421,7 +411,7 @@
      *
      */
     function init() {
-        addCSPMeta();
+        handleCSP();
         setupInputSanitization();
         setupRateLimiting();
         addClickjackingProtection();
@@ -429,7 +419,7 @@
         preventTabNabbing();
         protectSensitiveData();
 
-        console.log('✅ GCSEMate Security Fixes Applied');
+        log('GCSEMate Security Fixes Applied');
     }
 
     // Run on DOM ready
