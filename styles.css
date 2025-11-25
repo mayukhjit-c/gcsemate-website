@@ -7,14 +7,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Modern Professional Color Palette - Clean & Accessible */
-    --accent-50: 239 246 255;
-    --accent-100: 219 234 254;
-    --accent-300: 147 197 253;
-    --accent-400: 96 165 250;
-    --accent-500: 59 130 246;
-    --accent-600: 37 99 235;
-    --accent-700: 29 78 216;
+    /* Modern Professional Color Palette - Bright GCSEMate Blue */
+    --accent-50: 240 249 255;
+    --accent-100: 224 242 254;
+    --accent-300: 125 211 252;
+    --accent-400: 56 189 248;
+    --accent-500: 14 165 233;
+    --accent-600: 2 132 199;
+    --accent-700: 3 105 161;
+    /* GCSEMate Brand Blue - Bright & Vibrant */
+    --gcsemate-blue: #0ea5e9;
+    --gcsemate-blue-hover: #0284c7;
+    --gcsemate-blue-light: #38bdf8;
     /* Secondary Accent Colors for variety */
     --accent-purple-400: 196 181 253;
     --accent-purple-500: 167 139 250;
@@ -480,7 +484,7 @@ div {
 .btn-gradient,
 button[class*='bg-blue'],
 .btn-primary {
-    background: linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--accent-600)));
+    background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
     border: none;
     border-radius: var(--button-radius);
     color: #ffffff !important;
@@ -494,7 +498,7 @@ button[class*='bg-blue'],
     backface-visibility: hidden;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 12px -2px rgba(var(--accent-500), 0.3);
+    box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.4);
     cursor: pointer;
 }
 
@@ -532,8 +536,8 @@ button[class*='bg-blue']::before,
 button[class*='bg-blue']:hover,
 .btn-primary:hover {
     transform: translateY(-2px) scale(1.02) translateZ(0);
-    box-shadow: 0 10px 30px -6px rgba(var(--accent-500), 0.5);
-    background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));
+    box-shadow: 0 10px 30px -6px rgba(14, 165, 233, 0.5);
+    background: linear-gradient(135deg, #0284c7, #0369a1) !important;
 }
 
 .btn-gradient:hover::before,
@@ -1714,24 +1718,30 @@ iframe {
         0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Accent utility overrides for existing Tailwind blue classes */
+/* Accent utility overrides for existing Tailwind blue classes - Bright GCSEMate Blue */
 .text-blue-600 {
-    color: rgb(var(--accent-600)) !important;
+    color: #0ea5e9 !important;
 }
 .text-blue-700 {
-    color: rgb(var(--accent-700)) !important;
+    color: #0284c7 !important;
 }
 .bg-blue-50 {
-    background-color: rgb(var(--accent-50)) !important;
+    background-color: #f0f9ff !important;
 }
 .bg-blue-100 {
-    background-color: rgb(var(--accent-100)) !important;
+    background-color: #e0f2fe !important;
 }
 .bg-blue-600 {
-    background-color: rgb(var(--accent-600)) !important;
+    background-color: #0ea5e9 !important;
+    color: #ffffff !important;
+}
+.bg-blue-700 {
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
 }
 .hover\:bg-blue-700:hover {
-    background-color: rgb(var(--accent-700)) !important;
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
 }
 .focus\:ring-blue-300:focus {
     --tw-ring-color: rgb(var(--accent-300)) !important;
@@ -7009,4 +7019,53 @@ textarea::placeholder {
 [data-theme='dark'] input::placeholder,
 [data-theme='dark'] textarea::placeholder {
     color: var(--text-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* GCSEMATE BRIGHT BLUE BUTTON OVERRIDE - Final Priority */
+/* ═══════════════════════════════════════════════════════════════ */
+button[class*='bg-blue'],
+.bg-blue-600,
+.bg-blue-700,
+[class*='bg-blue-600'],
+[class*='bg-blue-700'],
+.btn-primary,
+.btn-gradient,
+button.bg-blue-600,
+button.bg-blue-700 {
+    background: #0ea5e9 !important;
+    background-image: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+    color: #ffffff !important;
+}
+
+button[class*='bg-blue']:hover,
+.bg-blue-600:hover,
+.bg-blue-700:hover,
+[class*='bg-blue-600']:hover,
+[class*='bg-blue-700']:hover,
+.btn-primary:hover,
+.btn-gradient:hover,
+button.bg-blue-600:hover,
+button.bg-blue-700:hover {
+    background: #0284c7 !important;
+    background-image: linear-gradient(135deg, #0284c7, #0369a1) !important;
+    color: #ffffff !important;
+}
+
+button[class*='bg-blue'] *,
+.bg-blue-600 *,
+.bg-blue-700 *,
+.btn-primary *,
+.btn-gradient * {
+    color: #ffffff !important;
+}
+
+button[class*='bg-blue'] i,
+button[class*='bg-blue'] svg,
+.bg-blue-600 i,
+.bg-blue-600 svg,
+.btn-primary i,
+.btn-primary svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
 }
