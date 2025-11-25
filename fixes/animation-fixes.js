@@ -150,7 +150,7 @@
 
         .loading-bar-progress {
             height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+            background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--primary));
             background-size: 200% 100%;
             animation: loadingProgress 1.5s ease-in-out infinite;
             border-radius: 2px;
@@ -302,16 +302,6 @@
             100% { background-position: -200% 0; }
         }
 
-        [data-theme="dark"] .skeleton {
-            background: linear-gradient(
-                90deg,
-                #374151 25%,
-                #4b5563 50%,
-                #374151 75%
-            );
-            background-size: 200% 100%;
-        }
-
         /* ================================================ */
         /* MICRO-INTERACTIONS */
         /* ================================================ */
@@ -346,8 +336,8 @@
         }
 
         @keyframes inputFocus {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-            100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            100% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
         }
 
         /* ================================================ */
@@ -422,7 +412,7 @@
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
             border-radius: 2px;
             transition: width 0.3s ease;
         }

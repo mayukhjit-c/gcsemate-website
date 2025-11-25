@@ -20039,114 +20039,27 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* DESIGN IMPROVEMENT #1: DARK MODE SUPPORT - FULL IMPLEMENTATION */
+/* DESIGN IMPROVEMENT #1: LIGHT MODE ONLY - ENFORCED */
 /* ═══════════════════════════════════════════════════════════════ */
 
 /**
- * Initialize and manage dark mode theme
+ * Initialize theme - Enforce Light Mode
  * @returns {void}
  */
 function initTheme() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
-    const themeIcon = document.getElementById('theme-icon');
-    const themeIconMobile = document.getElementById('theme-icon-mobile');
     const html = document.documentElement;
 
-    // Get saved theme or default to light (from server-side preferences)
-    const savedTheme =
-        (window.ServerPreferences && window.ServerPreferences.get('theme')) ||
-        localStorage.getItem('theme') ||
-        'light';
-    html.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme, themeIcon, themeIconMobile);
+    // Force light mode
+    html.setAttribute('data-theme', 'light');
 
-    /**
-     * Toggle theme between light and dark
-     * @returns {void}
-     */
-    function toggleTheme() {
-        const currentTheme = html.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-        // Add smooth fade transition
-        html.style.transition = 'background-color 0.5s ease, color 0.5s ease';
-        document.body.style.transition = 'background-color 0.5s ease, color 0.5s ease';
-
-        // Apply theme with fade
-        html.setAttribute('data-theme', newTheme);
-        // Save to server-side preferences
-        if (window.ServerPreferences) {
-            window.ServerPreferences.set('theme', newTheme).catch(err => {
-                logError(err, 'toggleTheme: ServerPreferences.set');
-            });
-        } else {
-            localStorage.setItem('theme', newTheme);
-        }
-        updateThemeIcon(newTheme, themeIcon, themeIconMobile);
-
-        // Announce theme change for screen readers
-        announceToScreenReader(`Theme changed to ${newTheme} mode`);
-
-        // Remove transition after animation completes to avoid performance issues
-        setTimeout(() => {
-            html.style.transition = '';
-            document.body.style.transition = '';
-        }, 500);
+    // Clear any saved theme preference to avoid confusion
+    if (window.ServerPreferences) {
+        window.ServerPreferences.set('theme', 'light').catch(() => {});
+    } else {
+        localStorage.setItem('theme', 'light');
     }
 
-    /**
-     * Update theme icon based on current theme
-     * @param {string} theme - Current theme ('light' or 'dark')
-     * @param {HTMLElement} icon - Desktop icon element
-     * @param {HTMLElement} iconMobile - Mobile icon element
-     * @returns {void}
-     */
-    function updateThemeIcon(theme, icon, iconMobile) {
-        if (!icon || !iconMobile) {
-            return;
-        }
-        // Use Font Awesome sun/moon icons
-        const iconClass = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-        if (icon) {
-            icon.className = `fas ${iconClass} icon-md`;
-            icon.setAttribute('aria-hidden', 'true');
-        }
-        if (iconMobile) {
-            iconMobile.className = `fas ${iconClass} icon-md`;
-            iconMobile.setAttribute('aria-hidden', 'true');
-        }
-
-        // Update aria-pressed for accessibility
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
-        if (themeToggle) {
-            themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-        }
-        if (themeToggleMobile) {
-            themeToggleMobile.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-        }
-    }
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-        themeToggle.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleTheme();
-            }
-        });
-    }
-
-    if (themeToggleMobile) {
-        themeToggleMobile.addEventListener('click', toggleTheme);
-        themeToggleMobile.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleTheme();
-            }
-        });
-    }
+    // Theme toggles have been removed from DOM, so no event listeners needed
 }
 
 // Initialize theme on DOM ready

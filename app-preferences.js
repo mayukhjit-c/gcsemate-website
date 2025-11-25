@@ -154,13 +154,18 @@ const ServerPreferences = {
      * Apply all preferences to the UI
      */
     applyPreferences() {
-        // Apply theme
-        const theme = this.get('theme', 'light');
+        // Apply theme - Enforce Light Mode
+        const theme = 'light'; // Always enforce light mode
         if (document.documentElement) {
             document.documentElement.setAttribute('data-theme', theme);
+            // Remove dark class if present
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('dark');
+
             if (typeof updateThemeIcon === 'function') {
                 const themeIcon = document.getElementById('theme-icon');
                 const themeIconMobile = document.getElementById('theme-icon-mobile');
+                // Pass 'light' to update icon, though icons are hidden now
                 updateThemeIcon(theme, themeIcon, themeIconMobile);
             }
         }
