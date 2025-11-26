@@ -454,7 +454,7 @@
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com" />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <!-- Main styles -->
     <!-- reCAPTCHA - Load after page load -->
     <script>
         window.addEventListener('load', function () {
@@ -472,7 +472,11 @@
     <link rel="stylesheet" href="animations-enhanced.css" />
     <link rel="stylesheet" href="animation-improvements.css" />
     <link rel="stylesheet" href="responsive-utilities.css" />
+    <!-- Design Fixes - Cleaner, more professional look + cross-browser compatibility -->
+    <link rel="stylesheet" href="design-fixes.css" />
 
+    <!-- Compatibility fixes - Load early to catch display issues -->
+    <script src="compatibility-fixes.js"></script>
     <!-- Security Layer - Copyright © 2024 Mayukhjit Chakraborty -->
     <script src="security.js"></script>
     <!-- Preconnect to Firebase for faster connection -->

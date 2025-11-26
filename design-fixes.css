@@ -1,0 +1,780 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   GCSEMate - Design Fixes for Minimalistic, Clean, Professional Look
+   Cross-browser compatibility fixes included
+   Mobile responsiveness improvements
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 1: Cross-Browser Compatibility Fixes
+   These fixes address display issues on different laptops/browsers
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Reset problematic properties that cause display issues */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Fix for browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+    .glass-card,
+    .glass-card-premium,
+    .glass-card-soft,
+    .glass-card-white,
+    .nav-glass,
+    [class*='glass'] {
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* Safari and older WebKit browsers fix */
+@supports (-webkit-backdrop-filter: blur(10px)) {
+    .glass-card,
+    .glass-card-premium {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+}
+
+/* Firefox compatibility */
+@-moz-document url-prefix() {
+    .glass-card,
+    .glass-card-premium,
+    [class*='glass'] {
+        background: rgba(255, 255, 255, 0.95) !important;
+    }
+}
+
+/* IE11 and Edge Legacy fallback */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    .glass-card,
+    .glass-card-premium,
+    [class*='glass'] {
+        background: #ffffff !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 2: Simplified, Professional Design System
+   Cleaner, more minimalistic approach
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Cleaner color variables - more subtle and professional */
+:root {
+    /* Override with cleaner shadows - less dramatic */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    /* Cleaner border */
+    --border-color: #e5e7eb;
+    --border-color-hover: #d1d5db;
+
+    /* Subtler accent */
+    --accent-500: #5b5fc7;
+    --accent-600: #4f46e5;
+
+    /* Cleaner backgrounds */
+    --bg-primary: #f9fafb;
+    --bg-secondary: #ffffff;
+
+    /* Reduced animation speeds */
+    --animation-fast: 120ms;
+    --animation-normal: 200ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 3: Clean Card Styles - Remove Heavy Glassmorphism
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Simplified card - professional and clean */
+.glass-card,
+.glass-card-premium,
+.glass-card-soft,
+.glass-card-white,
+.card-modern,
+.card-enhanced {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-md) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition:
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease !important;
+}
+
+.glass-card:hover,
+.glass-card-premium:hover,
+.card-modern:hover,
+.card-enhanced:hover {
+    box-shadow: var(--shadow-lg) !important;
+    border-color: var(--border-color-hover) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Subject cards - cleaner design */
+.subject-card {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 1.25rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.subject-card:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-3px) !important;
+    border-color: var(--accent-500) !important;
+}
+
+.subject-card::before {
+    display: none !important; /* Remove gradient overlays */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 4: Clean Button Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Primary button - clean and professional */
+.btn-primary,
+.btn-gradient,
+button[type='submit'],
+.cta-button {
+    background: linear-gradient(135deg, var(--accent-600) 0%, var(--accent-500) 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 500 !important;
+    padding: 0.75rem 1.5rem !important;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2) !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.btn-primary:hover,
+.btn-gradient:hover,
+button[type='submit']:hover,
+.cta-button:hover {
+    background: linear-gradient(
+        135deg,
+        var(--accent-700, #4338ca) 0%,
+        var(--accent-600) 100%
+    ) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Secondary button */
+.btn-secondary,
+.btn-outline {
+    background: transparent !important;
+    border: 1.5px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    padding: 0.75rem 1.5rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-secondary:hover,
+.btn-outline:hover {
+    border-color: var(--accent-500) !important;
+    color: var(--accent-600) !important;
+    background: var(--accent-50, #eef2ff) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 5: Clean Navigation
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Main navigation - professional */
+#main-app-nav,
+.main-app-nav,
+nav.fixed {
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Nav links */
+.nav-link {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 6px !important;
+    transition:
+        color 0.15s ease,
+        background 0.15s ease !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--accent-600) !important;
+    background: var(--accent-50, #eef2ff) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 6: Form Inputs - Clean and Accessible
+   ═══════════════════════════════════════════════════════════════ */
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='number'],
+input[type='tel'],
+input[type='url'],
+input[type='date'],
+textarea,
+select,
+.input-enhanced,
+.input-modern {
+    background: #ffffff !important;
+    border: 1.5px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+    color: var(--text-primary) !important;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease !important;
+    width: 100% !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.input-enhanced:focus,
+.input-modern:focus {
+    outline: none !important;
+    border-color: var(--accent-500) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 7: Typography - Clean and Readable
+   ═══════════════════════════════════════════════════════════════ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.02em !important;
+}
+
+h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
+}
+h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem) !important;
+}
+h3 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem) !important;
+}
+h4 {
+    font-size: clamp(1.125rem, 2vw, 1.25rem) !important;
+}
+
+p {
+    color: var(--text-secondary) !important;
+    line-height: 1.6 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 8: Loading States - Clean
+   ═══════════════════════════════════════════════════════════════ */
+
+#loading-overlay,
+.loading-overlay {
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Simple spinner */
+.loader,
+.loading-spinner {
+    border: 3px solid var(--border-color) !important;
+    border-top-color: var(--accent-500) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    animation: spin 0.8s linear infinite !important;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 9: Modals - Clean and Professional
+   ═══════════════════════════════════════════════════════════════ */
+
+.modal-overlay,
+.popup-overlay,
+[class*='modal'] .fixed {
+    background: rgba(15, 23, 42, 0.5) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+.modal-content,
+.popup-content,
+[class*='modal-content'] {
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    max-width: 90vw !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 10: Mobile Responsiveness Fixes
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Mobile Menu - Clean and Functional */
+@media (max-width: 768px) {
+    /* Mobile menu button - larger touch target */
+    #mobile-menu-toggle,
+    .mobile-menu-toggle,
+    [class*='menu-toggle'] {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.5rem !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    /* Mobile menu panel */
+    #mobile-menu,
+    .mobile-menu {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important; /* Dynamic viewport height for mobile */
+        background: #ffffff !important;
+        z-index: 9999 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: env(safe-area-inset-bottom, 20px) !important;
+    }
+
+    /* Mobile menu links - proper touch targets */
+    #mobile-menu a,
+    .mobile-menu a,
+    .mobile-nav-link {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 48px !important;
+        padding: 0.875rem 1.25rem !important;
+        font-size: 1rem !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        -webkit-tap-highlight-color: rgba(99, 102, 241, 0.1) !important;
+    }
+
+    /* Hide desktop nav on mobile */
+    .desktop-nav,
+    nav .hidden.md\\:flex,
+    .md\\:flex:not(.mobile-visible) {
+        display: none !important;
+    }
+
+    /* Grid fixes for mobile */
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Cards on mobile */
+    .glass-card,
+    .glass-card-premium,
+    .subject-card,
+    .card-modern {
+        margin: 0.5rem !important;
+        padding: 1rem !important;
+    }
+
+    /* Form elements on mobile */
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+
+    /* Container padding on mobile */
+    .container,
+    main,
+    .main-content {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Bottom navigation safe area */
+    .bottom-nav,
+    .mobile-bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    }
+
+    /* Fix text overflow */
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    span {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+}
+
+/* Tablet fixes */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .container {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 11: Animation Cleanup - Reduce Motion
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Simpler animations - less dramatic */
+.animate-on-scroll,
+[class*='animate-'] {
+    animation-duration: 0.3s !important;
+    animation-timing-function: ease-out !important;
+}
+
+/* Remove floating animations that cause distraction */
+.floating,
+.float,
+[class*='floating'],
+.animate-float {
+    animation: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 12: Fix Overflow and Layout Issues
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Prevent horizontal scroll */
+html,
+body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}
+
+/* Fix absolutely positioned elements */
+.absolute {
+    max-width: 100% !important;
+}
+
+/* Fix image overflow */
+img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Fix video containers */
+.video-container,
+iframe,
+video {
+    max-width: 100% !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 13: Landing Page - Professional Look
+   ═══════════════════════════════════════════════════════════════ */
+
+#landing-page {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
+}
+
+.hero-section {
+    background: transparent !important;
+}
+
+/* Remove heavy background animations */
+.hero-section::before,
+.hero-section::after {
+    display: none !important;
+}
+
+/* Clean feature cards */
+.feature-card {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all 0.2s ease !important;
+}
+
+.feature-card:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Testimonial cards - cleaner */
+.testimonial-card {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 14: Print Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+@media print {
+    *,
+    *::before,
+    *::after {
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    nav,
+    .mobile-menu,
+    button,
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 15: High Contrast Mode Support
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #6b7280;
+        --text-secondary: #374151;
+    }
+
+    .glass-card,
+    .card-modern,
+    button {
+        border-width: 2px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 16: Fix Specific Component Issues
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Calendar fixes */
+#calendar-container,
+.calendar-container {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-md) !important;
+    overflow: hidden !important;
+}
+
+/* File browser */
+.file-browser,
+.file-list {
+    background: #ffffff !important;
+}
+
+.file-item {
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.75rem 1rem !important;
+    transition: background 0.15s ease !important;
+}
+
+.file-item:hover {
+    background: var(--bg-primary) !important;
+}
+
+/* Video player container */
+.video-player-container {
+    background: #000 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+/* Search box */
+.search-box,
+.search-input-container {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+}
+
+/* Tags and badges */
+.tag,
+.badge,
+[class*='badge'] {
+    background: var(--accent-50, #eef2ff) !important;
+    color: var(--accent-700, #4338ca) !important;
+    border-radius: 6px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+/* Progress bars */
+.progress-bar {
+    background: var(--border-color) !important;
+    border-radius: 9999px !important;
+    overflow: hidden !important;
+}
+
+.progress-bar-fill,
+.progress-fill {
+    background: linear-gradient(90deg, var(--accent-500), var(--accent-600)) !important;
+    border-radius: 9999px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 17: Scrollbar Styling (Cross-browser)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 var(--bg-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 18: Focus States - Accessibility
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Visible focus for keyboard navigation */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--accent-500) !important;
+    outline-offset: 2px !important;
+}
+
+/* Remove focus outline for mouse users */
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+    outline: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 19: Skeleton Loading States
+   ═══════════════════════════════════════════════════════════════ */
+
+.skeleton,
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 1.5s infinite !important;
+    border-radius: 4px !important;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 20: Toast/Notification Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.toast,
+.notification,
+.alert {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow-lg) !important;
+    padding: 1rem 1.25rem !important;
+}
+
+.toast.success,
+.alert.success {
+    border-left: 4px solid var(--color-success) !important;
+}
+
+.toast.error,
+.alert.error {
+    border-left: 4px solid var(--color-error) !important;
+}
+
+.toast.warning,
+.alert.warning {
+    border-left: 4px solid var(--color-warning) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   END OF DESIGN FIXES
+   ═══════════════════════════════════════════════════════════════ */
