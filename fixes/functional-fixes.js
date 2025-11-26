@@ -1262,12 +1262,14 @@
 
             /* FIX: Study timer stop button - ensure proper visibility */
             #study-stop-btn {
-                display: none;
+                display: none !important;
             }
             #study-stop-btn.visible,
+            #study-stop-btn:not(.hidden),
             body.study-session-active #study-stop-btn {
                 display: inline-flex !important;
             }
+            #study-start-btn.hidden,
             body.study-session-active #study-start-btn {
                 display: none !important;
             }
@@ -1352,11 +1354,10 @@
                         }
                     }, 1000);
 
-                    // Update UI
-                    startBtn.classList.add('hidden');
+                    // Update UI - Use inline styles for reliable toggling
+                    startBtn.style.display = 'none';
                     if (stopBtn) {
-                        stopBtn.classList.remove('hidden');
-                        stopBtn.classList.add('visible');
+                        stopBtn.style.display = 'inline-flex';
                     }
                     document.body.classList.add('study-session-active');
 
@@ -1396,12 +1397,11 @@
                             window.StudyProgress.currentSubject = null;
                         }
 
-                        // Update UI
+                        // Update UI - Use inline styles for reliable toggling
                         if (startBtn) {
-                            startBtn.classList.remove('hidden');
+                            startBtn.style.display = 'inline-flex';
                         }
-                        stopBtn.classList.add('hidden');
-                        stopBtn.classList.remove('visible');
+                        stopBtn.style.display = 'none';
                         document.body.classList.remove('study-session-active');
                     },
                     { capture: true }

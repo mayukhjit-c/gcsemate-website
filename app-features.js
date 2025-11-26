@@ -998,11 +998,23 @@ const StudyPlanner = {
         return this.plans
             .map(
                 plan => `
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3">
-                <h4 class="font-semibold text-gray-900 dark:text-gray-100">${escapeHtml(plan.name)}</h4>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    ${plan.subjects.join(', ')} • ${plan.hoursPerWeek}h/week
-                </p>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 group">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">${escapeHtml(plan.name)}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            ${plan.subjects.join(', ')} • ${plan.hoursPerWeek}h/week
+                        </p>
+                    </div>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="StudyPlanner.editPlan('${plan.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit plan">
+                            <i class="fas fa-pencil-alt text-sm"></i>
+                        </button>
+                        <button onclick="StudyPlanner.deletePlan('${plan.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete plan">
+                            <i class="fas fa-trash-alt text-sm"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         `
             )
@@ -1013,8 +1025,18 @@ const StudyPlanner = {
         return this.goals
             .map(
                 goal => `
-            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3">
-                <h4 class="font-semibold text-gray-900 dark:text-gray-100">${escapeHtml(goal.title)}</h4>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3 group">
+                <div class="flex justify-between items-start">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100">${escapeHtml(goal.title)}</h4>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="StudyPlanner.editGoal('${goal.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit goal">
+                            <i class="fas fa-pencil-alt text-sm"></i>
+                        </button>
+                        <button onclick="StudyPlanner.deleteGoal('${goal.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete goal">
+                            <i class="fas fa-trash-alt text-sm"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="mt-2">
                     <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                         <span>Progress: ${goal.progress || 0}%</span>
@@ -1028,6 +1050,219 @@ const StudyPlanner = {
         `
             )
             .join('');
+    },
+
+    /**
+     * Delete a study plan
+     */
+    async deletePlan(planId) {
+        if (!currentUser || !currentUser.uid) {
+            showToast('You must be logged in', 'error');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this study plan?')) {
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userStudyPlans')
+                .doc(currentUser.uid)
+                .collection('plans')
+                .doc(planId)
+                .delete();
+
+            showToast('Study plan deleted', 'success');
+            await this.loadPlans();
+        } catch (error) {
+            logError(error, 'StudyPlanner.deletePlan');
+            showToast('Failed to delete study plan', 'error');
+        }
+    },
+
+    /**
+     * Delete a goal
+     */
+    async deleteGoal(goalId) {
+        if (!currentUser || !currentUser.uid) {
+            showToast('You must be logged in', 'error');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this goal?')) {
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            await db
+                .collection('userGoals')
+                .doc(currentUser.uid)
+                .collection('goals')
+                .doc(goalId)
+                .delete();
+
+            showToast('Goal deleted', 'success');
+            await this.loadGoals();
+            this.render();
+        } catch (error) {
+            logError(error, 'StudyPlanner.deleteGoal');
+            showToast('Failed to delete goal', 'error');
+        }
+    },
+
+    /**
+     * Edit a study plan
+     */
+    async editPlan(planId) {
+        const plan = this.plans.find(p => p.id === planId);
+        if (!plan) {
+            showToast('Plan not found', 'error');
+            return;
+        }
+
+        // Create edit modal
+        const modal = document.createElement('div');
+        modal.id = 'edit-plan-modal';
+        modal.className =
+            'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Edit Study Plan</h2>
+                    <button onclick="document.getElementById('edit-plan-modal').remove()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form id="edit-plan-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Plan Name</label>
+                        <input type="text" id="edit-plan-name" value="${escapeHtml(plan.name)}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Hours Per Week</label>
+                        <input type="number" id="edit-plan-hours" value="${plan.hoursPerWeek}" min="1" max="40" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="document.getElementById('edit-plan-modal').remove()"
+                            class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Save</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('edit-plan-form').onsubmit = async e => {
+            e.preventDefault();
+            const name = document.getElementById('edit-plan-name').value.trim();
+            const hoursPerWeek = parseInt(document.getElementById('edit-plan-hours').value);
+
+            try {
+                const db = getFirestore();
+                await db
+                    .collection('userStudyPlans')
+                    .doc(currentUser.uid)
+                    .collection('plans')
+                    .doc(planId)
+                    .update({
+                        name,
+                        hoursPerWeek,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+
+                showToast('Plan updated successfully', 'success');
+                modal.remove();
+                await this.loadPlans();
+            } catch (error) {
+                logError(error, 'StudyPlanner.editPlan');
+                showToast('Failed to update plan', 'error');
+            }
+        };
+    },
+
+    /**
+     * Edit a goal
+     */
+    async editGoal(goalId) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal) {
+            showToast('Goal not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'edit-goal-modal';
+        modal.className =
+            'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Edit Goal</h2>
+                    <button onclick="document.getElementById('edit-goal-modal').remove()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form id="edit-goal-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Goal Title</label>
+                        <input type="text" id="edit-goal-title" value="${escapeHtml(goal.title)}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Target Hours</label>
+                        <input type="number" id="edit-goal-hours" value="${goal.targetHours || 0}" min="1" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Progress (%)</label>
+                        <input type="number" id="edit-goal-progress" value="${goal.progress || 0}" min="0" max="100"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="document.getElementById('edit-goal-modal').remove()"
+                            class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancel</button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Save</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('edit-goal-form').onsubmit = async e => {
+            e.preventDefault();
+            const title = document.getElementById('edit-goal-title').value.trim();
+            const targetHours = parseInt(document.getElementById('edit-goal-hours').value);
+            const progress = parseInt(document.getElementById('edit-goal-progress').value);
+
+            try {
+                const db = getFirestore();
+                await db
+                    .collection('userGoals')
+                    .doc(currentUser.uid)
+                    .collection('goals')
+                    .doc(goalId)
+                    .update({
+                        title,
+                        targetHours,
+                        progress,
+                        completed: progress >= 100,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+
+                showToast('Goal updated successfully', 'success');
+                modal.remove();
+                await this.loadGoals();
+                this.render();
+            } catch (error) {
+                logError(error, 'StudyPlanner.editGoal');
+                showToast('Failed to update goal', 'error');
+            }
+        };
     },
 };
 

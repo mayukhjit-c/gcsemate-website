@@ -1404,11 +1404,6 @@
                                 onclick="showPage('study-planner-page')">
                                 Open study planner
                             </button>
-                            <button type="button"
-                                class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-                                onclick="showPage('notes-page')">
-                                Review notes
-                            </button>
                         </div>
                     </div>
                     <div class="utility-toolbar mb-8" data-animate="fade-up">
@@ -1469,16 +1464,16 @@
                                 aria-label="Study subject" />
                             <div class="flex flex-wrap gap-2">
                                 <button id="study-start-btn"
-                                    class="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                                    class="study-session-btn flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors"
                                     type="button">
                                     <i class="fas fa-play"></i>
                                     Start session
                                 </button>
                                 <button id="study-stop-btn"
-                                    class="hidden flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold shadow-sm hover:bg-red-600 transition-colors"
-                                    type="button">
+                                    class="study-session-btn flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold shadow-sm hover:bg-red-600 transition-colors"
+                                    type="button" style="display: none;">
                                     <i class="fas fa-stop-circle"></i>
-                                    Stop
+                                    Stop session
                                 </button>
                                 <button id="study-history-toggle"
                                     class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"

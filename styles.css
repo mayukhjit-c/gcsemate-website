@@ -4606,6 +4606,11 @@ a:not(.nav-link):not(.btn):not([class*='bg-']):hover {
 }
 
 #videos-page .playlist-card i.fa-trash-alt {
+    color: #ef4444 !important; /* Red color for delete icon */
+}
+
+/* Keep delete icon white when inside red background button */
+#videos-page .playlist-card button[class*='bg-red'] i.fa-trash-alt {
     color: #ffffff !important;
 }
 
