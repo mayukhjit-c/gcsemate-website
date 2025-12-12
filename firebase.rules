@@ -12,9 +12,6 @@ service cloud.firestore {
     }
     function isAdmin() { return isSignedIn() && userDoc().role == 'admin'; }
     function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
-    function allowedNotificationKeys(data) {
-      return data.keys().hasOnly(['userId','title','message','type','timestamp','read','createdAt','updatedAt']);
-    }
 
     // Users collection
     match /users/{uid} {
@@ -128,16 +125,8 @@ service cloud.firestore {
     // USER STUDY PLANS
     match /userStudyPlans/{uid} {
       allow read, write: if false; // disallow direct doc ops at root
-
-      // Legacy subjects collection
       match /subjects/{subjectId} {
         allow read, write: if isSignedIn() && request.auth.uid == uid;
-      }
-
-      // New plans collection
-      match /plans/{planId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
       }
     }
 
@@ -151,84 +140,18 @@ service cloud.firestore {
 
     // USER EXAM RESULTS
     match /userExamResults/{uid} {
-      allow read, write: if false; // disallow direct doc ops at root
+      allow read, write: if false;
       match /subjects/{subjectId} {
-        // Allow read if user owns the data OR if admin is reading
-        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
-
-        // Allow create/update with validation
-        allow create: if isSignedIn() && request.auth.uid == uid &&
-          request.resource.data.keys().hasAll(['exams']) &&
-          request.resource.data.exams is list;
-
-        allow update: if isSignedIn() && request.auth.uid == uid &&
-          request.resource.data.keys().hasAll(['exams']) &&
-          request.resource.data.exams is list;
-
-        // Allow delete if user owns the data
-        allow delete: if isSignedIn() && request.auth.uid == uid;
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
       }
     }
 
     // USER STUDY SESSIONS (analytics - created by the signed-in user, readable by admin)
     match /userStudySessions/{sessionId} {
       allow create: if isSignedIn() &&
-        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes','createdAt','updatedAt']) &&
+        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes']) &&
         request.resource.data.userId == request.auth.uid;
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow update: if isSignedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.keys().hasOnly(['userId','subject','startedAt','endedAt','durationMs','durationMinutes','createdAt','updatedAt']) &&
-        request.resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-    }
-
-    match /userSearchPreferences/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow create, update: if isSignedIn() &&
-        request.auth.uid == uid &&
-        request.resource.data.keys().hasOnly(['history','savedSearches','updatedAt']) &&
-        (
-          !request.resource.data.keys().hasAll(['history']) ||
-          (request.resource.data.history is list && request.resource.data.history.size() <= 20)
-        ) &&
-        (
-          !request.resource.data.keys().hasAll(['savedSearches']) ||
-          (request.resource.data.savedSearches is list && request.resource.data.savedSearches.size() <= 20)
-        );
-    }
-
-    match /userNotifications/{uid} {
-      allow read, write: if false;
-      match /items/{notificationId} {
-        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
-        // Users can create their own notifications
-        allow create: if isSignedIn() &&
-          request.auth.uid == uid &&
-          allowedNotificationKeys(request.resource.data) &&
-          request.resource.data.userId == request.auth.uid &&
-          request.resource.data.title is string &&
-          request.resource.data.message is string &&
-          request.resource.data.type is string &&
-          request.resource.data.read is bool;
-        // Admins can create notifications for any user
-        allow create: if isAdmin() &&
-          allowedNotificationKeys(request.resource.data) &&
-          request.resource.data.userId == uid &&
-          request.resource.data.title is string &&
-          request.resource.data.message is string &&
-          request.resource.data.type is string &&
-          request.resource.data.read is bool;
-        allow update: if isSignedIn() &&
-          request.auth.uid == uid &&
-          allowedNotificationKeys(request.resource.data) &&
-          resource.data.userId == request.auth.uid &&
-          (
-            !request.resource.data.keys().hasAll(['userId']) ||
-            request.resource.data.userId == request.auth.uid
-          );
-        allow delete: if isSignedIn() && (request.auth.uid == uid || isAdmin());
-      }
     }
 
     // USER FILE VIEWS (analytics - created by the signed-in user, readable by admin)
@@ -354,7 +277,7 @@ service cloud.firestore {
       // Users can read their own request counts
       allow read: if isSignedIn() && requestId.matches(request.auth.uid + '_.*');
       // Users can write their own request counts (server validates, client writes)
-      allow create, update: if isSignedIn() &&
+      allow create, update: if isSignedIn() && 
         requestId.matches(request.auth.uid + '_.*') &&
         request.resource.data.keys().hasOnly(['userId','date','count','lastRequestAt']) &&
         request.resource.data.userId == request.auth.uid &&
@@ -369,237 +292,6 @@ service cloud.firestore {
       allow read: if isAdmin();
       // Admins can write global stats
       allow write: if isAdmin();
-    }
-
-    // USER PREFERENCES (migrated from localStorage - all client-side data now server-side)
-    match /userPreferences/{uid} {
-      // Users can only access their own preferences
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      // Admins can read for support
-      allow read: if isAdmin();
-
-      // Validation for preferences data - allow all preference fields
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-    }
-
-    // USER RATE LIMITER DATA (server-side rate limiting)
-    match /userRateLimiters/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
-
-      // Validation
-      allow create, update: if isSignedIn() && request.auth.uid == uid &&
-        request.resource.data.keys().hasOnly([
-          'signInAttempts', 'passwordResetAttempts', 'downloadAttempts',
-          'lastUpdated', 'createdAt'
-        ]);
-    }
-
-    // AI Tutor Conversation History
-    match /aiTutorConversations/{uid} {
-      allow read, write: if false;
-      match /sessions/{sessionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // FLASHCARDS SYSTEM
-    match /userFlashcards/{uid} {
-      allow read, write: if false;
-      match /decks/{deckId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-      match /cards/{cardId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // STUDY PLANNER & GOALS (Merged into USER STUDY PLANS above)
-    // match /userStudyPlans/{uid} { ... } - REMOVED DUPLICATE
-
-    match /userGoals/{uid} {
-      allow read, write: if false;
-      match /goals/{goalId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // PRACTICE QUESTIONS
-    match /practiceQuestions/{questionId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-    match /userPracticeSessions/{uid} {
-      allow read, write: if false;
-      match /sessions/{sessionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // NOTES & ANNOTATIONS (Enhanced)
-    match /userNotes/{uid} {
-      allow read, write: if false;
-      match /notes/{noteId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // STUDY GROUPS & COLLABORATION
-    match /studyGroups/{groupId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() &&
-        (isAdmin() || resource.data.ownerId == request.auth.uid);
-      match /members/{memberId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn() &&
-          (isAdmin() || resource.data.ownerId == request.auth.uid);
-        allow update, delete: if isSignedIn() &&
-          (isAdmin() || resource.data.ownerId == request.auth.uid || request.auth.uid == memberId);
-      }
-      match /sharedResources/{resourceId} {
-        allow read: if isSignedIn();
-        allow create, update, delete: if isSignedIn() &&
-          (isAdmin() || resource.data.ownerId == request.auth.uid);
-      }
-      match /messages/{messageId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn();
-        allow update, delete: if isSignedIn() &&
-          (isAdmin() || resource.data.authorId == request.auth.uid);
-      }
-    }
-
-    // ACHIEVEMENTS & GAMIFICATION
-    match /userAchievements/{uid} {
-      allow read, write: if false;
-      match /achievements/{achievementId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-    match /userXP/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-    }
-    match /leaderboards/{leaderboardId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    // REVISION TIMETABLES
-    match /userTimetables/{uid} {
-      allow read, write: if false;
-      match /timetables/{timetableId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // PAST PAPER ANALYZER
-    match /userPastPapers/{uid} {
-      allow read, write: if false;
-      match /papers/{paperId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-      match /analyses/{analysisId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // VOICE NOTES & AUDIO
-    match /userVoiceNotes/{uid} {
-      allow read, write: if false;
-      match /notes/{noteId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-    match /userAudioStudy/{uid} {
-      allow read, write: if false;
-      match /playlists/{playlistId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // EXPORTS & REPORTS
-    match /userExports/{uid} {
-      allow read, write: if false;
-      match /exports/{exportId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // ENHANCED SEARCH
-    match /userSearchHistory/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
-    }
-    match /userSavedSearches/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
-    }
-
-    // ENHANCED CALENDAR (Recurring Events)
-    match /userRecurringEvents/{uid} {
-      allow read, write: if false;
-      match /events/{eventId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // VIDEO PROGRESS TRACKING
-    match /userVideoProgress/{uid} {
-      allow read, write: if false;
-      match /videos/{videoId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-    match /userVideoNotes/{uid} {
-      allow read, write: if false;
-      match /notes/{noteId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // BLOG ENHANCEMENTS
-    match /userBlogBookmarks/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
-    }
-
-    // FILE COLLECTIONS
-    match /userFileCollections/{uid} {
-      allow read, write: if false;
-      match /collections/{collectionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
-        allow read: if isAdmin();
-      }
-    }
-
-    // ADMIN ANALYTICS
-    match /adminAnalytics/{analyticsId} {
-      allow read, write: if isAdmin();
-    }
-    match /contentAnalytics/{analyticsId} {
-      allow read, write: if isAdmin();
-    }
-    match /automatedReports/{reportId} {
-      allow read, write: if isAdmin();
     }
   }
 }
