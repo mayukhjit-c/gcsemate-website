@@ -94,10 +94,10 @@ Initializes lazy loading for images using IntersectionObserver.
 - `/` - Focus search input
 - `g` then `d` - Go to Dashboard
 - `g` then `v` - Go to Videos
-- `g` then `b` - Go to Blog
-- `g` then `c` - Go to Calendar
-- `g` then `t` - Go to AI Tutor (Pro only)
-- `Esc` - Close modals
+-- `g` then `b` - Go to Blog
+-- `g` then `c` - Go to Calendar
+-- `g` then `t` - Go to AI Tutor (Pro only) — REMOVED
+-- `Esc` - Close modals
 
 ## Event Handlers
 

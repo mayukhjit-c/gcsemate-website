@@ -72,10 +72,19 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Video playlists: readable by signed-in; writable by admin
+    // Video playlists: readable by signed-in; writable only by admin.
+    // Admins are expected to manage playlist metadata (title, playlistId, subject, tags, url).
     match /videoPlaylists/{id} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin() &&
+        // Only allow a controlled set of fields so clients cannot inject arbitrary data.
+        request.resource.data.keys().hasOnly(['title','playlistId','subject','tags','url','createdAt','createdBy','updatedAt']) &&
+        // Basic type checks
+        request.resource.data.title is string &&
+        request.resource.data.playlistId is string &&
+        // tags must be a list (may be empty); limit size for safety
+        (request.resource.data.tags is list) &&
+        request.resource.data.tags.size() <= 50;
     }
 
     // Useful links: readable by signed-in; writable by admin
@@ -86,8 +95,16 @@ service cloud.firestore {
 
     // Blog posts and comments
     match /blogPosts/{postId} {
+      // Posts are authoritatively managed by admins. Clients may read.
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin() &&
+        // Enforce a constrained set of fields for blog posts
+        request.resource.data.keys().hasOnly(['title','content','image','tags','subject','createdAt','createdBy','updatedAt']) &&
+        request.resource.data.title is string &&
+        request.resource.data.content is string &&
+        // tags optional but if present must be a list and limited in size
+        (request.resource.data.tags is list) &&
+        request.resource.data.tags.size() <= 50;
 
       match /comments/{commentId} {
         allow read: if isSignedIn();
@@ -102,6 +119,14 @@ service cloud.firestore {
         allow delete: if isSignedIn() &&
           (isAdmin() || resource.data.authorId == request.auth.uid);
       }
+    }
+
+    // Playlist tags: centralized tag management controlled by admins.
+    match /playlistTags/{tagId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['name','createdAt','createdBy']) &&
+        request.resource.data.name is string && request.resource.data.name.size() > 0;
     }
 
     // Global events
@@ -272,27 +297,8 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // AI Tutor Request Tracking
-    match /aiTutorRequests/{requestId} {
-      // Users can read their own request counts
-      allow read: if isSignedIn() && requestId.matches(request.auth.uid + '_.*');
-      // Users can write their own request counts (server validates, client writes)
-      allow create, update: if isSignedIn() && 
-        requestId.matches(request.auth.uid + '_.*') &&
-        request.resource.data.keys().hasOnly(['userId','date','count','lastRequestAt']) &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.count is int &&
-        request.resource.data.count >= 0 &&
-        request.resource.data.count <= 200; // Max safety limit
-    }
-
-    // AI Tutor Global Stats (provider usage tracking)
-    match /aiTutorGlobalStats/{statId} {
-      // Only admins can read global stats
-      allow read: if isAdmin();
-      // Admins can write global stats
-      allow write: if isAdmin();
-    }
+    // AI Tutor rules removed: feature deprecated and endpoint disabled.
+    // If you later reintroduce an AI feature, re-add request-tracking and global stats rules with proper validation and admin controls.
   }
 }
 

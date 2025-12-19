@@ -42,11 +42,11 @@ GCSEMate is a single-page application (SPA) built with vanilla JavaScript, HTML,
 
 ### Page Components
 - `subject-dashboard-page` - Subject selection
-- `videos-page` - Video playlists
-- `blog-page` - Blog posts
-- `calendar-page` - Calendar view
-- `ai-tutor-page` - AI tutoring
-- `account-settings-page` - User settings
+-- `videos-page` - Video playlists
+-- `blog-page` - Blog posts
+-- `calendar-page` - Calendar view
+-- `ai-tutor-page` - AI tutoring (REMOVED)
+-- `account-settings-page` - User settings
 
 ### Modal Components
 - `confirmation-modal` - Confirmation dialogs

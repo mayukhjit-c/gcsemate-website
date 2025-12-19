@@ -9053,7 +9053,10 @@ function renderVideosPage(playlists) {
     if (!grid || !adminForm) return;
     // Show admin form if user is admin
     adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    // store global playlists for filtering
+    window.allPlaylists = playlists || [];
     grid.innerHTML = '';
+    populatePlaylistSubjectFilter(window.allPlaylists);
     if (!playlists || playlists.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Available Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for curated revision videos.</p></div>`;
         return;
@@ -9083,41 +9086,113 @@ function renderVideosPage(playlists) {
         if (existing) { existing.replaceWith(node); } else { document.head.appendChild(node); }
     } catch(_){}
 
-    playlists.forEach(playlist => {
-        const card = document.createElement('div');
-        card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
-        card.onclick = () => handlePlaylistClick(playlist);
-        const playlistUrl = playlist.url || '';
-        card.innerHTML = `
-            <div class="flex-grow flex flex-col justify-center items-center text-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 class="font-bold text-gray-800 leading-tight">${playlist.title}</h3>
-            </div>
-             <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
-                 <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
-                 ${playlistUrl ? `
-                 <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
-                     <i class="fas fa-external-link-alt"></i>
-                     <span>Open</span>
-                 </button>
-                 ` : ''}
-            </div>
-            ${currentUser.role === 'admin' ? `
-            <div class="absolute top-2 right-2 flex gap-1">
-                <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${playlist.title.replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
-                </button>
-                <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-            </div>` : ''}
-        `;
-        grid.appendChild(card);
+    // Use client-side filters and render via createPlaylistCard
+    try {
+        setupPlaylistFilters();
+    } catch (e) {
+        // Fallback: simple render
+        playlists.forEach(p => grid.appendChild(createPlaylistCard(p)));
+    }
+    return;
+}
+
+function populatePlaylistSubjectFilter(playlists) {
+    const select = document.getElementById('playlist-subject-filter');
+    if (!select) return;
+    const subjects = new Set(playlists.map(p => (p.subject||'').trim()).filter(Boolean));
+    // clear existing (keep 'all')
+    select.querySelectorAll('option:not([value="all"])').forEach(o => o.remove());
+    Array.from(subjects).sort().forEach(s => {
+        const opt = document.createElement('option'); opt.value = s; opt.textContent = s; select.appendChild(opt);
     });
 }
+
+// Filtering and rendering wrapper
+function setupPlaylistFilters() {
+    const search = document.getElementById('playlist-search');
+    const subjectFilter = document.getElementById('playlist-subject-filter');
+    const tagFilter = document.getElementById('playlist-tag-filter');
+    const sortSelect = document.getElementById('playlist-sort');
+    const grid = document.getElementById('playlist-grid');
+    if (!grid) return;
+
+    function applyFilters() {
+        const term = (search?.value||'').toLowerCase().trim();
+        const subject = (subjectFilter?.value||'all');
+        const tagsRaw = (tagFilter?.value||'').toLowerCase().trim();
+        const tags = tagsRaw ? tagsRaw.split(/[\s,]+/).filter(Boolean) : [];
+        const sortBy = (sortSelect?.value||'newest');
+        let list = (window.allPlaylists||[]).slice();
+        if (subject && subject !== 'all') list = list.filter(p => (p.subject||'').toLowerCase() === subject.toLowerCase());
+        if (term) list = list.filter(p => (p.title||'').toLowerCase().includes(term) || (p.tags||[]).join(' ').toLowerCase().includes(term));
+        if (tags.length) list = list.filter(p => {
+            const ptags = (p.tags||[]).map(t=>t.toLowerCase());
+            return tags.every(t => ptags.includes(t));
+        });
+        if (sortBy === 'title') list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+        else list.sort((a,b)=> new Date(b.createdAt?.seconds?b.createdAt.seconds*1000:b.createdAt||b._ts||Date.now()) - new Date(a.createdAt?.seconds?a.createdAt.seconds*1000:a.createdAt||a._ts||Date.now()));
+        // re-render grid
+        grid.innerHTML = '';
+        if (list.length === 0) {
+            grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Found</h3></div>`;
+            return;
+        }
+        list.forEach(p => grid.appendChild(createPlaylistCard(p)));
+    }
+
+    // debounce handlers
+    let dT;
+    [search, subjectFilter, tagFilter, sortSelect].forEach(el => {
+        if (!el) return;
+        el.addEventListener('input', () => { clearTimeout(dT); dT = setTimeout(applyFilters, 220); });
+        el.addEventListener('change', () => { clearTimeout(dT); dT = setTimeout(applyFilters, 120); });
+    });
+
+    // initial render
+    applyFilters();
+}
+
+function createPlaylistCard(playlist) {
+    const card = document.createElement('div');
+    card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+    card.onclick = () => handlePlaylistClick(playlist);
+    const playlistUrl = playlist.url || '';
+    const tags = (playlist.tags||[]).map(t=>escapeHTML(t)).slice(0,5);
+    card.innerHTML = `
+        <div class="flex-grow flex flex-col justify-center items-center text-center">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="font-bold text-gray-800 leading-tight">${escapeHTML(playlist.title)}</h3>
+            ${tags.length ? `<div class="mt-2 flex gap-2 flex-wrap justify-center">${tags.map(t=>`<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${t}</span>`).join('')}</div>` : ''}
+        </div>
+         <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
+             <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
+             ${playlistUrl ? `
+             <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
+                 <i class="fas fa-external-link-alt"></i>
+                 <span>Open</span>
+             </button>
+             ` : ''}
+        </div>
+        ${currentUser.role === 'admin' ? `
+        <div class="absolute top-2 right-2 flex gap-1">
+            <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title||'').replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
+            </button>
+            <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+        </div>` : ''}
+    `;
+    return card;
+}
+
+// wire up playlist filters when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    try { setupPlaylistFilters(); } catch (_) {}
+});
 
 // =================================================================================
     // Lessons removed
@@ -9263,6 +9338,9 @@ async function handleAddPlaylist() {
         const playlistData = {
             title: title,
             playlistId: youtubeData.id,
+            subject: (document.getElementById('playlist-subject')?.value || '').trim(),
+            tags: (document.getElementById('playlist-tags')?.value || '').split(/[\s,]+/).map(t=>t.trim()).filter(Boolean),
+            url: url,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         await db.collection('videoPlaylists').add(playlistData);
@@ -10250,7 +10328,11 @@ function setupBlogPasteHandler() {
                 for (const item of imageItems) {
                     const file = item.getAsFile();
                     if (file) {
-                        await insertBlogImageFromFile(file, 'paste');
+                    window.allBlogPosts = posts || [];
+                    grid.innerHTML = '';
+                    populateBlogSubjectFilter(window.allBlogPosts);
+                    applyBlogFilters();
+                    return;
                     }
                 }
                 return;

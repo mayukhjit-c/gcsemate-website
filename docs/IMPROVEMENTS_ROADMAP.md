@@ -157,12 +157,8 @@
 - Create study pattern insights (best times, most productive subjects)
 - Export study data for external analysis
 
-### 2. **AI Tutor Improvements**
-- Save conversation history per session
-- Add conversation export (PDF/text)
-- Implement context memory across sessions
-- Add subject-specific tutor modes
-- Create practice question generation from AI
+### 2. **AI Tutor Improvements (Removed)**
+The AI Tutor feature has been removed from the product and deployment. The items that were previously listed here have been archived. If you plan to reintroduce any AI functionality, reopen this section and add implementation details.
 
 ### 3. **Search Functionality Expansion**
 - Add advanced search filters (file type, date, subject)

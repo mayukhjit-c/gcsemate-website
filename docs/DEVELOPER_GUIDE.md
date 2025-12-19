@@ -119,7 +119,7 @@ npm run test:a11y
 ### External APIs
 - Google Drive API
 - YouTube API
-- Groq API (AI Tutor)
+- Groq API (AI Tutor) - REMOVED (feature deprecated)
 
 ## Deployment
 

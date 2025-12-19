@@ -206,12 +206,8 @@
 - Add export study progress reports
 - Create shareable study plans
 
-### 9. **Advanced AI Tutor Features**
-- Add conversation history
-- Implement context-aware responses
-- Include subject-specific tutoring modes
-- Add practice question generation
-- Create personalized learning paths
+### 9. **Advanced AI Tutor Features (Removed)**
+This section has been archived — the AI Tutor feature is no longer part of the active product. The ideas here can be reconsidered if an AI feature is reintroduced in the future.
 
 ### 10. **Performance Optimizations**
 - Implement lazy loading for images
