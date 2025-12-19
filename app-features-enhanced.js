@@ -377,27 +377,9 @@ Explain clearly why each wrong option is incorrect to help students learn from t
             // Get Firebase Auth token for server-side verification
             const idToken = await firebase.auth().currentUser.getIdToken();
 
-            const response = await fetch('/api/ai-tutor', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${idToken}`,
-                },
-                body: JSON.stringify({
-                    message: prompt,
-                    userId: currentUser.uid,
-                    conversationHistory: [],
-                    userSubjects: [subject],
-                    userData: {
-                        tier: currentUser.tier,
-                        role: currentUser.role,
-                        aiMaxRequestsDaily: currentUser.aiMaxRequestsDaily,
-                        aiAccessBlocked: currentUser.aiAccessBlocked,
-                    },
-                    currentRequestCount: currentRequestCount,
-                    aiType: 'general',
-                }),
-            });
+            // AI Tutor has been removed - abort AI-based quiz generation
+            showToast('AI Tutor has been removed and is no longer available.', 'error');
+            throw new Error('AI Tutor removed');
 
             const data = await response.json();
 

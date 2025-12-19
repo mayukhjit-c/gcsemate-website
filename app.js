@@ -1,7 +1,7 @@
 // GCSEMate - GCSE Revision Platform
 // Proudly made using no generative AI
 // Handcrafted with pure JavaScript, HTML, and CSS by Mayukhjit Chakraborty
-// Copyright © 2024 Mayukhjit Chakraborty. All rights reserved.
+// Copyright © 2025 Mayukhjit Chakraborty. All rights reserved.
 // Protected by copyright and trade secret laws.
 // Unauthorized copying, reproduction, or distribution is strictly prohibited.
 
@@ -1645,7 +1645,7 @@ function startRealtimeAnalytics() {
 }
 
 // Enhanced real-time analytics  
-// Copyright © 2024 Mayukhjit Chakraborty. All rights reserved.
+// Copyright © 2025 Mayukhjit Chakraborty. All rights reserved.
 async function updateAnalyticsRealtime() {
     try {
         // Get active sessions in real-time
@@ -3111,25 +3111,8 @@ function cleanAIResponse(text) {
 }
 
 function updateAITutorNavVisibility() {
-    const isPaidOrAdmin = currentUser && ((currentUser.tier === 'paid') || ((currentUser.role || '').toLowerCase() === 'admin'));
-    const desktopNav = document.getElementById('ai-tutor-nav');
-    const mobileNav = document.getElementById('ai-tutor-nav-mobile');
-    
-    if (desktopNav) {
-        if (isPaidOrAdmin) {
-            desktopNav.classList.remove('hidden');
-        } else {
-            desktopNav.classList.add('hidden');
-        }
-    }
-    
-    if (mobileNav) {
-        if (isPaidOrAdmin) {
-            mobileNav.classList.remove('hidden');
-        } else {
-            mobileNav.classList.add('hidden');
-        }
-    }
+    // AI Tutor removed - navigation visibility is not needed
+    return;
 }
 
 let lastUserMessage = null;
@@ -3265,6 +3248,11 @@ async function sendAIMessage(retryMessage = null) {
     
     // Store message for retry
     lastUserMessage = message;
+
+    // Feature removed: bail out early
+    showToast('AI Tutor has been removed and is no longer available.', 'error');
+    showPage('features-page');
+    return;
     
     // Disable input and button
     chatInput.disabled = true;
@@ -8333,61 +8321,7 @@ function showPage(pageId) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
     
-    // Initialize AI Tutor when page is shown
-    if (pageId === 'ai-tutor-page') {
-        // Check access
-        if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
-            showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
-            showPage('features-page');
-            return;
-        }
-        setTimeout(async () => {
-            initializeAITutor();
-            // Reset conversation if needed
-            const chatMessages = document.getElementById('ai-chat-messages');
-            if (chatMessages && chatMessages.children.length === 1) {
-                // Only welcome message, conversation is fresh
-                aiConversationHistory = [];
-            }
-            
-            // Load current request count
-            const tokenUsageEl = document.getElementById('ai-token-usage');
-            if (tokenUsageEl && currentUser) {
-                const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
-                if (isAdmin) {
-                    tokenUsageEl.textContent = `Requests: Unlimited (Admin)`;
-                    tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
-                    tokenUsageEl.classList.add('bg-green-50', 'border-green-200');
-                } else {
-                    try {
-                        const today = new Date().toISOString().split('T')[0];
-                        const docId = `${currentUser.uid}_${today}`;
-                        const requestDoc = await db.collection('aiTutorRequests').doc(docId).get();
-                        const currentCount = requestDoc.exists ? (requestDoc.data().count || 0) : 0;
-                        const maxRequests = currentUser.aiMaxRequestsDaily || 50;
-                        aiRequestCount = currentCount;
-                        aiMaxRequests = maxRequests;
-                        
-                        tokenUsageEl.textContent = `Requests: ${currentCount} / ${maxRequests}`;
-                        const remaining = maxRequests - currentCount;
-                        if (remaining === 0) {
-                            tokenUsageEl.classList.add('bg-red-50', 'border-red-200');
-                            tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-yellow-50', 'border-yellow-200');
-                        } else if (remaining <= 10) {
-                            tokenUsageEl.classList.add('bg-yellow-50', 'border-yellow-200');
-                            tokenUsageEl.classList.remove('bg-blue-50', 'border-blue-200', 'bg-red-50', 'border-red-200');
-                        } else {
-                            tokenUsageEl.classList.remove('bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
-                            tokenUsageEl.classList.add('bg-blue-50', 'border-blue-200');
-                        }
-                    } catch (error) {
-                        console.error('Error loading request count:', error);
-                        tokenUsageEl.textContent = `Requests: 0 / ${currentUser.aiMaxRequestsDaily || 50}`;
-                    }
-                }
-            }
-        }, 100);
-    }
+    // AI Tutor initialization removed (feature disabled)
 
     if (current && current !== newPage) {
         // Modern iOS-like leave
@@ -8439,7 +8373,7 @@ function showAnnouncement(message) {
         announcementBanner.innerHTML = `<div class="bg-blue-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-between relative">
             <div class="flex items-center gap-3">
                 <span class="truncate">${message}</span>
-                ${progressText ? `<span class="text-blue-100 text-xs whitespace-nowrap">${progressText}</span>` : ''}
+                ${typeof progressText !== 'undefined' && progressText ? `<span class="text-blue-100 text-xs whitespace-nowrap">${progressText}</span>` : ''}
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="restoreLastAnnouncement()" class="text-xs underline decoration-white/50 hover:decoration-white/80">Restore</button>
@@ -8646,7 +8580,7 @@ async function renderDashboard() {
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
-                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just 20p/month (excluding VAT).';
+                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1 a month.';
                         document.getElementById('upgrade-modal').style.display = 'flex';
                         return;
                     }
@@ -11626,8 +11560,7 @@ const pageTitles = {
     'about-page': 'About - GCSEMate',
     'features-page': 'Features & Pricing - GCSEMate',
     'help-page': 'Help/FAQ - GCSEMate',
-    'checkout-page': 'Upgrade - GCSEMate',
-    'ai-tutor-page': 'AI Tutor - GCSEMate'
+    'checkout-page': 'Upgrade - GCSEMate'
 };
 
 function initializeFaqAccordion() {
@@ -12473,7 +12406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a: 'about-page', 
                 f: 'features-page', 
                 h: 'help-page',
-                t: 'ai-tutor-page' // AI Tutor (Pro only)
+                // AI Tutor shortcut removed
             };
             const target = map[k];
             if (target) {

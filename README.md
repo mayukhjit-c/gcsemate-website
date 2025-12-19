@@ -2,7 +2,7 @@
 
 **Proudly made using no generative AI** - This entire project was handcrafted with pure JavaScript, HTML, and CSS.
 
-GCSEMate is a comprehensive GCSE revision platform designed to help students efficiently access and organize revision materials. Created by Mayukhjit Chakraborty, the platform provides a streamlined interface for students to browse subjects, access past papers, watch educational videos, read blog posts, and utilize an AI tutor.
+GCSEMate is a comprehensive GCSE revision platform designed to help students efficiently access and organize revision materials. Created by Mayukhjit Chakraborty, the platform provides a streamlined interface for students to browse subjects, access past papers, watch educational videos, and read blog posts.
 
 ## Features
 
@@ -23,10 +23,7 @@ GCSEMate is a comprehensive GCSE revision platform designed to help students eff
 - Comment system for community engagement
 - Searchable blog archive
 
-### AI Tutor
-- Interactive AI-powered tutoring
-- Get help with GCSE subject questions
-- Personalized learning assistance
+<!-- AI Tutor feature removed -->
 
 ### Calendar & Activity Tracking
 - Track your study sessions
@@ -48,7 +45,7 @@ GCSEMate is a comprehensive GCSE revision platform designed to help students eff
   - Google Drive API (for file management)
   - Google reCAPTCHA Enterprise (for security)
   - YouTube API (for video playlists)
-  - Groq API (for AI Tutor - Llama 3.1 8B)
+   - (AI Tutor integration removed)
 - **Cloudflare Services**:
   - Cloudflare Pages (hosting)
 
@@ -66,9 +63,8 @@ gcsemate-website/
 │       ├── drive-subjects.js   # Google Drive subjects API
 │       ├── proxy-drive.js      # Google Drive proxy
 │       ├── recaptcha-verify.js # reCAPTCHA verification
-│       └── ai-tutor.js         # AI Tutor with Groq API integration
 ├── docs/               # Documentation
-│   └── AI_TUTOR_SETUP.md      # AI Tutor setup guide with KV configuration
+│   └── (AI Tutor docs removed)
 └── README.md           # This file
 ```
 
@@ -102,15 +98,9 @@ gcsemate-website/
    - Set up reCAPTCHA Enterprise
    - Add your site key to `index.html`
 
-5. **Configure AI Tutor (Optional but Recommended)**
-   - Get a Groq API key from https://console.groq.com/
-   - See [AI Tutor Setup Guide](docs/AI_TUTOR_SETUP.md) for detailed instructions
-   - Add `GROQ_API_KEY` environment variable in Cloudflare Pages settings
-
-6. **Deploy to Cloudflare Pages**
+5. **Deploy to Cloudflare Pages**
    - Connect your GitHub repository to Cloudflare Pages
    - Set build output directory to root
-   - Configure environment variables (GROQ_API_KEY)
    - Deploy
 
 ## Usage
@@ -137,11 +127,6 @@ gcsemate-website/
    - Visit the Blog section
    - Read revision tips and guides
    - Engage with comments
-
-5. **Use AI Tutor**
-   - Access the AI Tutor section
-   - Ask questions about GCSE topics
-   - Get personalized help
 
 ### For Administrators
 

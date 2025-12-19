@@ -486,72 +486,7 @@
             100% { background-position: -100% 0; }
         }
 
-        /* ========================================
-           AI TUTOR PAGE WHITESPACE FIX
-           ======================================== */
-
-        /* Reduce whitespace on AI tutor page */
-        #ai-tutor-page {
-            padding: 0.75rem !important;
-            padding-top: 0.5rem !important;
-            gap: 0.5rem;
-        }
-
-        #ai-tutor-page > .mb-4 {
-            margin-bottom: 0.5rem !important;
-        }
-
-        /* Compact header on AI tutor */
-        #ai-tutor-page h2 {
-            font-size: 1.5rem !important;
-        }
-
-        /* Compact disclaimers */
-        #ai-tutor-page .bg-amber-50 {
-            padding: 0.5rem 0.75rem !important;
-            margin-bottom: 0.5rem !important;
-        }
-
-        #ai-tutor-page .bg-amber-50 ul {
-            font-size: 0.75rem !important;
-        }
-
-        /* Maximize chat container height */
-        #ai-tutor-page .flex-1.flex.flex-col {
-            flex: 1;
-            min-height: 0;
-        }
-
-        #ai-chat-messages {
-            max-height: none !important;
-            flex: 1;
-            min-height: 200px;
-        }
-
-        /* Page content area - remove extra padding for full-height pages */
-        main#page-content {
-            padding: 0 !important;
-        }
-
-        /* The pages themselves handle their own padding */
-        #page-content > #page-container {
-            height: 100%;
-        }
-
-        /* Mobile: even more compact */
-        @media (max-width: 640px) {
-            #ai-tutor-page {
-                padding: 0.5rem !important;
-            }
-
-            #ai-tutor-page h2 {
-                font-size: 1.25rem !important;
-            }
-
-            #ai-tutor-page .bg-amber-50 {
-                padding: 0.375rem 0.5rem !important;
-            }
-        }
+        /* AI Tutor styles removed */
     `;
 
     document.head.appendChild(layoutFixes);

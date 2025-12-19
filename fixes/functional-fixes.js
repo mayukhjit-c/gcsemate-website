@@ -1037,30 +1037,7 @@
                 max-height: none;
             }
 
-            /* FIX: AI Tutor page spacing - AGGRESSIVELY remove blank space above */
-            #ai-tutor-page {
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-                position: relative !important;
-                top: 0 !important;
-            }
-            #ai-tutor-page.page {
-                padding-top: 0.5rem !important;
-            }
-            #ai-tutor-page > *:first-child {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-            #ai-tutor-page .flex:first-child,
-            #ai-tutor-page > .flex.flex-col:first-child,
-            #ai-tutor-page > div:first-child {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-            /* Remove any spacing that might be above AI tutor page container */
-            #page-container > #ai-tutor-page {
-                margin-top: 0 !important;
-            }
+            /* AI Tutor page fixes removed (feature disabled) */
             /* Ensure no gap between nav and content */
             #page-content {
                 padding-top: 0 !important;
