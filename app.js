@@ -12513,22 +12513,46 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (hamburgerButton && mobileMenu && closeMenuButton) {
         hamburgerButton.addEventListener('click', () => {
+            // Create backdrop to capture outside clicks and add smooth fade
+            let backdrop = document.getElementById('mobile-menu-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'mobile-menu-backdrop';
+                backdrop.className = 'fixed inset-0 bg-black/40 z-40';
+                backdrop.style.opacity = '0';
+                backdrop.style.transition = 'opacity 200ms ease';
+                document.body.appendChild(backdrop);
+                // clicking backdrop closes menu
+                backdrop.addEventListener('click', () => closeMobileMenu());
+            }
+
             // Show menu first, then animate in
             mobileMenu.style.display = 'block';
             mobileMenu.classList.remove('hidden');
+            mobileMenu.classList.add('menu-open');
             hamburgerButton.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            
-            // Trigger animation on next frame
+
+            // reveal backdrop
+            requestAnimationFrame(() => { backdrop.style.opacity = '1'; });
+
+            // Trigger menu slide-in animation on next frame
             requestAnimationFrame(() => {
                 mobileMenu.style.transform = 'translateX(0)';
                 mobileMenu.style.opacity = '1';
             });
-            
+
+            // Stagger link animations for a nicer entrance
+            const mobileMenuLinks = Array.from(mobileMenu.querySelectorAll('.nav-link'));
+            mobileMenuLinks.forEach((link, i) => {
+                link.style.animation = 'fadeUp 260ms ease-out both';
+                link.style.animationDelay = `${i * 30}ms`;
+            });
+
             // Focus management for accessibility
             const firstFocusableElement = mobileMenu.querySelector('a, button');
             if (firstFocusableElement) {
-                setTimeout(() => firstFocusableElement.focus(), 100);
+                setTimeout(() => firstFocusableElement.focus(), 120);
             }
         });
         
@@ -12538,10 +12562,23 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileMenu.style.opacity = '0';
             hamburgerButton.setAttribute('aria-expanded', 'false');
             
+            // Fade out backdrop and clean up animations
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => backdrop.remove(), 250);
+            }
+
             // Hide menu after animation completes
             setTimeout(() => {
                 mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('menu-open');
                 mobileMenu.style.display = 'none';
+                // clear individual link animation styles
+                mobileMenu.querySelectorAll('.nav-link').forEach(link => {
+                    link.style.animation = '';
+                    link.style.animationDelay = '';
+                });
                 document.body.style.overflow = ''; // Restore scrolling
                 hamburgerButton.focus(); // Return focus to hamburger button
             }, 300);
@@ -12551,7 +12588,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mobileMenuLinks = mobileMenu.querySelectorAll('.nav-link');
         mobileMenuLinks.forEach(link => {
             link.addEventListener('click', () => {
-                closeMobileMenu();
+                // small delay so pressed link shows active state
+                setTimeout(() => closeMobileMenu(), 80);
             });
         });
         
@@ -12566,6 +12604,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close mobile menu when clicking outside
         document.addEventListener('click', (e) => {
             if (!mobileMenu.contains(e.target) && !hamburgerButton.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
+                // ignore clicks on the backdrop (backdrop listener handles it)
+                if (e.target.id === 'mobile-menu-backdrop') return;
                 closeMobileMenu();
             }
         });
@@ -12590,11 +12630,24 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileMenu.style.transform = 'translateX(100%)';
             mobileMenu.style.opacity = '0';
             hamburgerButton.setAttribute('aria-expanded', 'false');
-            
+
+            // Fade out backdrop
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => backdrop.remove(), 250);
+            }
+
             // Hide menu after animation completes
             setTimeout(() => {
                 mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('menu-open');
                 mobileMenu.style.display = 'none';
+                // clear link animations
+                mobileMenu.querySelectorAll('.nav-link').forEach(link => {
+                    link.style.animation = '';
+                    link.style.animationDelay = '';
+                });
                 document.body.style.overflow = ''; // Restore scrolling
                 hamburgerButton.focus(); // Return focus to hamburger button
             }, 300);

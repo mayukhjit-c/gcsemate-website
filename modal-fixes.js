@@ -7,9 +7,7 @@
     // Universal modal close function with smooth fade out
     window.closeModal = function (modalId) {
         const modal = document.getElementById(modalId);
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
 
         // Add fade out animation
         modal.style.opacity = '0';
@@ -25,6 +23,10 @@
             if (modal.dataset.clearOnClose === 'true') {
                 modal.innerHTML = '';
             }
+
+            // Remove modal-open marker if no visible modals remain
+            const hasVisibleModal = document.querySelector('.fixed:not(.hidden)[style*="display: block"], .fixed:not(.hidden)');
+            if (!hasVisibleModal) document.body.classList.remove('modal-open');
         }, 250);
     };
 
@@ -92,18 +94,25 @@
         }
     };
 
-    // Enhanced modal close with element removal
+    // Close modal or remove element if explicitly requested
     window.closeAndRemoveModal = function (element) {
         const modal = element.closest('.fixed') || element.closest('[role="dialog"]');
-        if (!modal) {
-            return;
-        }
+        if (!modal) return;
 
         modal.style.opacity = '0';
         modal.style.transform = 'scale(0.95)';
 
         setTimeout(() => {
-            modal.remove();
+            // Respect explicit removal flag; otherwise hide so modal can be reused
+            if (modal.dataset.removeOnClose === 'true') {
+                modal.remove();
+            } else {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+
+            const hasVisibleModal = document.querySelector('.fixed:not(.hidden)[style*="display: block"], .fixed:not(.hidden)');
+            if (!hasVisibleModal) document.body.classList.remove('modal-open');
         }, 250);
     };
 
@@ -111,9 +120,9 @@
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' || e.keyCode === 27) {
             // Find all visible modals
-            const modals = document.querySelectorAll(
-                '.fixed[style*="display: block"], .fixed:not([style*="display: none"])'
-            );
+            const modals = Array.from(document.querySelectorAll('.fixed')).filter(m => {
+                return !m.classList.contains('hidden') && m.style.display !== 'none';
+            });
 
             // Close the topmost modal
             if (modals.length > 0) {
@@ -129,7 +138,7 @@
         }
     });
 
-    // Click outside to close modals
+    // Click outside to close modals (backdrop or outer fixed container)
     document.addEventListener('click', function (e) {
         if (
             e.target.classList.contains('modal-backdrop') ||
@@ -191,32 +200,25 @@
     `;
     document.head.appendChild(style);
 
-    // Helper: Mark body when modal opens
-    window.addEventListener('DOMNodeInserted', function (e) {
-        if (
-            e.target.classList &&
-            e.target.classList.contains('fixed') &&
-            e.target.style.display !== 'none'
-        ) {
-            document.body.classList.add('modal-open');
-        }
-    });
+    // Helper: mark body when a modal is activated
+    function markBodyModalOpen() {
+        const hasVisibleModal = document.querySelector('.fixed:not(.hidden)[style*="display: block"], .fixed:not(.hidden)');
+        if (hasVisibleModal) document.body.classList.add('modal-open');
+    }
 
-    // Helper: Unmark body when modal closes
-    const observer = new MutationObserver(function (mutations) {
-        const hasVisibleModal = document.querySelector(
-            '.fixed[style*="display: block"], .fixed:not([style*="display: none"])'
-        );
-        if (!hasVisibleModal) {
-            document.body.classList.remove('modal-open');
-        }
+    // Hook into our activateModal to mark body as modal-open
+
+    // Unmark body when modal closes (observe style/class changes)
+    const observer = new MutationObserver(function () {
+        const hasVisibleModal = document.querySelector('.fixed:not(.hidden)[style*="display: block"], .fixed:not(.hidden)');
+        if (!hasVisibleModal) document.body.classList.remove('modal-open');
     });
 
     observer.observe(document.body, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['style'],
+        attributeFilter: ['style', 'class'],
     });
 
     console.log('✅ Modal improvements loaded - Escape key & click outside support enabled');

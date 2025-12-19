@@ -1058,6 +1058,62 @@ to {
     opacity: 1; 
 } 
         }
+
+/* ---------- UI Motion & Polishing ---------- */
+:root {
+    --motion-fast: 160ms;
+    --motion-medium: 320ms;
+    --motion-slow: 520ms;
+    --easing-soft: cubic-bezier(0.22, 1, 0.36, 1);
+    --easing-pop: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Page transitions used by showPage() */
+.page-enter-modern {
+    animation: pageEnter var(--motion-medium) var(--easing-soft) both;
+}
+.page-leave-modern {
+    animation: pageLeave var(--motion-fast) var(--easing-pop) both;
+}
+@keyframes pageEnter {
+    from { opacity: 0; transform: translateY(6px) scale(0.998); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pageLeave {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-6px) scale(0.998); }
+}
+
+/* Buttons & controls: smoother hover + subtle lift */
+button, .btn {
+    transition: transform var(--motion-fast) var(--easing-pop),
+                box-shadow var(--motion-fast) var(--easing-pop),
+                background-color var(--motion-fast) var(--easing-pop);
+}
+button:hover, .btn:hover { transform: translateY(-2px); }
+button:active, .btn:active { transform: translateY(0); }
+
+/* Focus ring for keyboard navigation */
+.focus-ring { box-shadow: 0 0 0 4px rgba(59,130,246,0.12) !important; outline: none !important; }
+
+/* Improve modal backdrop smoothing */
+.modal-backdrop { transition: opacity var(--motion-medium) ease, backdrop-filter var(--motion-medium) ease; }
+
+/* Mobile menu: ensure hardware-accelerated transform */
+#mobile-menu.menu-open { will-change: transform, opacity; }
+
+/* Card elevation and subtle hover */
+.card, .bg-white\/50, .bg-white { transition: box-shadow var(--motion-fast) var(--easing-pop), transform var(--motion-fast) var(--easing-pop); }
+.card:hover { box-shadow: 0 10px 30px rgba(2,6,23,0.08); transform: translateY(-4px); }
+
+/* Toasts and small components */
+#toast-container > * { transition: transform var(--motion-fast) var(--easing-pop), opacity var(--motion-fast) ease; }
+
+/* Reduce motion for users who prefer reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    :root { --motion-fast: 0ms; --motion-medium: 0ms; --motion-slow: 0ms; }
+    * { transition: none !important; animation: none !important; }
+}
         @keyframes slideInDown { 
 from { 
     transform: translateY(-10px) translateZ(0); 
