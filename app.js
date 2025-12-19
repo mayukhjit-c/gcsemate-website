@@ -2671,6 +2671,14 @@ const subjectSpecifications = {
         }
     }
 };
+
+// Exam board logos (used in subject cards)
+const examBoardLogos = {
+    'OCR': 'https://images.seeklogo.com/logo-png/39/2/oxford-cambridge-and-rsa-ocr-logo-png_seeklogo-392494.png',
+    'AQA': 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e2/AQA_logo.svg/2560px-AQA_logo.svg.png',
+    'Edexcel': 'https://qualifications.pearson.com/content/dam/demo/stuntcontent/images/toolkits/edexcel/PLogo_Primary_Edexcel_Blk_RGB.png',
+    'Eduqas': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0aNv7lFsZf4oDHQjL6H5gFkvObG9WpjAuYQ&s'
+};
 const subjectIconMap = {
     // Biology: tree icon
     biology: `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.5 0-4.5 2-4.5 4.5 0 .5.1 1 .3 1.5C6 8.2 5 9.7 5 11.5 5 14 7 16 9.5 16H11v3H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3h1.5C17 16 19 14 19 11.5c0-1.8-1-3.3-2.8-3.5.2-.5.3-1 .3-1.5C16.5 4 14.5 2 12 2z"/></svg>`,
@@ -4604,6 +4612,8 @@ function renderUserManagementPanel(allUsers) {
     // Calculate active today (users who accessed in last 24 hours)
     const today = new Date();
     const activeToday = Object.values(allUsers).filter(user => {
+        // Exclude admin accounts from Active Today count
+        if ((user.role||'user') === 'admin') return false;
         if (!user.lastAccess) return false;
         const lastAccess = user.lastAccess.toDate ? user.lastAccess.toDate() : new Date(user.lastAccess);
         const hoursDiff = (today - lastAccess) / (1000 * 60 * 60);
@@ -7370,6 +7380,8 @@ async function updateAnalytics() {
         const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
         
         const activeToday = Object.values(allUsers).filter(user => {
+            // Exclude admin accounts from Active Today
+            if ((user.role||'user') === 'admin') return false;
             if (!user.lastAccess) return false;
             const lastAccess = user.lastAccess.toDate ? user.lastAccess.toDate() : new Date(user.lastAccess);
             return lastAccess >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -8508,7 +8520,15 @@ async function renderDashboard() {
             const card = document.createElement('div');
             const iconSvg = subjectIconMap[subject.toLowerCase()] || uniformSubjectIcon;
             const board = examBoardBySubject[subject.toLowerCase()];
-            const badge = board ? `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>` : '';
+            let badge = '';
+            if (board) {
+                const logo = examBoardLogos[board] || null;
+                if (logo) {
+                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="h-6 w-auto mt-1" style="object-fit:contain;"/>`;
+                } else {
+                    badge = `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>`;
+                }
+            }
             const name = subject && subject.trim() ? subject : 'Subject';
             const subjectData = subjectSummaries[subject.toLowerCase()] || { summary: 'Access revision materials and resources for this subject.', description: '' };
             
@@ -8566,6 +8586,11 @@ async function renderDashboard() {
                     specButton.setAttribute('data-tooltip', spec.label);
                     specButton.onclick = (e) => {
                         e.stopPropagation(); // Prevent card click
+                        // Edexcel PDFs often prevent embedding; open in new tab instead
+                        if (board && board.toLowerCase().includes('edexcel')) {
+                            window.open(spec.url, '_blank', 'noopener,noreferrer');
+                            return;
+                        }
                         showSpecificationModal(spec.url, spec.label);
                     };
                     specContainer.appendChild(specButton);
@@ -8576,7 +8601,8 @@ async function renderDashboard() {
             if (subjectId) {
                 // Set consistent height constraints to maintain grid alignment
                 // Max height accommodates cards with up to 2 specification buttons
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise min-h-[200px] max-h-[280px] overflow-hidden';
+                const isMaths = subject && subject.toLowerCase().includes('math');
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-hidden ' + (isMaths ? 'min-h-[240px] max-h-[340px]' : 'min-h-[200px] max-h-[280px]');
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
@@ -9192,6 +9218,158 @@ function createPlaylistCard(playlist) {
 // wire up playlist filters when DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     try { setupPlaylistFilters(); } catch (_) {}
+    try { attachAddPlaylistPreview(); } catch(_) {}
+});
+
+// Add Playlist form: preview & validation
+function attachAddPlaylistPreview() {
+    const urlInput = document.getElementById('playlist-url');
+    const preview = document.getElementById('add-playlist-preview');
+    if (!urlInput || !preview) return;
+    let t;
+    function renderPreview() {
+        const val = (urlInput.value || '').trim();
+        preview.innerHTML = '';
+        if (!val) return;
+        try {
+            const parsed = parseYoutubeUrl(val);
+            if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) {
+                preview.innerHTML = `<div class="text-sm text-yellow-600">Invalid YouTube playlist URL.</div>`;
+                return;
+            }
+            const pid = parsed.id;
+            const embed = document.createElement('div');
+            embed.innerHTML = `
+                <div class="w-full rounded overflow-hidden border border-gray-200/60">
+                    <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong> — <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+                </div>`;
+            preview.appendChild(embed);
+        } catch (e) {
+            preview.innerHTML = `<div class="text-sm text-yellow-600">Could not parse URL.</div>`;
+        }
+    }
+    urlInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderPreview, 250); });
+    setTimeout(renderPreview, 60);
+}
+
+// Manage Playlists admin page
+async function renderManagePlaylistsPage() {
+    if (currentUser.role !== 'admin') return;
+    const tbody = document.getElementById('manage-playlists-tbody');
+    const search = document.getElementById('manage-search')?.value?.toLowerCase() || '';
+    const selectAll = document.getElementById('manage-select-all');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-gray-500">Loading...</td></tr>';
+    try {
+        const snapshot = await db.collection('videoPlaylists').orderBy('createdAt','desc').get();
+        const rows = [];
+        snapshot.forEach(doc => {
+            const p = { id: doc.id, ...(doc.data()||{}) };
+            const text = ((p.title||'') + ' ' + (p.subject||'') + ' ' + (p.tags||[]).join(' ')).toLowerCase();
+            if (search && !text.includes(search)) return;
+            rows.push(p);
+        });
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-gray-600">No playlists found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = '';
+        rows.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-2"><input class="manage-select" data-id="${p.id}" type="checkbox"></td>
+                <td class="p-2">${escapeHTML(p.title || '(untitled)')}</td>
+                <td class="p-2">${escapeHTML(p.subject || '')}</td>
+                <td class="p-2">${(p.tags||[]).map(t=>`<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 mr-1">${escapeHTML(t)}</span>`).join('')}</td>
+                <td class="p-2">${p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-GB') : ''}</td>
+                <td class="p-2">
+                    <button onclick="editPlaylist('${p.id}', '${(p.title||'').replace(/'/g, "\\'")}')" class="px-2 py-1 rounded bg-blue-600 text-white text-sm mr-2">Edit</button>
+                    <button onclick="deletePlaylist('${p.id}')" class="px-2 py-1 rounded bg-red-600 text-white text-sm">Delete</button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+        if (selectAll) selectAll.checked = false;
+        attachManageTableHandlers();
+    } catch (e) {
+        console.error('Could not load playlists', e);
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-red-600">Error loading playlists.</td></tr>';
+    }
+}
+
+function attachManageTableHandlers() {
+    const selectAll = document.getElementById('manage-select-all');
+    const checkboxes = Array.from(document.querySelectorAll('.manage-select'));
+    if (selectAll) {
+        selectAll.onchange = () => { checkboxes.forEach(cb => cb.checked = selectAll.checked); };
+    }
+    document.getElementById('manage-refresh').onclick = () => renderManagePlaylistsPage();
+    document.getElementById('manage-search').addEventListener('input', debounce(() => renderManagePlaylistsPage(), 220));
+    document.getElementById('manage-bulk-delete').onclick = async () => {
+        const ids = Array.from(document.querySelectorAll('.manage-select:checked')).map(i=>i.dataset.id);
+        if (!ids.length) return showToast('Select playlists to delete', 'warning');
+        showConfirmationModal(`Delete ${ids.length} playlists? This is irreversible.`, async () => {
+            try {
+                const batch = db.batch();
+                ids.forEach(id => batch.delete(db.collection('videoPlaylists').doc(id)));
+                await batch.commit();
+                showToast('Deleted selected playlists', 'success');
+                renderManagePlaylistsPage();
+            } catch (e) { console.error(e); showToast('Bulk delete failed', 'error'); }
+        }, { okText: 'Delete' });
+    };
+    document.getElementById('manage-bulk-edit').onclick = () => {
+        const ids = Array.from(document.querySelectorAll('.manage-select:checked')).map(i=>i.dataset.id);
+        if (!ids.length) return showToast('Select playlists to edit', 'warning');
+        showBulkEditModal(ids);
+    };
+}
+
+function showBulkEditModal(ids) {
+    const modal = document.getElementById('confirmation-modal');
+    modal.innerHTML = `
+        <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Bulk Edit ${ids.length} playlists</h3>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Set Subject (leave blank to skip)</label>
+            <input id="bulk-subject" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Add Tags (comma-separated)</label>
+            <input id="bulk-tags" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="bulk-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800">Cancel</button>
+                <button id="bulk-apply" class="px-4 py-2 rounded-md bg-blue-600 text-white">Apply</button>
+            </div>
+        </div>`;
+    modal.style.display = 'flex';
+    document.getElementById('bulk-cancel').onclick = () => { modal.style.display = 'none'; };
+    document.getElementById('bulk-apply').onclick = async () => {
+        const subj = document.getElementById('bulk-subject').value.trim();
+        const addTags = (document.getElementById('bulk-tags').value||'').split(/[,\s]+/).map(t=>t.trim()).filter(Boolean);
+        if (!subj && addTags.length===0) return showToast('Provide subject or tags to apply', 'warning');
+        try {
+            const batch = db.batch();
+            ids.forEach(id => {
+                const ref = db.collection('videoPlaylists').doc(id);
+                const update = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (subj) update.subject = subj;
+                if (addTags.length) update.tags = firebase.firestore.FieldValue.arrayUnion(...addTags);
+                batch.update(ref, update);
+            });
+            await batch.commit();
+            showToast('Bulk edit applied', 'success');
+            modal.style.display = 'none';
+            renderManagePlaylistsPage();
+        } catch (e) { console.error(e); showToast('Bulk edit failed', 'error'); }
+    };
+}
+
+// Utility: debounce
+function debounce(fn, wait){ let t; return function(...a){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,a), wait); }; }
+
+// Hook manage page render when navigating
+document.addEventListener('click', (e) => {
+    if (e.target && (e.target.id === 'manage-playlists-quick' || e.target.closest && e.target.closest('#manage-playlists-quick'))) {
+        setTimeout(() => renderManagePlaylistsPage(), 80);
+    }
 });
 
 // =================================================================================
@@ -9354,27 +9532,93 @@ async function handleAddPlaylist() {
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
     }
 }
-function editPlaylist(id, currentTitle) {
+async function editPlaylist(id, currentTitle) {
     if (currentUser.role !== 'admin') return;
     const modal = document.getElementById('confirmation-modal');
-    modal.innerHTML = `
-        <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-md p-6 fade-in">
+    // Fetch current playlist data to prefill fields
+    const docRef = db.collection('videoPlaylists').doc(id);
+    try {
+        const snap = await docRef.get();
+        const data = snap.exists ? snap.data() : {};
+        const curTitle = data.title || currentTitle || '';
+        const curUrl = data.url || '';
+        const curSubject = data.subject || '';
+        const curTags = (data.tags || []).join(', ');
+        modal.innerHTML = `
+        <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg p-6 fade-in">
             <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Playlist</h3>
             <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${currentTitle}" />
+            <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTitle)}" />
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">YouTube Playlist URL</label>
+            <input id="edit-playlist-url" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curUrl)}" />
+            <div id="edit-playlist-preview" class="mt-3"></div>
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Subject</label>
+            <input id="edit-playlist-subject" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curSubject)}" />
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Tags (comma-separated)</label>
+            <input id="edit-playlist-tags" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTags)}" />
             <p class="text-xs text-gray-500 mt-2">Playlist ID cannot be changed here. To replace a playlist, delete and add a new one.</p>
             <div class="flex justify-end gap-2 mt-4">
                 <button id="edit-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
                 <button id="edit-save" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Save</button>
             </div>
         </div>`;
+    } catch (e) {
+        console.error('Could not load playlist for editing', e);
+        showToast('Could not load playlist data', 'error');
+        return;
+    }
     modal.style.display = 'flex';
     document.getElementById('edit-cancel').onclick = () => { modal.style.display = 'none'; };
+    // URL validation + preview
+    (function attachPreview() {
+        const urlInput = document.getElementById('edit-playlist-url');
+        const preview = document.getElementById('edit-playlist-preview');
+        if (!urlInput || !preview) return;
+        let t;
+        function renderPreview() {
+            const val = (urlInput.value || '').trim();
+            preview.innerHTML = '';
+            if (!val) return;
+            try {
+                const parsed = parseYoutubeUrl(val);
+                if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) {
+                    preview.innerHTML = `<div class="text-sm text-yellow-600">Invalid YouTube playlist URL.</div>`;
+                    return;
+                }
+                const pid = parsed.id;
+                const embed = document.createElement('div');
+                embed.innerHTML = `
+                    <div class="w-full rounded overflow-hidden border border-gray-200/60">
+                        <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                        <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong> — <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+                    </div>`;
+                preview.appendChild(embed);
+            } catch (e) {
+                preview.innerHTML = `<div class="text-sm text-yellow-600">Could not parse URL.</div>`;
+            }
+        }
+        urlInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderPreview, 250); });
+        // initial render
+        setTimeout(renderPreview, 60);
+    })();
+
     document.getElementById('edit-save').onclick = async () => {
         const newTitle = document.getElementById('edit-playlist-title').value.trim();
-        if (!newTitle) return;
+        const newUrl = document.getElementById('edit-playlist-url').value.trim();
+        const newSubject = document.getElementById('edit-playlist-subject').value.trim();
+        const newTagsRaw = (document.getElementById('edit-playlist-tags').value || '').split(/[,\s]+/).map(t=>t.trim()).filter(Boolean);
+        if (!newTitle) return showToast('Title is required', 'error');
+        // Validate URL if present
+        if (newUrl) {
+            const parsed = parseYoutubeUrl(newUrl);
+            if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) return showToast('Please enter a valid YouTube Playlist URL.', 'error');
+        }
         try {
-            await db.collection('videoPlaylists').doc(id).update({ title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            const updateData = { title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if (newUrl) updateData.url = newUrl; else updateData.url = firebase.firestore.FieldValue.delete;
+            if (newSubject) updateData.subject = newSubject; else updateData.subject = firebase.firestore.FieldValue.delete;
+            updateData.tags = newTagsRaw;
+            await db.collection('videoPlaylists').doc(id).update(updateData);
             showToast('Playlist updated', 'success');
             modal.style.display = 'none';
         } catch (e) {
