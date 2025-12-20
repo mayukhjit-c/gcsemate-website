@@ -1217,6 +1217,7 @@ let currentFile = null;
 let userIP = null;
 let userLocation = null;
 let sessionId = null;
+let hasTrackedLogout = false;
 let userActivityTracker = {
     currentSubject: null,
     currentFile: null,
@@ -1354,6 +1355,7 @@ async function initializeUserTracking() {
         
         // Generate unique session ID
         sessionId = `${currentUser.uid}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        hasTrackedLogout = false;
         
         // Initialize activity tracker
         userActivityTracker.sessionStart = Date.now();
@@ -1370,6 +1372,18 @@ async function initializeUserTracking() {
             loginTime: userActivityTracker.loginTime,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+
+        // Persist last login info for admin visibility
+        try {
+            await db.collection('users').doc(currentUser.uid).set({
+                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastLoginSessionId: sessionId,
+                lastLoginIp: userIP || null,
+                lastLoginLocation: userLocation || null,
+                isOnline: true,
+                currentSessionId: sessionId
+            }, { merge: true });
+        } catch (_) {}
         
         // Update daily stats
         userActivityTracker.dailyStats.loginCount++;
@@ -1544,6 +1558,10 @@ async function updateDailyStats() {
 // Track logout
 async function trackLogout() {
     if (!currentUser) return;
+
+    // Prevent double-logging (e.g., logout button + beforeunload)
+    if (hasTrackedLogout) return;
+    hasTrackedLogout = true;
     
     userActivityTracker.logoutTime = Date.now();
     const sessionDuration = userActivityTracker.logoutTime - userActivityTracker.loginTime;
@@ -1561,6 +1579,20 @@ async function trackLogout() {
         openedFiles: Array.from(userActivityTracker.openedFiles),
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    // Persist last logout/session summary for admin visibility
+    try {
+        await db.collection('users').doc(currentUser.uid).set({
+            lastLogoutAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastLogoutSessionId: sessionId || null,
+            lastSessionDurationMs: sessionDuration,
+            lastSessionTotalSubjectTime: userActivityTracker.totalSubjectTime || {},
+            lastSessionTotalFileTime: userActivityTracker.totalFileTime || {},
+            lastSessionOpenedFiles: Array.from(userActivityTracker.openedFiles),
+            isOnline: false,
+            currentSessionId: firebase.firestore.FieldValue.delete()
+        }, { merge: true });
+    } catch (_) {}
     
     await updateDailyStats();
     
@@ -1942,6 +1974,47 @@ function formatTimeAgo(date) {
     
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
+}
+
+function formatDurationMs(ms) {
+    const n = Number(ms);
+    if (!Number.isFinite(n) || n <= 0) return '0m';
+    const totalSeconds = Math.floor(n / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes <= 0) return `${seconds}s`;
+    if (seconds === 0) return `${minutes}m`;
+    return `${minutes}m ${seconds}s`;
+}
+
+function formatDateMaybe(ts) {
+    if (!ts) return 'Never';
+    try {
+        return formatDateUK(ts);
+    } catch (_) {
+        try {
+            const d = ts?.toDate ? ts.toDate() : new Date(ts);
+            return d.toLocaleString('en-GB');
+        } catch (_) {
+            return 'Unknown';
+        }
+    }
+}
+
+function getTopSubjectFromTotals(totals) {
+    if (!totals || typeof totals !== 'object') return null;
+    let best = null;
+    let bestMs = 0;
+    for (const [subject, value] of Object.entries(totals)) {
+        const ms = Number(value);
+        if (!subject) continue;
+        if (Number.isFinite(ms) && ms > bestMs) {
+            bestMs = ms;
+            best = subject;
+        }
+    }
+    if (!best) return null;
+    return { subject: best, ms: bestMs };
 }
 
 // Cleanup function
@@ -4781,7 +4854,10 @@ async function handleLogout() {
             recaptchaVerifier.clear();
             recaptchaVerifier = null;
         }
-        
+
+        // Best-effort: record logout tracking before signing out
+        try { await trackLogout(); } catch (_) {}
+
         await auth.signOut();
         // onAuthStateChanged will handle UI changes
         path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
@@ -4885,6 +4961,7 @@ function renderUserManagementPanel(allUsers) {
 
     list.forEach(user => {
         if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+        const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const card = document.createElement('div');
         card.className = 'bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200';
         card.innerHTML = `
@@ -4916,10 +4993,14 @@ function renderUserManagementPanel(allUsers) {
                     <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
                     <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
                 </div>
-                ${user.lastAccess ? `<div class="mt-3 text-xs text-gray-600 space-y-1">
-                    <div><span class="font-semibold">Last Access:</span> ${formatDateUK(user.lastAccess)}</div>
+                <div class="mt-3 text-xs text-gray-600 space-y-1">
+                    <div><span class="font-semibold">Last Login:</span> ${formatDateMaybe(user.lastLoginAt)}</div>
+                    <div><span class="font-semibold">Last Logout:</span> ${formatDateMaybe(user.lastLogoutAt)}</div>
+                    ${user.lastSessionDurationMs ? `<div><span class="font-semibold">Last Session:</span> ${formatDurationMs(user.lastSessionDurationMs)}</div>` : ''}
+                    ${topSubject ? `<div><span class="font-semibold">Top Subject:</span> ${escapeHTML(topSubject.subject)} (${formatDurationMs(topSubject.ms)})</div>` : ''}
+                    ${user.lastAccess ? `<div><span class="font-semibold">Last Access:</span> ${formatDateMaybe(user.lastAccess)}</div>` : ''}
                     ${user.ipInfo ? `<div class="flex items-center gap-2"><img src="https://flagcdn.com/24x18/${(user.ipInfo.country_code||'').toLowerCase()}.png" alt="${user.ipInfo.country || 'Unknown'}" class="w-4 h-3 rounded-sm border border-gray-200" onerror="this.onerror=null; this.src='https://flagcdn.com/24x18/${(user.ipInfo.country||'').toLowerCase().replace(/\s+/g, '-')}.png'; this.onerror=function(){this.style.display='none';};" style="display:block;"> <span>${user.ipInfo.ip || ''} • ${user.ipInfo.country || 'Unknown'} ${user.ipInfo.city ? '• ' + user.ipInfo.city : ''}</span></div>` : ''}
-                </div>` : ''}
+                </div>
             </div>
             <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button onclick="openEditUserModal('${user.id}')" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
@@ -5845,6 +5926,7 @@ async function openEditUserModal(userId) {
             return;
         }
         const user = { id: userDoc.id, ...userDoc.data() };
+        const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const modal = document.getElementById('edit-user-modal');
         modal.style.display = 'flex';
         modal.innerHTML = `
@@ -5854,6 +5936,15 @@ async function openEditUserModal(userId) {
                      <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                  </div>
                  <div class="p-6 space-y-4 overflow-y-auto">
+                     <div class="bg-white/60 border border-white/30 rounded-lg p-3 text-sm text-gray-700">
+                         <div class="font-semibold text-gray-800 mb-1">Tracking</div>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-700">
+                             <div><span class="font-semibold">Last Login:</span> ${formatDateMaybe(user.lastLoginAt)}</div>
+                             <div><span class="font-semibold">Last Logout:</span> ${formatDateMaybe(user.lastLogoutAt)}</div>
+                             <div><span class="font-semibold">Last Session:</span> ${user.lastSessionDurationMs ? formatDurationMs(user.lastSessionDurationMs) : 'N/A'}</div>
+                             <div><span class="font-semibold">Top Subject:</span> ${topSubject ? `${escapeHTML(topSubject.subject)} (${formatDurationMs(topSubject.ms)})` : 'N/A'}</div>
+                         </div>
+                     </div>
                      <form id="edit-user-form" onsubmit="event.preventDefault(); handleUpdateUser('${user.id}')">
                          <div>
                              <label for="edit-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
@@ -9858,12 +9949,14 @@ async function editPlaylist(id, currentTitle) {
         }
         try {
             const updateData = { title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            if (newUrl) updateData.url = newUrl; else updateData.url = firebase.firestore.FieldValue.delete;
-            if (newSubject) updateData.subject = newSubject; else updateData.subject = firebase.firestore.FieldValue.delete;
+            if (newUrl) updateData.url = newUrl; else updateData.url = firebase.firestore.FieldValue.delete();
+            if (newSubject) updateData.subject = newSubject; else updateData.subject = firebase.firestore.FieldValue.delete();
             updateData.tags = newTagsRaw;
             await db.collection('videoPlaylists').doc(id).update(updateData);
             showToast('Playlist updated', 'success');
             modal.style.display = 'none';
+            // Refresh admin management table if visible
+            try { if (document.getElementById('manage-playlists-tbody')) renderManagePlaylistsPage(); } catch (_) {}
         } catch (e) {
             console.error('Update failed', e);
             showToast('Could not update playlist', 'error');
@@ -9888,7 +9981,22 @@ function handlePlaylistClick(playlist) {
         document.getElementById('upgrade-modal').style.display = 'flex';
         return;
     }
-    showPlaylistViewer(playlist);
+
+    // Always open playlists in a new tab (avoids YouTube embed configuration errors)
+    const playlistUrl = (playlist && playlist.url) ? String(playlist.url) : '';
+    if (playlistUrl) {
+        window.openYouTubeInNewTab(playlistUrl);
+        return;
+    }
+
+    // Fallback: if only playlistId is available
+    if (playlist && playlist.playlistId) {
+        const url = `https://www.youtube.com/playlist?list=${encodeURIComponent(String(playlist.playlistId))}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
+    showToast('Playlist link is missing.', 'error');
 }
 function showPlaylistViewer(playlist) {
     const modal = document.getElementById('playlist-viewer-modal');
