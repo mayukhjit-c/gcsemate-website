@@ -119,6 +119,24 @@ let throttleTimers = new Map();
 let serverTimeInterval = null;
 let connectionCheckInterval = null;
 
+// --- LIGHTWEIGHT PERFORMANCE MODE ---
+function applyLowSpecMode() {
+    try {
+        const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const saveData = navigator.connection && navigator.connection.saveData;
+        const effectiveType = navigator.connection && navigator.connection.effectiveType;
+        const slowConnection = typeof effectiveType === 'string' && (effectiveType.includes('2g') || effectiveType.includes('slow-2g'));
+
+        if (prefersReducedMotion || saveData || slowConnection) {
+            document.documentElement.classList.add('low-spec');
+        }
+    } catch (_) {
+        // Best-effort only
+    }
+}
+
+applyLowSpecMode();
+
 // Comprehensive Error Handling System
 class ErrorHandler {
     constructor() {
@@ -1476,9 +1494,10 @@ async function logUserActivity(activityType, additionalData = {}) {
             activityType: activityType,
             sessionId: sessionId,
             ip: userIP,
+            location: userLocation,
             userAgent: navigator.userAgent,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            ...additionalData
+            additionalData: (additionalData && typeof additionalData === 'object') ? additionalData : {}
         };
         
         await db.collection('userActivities').add(activityData);
@@ -2325,10 +2344,8 @@ function trackSubjectChange(subjectName) {
         logUserActivity('subject_change', {
             previousSubject: userActivityTracker.currentSubject,
             newSubject: subjectName,
-            timeSpent: timeSpent,
-            sessionId: sessionId,
-            ip: userIP,
-            location: userLocation
+            revisionDuration: timeSpent,
+            revisionDurationSeconds: Math.round(timeSpent / 1000)
         });
     }
     
@@ -2340,10 +2357,7 @@ function trackSubjectChange(subjectName) {
     
     // Log subject start
     logUserActivity('subject_start', {
-        subject: subjectName,
-        sessionId: sessionId,
-        ip: userIP,
-        location: userLocation
+        subject: subjectName
     });
     
     // Update daily stats
@@ -2363,10 +2377,8 @@ function trackFileOpen(fileName, fileType, subjectName) {
         logUserActivity('file_change', {
             previousFile: userActivityTracker.currentFile,
             newFile: fileName,
-            timeSpent: timeSpent,
-            sessionId: sessionId,
-            ip: userIP,
-            location: userLocation
+            viewDuration: timeSpent,
+            viewDurationSeconds: Math.round(timeSpent / 1000)
         });
     }
     
@@ -2381,10 +2393,7 @@ function trackFileOpen(fileName, fileType, subjectName) {
     logUserActivity('file_open', {
         fileName: fileName,
         fileType: fileType,
-        subject: subjectName,
-        sessionId: sessionId,
-        ip: userIP,
-        location: userLocation
+        subject: subjectName
     });
     
     // Update daily stats
@@ -2835,6 +2844,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize form validations
     initializeFormValidations();
+
+    // Best-effort: derive brand palette from the local logo (same-origin only)
+    try {
+        const run = () => extractAndApplyBrandPaletteFromLogo();
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(run, { timeout: 1200 });
+        } else {
+            setTimeout(run, 0);
+        }
+    } catch (_) {}
+
+    // Ensure all modals close reliably (Escape, backdrop click, close buttons)
+    try {
+        setupGlobalModalCloseHandlers();
+    } catch (_) {}
     
     // Use requestIdleCallback for better performance
     if ('requestIdleCallback' in window) {
@@ -2861,6 +2885,208 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
     }
 }, { once: true });
+
+function setupGlobalModalCloseHandlers() {
+    if (window.__gcsemateModalCloseSetup) return;
+    window.__gcsemateModalCloseSetup = true;
+
+    const dynamicModalIdsToClear = new Set([
+        'preview-modal',
+        'playlist-viewer-modal',
+        'blog-viewer-modal',
+        'legal-modal',
+        'dmca-modal',
+        'edit-user-modal',
+        'event-modal',
+        'confirmation-modal',
+        'specification-pdf-modal'
+    ]);
+
+    function isVisible(el) {
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return style && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+    }
+
+    function closeModalElement(modalEl) {
+        if (!modalEl) return;
+
+        // Special-case mobile menu backdrop cleanup
+        if (modalEl.id === 'mobile-menu') {
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            if (backdrop) backdrop.remove();
+            modalEl.classList.remove('menu-open');
+        }
+
+        modalEl.style.display = 'none';
+        modalEl.classList.add('hidden');
+
+        if (dynamicModalIdsToClear.has(modalEl.id)) {
+            modalEl.innerHTML = '';
+        }
+
+        document.body.style.overflow = '';
+    }
+
+    function getTopmostOpenModal() {
+        const candidates = Array.from(document.querySelectorAll('div[id$="-modal"], #tutorial-overlay, #mobile-menu'));
+        const open = candidates.filter(isVisible);
+        if (open.length === 0) return null;
+        open.sort((a, b) => {
+            const za = parseInt(window.getComputedStyle(a).zIndex || '0', 10) || 0;
+            const zb = parseInt(window.getComputedStyle(b).zIndex || '0', 10) || 0;
+            return zb - za;
+        });
+        return open[0];
+    }
+
+    // Backdrop click closes
+    const modals = Array.from(document.querySelectorAll('div[id$="-modal"], #tutorial-overlay'));
+    modals.forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModalElement(modal);
+            }
+        });
+    });
+
+    // Close button (delegated): fixes cases where inline handlers only toggle `hidden`
+    document.addEventListener('click', (e) => {
+        const closeBtn = e.target.closest(
+            '[data-modal-close], [aria-label="Close"], [aria-label="Close modal"], [aria-label="Close navigation menu"], .modal-close'
+        );
+        if (!closeBtn) return;
+
+        const modal = closeBtn.closest('div[id$="-modal"], #tutorial-overlay, #mobile-menu');
+        if (!modal) return;
+
+        closeModalElement(modal);
+    });
+
+    // Escape closes top-most open modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const top = getTopmostOpenModal();
+        if (!top) return;
+        closeModalElement(top);
+    });
+}
+
+function extractAndApplyBrandPaletteFromLogo() {
+    try {
+        const root = document.documentElement;
+        const logoEl = document.querySelector('img[src*="gcsemate"], img[alt*="GCSEMate"]');
+        const src = logoEl ? (logoEl.getAttribute('src') || '') : 'gcsemate%20new.png';
+        const url = new URL(src, window.location.href);
+
+        // Avoid tainted canvas from cross-origin fallback images
+        if (url.origin !== window.location.origin) return;
+
+        const img = new Image();
+        img.decoding = 'async';
+        img.loading = 'eager';
+        img.src = url.href;
+
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                if (!ctx) return;
+
+                // Downsample aggressively
+                const w = Math.max(24, Math.min(96, img.naturalWidth || 96));
+                const h = Math.max(24, Math.min(96, img.naturalHeight || 96));
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+
+                const { data } = ctx.getImageData(0, 0, w, h);
+
+                // Simple hue-bin histogram for saturated colors
+                const bins = Array.from({ length: 12 }, () => ({ count: 0, r: 0, g: 0, b: 0 }));
+                for (let i = 0; i < data.length; i += 4 * 3) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    if (a < 200) continue;
+
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    const l = (max + min) / 2 / 255;
+                    const delta = (max - min) / 255;
+                    if (l > 0.95 || l < 0.12) continue; // ignore near-white/near-black
+                    if (delta < 0.08) continue; // ignore near-gray
+
+                    let hVal = 0;
+                    if (max === min) {
+                        hVal = 0;
+                    } else if (max === r) {
+                        hVal = ((g - b) / (max - min)) % 6;
+                    } else if (max === g) {
+                        hVal = (b - r) / (max - min) + 2;
+                    } else {
+                        hVal = (r - g) / (max - min) + 4;
+                    }
+                    hVal = (hVal * 60 + 360) % 360;
+                    const bin = Math.floor(hVal / 30);
+                    const slot = bins[bin];
+                    slot.count++;
+                    slot.r += r;
+                    slot.g += g;
+                    slot.b += b;
+                }
+
+                const sorted = bins
+                    .filter(b => b.count > 0)
+                    .sort((a, b) => b.count - a.count);
+
+                if (sorted.length === 0) return;
+
+                const primary = sorted[0];
+                const p = {
+                    r: Math.round(primary.r / primary.count),
+                    g: Math.round(primary.g / primary.count),
+                    b: Math.round(primary.b / primary.count)
+                };
+
+                function mix(c1, c2, t) {
+                    return {
+                        r: Math.round(c1.r + (c2.r - c1.r) * t),
+                        g: Math.round(c1.g + (c2.g - c1.g) * t),
+                        b: Math.round(c1.b + (c2.b - c1.b) * t)
+                    };
+                }
+                const white = { r: 255, g: 255, b: 255 };
+                const black = { r: 0, g: 0, b: 0 };
+
+                const brand50 = mix(p, white, 0.90);
+                const brand100 = mix(p, white, 0.80);
+                const brand300 = mix(p, white, 0.55);
+                const brand400 = mix(p, white, 0.35);
+                const brand500 = p;
+                const brand600 = mix(p, black, 0.12);
+                const brand700 = mix(p, black, 0.24);
+
+                function setTriplet(name, c) {
+                    root.style.setProperty(name, `${c.r} ${c.g} ${c.b}`);
+                }
+
+                setTriplet('--brand-50', brand50);
+                setTriplet('--brand-100', brand100);
+                setTriplet('--brand-300', brand300);
+                setTriplet('--brand-400', brand400);
+                setTriplet('--brand-500', brand500);
+                setTriplet('--brand-600', brand600);
+                setTriplet('--brand-700', brand700);
+            } catch (_) {
+                // Best-effort only
+            }
+        };
+    } catch (_) {
+        // Best-effort only
+    }
+}
 
 window.addEventListener('load', () => {
     // Trigger logo slide-in immediately on load
@@ -4984,21 +5210,28 @@ async function viewUserTracking(userId) {
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 mb-4">Recent Activities (${activities.length})</h4>
                             <div class="space-y-2 max-h-96 overflow-y-auto">
-                                ${activities.map(activity => `
+                                ${activities.map(activity => {
+                                    const ad = activity.additionalData || {};
+                                    const subject = activity.subject || ad.subject;
+                                    const fileName = activity.fileName || ad.fileName;
+                                    const viewDuration = activity.viewDuration || ad.viewDuration;
+                                    const revisionDuration = activity.revisionDuration || ad.revisionDuration;
+                                    return `
                                     <div class="bg-gray-50 p-3 rounded-lg text-sm">
                                         <div class="flex justify-between items-start">
                                             <div>
                                                 <span class="font-medium text-blue-600">${activity.activityType.replace(/_/g, ' ').toUpperCase()}</span>
-                                                ${activity.subject ? `<span class="text-gray-600"> - ${activity.subject}</span>` : ''}
-                                                ${activity.fileName ? `<span class="text-gray-600"> - ${activity.fileName}</span>` : ''}
+                                                ${subject ? `<span class="text-gray-600"> - ${subject}</span>` : ''}
+                                                ${fileName ? `<span class="text-gray-600"> - ${fileName}</span>` : ''}
                                             </div>
                                             <span class="text-xs text-gray-500">${formatDate(activity.timestamp)}</span>
                                         </div>
-                                        ${activity.viewDuration ? `<div class="text-xs text-gray-600 mt-1">Duration: ${Math.round(activity.viewDuration / 1000)}s</div>` : ''}
-                                        ${activity.revisionDuration ? `<div class="text-xs text-gray-600 mt-1">Revision Time: ${Math.round(activity.revisionDuration / 1000)}s</div>` : ''}
+                                        ${viewDuration ? `<div class="text-xs text-gray-600 mt-1">Duration: ${Math.round(viewDuration / 1000)}s</div>` : ''}
+                                        ${revisionDuration ? `<div class="text-xs text-gray-600 mt-1">Revision Time: ${Math.round(revisionDuration / 1000)}s</div>` : ''}
                                         ${activity.ip ? `<div class="text-xs text-gray-500 mt-1">IP: ${activity.ip}</div>` : ''}
                                     </div>
-                                `).join('')}
+                                `;
+                                }).join('')}
                             </div>
                         </div>
                         
@@ -12676,8 +12909,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Keyboard shortcuts and navigation
     let goPrefix = false; // 'g' then key
     document.addEventListener('keydown', (e) => {
-        // Don't interfere with form inputs
-        if (e.target && ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+        // Don't interfere with text inputs / editors (including contenteditable blog editor)
+        const target = e.target;
+        const tagName = target && target.tagName;
+        const isFormField = tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName);
+        const isContentEditable = !!(target && (target.isContentEditable || target.closest('[contenteditable="true"]')));
+        const isBlogEditor = !!(target && target.closest('#blog-post-content'));
+        if (isFormField || isContentEditable || isBlogEditor) return;
         
         // Don't interfere with modals
         const activeModals = document.querySelectorAll('[id$="-modal"]');

@@ -285,69 +285,71 @@
     <!-- If tailwind.css is built and has content, it will be used. Otherwise CDN loads as fallback -->
     <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link">
     <script>
-        (function() {
-            // Store original console.warn before any modifications
+        (function () {
             const originalConsoleWarn = console.warn;
-            let warnOverrideActive = false;
-            
-            // Safe wrapper function that only suppresses Tailwind CDN warnings
+
+            function markTailwindLoaded() {
+                document.body.classList.add('tailwind-loaded');
+            }
+
             function createWarnWrapper() {
-                return function(...args) {
-                    // Only suppress if this is specifically the Tailwind CDN production warning
+                return function (...args) {
                     const firstArg = args[0];
                     if (firstArg && typeof firstArg === 'string') {
                         const message = firstArg.toLowerCase();
-                        // Check for Tailwind CDN production warning patterns
-                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss')) && 
+                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss')) &&
                             (message.includes('production') || message.includes('not recommended'))) {
-                            return; // Suppress only this specific warning
+                            return;
                         }
                     }
-                    // Pass through all other warnings
                     originalConsoleWarn.apply(console, args);
                 };
             }
-            
-            // Load Tailwind CDN immediately as fallback
-            // This ensures styles work even if tailwind.css is not built yet
-            const script = document.createElement('script');
-            script.src = 'https://cdn.tailwindcss.com';
-            
-            script.onload = function() {
-                // Mark Tailwind as loaded to show content
-                document.body.classList.add('tailwind-loaded');
-                
-                // Only apply override if script loads successfully
-                if (!warnOverrideActive) {
+
+            function loadTailwindCdnFallback() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.tailwindcss.com';
+
+                script.onload = function () {
+                    // Tailwind is available; show content
+                    markTailwindLoaded();
+
+                    // Only suppress the specific Tailwind CDN production warning
                     console.warn = createWarnWrapper();
-                    warnOverrideActive = true;
-                }
-                
-                // Check if compiled tailwind.css exists and has real content
-                fetch('tailwind.css')
-                    .then(res => res.text())
-                    .then(text => {
-                        if (text && text.trim().length > 1000) {
-                            // Compiled file exists with content
-                            console.log('Tailwind CSS: Compiled file found. To use it, build with: npm run build:css');
-                        }
-                    })
-                    .catch(() => {
-                        // File doesn't exist, CDN is already loaded
-                    });
-            };
-            
-            // Fallback: Show content after timeout if Tailwind doesn't load
-            setTimeout(() => {
-                document.body.classList.add('tailwind-loaded');
-            }, 3000);
-            
-            script.onerror = function() {
-                // If CDN fails to load, don't modify console.warn
-                console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
-            };
-            
-            document.head.appendChild(script);
+                };
+
+                script.onerror = function () {
+                    console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
+                    // Still show content so the page isn't blank
+                    markTailwindLoaded();
+                };
+
+                document.head.appendChild(script);
+            }
+
+            // Prefer local compiled tailwind.css. Only load CDN if it's missing/empty.
+            const localCssCheck = fetch('tailwind.css', { cache: 'no-store' })
+                .then(res => (res.ok ? res.text() : ''))
+                .then(text => (text && text.trim().length > 1000));
+
+            // Don't block rendering too long on slow networks
+            const timeout = new Promise(resolve => setTimeout(() => resolve(false), 900));
+
+            Promise.race([localCssCheck, timeout])
+                .then(hasLocalCss => {
+                    if (hasLocalCss) {
+                        markTailwindLoaded();
+                    } else {
+                        loadTailwindCdnFallback();
+                    }
+                })
+                .catch(() => {
+                    // On any unexpected failure, try CDN fallback
+                    loadTailwindCdnFallback();
+                });
+
+            // Final fallback: never keep the UI hidden forever
+            setTimeout(markTailwindLoaded, 3000);
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -419,7 +421,7 @@
         <main class="mt-8 sm:mt-12 lg:mt-16" role="main">
             <div class="animate-hero-title">
                 <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight px-4">
-                    Ace Your GCSEs with <span class="text-blue-600">Zero Stress</span>
+                    Ace Your GCSEs with <span class="brand-text">Zero Stress</span>
                 </h1>
             </div>
             <div class="animate-hero-subtitle">
@@ -428,10 +430,10 @@
                 </p>
             </div>
             <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
-                <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 sm:px-10 py-4 text-lg font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 min-h-[60px] flex items-center justify-center" data-tooltip="Start your GCSE success journey today">
+                <button onclick="showAuthPage(false)" class="btn-primary w-full sm:w-auto px-8 sm:px-10 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Start your GCSE success journey today">
                     Start Free Today
                 </button>
-                <button onclick="showAuthPage(true)" class="w-full sm:w-auto px-6 sm:px-8 py-4 text-base font-bold text-blue-700 bg-transparent rounded-xl hover:bg-blue-50 transition-colors border-2 border-blue-600 min-h-[60px] flex items-center justify-center">
+                <button onclick="showAuthPage(true)" class="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-4 text-base min-h-[60px] flex items-center justify-center">
                     Already have an account? Sign In
                 </button>
             </div>
@@ -562,13 +564,13 @@
             </div>
             
             <!-- Call to Action Section -->
-            <div class="mt-20 sm:mt-24 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 sm:p-12 text-center text-white">
+            <div class="mt-20 sm:mt-24 brand-cta rounded-2xl p-8 sm:p-12 text-center text-white">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">Ready to Transform Your GCSE Journey?</h2>
                 <p class="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
                     Join thousands of students who've already discovered the secret to stress-free revision and better grades.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <button onclick="showAuthPage(false)" class="w-full sm:w-auto px-8 py-4 text-lg font-bold text-blue-600 bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/30 min-h-[60px] flex items-center justify-center">
+                    <button onclick="showAuthPage(false)" class="btn-inverse w-full sm:w-auto px-8 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-white/30">
                         Start Your Success Story
                     </button>
                     <p class="text-sm text-blue-200">Free forever • No credit card required</p>
@@ -1716,7 +1718,7 @@
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                             <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
-                                <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos).</p>
+                                <p>Yes! Press <strong>?</strong> anywhere to open this Help/FAQ and see the shortcuts. You can also press <strong>/</strong> to focus the file search, or press <strong>g</strong> followed by a letter to jump to a section (e.g. <strong>d</strong> for dashboard, <strong>v</strong> for videos). While typing in the blog editor, navigation shortcuts are disabled.</p>
                             </div>
                         </div>
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
@@ -1990,6 +1992,7 @@
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
+            <p class="text-sm text-gray-600 mb-4">Note: Navigation shortcuts (like <strong>?</strong>, <strong>/</strong>, and <strong>g</strong> then a letter) are disabled while typing in the blog editor.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div class="space-y-3">
                     <h4 class="font-semibold text-gray-700 mb-2">Text Formatting</h4>
