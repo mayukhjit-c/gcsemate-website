@@ -3286,6 +3286,7 @@ auth.onAuthStateChanged(async (user) => {
             landingPage.classList.remove('hidden');
             landingPage.classList.add('fade-in');
         }
+        try { initLandingEnhancements(); } catch (_) {}
         hideAppLoading();
     }
 });
@@ -3366,6 +3367,98 @@ function initializeAppState() {
     
     // Update AI Tutor navigation visibility
     updateAITutorNavVisibility();
+}
+
+// =================================================================================
+// Landing page micro-interactions (reveal + count-up)
+// =================================================================================
+
+let landingEnhancementsInitialized = false;
+function initLandingEnhancements() {
+    if (landingEnhancementsInitialized) return;
+    landingEnhancementsInitialized = true;
+
+    try {
+        // Reveal-on-scroll
+        const nodes = Array.from(document.querySelectorAll('.reveal-on-scroll'));
+        if (nodes.length) {
+            const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) {
+                nodes.forEach(n => n.classList.add('is-revealed'));
+            } else {
+                const observer = new IntersectionObserver(
+                    entries => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('is-revealed');
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.15 }
+                );
+                nodes.forEach(n => observer.observe(n));
+            }
+        }
+
+        // Count-up stats (only for elements explicitly tagged)
+        const countNodes = Array.from(document.querySelectorAll('[data-countup]'));
+        if (countNodes.length) {
+            const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const formatCompact = (n) => {
+                try {
+                    return new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+                } catch (_) {
+                    return String(n);
+                }
+            };
+
+            const animateCount = (el) => {
+                const target = Number(el.getAttribute('data-countup'));
+                if (!Number.isFinite(target)) return;
+                const suffix = el.getAttribute('data-suffix') || '';
+                const mode = el.getAttribute('data-format') || '';
+                const duration = 900;
+                const start = performance.now();
+
+                const step = (now) => {
+                    const t = Math.min(1, (now - start) / duration);
+                    // easeOutCubic
+                    const eased = 1 - Math.pow(1 - t, 3);
+                    const value = Math.round(target * eased);
+                    const displayValue = mode === 'compact' ? formatCompact(value) : String(value);
+                    el.textContent = `${displayValue}${suffix}`;
+                    if (t < 1) requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
+            };
+
+            if (reduceMotion) {
+                countNodes.forEach(el => {
+                    const target = Number(el.getAttribute('data-countup'));
+                    const suffix = el.getAttribute('data-suffix') || '';
+                    const mode = el.getAttribute('data-format') || '';
+                    const displayValue = mode === 'compact' ? formatCompact(target) : String(target);
+                    el.textContent = `${displayValue}${suffix}`;
+                });
+            } else {
+                const observer = new IntersectionObserver(
+                    entries => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                animateCount(entry.target);
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.35 }
+                );
+                countNodes.forEach(el => observer.observe(el));
+            }
+        }
+    } catch (e) {
+        console.error('initLandingEnhancements failed', e);
+    }
 }
 
 // AI Tutor functionality
@@ -4291,6 +4384,9 @@ function setupRealtimeListeners() {
         document.getElementById('user-settings-panel').classList.add('hidden');
         document.getElementById('add-link-form-container').classList.remove('hidden');
         document.getElementById('add-blog-post-form-container').classList.remove('hidden');
+
+        // Admin-only predicted exam results tracker
+        try { AdminExamResultsTracker.initAdminUI(); } catch (e) { console.error(e); }
         
         // Initialize maintenance mode status
         initializeMaintenanceStatus();
@@ -4318,6 +4414,9 @@ function setupRealtimeListeners() {
         document.getElementById('user-settings-panel').classList.remove('hidden');
         document.getElementById('add-link-form-container').classList.add('hidden');
         document.getElementById('add-blog-post-form-container').classList.add('hidden');
+
+        // Normal-user predicted exam results section
+        try { PredictedExamResults.initUserUI(); } catch (e) { console.error(e); }
     }
     // Listen for useful links
     unsubscribeUsefulLinks = db.collection('usefulLinks').orderBy('createdAt', 'desc')
@@ -8538,6 +8637,366 @@ function createToastContainer() {
     document.body.appendChild(container);
     return container;
 }
+
+// =================================================================================
+// PREDICTED EXAM RESULTS (GCSE grades) - User + Admin Tracker
+// =================================================================================
+
+function toPeriodIdFromMonthInput(value) {
+    // value is expected to be YYYY-MM from <input type="month">
+    if (typeof value !== 'string') return '';
+    const v = value.trim();
+    return /^\d{4}-\d{2}$/.test(v) ? v : '';
+}
+
+function normalizeSubjectId(subjectName) {
+    return String(subjectName || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\-]/g, '');
+}
+
+function sanitizeGcseGrade(raw) {
+    if (raw === null || raw === undefined) return '';
+    const s = String(raw).toUpperCase();
+    // Accept 0-9 or U (first valid char only)
+    const match = s.match(/[0-9U]/);
+    return match ? match[0] : '';
+}
+
+function gradeToNumeric(grade) {
+    const g = sanitizeGcseGrade(grade);
+    if (!g) return null;
+    if (g === 'U') return 0;
+    const n = Number(g);
+    return Number.isFinite(n) ? n : null;
+}
+
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+function clamp01(x) {
+    return Math.max(0, Math.min(1, x));
+}
+
+function gradeToHsl(grade) {
+    const g = sanitizeGcseGrade(grade);
+    if (!g) return null;
+    if (g === 'U') {
+        return { h: 0, s: 80, l: 25 }; // darkest red
+    }
+
+    const n = Number(g);
+    if (!Number.isFinite(n)) return null;
+
+    // Smooth piecewise mapping:
+    // U-4: red -> orange; darker = lower
+    // 4-7: orange -> yellow-green (amber); darker = higher
+    // 7-9: yellow-green -> green; darker = higher
+    if (n <= 4) {
+        // 0..4
+        const t = clamp01(n / 4);
+        const h = lerp(0, 25, t); // red -> orange
+        const l = lerp(25, 55, t); // darker at low end (U/0), lighter toward 4
+        return { h, s: 85, l };
+    }
+    if (n <= 7) {
+        const t = clamp01((n - 4) / 3);
+        const h = lerp(25, 90, t); // orange -> yellow-green
+        const l = lerp(55, 45, t); // darker as number increases
+        return { h, s: 85, l };
+    }
+    // 7..9
+    const t = clamp01((n - 7) / 2);
+    const h = lerp(90, 120, t); // yellow-green -> green
+    const l = lerp(45, 30, t); // darker as number increases
+    return { h, s: 70, l };
+}
+
+function applyGradeStyling(inputEl, grade) {
+    if (!inputEl) return;
+    inputEl.style.transition = 'background-color 200ms ease, border-color 200ms ease, color 200ms ease';
+
+    const hsl = gradeToHsl(grade);
+    if (!hsl) {
+        inputEl.style.backgroundColor = '';
+        inputEl.style.borderColor = '';
+        inputEl.style.color = '';
+        inputEl.dataset.grade = '';
+        return;
+    }
+    const bg = `hsl(${hsl.h} ${hsl.s}% ${hsl.l}%)`;
+    const border = `hsl(${hsl.h} ${Math.min(95, hsl.s + 5)}% ${Math.max(15, hsl.l - 8)}%)`;
+    inputEl.style.backgroundColor = bg;
+    inputEl.style.borderColor = border;
+
+    // Choose readable text color based on lightness
+    inputEl.style.color = hsl.l <= 48 ? '#ffffff' : '#111827';
+    inputEl.dataset.grade = sanitizeGcseGrade(grade);
+}
+
+const PredictedExamResults = {
+    unsubscribe: null,
+    currentPeriod: null,
+    loaded: false,
+
+    getDefaultPeriod() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+    },
+
+    getUserCollectionRef(periodId) {
+        return db
+            .collection('userExamResults')
+            .doc(currentUser.uid)
+            .collection('predicted')
+            .doc(periodId)
+            .collection('subjects');
+    },
+
+    renderGrid(containerEl, dataBySubjectId) {
+        if (!containerEl) return;
+        const subjects = Array.isArray(SUBJECTS) ? SUBJECTS : [];
+
+        containerEl.innerHTML = subjects
+            .map(subjectName => {
+                const subjectId = normalizeSubjectId(subjectName);
+                const existing = dataBySubjectId?.[subjectId];
+                const grade = sanitizeGcseGrade(existing?.grade || '');
+                const inputId = `predicted-grade-${subjectId}`;
+                return `
+                    <div class="flex items-center justify-between gap-3 bg-white/60 border border-white/30 rounded-lg p-3">
+                        <div class="text-sm font-semibold text-gray-800 truncate" title="${escapeHtml(subjectName)}">${escapeHtml(subjectName)}</div>
+                        <input
+                            id="${inputId}"
+                            data-subject-id="${subjectId}"
+                            data-subject-name="${escapeHtml(subjectName)}"
+                            inputmode="text"
+                            autocomplete="off"
+                            maxlength="1"
+                            spellcheck="false"
+                            aria-label="Predicted grade for ${escapeHtml(subjectName)}"
+                            class="w-14 h-12 text-center text-lg font-extrabold rounded-lg border border-gray-300/60 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value="${grade}"
+                            placeholder="-"
+                        />
+                    </div>
+                `;
+            })
+            .join('');
+
+        // Apply styling and bind handlers
+        containerEl.querySelectorAll('input[data-subject-id]').forEach(input => {
+            applyGradeStyling(input, input.value);
+
+            const handler = async (e) => {
+                if (!currentUser || !currentUser.uid) return;
+                const periodId = this.currentPeriod;
+                if (!periodId) return;
+
+                const subjectId = input.getAttribute('data-subject-id');
+                const subjectName = input.getAttribute('data-subject-name') || subjectId;
+
+                const sanitized = sanitizeGcseGrade(input.value);
+                if (input.value !== sanitized) {
+                    input.value = sanitized;
+                }
+                applyGradeStyling(input, sanitized);
+
+                // Debounced save per input
+                const key = `predictedExam:${periodId}:${subjectId}`;
+                debounce(key, async () => {
+                    try {
+                        const statusEl = document.getElementById('predicted-exam-results-status');
+                        if (statusEl) statusEl.textContent = 'Saving...';
+
+                        const ref = this.getUserCollectionRef(periodId).doc(subjectId);
+                        if (!sanitized) {
+                            await ref.delete();
+                        } else {
+                            await ref.set(
+                                {
+                                    userId: currentUser.uid,
+                                    period: periodId,
+                                    subjectId,
+                                    subjectName,
+                                    grade: sanitized,
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                },
+                                { merge: true }
+                            );
+                        }
+                        if (statusEl) statusEl.textContent = 'Saved.';
+                        setTimeout(() => {
+                            if (statusEl && statusEl.textContent === 'Saved.') statusEl.textContent = '';
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Failed to save predicted exam result:', err);
+                        showToast('Failed to save predicted grade', 'error');
+                        const statusEl = document.getElementById('predicted-exam-results-status');
+                        if (statusEl) statusEl.textContent = 'Failed to save.';
+                    }
+                }, 350);
+            };
+
+            input.addEventListener('input', handler);
+            input.addEventListener('paste', handler);
+            input.addEventListener('change', handler);
+        });
+    },
+
+    async loadForPeriod(periodId) {
+        const gridEl = document.getElementById('predicted-exam-results-grid');
+        const statusEl = document.getElementById('predicted-exam-results-status');
+        if (!gridEl) return;
+        if (!currentUser || !currentUser.uid) return;
+
+        const pid = toPeriodIdFromMonthInput(periodId);
+        if (!pid) return;
+        this.currentPeriod = pid;
+
+        try {
+            if (statusEl) statusEl.textContent = 'Loading...';
+            const snapshot = await this.getUserCollectionRef(pid).get();
+            const dataBySubjectId = {};
+            snapshot.forEach(docSnap => {
+                dataBySubjectId[docSnap.id] = docSnap.data();
+            });
+            this.renderGrid(gridEl, dataBySubjectId);
+            if (statusEl) statusEl.textContent = '';
+            this.loaded = true;
+        } catch (err) {
+            console.error('Failed to load predicted exam results:', err);
+            if (statusEl) statusEl.textContent = 'Failed to load.';
+        }
+    },
+
+    initUserUI() {
+        if (!currentUser || !currentUser.uid) return;
+        if (currentUser.role === 'admin') return; // admins use tracker
+
+        const section = document.getElementById('predicted-exam-results-section');
+        const monthEl = document.getElementById('predicted-exam-month');
+        const gridEl = document.getElementById('predicted-exam-results-grid');
+
+        if (!section || !monthEl || !gridEl) return;
+
+        const defaultPeriod = this.getDefaultPeriod();
+        if (!monthEl.value) monthEl.value = defaultPeriod;
+
+        monthEl.addEventListener('change', async () => {
+            const pid = toPeriodIdFromMonthInput(monthEl.value);
+            if (!pid) return;
+            await this.loadForPeriod(pid);
+        });
+
+        // Initial load
+        this.loadForPeriod(toPeriodIdFromMonthInput(monthEl.value) || defaultPeriod);
+    },
+};
+
+const AdminExamResultsTracker = {
+    getCollectionRef(uid, periodId) {
+        return db
+            .collection('userExamResults')
+            .doc(uid)
+            .collection('predicted')
+            .doc(periodId)
+            .collection('subjects');
+    },
+
+    renderGrid(containerEl, dataBySubjectId) {
+        if (!containerEl) return;
+        const subjects = Array.isArray(SUBJECTS) ? SUBJECTS : [];
+        containerEl.innerHTML = subjects
+            .map(subjectName => {
+                const subjectId = normalizeSubjectId(subjectName);
+                const doc = dataBySubjectId?.[subjectId];
+                const grade = sanitizeGcseGrade(doc?.grade || '');
+                const display = grade || '—';
+                return `
+                    <div class="flex items-center justify-between gap-3 bg-white/60 border border-white/30 rounded-lg p-3">
+                        <div class="text-sm font-semibold text-gray-800 truncate" title="${escapeHtml(subjectName)}">${escapeHtml(subjectName)}</div>
+                        <div class="w-14 h-12 flex items-center justify-center text-lg font-extrabold rounded-lg border border-gray-300/60 bg-white/60" data-admin-grade="${display}">${escapeHtml(display)}</div>
+                    </div>
+                `;
+            })
+            .join('');
+
+        containerEl.querySelectorAll('[data-admin-grade]').forEach(box => {
+            const grade = box.getAttribute('data-admin-grade');
+            if (!grade || grade === '—') return;
+            box.style.transition = 'background-color 200ms ease, border-color 200ms ease, color 200ms ease';
+            const hsl = gradeToHsl(grade);
+            if (!hsl) return;
+            box.style.backgroundColor = `hsl(${hsl.h} ${hsl.s}% ${hsl.l}%)`;
+            box.style.borderColor = `hsl(${hsl.h} ${Math.min(95, hsl.s + 5)}% ${Math.max(15, hsl.l - 8)}%)`;
+            box.style.color = hsl.l <= 48 ? '#ffffff' : '#111827';
+        });
+    },
+
+    async load(uid, periodId) {
+        const statusEl = document.getElementById('admin-exam-results-status');
+        const gridEl = document.getElementById('admin-exam-results-grid');
+        if (!gridEl) return;
+        if (!currentUser || currentUser.role !== 'admin') return;
+
+        const cleanUid = String(uid || '').trim();
+        const pid = toPeriodIdFromMonthInput(periodId);
+        if (!cleanUid) {
+            if (statusEl) statusEl.textContent = 'Enter a user UID.';
+            return;
+        }
+        if (!pid) {
+            if (statusEl) statusEl.textContent = 'Select a month.';
+            return;
+        }
+
+        try {
+            if (statusEl) statusEl.textContent = 'Loading...';
+            const snapshot = await this.getCollectionRef(cleanUid, pid).get();
+            const dataBySubjectId = {};
+            snapshot.forEach(docSnap => {
+                dataBySubjectId[docSnap.id] = docSnap.data();
+            });
+            this.renderGrid(gridEl, dataBySubjectId);
+            if (statusEl) statusEl.textContent = '';
+        } catch (err) {
+            console.error('Failed to load admin predicted exam results:', err);
+            if (statusEl) statusEl.textContent = 'Failed to load (check permissions / UID).';
+        }
+    },
+
+    initAdminUI() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        const uidEl = document.getElementById('admin-exam-results-uid');
+        const monthEl = document.getElementById('admin-exam-results-month');
+        const loadBtn = document.getElementById('admin-exam-results-load');
+        const clearBtn = document.getElementById('admin-exam-results-clear');
+        const gridEl = document.getElementById('admin-exam-results-grid');
+        const statusEl = document.getElementById('admin-exam-results-status');
+
+        if (!uidEl || !monthEl || !loadBtn || !clearBtn || !gridEl) return;
+
+        const d = new Date();
+        const defaultPeriod = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthEl.value) monthEl.value = defaultPeriod;
+
+        loadBtn.addEventListener('click', () => {
+            this.load(uidEl.value, monthEl.value);
+        });
+        clearBtn.addEventListener('click', () => {
+            uidEl.value = '';
+            gridEl.innerHTML = '';
+            if (statusEl) statusEl.textContent = '';
+        });
+    },
+};
 
 // Global error handler for better user experience
 function handleAPIError(error, context = '') {

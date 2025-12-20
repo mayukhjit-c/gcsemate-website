@@ -167,7 +167,28 @@ service cloud.firestore {
     match /userExamResults/{uid} {
       allow read, write: if false;
       match /subjects/{subjectId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+        allow write: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // Predicted grades by month/year (YYYY-MM)
+      match /predicted/{periodId} {
+        allow read, write: if false;
+        match /subjects/{subjectId} {
+          allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+
+          allow create, update: if isSignedIn() && request.auth.uid == uid &&
+            periodId.matches('^\\d{4}-\\d{2}$') &&
+            request.resource.data.keys().hasOnly(['userId','period','subjectId','subjectName','grade','createdAt','updatedAt']) &&
+            request.resource.data.userId == uid &&
+            request.resource.data.period == periodId &&
+            request.resource.data.subjectId == subjectId &&
+            request.resource.data.subjectName is string &&
+            request.resource.data.grade is string &&
+            request.resource.data.grade.matches('^[U0-9]$');
+
+          allow delete: if isSignedIn() && request.auth.uid == uid;
+        }
       }
     }
 
