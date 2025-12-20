@@ -220,40 +220,6 @@ border-radius: 4px;
         .animate-fade-in {
             animation: fade-in 0.3s ease-out;
         }
-
-        /* Micro-animations: reveal on scroll */
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(12px);
-            transition: opacity var(--animation-slow) cubic-bezier(0.16, 1, 0.3, 1),
-                        transform var(--animation-slow) cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: opacity, transform;
-        }
-        .reveal-on-scroll.is-revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Micro-animations: subtle lift on hover */
-        .lift-on-hover {
-            transition: transform var(--animation-fast) cubic-bezier(0.16, 1, 0.3, 1),
-                        box-shadow var(--animation-fast) cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform, box-shadow;
-        }
-        .lift-on-hover:hover {
-            transform: translateY(-2px);
-        }
-        .lift-on-hover:active {
-            transform: translateY(-1px);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .reveal-on-scroll,
-            .lift-on-hover {
-                transition: none !important;
-                transform: none !important;
-            }
-        }
         @keyframes skeleton-loading {
 0% { background-position: 200% 0; }
 100% { background-position: -200% 0; }

@@ -6,57 +6,6 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3142302168894001"
      crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-
-    <!-- CSS first: start fetching critical styles immediately to avoid FOUC -->
-    <link rel="preload" href="tailwind.css" as="style" fetchpriority="high">
-    <link rel="preload" href="styles.css" as="style" fetchpriority="high">
-    <style>
-        /* Critical loader styling (works even before Tailwind loads) */
-        #app-loading {
-            position: fixed;
-            inset: 0;
-            z-index: 20000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #ffffff;
-            text-align: center;
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-        #app-loading .progress-bar {
-            width: 300px;
-            max-width: 80vw;
-            height: 10px;
-            border-radius: 9999px;
-            overflow: hidden;
-            background: rgba(15, 23, 42, 0.08);
-        }
-        #app-loading .progress-bar .bar {
-            height: 100%;
-            width: 100%;
-            background: #2563eb;
-            opacity: 0.18;
-            transform: translateX(-100%);
-            animation: app-loading-bar 1.15s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-        }
-        #app-loading .progress-bar .bar2 {
-            opacity: 0.10;
-            animation-delay: 0.25s;
-        }
-        @keyframes app-loading-bar {
-            0% { transform: translateX(-100%); }
-            55% { transform: translateX(0%); }
-            100% { transform: translateX(100%); }
-        }
-        /* Keep UI stable while Tailwind loads; loader stays visible */
-        html:not(.tailwind-loaded) body > *:not(#app-loading):not(script) {
-            visibility: hidden;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            #app-loading .progress-bar .bar { animation: none; transform: translateX(0%); }
-        }
-    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="author" content="Mayukhjit Chakraborty - Proudly made using no generative AI">
     <title>GCSEMate - Free GCSE Revision Notes, Past Papers & Study Resources | AQA, Edexcel, OCR</title>
@@ -186,21 +135,6 @@
       }]
     }
     </script>
-        <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": "GCSEMate - GCSE Revision Platform",
-            "url": "https://gcsemate.com/",
-            "inLanguage": "en-GB",
-            "description": "Free GCSE revision platform with organized notes, past papers, videos, and study guides for all subjects. Upgrade available for students who want unlimited access.",
-            "isPartOf": {
-                "@type": "WebSite",
-                "name": "GCSEMate",
-                "url": "https://gcsemate.com/"
-            }
-        }
-        </script>
     <script>
     (function(){
         try{
@@ -349,13 +283,13 @@
     </script>
     <!-- Tailwind CSS - Production Build -->
     <!-- If tailwind.css is built and has content, it will be used. Otherwise CDN loads as fallback -->
-    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link" fetchpriority="high">
+    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link">
     <script>
         (function () {
             const originalConsoleWarn = console.warn;
 
             function markTailwindLoaded() {
-                document.documentElement.classList.add('tailwind-loaded');
+                document.body.classList.add('tailwind-loaded');
             }
 
             function createWarnWrapper() {
@@ -375,38 +309,47 @@
             function loadTailwindCdnFallback() {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.tailwindcss.com';
+
                 script.onload = function () {
+                    // Tailwind is available; show content
                     markTailwindLoaded();
+
+                    // Only suppress the specific Tailwind CDN production warning
                     console.warn = createWarnWrapper();
                 };
+
                 script.onerror = function () {
                     console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
+                    // Still show content so the page isn't blank
                     markTailwindLoaded();
                 };
+
                 document.head.appendChild(script);
             }
 
-            const link = document.getElementById('tailwind-css-link');
-            if (link) {
-                // Mark as soon as the stylesheet is ready
-                link.addEventListener('load', markTailwindLoaded, { once: true });
-                link.addEventListener('error', loadTailwindCdnFallback, { once: true });
+            // Prefer local compiled tailwind.css. Only load CDN if it's missing/empty.
+            const localCssCheck = fetch('tailwind.css', { cache: 'no-store' })
+                .then(res => (res.ok ? res.text() : ''))
+                .then(text => (text && text.trim().length > 1000));
 
-                // If the stylesheet is already cached/ready, don't wait
-                setTimeout(() => {
-                    try {
-                        if (link.sheet) markTailwindLoaded();
-                    } catch (_) {
-                        // Some browsers may throw for cross-origin; ignore
+            // Don't block rendering too long on slow networks
+            const timeout = new Promise(resolve => setTimeout(() => resolve(false), 900));
+
+            Promise.race([localCssCheck, timeout])
+                .then(hasLocalCss => {
+                    if (hasLocalCss) {
+                        markTailwindLoaded();
+                    } else {
+                        loadTailwindCdnFallback();
                     }
-                }, 0);
-            } else {
-                // Extremely defensive fallback
-                markTailwindLoaded();
-            }
+                })
+                .catch(() => {
+                    // On any unexpected failure, try CDN fallback
+                    loadTailwindCdnFallback();
+                });
 
-            // Never keep the UI hidden forever
-            setTimeout(markTailwindLoaded, 2000);
+            // Final fallback: never keep the UI hidden forever
+            setTimeout(markTailwindLoaded, 3000);
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -420,7 +363,7 @@
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
     <!-- External CSS -->
-    <link rel="stylesheet" href="styles.css" fetchpriority="high">
+    <link rel="stylesheet" href="styles.css">
     
     <!-- Security Layer - Copyright © 2025 Mayukhjit Chakraborty -->
     <script src="security.js"></script>
@@ -432,6 +375,23 @@
     </head>
     <!-- External JavaScript will be loaded after body for better performance -->
     <body class="bg-gray-100 min-h-screen relative">
+    <!-- Hide content until Tailwind loads to prevent FOUC -->
+    <style>
+        body:not(.tailwind-loaded) > *:not(#app-loading):not(script) {
+            visibility: hidden;
+        }
+        @keyframes loading-bar {
+            0% {
+                transform: translateX(-100%);
+            }
+            50% {
+                transform: translateX(0%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
     <a href="#page-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
@@ -478,27 +438,27 @@
                 </button>
             </div>
             <div class="mt-6 sm:mt-8 text-center px-4">
-                <p class="text-sm text-gray-500">No credit card required • Join in 30 seconds • Upgrade anytime to <span class="font-semibold text-gray-700">Pro</span> for unlimited access</p>
+                <p class="text-sm text-gray-500">No credit card required • Join in 30 seconds</p>
             </div>
             <div class="mt-16 sm:mt-20 lg:mt-24 px-4">
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">Why 50+ Students Choose GCSEMate</h2>
                 <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300 reveal-on-scroll lift-on-hover" style="animation-delay: 0.1s;">
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.1s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 hover:scale-110">
                             <i class="fas fa-folder-open text-2xl"></i>
                         </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">One-Stop Revision Hub</h3>
                         <p class="mt-2 text-gray-600">No more hunting through folders or losing important files. Everything you need for every subject is organized and instantly accessible from one dashboard.</p>
                     </div>
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300 reveal-on-scroll lift-on-hover" style="animation-delay: 0.2s;">
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.2s;">
                          <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 transition-transform duration-300 hover:scale-110">
                              <i class="fas fa-eye text-2xl"></i>
                          </div>
                         <h3 class="mt-6 text-xl font-bold text-gray-900">Instant File Previews</h3>
                         <p class="mt-2 text-gray-600">Preview PDFs, documents, and images instantly without downloading. Save time and storage space while studying more efficiently.</p>
                     </div>
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300 reveal-on-scroll lift-on-hover" style="animation-delay: 0.3s;">
+                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern animate-feature-card hover:shadow-xl transition-all duration-300" style="animation-delay: 0.3s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-600 transition-transform duration-300 hover:scale-110">
                            <i class="fas fa-calendar-alt text-2xl"></i>
                         </div>
@@ -514,32 +474,32 @@
                     <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">Trusted by Students Across the UK</h2>
                     <p class="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg">Real numbers from real students achieving real results</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow reveal-on-scroll lift-on-hover">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
                                 <i class="fas fa-users text-3xl sm:text-4xl text-blue-600"></i>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2" data-countup="50" data-suffix="+" aria-label="50+">0</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">50+</div>
                             <div class="text-sm text-gray-600">Active Students</div>
                         </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow reveal-on-scroll lift-on-hover">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
                                 <i class="fas fa-star text-3xl sm:text-4xl text-yellow-500"></i>
                             </div>
                             <div class="text-2xl sm:text-3xl font-bold text-yellow-600 mb-2">4.9/5</div>
                             <div class="text-sm text-gray-600">Average Rating</div>
                         </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow reveal-on-scroll lift-on-hover">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
                                 <i class="fas fa-chart-line text-3xl sm:text-4xl text-green-600"></i>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-green-600 mb-2" data-countup="95" data-suffix="%" aria-label="95%">0%</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-green-600 mb-2">95%</div>
                             <div class="text-sm text-gray-600">Grade Improvement</div>
                         </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow reveal-on-scroll lift-on-hover">
+                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-center mb-3">
                                 <i class="fas fa-file-alt text-3xl sm:text-4xl text-purple-600"></i>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-purple-600 mb-2" data-countup="1000" data-suffix="+" data-format="compact" aria-label="1,000+">0</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">1,000+</div>
                             <div class="text-sm text-gray-600">Resources Available</div>
                         </div>
                     </div>
@@ -547,7 +507,7 @@
                 
                 <!-- Testimonials -->
                 <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 reveal-on-scroll lift-on-hover">
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                         <div class="flex items-center mb-4">
                             <div class="flex text-yellow-400">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
@@ -565,7 +525,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 reveal-on-scroll lift-on-hover">
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                         <div class="flex items-center mb-4">
                             <div class="flex text-yellow-400">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
@@ -583,7 +543,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 reveal-on-scroll lift-on-hover">
+                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                         <div class="flex items-center mb-4">
                             <div class="flex text-yellow-400">
                                 <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
@@ -613,10 +573,7 @@
                     <button onclick="showAuthPage(false)" class="btn-inverse w-full sm:w-auto px-8 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-white/30">
                         Start Your Success Story
                     </button>
-                    <p class="text-sm text-blue-200">Start free • Upgrade anytime for unlimited access</p>
-                </div>
-                <div class="mt-5 text-sm text-blue-100/90">
-                    Want everything unlocked? <span class="font-semibold">Pro</span> is <span class="font-semibold">£1/month</span> and supports hosting while giving you unlimited access.
+                    <p class="text-sm text-blue-200">Free forever • No credit card required</p>
                 </div>
             </div>
         </main>
@@ -1356,32 +1313,6 @@
                             <div id="user-management-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                         </div>
 
-                        <!-- Predicted Exam Results Tracker (Admin only) -->
-                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-2xl font-bold text-gray-800">Exam Results (Predicted)</h3>
-                                <div class="text-xs text-gray-500">Admin tracker</div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                                <div>
-                                    <label for="admin-exam-results-uid" class="block text-sm font-medium text-gray-700">User UID</label>
-                                    <input id="admin-exam-results-uid" type="text" placeholder="Paste a user UID" class="mt-1 w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                                </div>
-                                <div>
-                                    <label for="admin-exam-results-month" class="block text-sm font-medium text-gray-700">Month</label>
-                                    <input id="admin-exam-results-month" type="month" class="mt-1 w-full p-3 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                                </div>
-                                <div class="flex gap-2">
-                                    <button id="admin-exam-results-load" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">Load</button>
-                                    <button id="admin-exam-results-clear" class="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold">Clear</button>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <div id="admin-exam-results-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-                                <p id="admin-exam-results-status" class="text-xs text-gray-500 h-4 mt-2" aria-live="polite"></p>
-                            </div>
-                        </div>
-
                         <!-- Site Management Tools -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <!-- Site Announcement -->
@@ -1556,20 +1487,6 @@
                                 <input id="accent-picker" type="color" aria-label="Accent color" class="w-9 h-9 rounded cursor-pointer border border-gray-300/70 bg-white" />
                                 <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
                             </div>
-                        </div>
-
-                        <!-- Predicted Exam Results (Normal users only; admins use Admin Dashboard) -->
-                        <div id="predicted-exam-results-section" class="mt-8 pt-6 border-t border-gray-200 space-y-4">
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800">Exam Results (Predicted)</h4>
-                                <p class="text-sm text-gray-500 mt-1">Enter your predicted GCSE grades for a specific month.</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <label for="predicted-exam-month" class="text-sm text-gray-700">Month</label>
-                                <input id="predicted-exam-month" type="month" class="p-2 rounded-lg border border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                            </div>
-                            <div id="predicted-exam-results-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-                            <p id="predicted-exam-results-status" class="text-xs text-gray-500 h-4" aria-live="polite"></p>
                         </div>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
                               <div>
