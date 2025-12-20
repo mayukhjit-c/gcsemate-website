@@ -8195,6 +8195,11 @@ window.exportSystemLogs = function() {
 };
 
 window.clearSystemLogs = async function() {
+    if (!currentUser || (currentUser.role || '').toLowerCase() !== 'admin') {
+        showToast('Only admins can clear system logs.', 'error');
+        return;
+    }
+
     if (!confirm('Are you sure you want to clear all system logs? This action cannot be undone.')) {
         return;
     }
@@ -8211,7 +8216,12 @@ window.clearSystemLogs = async function() {
         viewSystemLogs(); // Refresh the view
     } catch (error) {
         console.error('Error clearing logs:', error);
-        showToast('Failed to clear system logs', 'error');
+        const msg = (error && (error.message || error.code)) ? String(error.message || error.code) : '';
+        if (String(error.code || '').includes('permission') || msg.toLowerCase().includes('permission')) {
+            showToast('Missing permissions to clear logs. Check Firestore rules for /systemLogs delete.', 'error');
+        } else {
+            showToast('Failed to clear system logs', 'error');
+        }
     }
 };
 
@@ -9429,7 +9439,7 @@ function createPlaylistCard(playlist) {
          <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
              <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
              ${playlistUrl ? `
-             <button onclick="event.stopPropagation(); window.open('${escapeHTML(playlistUrl)}', '_blank', 'noopener,noreferrer');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
+             <button onclick="event.stopPropagation(); window.openYouTubeInNewTab('${escapeHTML(playlistUrl)}');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
                  <i class="fas fa-external-link-alt"></i>
                  <span>Open</span>
              </button>
@@ -9966,7 +9976,9 @@ window.handlePlaylistEmbedLoad = function(playlistId) {
 function parseYoutubeUrl(url) {
     try {
         const urlObj = new URL(url);
-        if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        const host = (urlObj.hostname || '').toLowerCase();
+        const isYouTubeHost = host.includes('youtube.com') || host.includes('youtu.be') || host.includes('youtube-nocookie.com');
+        if (isYouTubeHost) {
             const playlistId = urlObj.searchParams.get('list');
             if (playlistId) {
                 // Clean playlist ID (remove any extra characters)
@@ -9979,8 +9991,18 @@ function parseYoutubeUrl(url) {
                 };
             }
             let videoId = urlObj.searchParams.get('v');
-            if (!videoId && urlObj.hostname === 'youtu.be') {
+            if (!videoId && host.includes('youtu.be')) {
                 videoId = urlObj.pathname.slice(1).split('?')[0].split('&')[0];
+            }
+            // Support common path-based formats
+            if (!videoId) {
+                const parts = (urlObj.pathname || '').split('/').filter(Boolean);
+                // /embed/{id} , /shorts/{id} , /live/{id}
+                if (parts[0] === 'embed' && parts[1] && parts[1] !== 'videoseries') {
+                    videoId = parts[1];
+                } else if ((parts[0] === 'shorts' || parts[0] === 'live') && parts[1]) {
+                    videoId = parts[1];
+                }
             }
             if (videoId) {
                 // Clean video ID
@@ -9998,6 +10020,12 @@ function parseYoutubeUrl(url) {
     }
     return null;
 }
+
+window.openYouTubeInNewTab = function(url) {
+    const parsed = parseYoutubeUrl(url);
+    const target = parsed?.watchUrl || url;
+    window.open(target, '_blank', 'noopener,noreferrer');
+};
 async function handleAddLink() {
     if (currentUser.role !== 'admin') return;
     const titleInput = document.getElementById('link-title');

@@ -242,6 +242,7 @@ service cloud.firestore {
         request.resource.data.level is string &&
         request.resource.data.message is string &&
         request.resource.data.timestamp != null;
+      allow update, delete: if isAdmin();
     }
 
     // Error logs (diagnostic/error tracking; admins read, clients can write)
@@ -251,6 +252,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['type','message','stack','timestamp','userId','userAgent']) &&
         request.resource.data.message is string &&
         request.resource.data.timestamp != null;
+      allow update, delete: if isAdmin();
     }
 
     // Backups (created by admin-only tools)
