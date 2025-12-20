@@ -231,6 +231,21 @@ border-radius: 4px;
             outline-offset: 2px;
             border-radius: 4px;
         }
+
+        /* Form controls: ensure borders render consistently */
+        .page input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+        .page textarea,
+        .page select {
+            border-width: 1px;
+            border-style: solid;
+            transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+        }
+
+        .page input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+        .page textarea:hover,
+        .page select:hover {
+            border-color: rgb(var(--border) / 1);
+        }
         
         button:focus-visible,
         a:focus-visible,

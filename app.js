@@ -2965,7 +2965,6 @@ function setupGlobalModalCloseHandlers() {
 
     const dynamicModalIdsToClear = new Set([
         'preview-modal',
-        'playlist-viewer-modal',
         'blog-viewer-modal',
         'legal-modal',
         'dmca-modal',
@@ -2986,6 +2985,10 @@ function setupGlobalModalCloseHandlers() {
 
         // Special-case mobile menu backdrop cleanup
         if (modalEl.id === 'mobile-menu') {
+            if (typeof window.closeMobileMenu === 'function') {
+                window.closeMobileMenu({ restoreFocus: false });
+                return;
+            }
             const backdrop = document.getElementById('mobile-menu-backdrop');
             if (backdrop) backdrop.remove();
             modalEl.classList.remove('menu-open');
@@ -3275,7 +3278,7 @@ auth.onAuthStateChanged(async (user) => {
         if (loginPage) loginPage.classList.add('hidden');
         if (verifyPage) verifyPage.classList.add('hidden');
         // Close any open modals and mobile menu
-        ['mobile-menu','preview-modal','playlist-viewer-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+        ['mobile-menu','preview-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
             .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
         if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
         const landingPage = document.getElementById('landing-page');
@@ -4345,7 +4348,11 @@ function setupRealtimeListeners() {
             });
             allBlogPosts = posts; // Store globally for modal access
             renderBlogPage(posts);
-        }, err => logError(err, "Blog Posts"));
+        }, err => {
+            logError(err, "Blog Posts");
+            try { setBlogStatusMessage('Could not load blog posts. Please refresh and try again.'); } catch (_) {}
+            try { showToast('Could not load blog posts.', 'error'); } catch (_) {}
+        });
     // Listen for user-specific events
     unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
         .onSnapshot(snapshot => {
@@ -8706,11 +8713,22 @@ function showPage(pageId) {
     // Update document title
     try { if (pageTitles[pageId]) document.title = pageTitles[pageId]; } catch (_) {}
     // Lessons removed
-     // Close mobile menu on navigation
-    const mobileMenu = document.getElementById('mobile-menu');
-    if (!mobileMenu.classList.contains('hidden')) {
-        mobileMenu.classList.add('hidden');
-    }
+    // Close mobile menu on navigation (ensure we also clean up backdrop/inline styles)
+    try {
+        if (typeof window.closeMobileMenu === 'function') {
+            window.closeMobileMenu({ restoreFocus: false });
+        } else {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                const backdrop = document.getElementById('mobile-menu-backdrop');
+                if (backdrop) backdrop.remove();
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('menu-open');
+                mobileMenu.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+    } catch (_) {}
     
 }
 function showAnnouncement(message) {
@@ -8858,9 +8876,10 @@ async function renderDashboard() {
             if (board) {
                 const logo = examBoardLogos[board] || null;
                 if (logo) {
-                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="h-6 w-auto mt-1" style="object-fit:contain;"/>`;
+                    const sizeClass = board === 'OCR' ? 'h-7' : 'h-6';
+                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="${sizeClass} w-auto mt-1" style="object-fit:contain;" data-tooltip="Exam board: ${escapeHTML(board)}"/>`;
                 } else {
-                    badge = `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700">${board}</span>`;
+                    badge = `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700" data-tooltip="Exam board: ${escapeHTML(board)}">${board}</span>`;
                 }
             }
             const name = subject && subject.trim() ? subject : 'Subject';
@@ -9515,37 +9534,58 @@ function setupPlaylistFilters() {
 function createPlaylistCard(playlist) {
     const card = document.createElement('div');
     card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
-    card.onclick = () => handlePlaylistClick(playlist);
-    const playlistUrl = playlist.url || '';
-    const tags = (playlist.tags||[]).map(t=>escapeHTML(t)).slice(0,5);
-    card.innerHTML = `
-        <div class="flex-grow flex flex-col justify-center items-center text-center">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="font-bold text-gray-800 leading-tight">${escapeHTML(playlist.title)}</h3>
-            ${tags.length ? `<div class="mt-2 flex gap-2 flex-wrap justify-center">${tags.map(t=>`<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${t}</span>`).join('')}</div>` : ''}
-        </div>
-         <div class="mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center">
-             <span class="text-xs text-gray-500 font-semibold">YOUTUBE PLAYLIST</span>
-             ${playlistUrl ? `
-             <button onclick="event.stopPropagation(); window.openYouTubeInNewTab('${escapeHTML(playlistUrl)}');" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5" data-tooltip="Open playlist in new tab">
-                 <i class="fas fa-external-link-alt"></i>
-                 <span>Open</span>
-             </button>
-             ` : ''}
-        </div>
-        ${currentUser.role === 'admin' ? `
-        <div class="absolute top-2 right-2 flex gap-1">
-            <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title||'').replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
+    card.addEventListener('click', () => handlePlaylistClick(playlist));
+
+    const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
+
+    const body = document.createElement('div');
+    body.className = 'flex-grow flex flex-col justify-center items-center text-center';
+    body.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="font-bold text-gray-800 leading-tight">${escapeHTML(playlist.title)}</h3>
+        ${tags.length ? `<div class="mt-2 flex gap-2 flex-wrap justify-center">${tags.map(t => `<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${t}</span>`).join('')}</div>` : ''}
+    `;
+
+    const footer = document.createElement('div');
+    footer.className = 'mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center';
+
+    const label = document.createElement('span');
+    label.className = 'text-xs text-gray-500 font-semibold';
+    label.textContent = 'YOUTUBE PLAYLIST';
+
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5';
+    openBtn.setAttribute('data-tooltip', 'Open playlist in new tab');
+    openBtn.innerHTML = `<i class="fas fa-external-link-alt"></i><span>Open</span>`;
+    openBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handlePlaylistClick(playlist);
+    });
+
+    footer.appendChild(label);
+    footer.appendChild(openBtn);
+
+    card.appendChild(body);
+    card.appendChild(footer);
+
+    if (currentUser.role === 'admin') {
+        const adminWrap = document.createElement('div');
+        adminWrap.className = 'absolute top-2 right-2 flex gap-1';
+        adminWrap.innerHTML = `
+            <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
             </button>
             <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
-        </div>` : ''}
-    `;
+        `;
+        card.appendChild(adminWrap);
+    }
+
     return card;
 }
 
@@ -9998,84 +10038,6 @@ function handlePlaylistClick(playlist) {
 
     showToast('Playlist link is missing.', 'error');
 }
-function showPlaylistViewer(playlist) {
-    const modal = document.getElementById('playlist-viewer-modal');
-    if (!modal) return;
-    
-    // Extract playlist ID from URL if not already stored
-    let playlistId = playlist.playlistId;
-    if (!playlistId && playlist.url) {
-        try {
-            const urlObj = new URL(playlist.url);
-            playlistId = urlObj.searchParams.get('list');
-        } catch (e) {
-            console.error('Error parsing playlist URL:', e);
-        }
-    }
-    
-    if (!playlistId) {
-        showToast('Invalid playlist URL. Please check the playlist link.', 'error');
-        return;
-    }
-    
-    modal.innerHTML = `
-        <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
-            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
-                <div class="flex items-center gap-2 min-w-0">
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
-                    <h3 class="text-lg font-semibold text-gray-800 truncate">${playlist.title}</h3>
-                </div>
-                <button onclick="document.getElementById('playlist-viewer-modal').style.display='none'; document.getElementById('playlist-viewer-modal').innerHTML='';" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
-            </div>
-            <div class="flex-1 p-4 overflow-hidden">
-                <div class="relative w-full" style="padding-bottom: 56.25%; height: 0; overflow: hidden;" id="playlist-embed-${playlistId}">
-                    <iframe 
-                        id="playlist-iframe-${playlistId}"
-                        src="https://www.youtube.com/embed/videoseries?list=${playlistId}&modestbranding=1&rel=0&playsinline=1" 
-                        title="YouTube video player" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                        allowfullscreen
-                        loading="lazy"
-                        class="absolute top-0 left-0 w-full h-full"
-                        style="border: none;"
-                        onerror="handlePlaylistEmbedError('${playlistId}', '${escapeHTML(playlist.url || '')}')"
-                        onload="handlePlaylistEmbedLoad('${playlistId}')">
-                    </iframe>
-                    <div id="playlist-fallback-${playlistId}" class="video-embed-fallback hidden">
-                        <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl mb-2"></i>
-                        <p class="text-sm font-semibold text-white">We couldn’t load this playlist.</p>
-                        <a href="${escapeHTML(playlist.url || '')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors">
-                            <i class="fab fa-youtube"></i> Watch on YouTube
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    modal.style.display = 'flex';
-    modal.classList.remove('hidden');
-}
-
-// Handle playlist embed errors
-window.handlePlaylistEmbedError = function(playlistId, watchUrl) {
-    const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
-    if (iframe) iframe.classList.add('hidden');
-    const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
-    if (fallback) {
-        fallback.classList.remove('hidden');
-        const link = fallback.querySelector('a');
-        if (link && watchUrl) link.href = watchUrl;
-    }
-};
-
-// Handle successful playlist load
-window.handlePlaylistEmbedLoad = function(playlistId) {
-    const iframe = document.getElementById(`playlist-iframe-${playlistId}`);
-    const fallback = document.getElementById(`playlist-fallback-${playlistId}`);
-    if (iframe) iframe.classList.remove('hidden');
-    if (fallback) fallback.classList.add('hidden');
-};
 
 // =================================================================================
 // USEFUL LINKS LOGIC (SHARED PARSER)
@@ -10738,9 +10700,22 @@ async function rescheduleEvent(eventId, newDateKey) {
 // =================================================================================
 // BLOG LOGIC
 // =================================================================================
+function setBlogStatusMessage(message) {
+    const el = document.getElementById('blog-status-message');
+    if (!el) return;
+    if (!message) {
+        el.textContent = '';
+        el.classList.add('hidden');
+        return;
+    }
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
 function renderBlogPage(posts) {
     const grid = document.getElementById('blog-post-grid');
     if (!grid) return;
+    setBlogStatusMessage('');
     grid.innerHTML = '';
     if (!posts || posts.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Blog Posts Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for news and revision tips.</p></div>`;
@@ -10837,6 +10812,7 @@ async function handleSaveBlogPost() {
     if (!title || !content) {
         messageEl.textContent = "Title and content are required.";
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        showToast('Title and content are required.', 'error');
         return;
     }
     // Extract Cloudinary image public IDs from content for cleanup tracking
@@ -10876,8 +10852,13 @@ async function handleSaveBlogPost() {
         setTimeout(() => messageEl.textContent = '', 3000);
     } catch (error) {
         console.error("Error saving blog post:", error);
-        messageEl.textContent = "An error occurred. Please try again.";
+        const code = error?.code || '';
+        const friendly = code === 'permission-denied'
+            ? 'You do not have permission to save blog posts.'
+            : 'Could not save blog post. Please try again.';
+        messageEl.textContent = friendly;
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        showToast(friendly, 'error');
     }
 }
 // WYSIWYG Rich Text Editor Functions
@@ -13074,22 +13055,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Close mobile menu if open
             const mobileMenu = document.getElementById('mobile-menu');
             if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                // Use the same close animation
-                mobileMenu.style.transform = 'translateX(100%)';
-                mobileMenu.style.opacity = '0';
-                const hamburgerButton = document.getElementById('hamburger-button');
-                if (hamburgerButton) {
-                    hamburgerButton.setAttribute('aria-expanded', 'false');
-                }
-                
-                setTimeout(() => {
+                if (typeof window.closeMobileMenu === 'function') {
+                    window.closeMobileMenu({ restoreFocus: true });
+                } else {
+                    // Fallback: basic hide/cleanup
+                    const backdrop = document.getElementById('mobile-menu-backdrop');
+                    if (backdrop) backdrop.remove();
                     mobileMenu.classList.add('hidden');
                     mobileMenu.style.display = 'none';
                     document.body.style.overflow = '';
-                    if (hamburgerButton) {
-                        hamburgerButton.focus();
-                    }
-                }, 300);
+                }
             }
         } else if (e.key.toLowerCase() === 'g') {
             goPrefix = true;
@@ -13181,14 +13156,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // Setup modals
-    ['preview-modal', 'playlist-viewer-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
+    ['preview-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
         const modal = document.getElementById(id);
         if(modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target.id === id) {
                     modal.style.display = 'none';
                     // Special case for viewers to stop media playback
-                    if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
+                    if (id === 'blog-viewer-modal' || id === 'preview-modal') {
                         modal.innerHTML = '';
                     }
                 }
@@ -13197,7 +13172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && modal.style.display === 'flex') {
                     modal.style.display = 'none';
-                    if (id === 'playlist-viewer-modal' || id === 'blog-viewer-modal' || id === 'preview-modal') {
+                    if (id === 'blog-viewer-modal' || id === 'preview-modal') {
                         modal.innerHTML = '';
                     }
                 }
@@ -13227,6 +13202,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Show menu first, then animate in
+            // Ensure a known starting state for the transition
+            mobileMenu.style.transform = 'translateX(100%)';
+            mobileMenu.style.opacity = '0';
             mobileMenu.style.display = 'block';
             mobileMenu.classList.remove('hidden');
             mobileMenu.classList.add('menu-open');
@@ -13257,31 +13235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         closeMenuButton.addEventListener('click', () => {
-            // Animate out first, then hide
-            mobileMenu.style.transform = 'translateX(100%)';
-            mobileMenu.style.opacity = '0';
-            hamburgerButton.setAttribute('aria-expanded', 'false');
-            
-            // Fade out backdrop and clean up animations
-            const backdrop = document.getElementById('mobile-menu-backdrop');
-            if (backdrop) {
-                backdrop.style.opacity = '0';
-                setTimeout(() => backdrop.remove(), 250);
-            }
-
-            // Hide menu after animation completes
-            setTimeout(() => {
-                mobileMenu.classList.add('hidden');
-                mobileMenu.classList.remove('menu-open');
-                mobileMenu.style.display = 'none';
-                // clear individual link animation styles
-                mobileMenu.querySelectorAll('.nav-link').forEach(link => {
-                    link.style.animation = '';
-                    link.style.animationDelay = '';
-                });
-                document.body.style.overflow = ''; // Restore scrolling
-                hamburgerButton.focus(); // Return focus to hamburger button
-            }, 300);
+            closeMobileMenu();
         });
         
         // Handle mobile menu links
@@ -13289,14 +13243,14 @@ document.addEventListener('DOMContentLoaded', () => {
         mobileMenuLinks.forEach(link => {
             link.addEventListener('click', () => {
                 // small delay so pressed link shows active state
-                setTimeout(() => closeMobileMenu(), 80);
+                setTimeout(() => closeMobileMenu(false), 80);
             });
         });
         
         // Handle mobile logout button
         if (mobileLogoutButton) {
             mobileLogoutButton.addEventListener('click', () => {
-                closeMobileMenu();
+                closeMobileMenu(false);
                 handleLogout();
             });
         }
@@ -13320,12 +13274,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close mobile menu when resizing to desktop
         window.addEventListener('resize', throttle(() => {
             if (window.innerWidth >= 1024 && !mobileMenu.classList.contains('hidden')) {
-                closeMobileMenu();
+                closeMobileMenu(false);
             }
         }, 250));
         
         // Helper function to close mobile menu with animation
-        function closeMobileMenu() {
+        function closeMobileMenu(restoreFocus = true) {
             // Animate out first, then hide
             mobileMenu.style.transform = 'translateX(100%)';
             mobileMenu.style.opacity = '0';
@@ -13349,9 +13303,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     link.style.animationDelay = '';
                 });
                 document.body.style.overflow = ''; // Restore scrolling
-                hamburgerButton.focus(); // Return focus to hamburger button
+                if (restoreFocus) {
+                    hamburgerButton.focus(); // Return focus to hamburger button
+                }
             }, 300);
         }
+
+        // Make available to showPage() and global modal close handlers
+        window.closeMobileMenu = (options = {}) => {
+            const restoreFocus = options.restoreFocus !== false;
+            closeMobileMenu(restoreFocus);
+        };
     }
     
     // Initialize new features

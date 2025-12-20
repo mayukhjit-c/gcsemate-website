@@ -770,21 +770,21 @@
             </div>
             <nav class="flex flex-col p-6 space-y-3" role="navigation" aria-label="Main navigation">
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="subject-dashboard-page" tabindex="0">
-                    <span class="text-2xl mr-3"></span>
+                    <i class="fas fa-folder-open text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Subjects</div>
                         <div class="text-sm text-gray-500">Access your revision materials</div>
                     </div>
                 </a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="videos-page" tabindex="0">
-                    <span class="text-2xl mr-3">🎥</span>
+                    <i class="fas fa-play-circle text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Videos</div>
                         <div class="text-sm text-gray-500">Educational playlists & tutorials</div>
                     </div>
                 </a>
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="blog-page" tabindex="0">
-                    <span class="text-2xl mr-3"></span>
+                    <i class="fas fa-blog text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Blog</div>
                         <div class="text-sm text-gray-500">Study tips & latest news</div>
@@ -820,7 +820,7 @@
                 </a>
                 
                 <a href="#" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="help-page" tabindex="0">
-                    <span class="text-2xl mr-3">❓</span>
+                    <i class="fas fa-question-circle text-2xl mr-3"></i>
                     <div>
                         <div class="font-semibold">Help & FAQ</div>
                         <div class="text-sm text-gray-500">Get support & answers</div>
@@ -867,7 +867,10 @@
                      </div>
                     <div class="flex items-center justify-between gap-3 mb-4">
                         <div class="flex items-center gap-2 w-full max-w-lg">
-                            <input id="playlist-search" type="search" placeholder="Search playlists..." class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <div class="relative flex-1">
+                                <input id="playlist-search" type="search" placeholder="Search playlists..." class="w-full pl-10 pr-4 py-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search playlists" />
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex items-center"></i>
+                            </div>
                             <input id="playlist-tag-filter" type="text" placeholder="Filter by tag (comma or space separated)" class="hidden sm:block p-2 rounded-lg border-gray-200/60 bg-white/50" />
                         </div>
                         <div class="flex items-center gap-2">
@@ -911,6 +914,7 @@
                 </div>
                 <div id="blog-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
+                    <div id="blog-status-message" class="hidden mb-4 rounded-lg border border-red-200/60 bg-red-50/60 px-4 py-3 text-sm text-red-700" role="alert" aria-live="polite"></div>
                     <div id="add-blog-post-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
                         <h3 id="blog-form-title" class="text-xl font-semibold mb-4">Create New Blog Post</h3>
                         <form id="add-blog-post-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveBlogPost();">
@@ -1867,7 +1871,6 @@
     
     <div id="toast-container"></div>
     <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
-    <div id="playlist-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
