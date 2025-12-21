@@ -1348,6 +1348,19 @@ async function initializeUserTracking() {
     if (!currentUser) return;
     
     return safeExecuteAsync(async () => {
+        // Reset per-session trackers on new login to avoid stale durations
+        userActivityTracker.loginTime = Date.now();
+        userActivityTracker.logoutTime = null;
+        userActivityTracker.sessionStart = Date.now();
+        userActivityTracker.totalSubjectTime = {};
+        userActivityTracker.totalFileTime = {};
+        userActivityTracker.openedFiles = new Set();
+        userActivityTracker.activities = [];
+        hasTrackedLogout = false;
+        userSessionStart = Date.now();
+        currentPageStart = Date.now();
+        sessionId = null;
+        
         // Get user's IP address with IPv4 preference and location data
         const ipData = await getUserIPWithLocation();
         userIP = ipData.ip;
@@ -1355,7 +1368,6 @@ async function initializeUserTracking() {
         
         // Generate unique session ID
         sessionId = `${currentUser.uid}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        hasTrackedLogout = false;
         
         // Initialize activity tracker
         userActivityTracker.sessionStart = Date.now();
@@ -3212,6 +3224,11 @@ auth.onAuthStateChanged(async (user) => {
             const profileDoc = await db.collection('users').doc(user.uid).get();
             if (profileDoc.exists) {
                 currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...profileDoc.data() };
+                try {
+                    await initializeUserTracking();
+                } catch (e) {
+                    console.warn('User tracking init failed:', e);
+                }
                 initializeAppState();
                 hideAppLoading();
                 // Realtime listen to own profile for instant revoke/role changes
