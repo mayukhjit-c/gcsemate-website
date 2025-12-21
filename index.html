@@ -313,77 +313,8 @@
         });
     })();
     </script>
-    <!-- Tailwind CSS - Production Build -->
-    <!-- If tailwind.css is built and has content, it will be used. Otherwise CDN loads as fallback -->
-    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link">
-    <script>
-        (function () {
-            const originalConsoleWarn = console.warn;
-
-            function markTailwindLoaded() {
-                document.body.classList.add('tailwind-loaded');
-            }
-
-            function createWarnWrapper() {
-                return function (...args) {
-                    const firstArg = args[0];
-                    if (firstArg && typeof firstArg === 'string') {
-                        const message = firstArg.toLowerCase();
-                        if ((message.includes('tailwindcss.com') || message.includes('cdn.tailwindcss')) &&
-                            (message.includes('production') || message.includes('not recommended'))) {
-                            return;
-                        }
-                    }
-                    originalConsoleWarn.apply(console, args);
-                };
-            }
-
-            function loadTailwindCdnFallback() {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.tailwindcss.com';
-
-                script.onload = function () {
-                    // Tailwind is available; show content
-                    markTailwindLoaded();
-
-                    // Only suppress the specific Tailwind CDN production warning
-                    console.warn = createWarnWrapper();
-                };
-
-                script.onerror = function () {
-                    console.warn('Tailwind CDN failed to load. Please build tailwind.css locally.');
-                    // Still show content so the page isn't blank
-                    markTailwindLoaded();
-                };
-
-                document.head.appendChild(script);
-            }
-
-            // Prefer local compiled tailwind.css. Only load CDN if it's missing/empty.
-            const localCssCheck = fetch('tailwind.css', { cache: 'no-store' })
-                .then(res => (res.ok ? res.text() : ''))
-                .then(text => (text && text.trim().length > 1000));
-
-            // Don't block rendering too long on slow networks
-            const timeout = new Promise(resolve => setTimeout(() => resolve(false), 900));
-
-            Promise.race([localCssCheck, timeout])
-                .then(hasLocalCss => {
-                    if (hasLocalCss) {
-                        markTailwindLoaded();
-                    } else {
-                        loadTailwindCdnFallback();
-                    }
-                })
-                .catch(() => {
-                    // On any unexpected failure, try CDN fallback
-                    loadTailwindCdnFallback();
-                });
-
-            // Final fallback: never keep the UI hidden forever
-            setTimeout(markTailwindLoaded, 3000);
-        })();
-    </script>
+    <!-- Tailwind CSS - Production Build (local only, no CDN fallback) -->
+    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link" onload="document.body.classList.add('tailwind-loaded')">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
@@ -395,8 +326,8 @@
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
     <!-- External CSS -->
-    <link rel="preload" href="styles.css" as="style">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="styles.css"></noscript>
     
     <!-- Security Layer - Copyright © 2025 Mayukhjit Chakraborty -->
     <script src="security.js"></script>
@@ -2173,12 +2104,20 @@
       const isProduction = window.location.hostname === 'gcsemate.com';
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       
-      // Enhanced error logging for production - moved to main script section
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
-      // Storage removed - using Cloudinary for free image hosting
+            // Enhanced error logging for production - moved to main script section
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            try {
+                db.settings({
+                    experimentalAutoDetectLongPolling: true,
+                    useFetchStreams: false
+                });
+            } catch (e) {
+                console.warn('Firestore settings could not be applied', e);
+            }
+            // Storage removed - using Cloudinary for free image hosting
     </script>
         <!-- External JavaScript -->
     <script src="app.js"></script>
