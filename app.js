@@ -4985,9 +4985,10 @@ function renderUserManagementPanel(allUsers) {
 
     list.forEach(user => {
         if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+        const isActive = !!(user.isOnline || user.currentSessionId);
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const card = document.createElement('div');
-        card.className = 'bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200';
+        card.className = `bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200 ${isActive ? 'active-user-glow' : ''}`;
         card.innerHTML = `
             <div class="flex items-start justify-between">
                 <label class="inline-flex items-center gap-2 select-none">
@@ -5007,7 +5008,8 @@ function renderUserManagementPanel(allUsers) {
             <div class="flex-grow mt-3">
                 <div class="flex items-start justify-between mb-2">
                     <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1 items-center flex-wrap justify-end">
+                        ${isActive ? '<span class="active-user-dot">Active now</span>' : ''}
                         ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
                         ${user.role === 'admin' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>' : ''}
                     </div>

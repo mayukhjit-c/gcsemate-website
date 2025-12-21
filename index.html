@@ -135,6 +135,38 @@
       }]
     }
     </script>
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": "Is GCSEMate aligned to UK exam boards?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Yes. GCSEMate is organised by subject and aligned to AQA, Edexcel, and OCR specifications so you can revise exactly what your syllabus requires."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Can I revise on mobile?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "The site is mobile-first with fast file previews and saved preferences, so you can continue revision on your phone or tablet without losing your place."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Do I need a card to start?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "No card is required. Create a free account in under a minute and upgrade only if you want enhanced features."
+                    }
+                }
+            ]
+        }
+        </script>
     <script>
     (function(){
         try{
@@ -363,6 +395,7 @@
     <script src="https://www.google.com/recaptcha/api.js?render=6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk" async defer></script>
     
     <!-- External CSS -->
+    <link rel="preload" href="styles.css" as="style">
     <link rel="stylesheet" href="styles.css">
     
     <!-- Security Layer - Copyright © 2025 Mayukhjit Chakraborty -->
@@ -418,29 +451,74 @@
                   <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your free account">Get Started</button>
               </div>
         </header>
-        <main class="mt-8 sm:mt-12 lg:mt-16" role="main">
-            <div class="animate-hero-title">
-                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight px-4">
-                    Ace Your GCSEs with <span class="brand-text">Zero Stress</span>
-                </h1>
+        <main id="page-content" class="mt-8 sm:mt-12 lg:mt-16" role="main">
+            <section class="hero-shell" aria-labelledby="hero-heading">
+                <div class="hero-grid">
+                    <div class="hero-copy">
+                        <div class="hero-pill">Updated for the 2025 specs</div>
+                        <div class="animate-hero-title">
+                            <h1 id="hero-heading" class="hero-title">
+                                Ace Your GCSEs with <span class="brand-text">Zero Stress</span>
+                            </h1>
+                        </div>
+                        <div class="animate-hero-subtitle">
+                            <p class="hero-subtitle">
+                                Join 50+ students who already revise smarter with GCSEMate. Get organised notes, past papers, curated playlists, and mobile-first study tools in one clean dashboard.
+                            </p>
+                        </div>
+                        <div class="hero-meta" role="list">
+                            <span class="hero-meta-item" role="listitem"><i class="fas fa-award"></i>Aligned to AQA, Edexcel, and OCR</span>
+                            <span class="hero-meta-item" role="listitem"><i class="fas fa-mobile-alt"></i>Optimised for phones and tablets</span>
+                            <span class="hero-meta-item" role="listitem"><i class="fas fa-shield-alt"></i>Secure login, private workspace</span>
+                        </div>
+                        <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 animate-hero-buttons">
+                            <button onclick="showAuthPage(false)" class="btn-primary w-full sm:w-auto px-8 sm:px-10 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Start your GCSE success journey today">
+                                <i class="fas fa-rocket mr-2"></i>Start Free Today
+                            </button>
+                            <button onclick="showAuthPage(true)" class="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-4 text-base min-h-[60px] flex items-center justify-center">
+                                <i class="fas fa-user-check mr-2"></i>Already have an account? Sign In
+                            </button>
+                        </div>
+                        <div class="hero-trust" aria-label="GCSEMate highlights">
+                            <div class="hero-trust-pill"><i class="fas fa-bolt"></i>Fast previews & smooth downloads</div>
+                            <div class="hero-trust-pill"><i class="fas fa-check-circle"></i>No credit card required</div>
+                            <div class="hero-trust-pill"><i class="fas fa-heart"></i>Built with students, for students</div>
+                        </div>
+                    </div>
+                    <div class="hero-panel" aria-label="What you get inside GCSEMate">
+                        <div class="hero-panel-card">
+                            <div class="hero-panel-header">
+                                <p class="hero-panel-eyebrow">Everything organised for you</p>
+                                <span class="hero-panel-chip">New</span>
+                            </div>
+                            <ul class="hero-panel-list" aria-label="Included features">
+                                <li><i class="fas fa-check"></i>Structured notes & past papers by subject</li>
+                                <li><i class="fas fa-cloud-download-alt"></i>Instant file previews plus smart downloads</li>
+                                <li><i class="fas fa-calendar-alt"></i>Calendar, reminders, and study streak tracking</li>
+                                <li><i class="fas fa-sparkles"></i>Guided playlists to keep revision on rails</li>
+                            </ul>
+                            <div class="hero-panel-footer">
+                                <div class="hero-avatar-row" aria-hidden="true">
+                                    <span class="avatar-dot"></span>
+                                    <span class="avatar-dot"></span>
+                                    <span class="avatar-dot"></span>
+                                    <span class="avatar-dot"></span>
+                                </div>
+                                <p class="hero-panel-note">Trusted by 50+ students across the UK. Join in under a minute.</p>
+                                <div class="hero-cta-links">
+                                    <a class="ghost-link" href="#benefits">Explore features</a>
+                                    <a class="ghost-link" href="#testimonials">See student wins</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <div class="mobile-cta-bar">
+                <button onclick="showAuthPage(false)" class="mobile-cta primary"><i class="fas fa-rocket"></i><span>Start free</span></button>
+                <button onclick="showAuthPage(true)" class="mobile-cta ghost"><i class="fas fa-user-check"></i><span>Sign in</span></button>
             </div>
-            <div class="animate-hero-subtitle">
-                <p class="mt-6 sm:mt-8 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 px-4">
-                    Join 50+ students who've transformed their revision with GCSEMate. Get instant access to organized notes, past papers, and everything you need to achieve top grades—all in one place.
-                </p>
-            </div>
-            <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-hero-buttons px-4 sm:px-0">
-                <button onclick="showAuthPage(false)" class="btn-primary w-full sm:w-auto px-8 sm:px-10 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Start your GCSE success journey today">
-                    Start Free Today
-                </button>
-                <button onclick="showAuthPage(true)" class="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-4 text-base min-h-[60px] flex items-center justify-center">
-                    Already have an account? Sign In
-                </button>
-            </div>
-            <div class="mt-6 sm:mt-8 text-center px-4">
-                <p class="text-sm text-gray-500">No credit card required • Join in 30 seconds</p>
-            </div>
-            <div class="mt-16 sm:mt-20 lg:mt-24 px-4">
+            <div class="mt-16 sm:mt-20 lg:mt-24 px-4" id="benefits">
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">Why 50+ Students Choose GCSEMate</h2>
                 <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
                 <div class="mt-12 grid gap-8 md:grid-cols-3">
@@ -469,7 +547,7 @@
             </div>
             
             <!-- Real Statistics Section -->
-            <div class="mt-16 sm:mt-20 lg:mt-24 px-4">
+            <div class="mt-16 sm:mt-20 lg:mt-24 px-4" id="statistics">
                 <div class="text-center mb-10 sm:mb-12">
                     <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">Trusted by Students Across the UK</h2>
                     <p class="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg">Real numbers from real students achieving real results</p>
@@ -506,7 +584,7 @@
                 </div>
                 
                 <!-- Testimonials -->
-                <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto" id="testimonials">
                     <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                         <div class="flex items-center mb-4">
                             <div class="flex text-yellow-400">
@@ -2061,6 +2139,20 @@
             </div>
         </div>
     </div>
+    <script>
+    // Progressive image loading to improve LCP without breaking hero
+    document.addEventListener('DOMContentLoaded', function() {
+        var imgs = document.querySelectorAll('img:not([loading])');
+        imgs.forEach(function(img, index) {
+            if (index === 0) {
+                img.setAttribute('fetchpriority', 'high');
+            } else {
+                img.setAttribute('loading', 'lazy');
+            }
+            img.setAttribute('decoding', 'async');
+        });
+    });
+    </script>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
