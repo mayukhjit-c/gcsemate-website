@@ -2111,7 +2111,7 @@
             const db = firebase.firestore();
             try {
                 db.settings({
-                    experimentalAutoDetectLongPolling: true,
+                    experimentalForceLongPolling: true,
                     useFetchStreams: false
                 });
             } catch (e) {

@@ -143,6 +143,7 @@ class ErrorHandler {
         this.errorCount = 0;
         this.maxErrors = 10;
         this.errorLog = [];
+        this.firestoreRecoveryTriggered = false;
         this.setupGlobalErrorHandlers();
     }
     
@@ -195,6 +196,12 @@ class ErrorHandler {
             userAgent: navigator.userAgent,
             url: window.location.href
         });
+
+        // Attempt automatic recovery for Firestore assertion loops (common with restricted networks)
+        if (!this.firestoreRecoveryTriggered && typeof errorInfo?.message === 'string' && errorInfo.message.includes('INTERNAL ASSERTION FAILED')) {
+            this.firestoreRecoveryTriggered = true;
+            recoverFirestoreSession();
+        }
         
         // Log to console in development
         if (isDevelopment) {
@@ -273,6 +280,30 @@ class ErrorHandler {
 
 // Initialize error handler
 const errorHandler = new ErrorHandler();
+
+// Firestore resilience: force long polling on recovery and reset local cache when assertion loops occur
+async function recoverFirestoreSession() {
+    if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    try {
+        const instance = firebase.firestore();
+        // Try to clean up any stuck state
+        await instance.terminate();
+        await instance.clearPersistence();
+    } catch (_) {
+        // ignore
+    }
+    try {
+        const instance = firebase.firestore();
+        instance.settings({
+            experimentalForceLongPolling: true,
+            useFetchStreams: false
+        });
+    } catch (_) {
+        // ignore
+    }
+    // Light-touch refresh to restart listeners on a clean channel
+    setTimeout(() => window.location.reload(), 200);
+}
 
 // Enhanced logging function
 function logError(error, context = '') {
