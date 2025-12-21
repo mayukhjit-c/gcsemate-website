@@ -18,6 +18,9 @@ let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 
+// Admin allowlist for elevated actions
+const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
+
 // Download rate limiting - 3 files per minute
 const DOWNLOAD_RATE_LIMIT = {
     maxDownloads: 3,
@@ -3255,6 +3258,16 @@ auth.onAuthStateChanged(async (user) => {
             const profileDoc = await db.collection('users').doc(user.uid).get();
             if (profileDoc.exists) {
                 currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...profileDoc.data() };
+                // Ensure allowlisted admins have the admin role synced
+                const lowerEmail = (user.email || '').toLowerCase();
+                if (ADMIN_EMAILS.includes(lowerEmail) && (currentUser.role || '').toLowerCase() !== 'admin') {
+                    try {
+                        await db.collection('users').doc(user.uid).set({ role: 'admin' }, { merge: true });
+                        currentUser.role = 'admin';
+                    } catch (e) {
+                        console.warn('Failed to sync admin role for allowlisted email', e);
+                    }
+                }
                 try {
                     await initializeUserTracking();
                 } catch (e) {
@@ -4807,7 +4820,7 @@ async function handleLogin() {
         // Enterprise reCAPTCHA token acquisition
         try {
             if (window.grecaptcha && typeof window.grecaptcha.ready === 'function' && RECAPTCHA_SITE_KEY) {
-                await window.grecaptcha.ready();
+                await new Promise((resolve) => window.grecaptcha.ready(resolve));
                 const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                 try {
                     const verifyRes = await fetch('/api/recaptcha-verify', {
