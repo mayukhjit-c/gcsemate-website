@@ -1562,17 +1562,24 @@ async function logUserActivity(activityType, additionalData = {}) {
         
         await db.collection('userActivities').add(activityData);
         
-        // Update session activity
+        // Update session activity (respect session end)
         if (sessionId) {
-            await db.collection('userSessions').doc(sessionId).set({
+            const sessionActive = activityType !== 'session_end';
+            const sessionUpdate = {
                 userId: currentUser.uid,
                 sessionId: sessionId,
                 ip: userIP,
                 userAgent: navigator.userAgent,
-                isActive: true,
+                isActive: sessionActive,
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
                 lastActivity: activityType
-            }, { merge: true });
+            };
+
+            if (!sessionActive) {
+                sessionUpdate.endedAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            await db.collection('userSessions').doc(sessionId).set(sessionUpdate, { merge: true });
         }
         
     }, 'User Activity Logging');
@@ -1735,8 +1742,12 @@ function startRealtimeAnalytics() {
     }
 
     realtimeTracker.analyticsInterval = setInterval(async () => {
-        if (currentUser && currentUser.role === 'admin') {
-            await updateAnalyticsRealtime();
+        try {
+            if (currentUser && currentUser.role === 'admin') {
+                await updateAnalyticsRealtime();
+            }
+        } catch (error) {
+            logError(error, 'Realtime Analytics Interval');
         }
     }, 5000); // Every 5 seconds for admin users
 }
@@ -2093,17 +2104,29 @@ function initializeAdminDiagnostics() {
 function startDiagnosticMonitoring() {
     // Monitor tracking system health
     setInterval(async () => {
-        await runTrackingDiagnostics();
+        try {
+            await runTrackingDiagnostics();
+        } catch (error) {
+            logError(error, 'Diagnostic Tracking Interval');
+        }
     }, 10000); // Every 10 seconds
 
     // Monitor system errors
     setInterval(async () => {
-        await collectErrorLogs();
+        try {
+            await collectErrorLogs();
+        } catch (error) {
+            logError(error, 'Diagnostic Error Collection Interval');
+        }
     }, 30000); // Every 30 seconds
 
     // Monitor Firebase connection
     setInterval(async () => {
-        await testFirebaseConnection();
+        try {
+            await testFirebaseConnection();
+        } catch (error) {
+            logError(error, 'Diagnostic Firebase Monitor Interval');
+        }
     }, 15000); // Every 15 seconds
 }
 
