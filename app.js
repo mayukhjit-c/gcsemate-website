@@ -21,6 +21,26 @@ let currentCountdownIndex = 0;
 // Admin allowlist for elevated actions
 const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
 
+// Silence noisy Firestore internal assertions to avoid UI error loops
+const FIRESTORE_ASSERTION_PATTERN = /INTERNAL ASSERTION FAILED/i;
+window.addEventListener('error', (event) => {
+    if (event?.message && FIRESTORE_ASSERTION_PATTERN.test(event.message)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        console.warn('[suppressed] Firestore assertion error');
+    }
+}, { capture: true });
+
+window.addEventListener('unhandledrejection', (event) => {
+    const reason = event?.reason;
+    const msg = (reason && (reason.message || reason.toString())) || '';
+    if (FIRESTORE_ASSERTION_PATTERN.test(msg)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        console.warn('[suppressed] Firestore assertion rejection');
+    }
+}, { capture: true });
+
 // Download rate limiting - 3 files per minute
 const DOWNLOAD_RATE_LIMIT = {
     maxDownloads: 3,

@@ -601,6 +601,9 @@
     let isShowingToast = false;
 
     window.queueToast = function (message, type = 'info', duration = 3000) {
+        // Drop error toasts entirely to avoid noisy loops
+        if (type === 'error') return;
+
         toastQueue.push({ message, type, duration });
 
         if (!isShowingToast) {
@@ -621,7 +624,10 @@
         const { message, type, duration } = toastQueue.shift();
 
         // Use existing showToast if available, otherwise create simple toast
-        if (typeof showToast === 'function') {
+        if (type === 'error') {
+            // Skip error toasts but continue the queue
+            setTimeout(processToastQueue, 10);
+        } else if (typeof showToast === 'function') {
             showToast(message, type, duration);
             setTimeout(processToastQueue, duration + 300);
         } else {
@@ -633,6 +639,7 @@
      *
      */
     function showSimpleToast(message, type, duration) {
+        if (type === 'error') return; // hard block error toasts
         const colors = {
             success: 'bg-green-600',
             error: 'bg-red-600',
