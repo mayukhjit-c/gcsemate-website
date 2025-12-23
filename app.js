@@ -85,6 +85,12 @@ function formatFilenameWithWatermark(originalName) {
 let userFilterTier = 'all'; // all|free|paid
 let userFilterRole = 'all'; // all|user|admin
 let userFilterActive = 'any'; // any|recent
+let userSearchQuery = '';
+const ANNOUNCEMENT_TEMPLATES = {
+    promo: 'New mock packs unlocked today. Pro gets full mark schemes and walkthroughs. Upgrade to try them.',
+    maintenance: 'Heads up: brief maintenance Sunday 7-8pm UK. Sessions auto-resume; we will post live updates if it runs long.',
+    examWarmup: 'Daily warm-up is live: 3 quick questions plus solutions. Jump in before class to bank easy marks.'
+};
 let clockInterval = null;
 let lastForceLogoutAt = null;
 let unsubscribeUserManagement;
@@ -165,9 +171,19 @@ class ErrorHandler {
         
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
+            const reasonMessage = event.reason?.message || event.reason?.toString() || 'Unknown promise rejection';
+            const isFirestoreAssertion = typeof reasonMessage === 'string' && reasonMessage.includes('INTERNAL ASSERTION FAILED');
+            if (isFirestoreAssertion) {
+                // Prevent noisy console spam and immediately try recovery
+                event.preventDefault();
+                recoverFirestoreSession();
+            } else {
+                // Mark as handled so browsers don't double-log while we surface our own toast
+                event.preventDefault();
+            }
             this.handleError({
                 type: 'Unhandled Promise Rejection',
-                message: event.reason?.message || 'Unknown promise rejection',
+                message: reasonMessage,
                 error: event.reason
             });
         });
@@ -3330,6 +3346,7 @@ auth.onAuthStateChanged(async (user) => {
                         // Re-render admin/user panels accordingly
                         try { initializeAppState(); } catch(_){}
                     }
+                    updateInlineUpsellBanner();
                     // Update AI Tutor navigation visibility
                     updateAITutorNavVisibility();
                 });
@@ -3352,6 +3369,7 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         // User is signed out.
         currentUser = null;
+        updateInlineUpsellBanner();
         const mainApp = document.getElementById('main-app');
         if (mainApp) {
             mainApp.classList.add('hidden');
@@ -3450,6 +3468,28 @@ function initializeAppState() {
     
     // Update AI Tutor navigation visibility
     updateAITutorNavVisibility();
+
+    // Refresh upsell ribbon based on current access
+    updateInlineUpsellBanner();
+}
+
+// Inline upsell banner logic
+function updateInlineUpsellBanner() {
+    const banner = document.getElementById('inline-upsell-banner');
+    if (!banner) return;
+    const copy = banner.querySelector('[data-upsell-copy]');
+    const isFree = (currentUser?.tier || 'free') === 'free';
+
+    if (currentUser && isFree) {
+        banner.classList.remove('hidden');
+        banner.style.display = 'flex';
+        if (copy) {
+            copy.textContent = 'Unlock unlimited subjects, downloads, and premium support for £1/month. Keep your starred files and calendar events.';
+        }
+    } else {
+        banner.classList.add('hidden');
+        banner.style.display = 'none';
+    }
 }
 
 // AI Tutor functionality
@@ -5033,6 +5073,12 @@ function renderUserManagementPanel(allUsers) {
             if (!da) return false;
             if ((Date.now() - da.getTime()) > 24*60*60*1000) return false;
         }
+        if (userSearchQuery) {
+            const q = userSearchQuery;
+            const name = (u.displayName||'').toLowerCase();
+            const email = (u.email||'').toLowerCase();
+            if (!name.includes(q) && !email.includes(q)) return false;
+        }
         return true;
     });
     // Sorting
@@ -6191,6 +6237,10 @@ async function handleUpdateUser(userId) {
 // New Admin Functions
 function setUserSort(key) {
     userSortBy = key;
+    renderUserManagementPanel(allUsers);
+}
+function handleUserSearch(value='') {
+    userSearchQuery = (value || '').trim().toLowerCase();
     renderUserManagementPanel(allUsers);
 }
 function setUserFilters({ tier, role, active }={}) {
@@ -8863,6 +8913,22 @@ async function postAnnouncement() {
     }
 }
 
+function applyAnnouncementTemplate(templateKey) {
+    const template = ANNOUNCEMENT_TEMPLATES[templateKey];
+    const textarea = document.getElementById('announcement-text');
+    if (!template || !textarea) return;
+    textarea.value = template;
+    updateAnnouncementCounter();
+}
+
+function updateAnnouncementCounter() {
+    const textarea = document.getElementById('announcement-text');
+    const counter = document.getElementById('announcement-count');
+    if (!textarea || !counter) return;
+    const len = (textarea.value || '').length;
+    counter.textContent = `${len}/500`;
+}
+
 async function clearAnnouncement() {
     if (currentUser.role !== 'admin') return;
     try {
@@ -10836,10 +10902,10 @@ function renderBlogPage(posts) {
     posts.forEach(post => {
         const card = document.createElement('div');
         card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg flex flex-col overflow-hidden';
-        const contentPreview = post.content.replace(/<[^>]+>/g, '').substring(0, 100);
+        const contentPreview = (post.content || '').replace(/<[^>]+>/g, '').substring(0, 120);
         const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB') : 'Just now';
         let adminButtons = '';
-        if(currentUser.role === 'admin') {
+        if(currentUser && currentUser.role === 'admin') {
             adminButtons = `
                 <div class="absolute top-2 right-2 flex gap-1">
                     <button onclick="event.stopPropagation(); editBlogPost('${post.id}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Post">
@@ -10946,6 +11012,67 @@ async function handleSaveBlogPost() {
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
         showToast(friendly, 'error');
     }
+}
+function insertBlogTemplate(type) {
+        const templates = {
+                examTips: {
+                        title: 'Weekly Exam Boost: Quick Wins to Save Marks',
+                        content: `
+<p>Here are this week's fast wins to pick up marks on your next paper.</p>
+<h3>1) Get the method marks</h3>
+<ul>
+    <li>Show every step for calculations.</li>
+    <li>Underline key numbers you substitute.</li>
+</ul>
+<h3>2) Language and structure cues</h3>
+<p>Use command words to frame your answer: define, explain, compare. Spend 20 seconds boxing them before you start writing.</p>
+<h3>3) Rapid review plan</h3>
+<p>5 min: skim the whole paper. 20 min: bank the short answers. 20 min: mid-mark questions. 15 min: hardest questions. 5 min: check units and labels.</p>
+<h3>4) Resources</h3>
+<p><a href="#">Download the checklist</a> and <a href="#">watch the 5-minute walkthrough</a>.</p>
+                        `.trim()
+                },
+                releaseNotes: {
+                    title: "What's New in GCSEMate this week",
+                        content: `
+<p>Fresh updates to keep you moving faster.</p>
+<h3>New</h3>
+<ul>
+    <li>Smart search: find topics by exam board and difficulty.</li>
+    <li>Admin audit log: track edits, logins, and bulk actions.</li>
+</ul>
+<h3>Improved</h3>
+<ul>
+    <li>Playlists load 30% faster with new caching.</li>
+    <li>Blog editor templates for announcements and study tips.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+    <li>Resolved rare login loop on slow networks.</li>
+    <li>Stabilised comment counts for new posts.</li>
+</ul>
+<p>Tell us what to ship next: support@gcsemate.com</p>
+                        `.trim()
+                },
+                announcement: {
+                        title: 'Maintenance window: Sunday 7-8pm UK',
+                        content: `
+<p>Heads up: we will perform a quick database tune-up this Sunday 7-8pm UK.</p>
+<ul>
+    <li>Core services stay online; brief reconnects may happen.</li>
+    <li>Sessions will auto-resume; no action needed from users.</li>
+    <li>We will post live status in the banner if anything extends.</li>
+</ul>
+<p>Thanks for your patience. Reply if this window causes issues for your class.</p>
+                        `.trim()
+                }
+        };
+        const tpl = templates[type];
+        if (!tpl) return;
+        const titleEl = document.getElementById('blog-post-title');
+        const contentEl = document.getElementById('blog-post-content');
+        if (titleEl) titleEl.value = tpl.title;
+        if (contentEl) contentEl.innerHTML = tpl.content;
 }
 // WYSIWYG Rich Text Editor Functions
 // Make functions globally accessible for inline onclick handlers
@@ -13006,6 +13133,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
     document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
     document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
+    const announcementTemplateApply = document.getElementById('announcement-template-apply');
+    if (announcementTemplateApply) {
+        announcementTemplateApply.addEventListener('click', () => {
+            const select = document.getElementById('announcement-template-select');
+            if (!select) return;
+            const key = select.value;
+            if (key) applyAnnouncementTemplate(key);
+        });
+    }
+    const announcementText = document.getElementById('announcement-text');
+    if (announcementText) {
+        announcementText.addEventListener('input', updateAnnouncementCounter);
+        updateAnnouncementCounter();
+    }
     const prevMonthBtn = document.getElementById('prev-month-btn');
     const nextMonthBtn = document.getElementById('next-month-btn');
     if (prevMonthBtn) {
