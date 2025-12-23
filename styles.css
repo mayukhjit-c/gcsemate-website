@@ -1191,6 +1191,20 @@ button:active, .btn:active { transform: translateY(0); }
 /* Mobile menu: ensure hardware-accelerated transform */
 #mobile-menu.menu-open { will-change: transform, opacity; }
 
+/* Mobile menu base/off-canvas state for smoother open/close */
+#mobile-menu {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+}
+
+#mobile-menu.menu-open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
 /* Card elevation and subtle hover */
 .card, .bg-white\/50, .bg-white { transition: box-shadow var(--motion-fast) var(--easing-pop), transform var(--motion-fast) var(--easing-pop); }
 .card:hover { box-shadow: 0 10px 30px rgba(2,6,23,0.08); transform: translateY(-4px); }

@@ -1480,9 +1480,15 @@ async function checkConcurrentSessions() {
             }
         });
         
+        const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+
         if (activeSessions.length > 0) {
-            // Account sharing detected
-            await handleAccountSharing(activeSessions);
+            if (isAdmin) {
+                await handleAdminNewIPChallenge(activeSessions);
+            } else {
+                // Account sharing detected
+                await handleAccountSharing(activeSessions);
+            }
         }
         
     }, 'Concurrent Session Check');
@@ -1523,6 +1529,62 @@ async function handleAccountSharing(concurrentSessions) {
         }, 10000);
         
     }, 'Account Sharing Handling');
+}
+
+// Admin-only challenge for new IPs to avoid account sharing enforcement
+async function handleAdminNewIPChallenge(concurrentSessions) {
+    return safeExecuteAsync(async () => {
+        const answer = window.prompt('Security check: what is ur favourite number?');
+        const isCorrect = (answer || '').trim() === '67';
+
+        try {
+            await db.collection('adminIpChallenges').add({
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                concurrentSessions: concurrentSessions,
+                currentIP: userIP,
+                providedAnswer: answer || null,
+                status: isCorrect ? 'passed' : 'failed'
+            });
+        } catch (_) {}
+
+        if (isCorrect) {
+            return;
+        }
+
+        await permanentlyBanAdmin(concurrentSessions, answer);
+    }, 'Admin IP Challenge');
+}
+
+async function permanentlyBanAdmin(concurrentSessions, providedAnswer) {
+    return safeExecuteAsync(async () => {
+        try {
+            await db.collection('users').doc(currentUser.uid).set({
+                role: 'banned',
+                isBanned: true,
+                bannedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                bannedReason: 'failed_admin_ip_challenge',
+                bannedIp: userIP || null,
+                bannedAnswer: providedAnswer || null
+            }, { merge: true });
+        } catch (_) {}
+
+        try {
+            await db.collection('accountViolations').add({
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                violationType: 'admin_failed_ip_challenge',
+                detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                concurrentSessions: concurrentSessions,
+                currentIP: userIP,
+                currentUserAgent: navigator.userAgent,
+                providedAnswer: providedAnswer || null
+            });
+        } catch (_) {}
+
+        handleLogout();
+    }, 'Admin Permanent Ban');
 }
 
 // Show account sharing warning
@@ -8626,45 +8688,59 @@ function showErrorMessage(inputElement, message) {
 }
 
 // Enhanced toast notification system
+const toastLoopGuard = { renderFailures: 0, maxRenderFailures: 3 };
 function showToast(message, type = 'info', duration = 4000) {
-    const toastContainer = document.getElementById('toast-container') || createToastContainer();
-    
-    const toast = document.createElement('div');
-    const bgColor = {
-        'success': 'bg-green-600',
-        'error': 'bg-red-600',
-        'warning': 'bg-yellow-600',
-        'info': 'bg-blue-600'
-    }[type] || 'bg-blue-600';
-    
-    const icon = {
-        'success': '✓',
-        'error': '✕',
-        'warning': '⚠',
-        'info': 'ℹ'
-    }[type] || 'ℹ';
-    
-    toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out gpu-accelerated`;
-    toast.innerHTML = `
-        <span class="text-lg font-bold">${icon}</span>
-        <span class="flex-1">${message}</span>
-        <button class="text-white hover:text-gray-200 ml-2" onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    // Trigger slide-in animation
-    setTimeout(() => {
-        toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Auto remove
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.classList.add('translate-x-full', 'opacity-0');
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, duration);
+    if (type === 'error') {
+        console.warn('[toast] Error toast suppressed to avoid loops:', message);
+        return;
+    }
+    if (toastLoopGuard.renderFailures >= toastLoopGuard.maxRenderFailures) {
+        return;
+    }
+
+    try {
+        const toastContainer = document.getElementById('toast-container') || createToastContainer();
+        
+        const toast = document.createElement('div');
+        const bgColor = {
+            'success': 'bg-green-600',
+            'error': 'bg-red-600',
+            'warning': 'bg-yellow-600',
+            'info': 'bg-blue-600'
+        }[type] || 'bg-blue-600';
+        
+        const icon = {
+            'success': '✓',
+            'error': '✕',
+            'warning': '⚠',
+            'info': 'ℹ'
+        }[type] || 'ℹ';
+        
+        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out gpu-accelerated`;
+        toast.innerHTML = `
+            <span class="text-lg font-bold">${icon}</span>
+            <span class="flex-1">${message}</span>
+            <button class="text-white hover:text-gray-200 ml-2" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Trigger slide-in animation
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 10);
+        
+        // Auto remove
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, duration);
+    } catch (err) {
+        toastLoopGuard.renderFailures++;
+        console.warn('Toast rendering failed; suppressing further toast attempts.', err);
+    }
 }
 
 function createToastContainer() {
@@ -12365,17 +12441,34 @@ async function logClientAccess() {
 }
 // Toast notifications (success, error, warning) rendered top-center
 function showToast(message, type = 'success', options = {}) {
+    if (type === 'error') {
+        console.warn('[toast] Error toast suppressed to avoid loops:', message);
+        return;
+    }
+    if (toastLoopGuard.renderFailures >= toastLoopGuard.maxRenderFailures) {
+        return;
+    }
+
     const { duration = 3500, title } = options;
     const container = document.getElementById('toast-container');
-    if (!container) return alert(message);
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.setAttribute('role', 'status');
-    toast.setAttribute('aria-live', 'polite');
-    toast.innerHTML = title ? `<div class="font-bold mb-0.5">${title}</div><div>${message}</div>` : message;
-    container.appendChild(toast);
-    const timeout = setTimeout(() => toast.remove(), duration);
-    toast.addEventListener('click', () => { clearTimeout(timeout); toast.remove(); });
+    if (!container) {
+        console.warn('[toast] Missing container; toast skipped.');
+        return;
+    }
+
+    try {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.innerHTML = title ? `<div class="font-bold mb-0.5">${title}</div><div>${message}</div>` : message;
+        container.appendChild(toast);
+        const timeout = setTimeout(() => toast.remove(), duration);
+        toast.addEventListener('click', () => { clearTimeout(timeout); toast.remove(); });
+    } catch (err) {
+        toastLoopGuard.renderFailures++;
+        console.warn('Toast rendering failed; suppressing further toast attempts.', err);
+    }
 }
 
 function initializeTooltips() {
@@ -13412,10 +13505,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeMenuButton = document.getElementById('close-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLogoutButton = document.getElementById('mobile-logout-button');
-    
+    const mobileMenuState = { isOpen: false, isAnimating: false };
+
     if (hamburgerButton && mobileMenu && closeMenuButton) {
-        hamburgerButton.addEventListener('click', () => {
-            // Create backdrop to capture outside clicks and add smooth fade
+        const toggleButtons = [
+            hamburgerButton,
+            document.getElementById('mobile-menu-toggle'),
+            ...Array.from(document.querySelectorAll('.mobile-menu-button'))
+        ].filter(Boolean);
+
+        const ensureBackdrop = () => {
             let backdrop = document.getElementById('mobile-menu-backdrop');
             if (!backdrop) {
                 backdrop = document.createElement('div');
@@ -13424,41 +13523,93 @@ document.addEventListener('DOMContentLoaded', () => {
                 backdrop.style.opacity = '0';
                 backdrop.style.transition = 'opacity 200ms ease';
                 document.body.appendChild(backdrop);
-                // clicking backdrop closes menu
                 backdrop.addEventListener('click', () => closeMobileMenu());
             }
+            return backdrop;
+        };
 
-            // Show menu first, then animate in
-            // Ensure a known starting state for the transition
-            mobileMenu.style.transform = 'translateX(100%)';
-            mobileMenu.style.opacity = '0';
+        const openMobileMenu = () => {
+            if (mobileMenuState.isAnimating || mobileMenuState.isOpen) return;
+            mobileMenuState.isAnimating = true;
+            const backdrop = ensureBackdrop();
+
+            // Prepare menu for animation
             mobileMenu.style.display = 'block';
             mobileMenu.classList.remove('hidden');
             mobileMenu.classList.add('menu-open');
+            mobileMenu.style.transform = 'translateX(100%)';
+            mobileMenu.style.opacity = '0';
+            mobileMenu.setAttribute('aria-hidden', 'false');
             hamburgerButton.setAttribute('aria-expanded', 'true');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
 
-            // reveal backdrop
             requestAnimationFrame(() => { backdrop.style.opacity = '1'; });
-
-            // Trigger menu slide-in animation on next frame
             requestAnimationFrame(() => {
                 mobileMenu.style.transform = 'translateX(0)';
                 mobileMenu.style.opacity = '1';
             });
 
-            // Stagger link animations for a nicer entrance
             const mobileMenuLinks = Array.from(mobileMenu.querySelectorAll('.nav-link'));
             mobileMenuLinks.forEach((link, i) => {
                 link.style.animation = 'fadeUp 260ms ease-out both';
                 link.style.animationDelay = `${i * 30}ms`;
             });
 
-            // Focus management for accessibility
             const firstFocusableElement = mobileMenu.querySelector('a, button');
             if (firstFocusableElement) {
                 setTimeout(() => firstFocusableElement.focus(), 120);
             }
+
+            setTimeout(() => {
+                mobileMenuState.isAnimating = false;
+                mobileMenuState.isOpen = true;
+            }, 260);
+        };
+
+        const closeMobileMenu = (restoreFocus = true) => {
+            if (mobileMenuState.isAnimating) return;
+            if (mobileMenu.classList.contains('hidden')) {
+                const strayBackdrop = document.getElementById('mobile-menu-backdrop');
+                if (strayBackdrop) strayBackdrop.remove();
+                document.body.style.overflow = '';
+                mobileMenuState.isOpen = false;
+                return;
+            }
+
+            mobileMenuState.isAnimating = true;
+            mobileMenu.style.transform = 'translateX(100%)';
+            mobileMenu.style.opacity = '0';
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            hamburgerButton.setAttribute('aria-expanded', 'false');
+
+            const backdrop = document.getElementById('mobile-menu-backdrop');
+            if (backdrop) {
+                backdrop.style.opacity = '0';
+                setTimeout(() => backdrop.remove(), 250);
+            }
+
+            setTimeout(() => {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('menu-open');
+                mobileMenu.style.display = 'none';
+                mobileMenu.querySelectorAll('.nav-link').forEach(link => {
+                    link.style.animation = '';
+                    link.style.animationDelay = '';
+                });
+                document.body.style.overflow = '';
+                mobileMenuState.isAnimating = false;
+                mobileMenuState.isOpen = false;
+                if (restoreFocus) {
+                    hamburgerButton.focus();
+                }
+            }, 300);
+        };
+
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openMobileMenu();
+            });
         });
         
         closeMenuButton.addEventListener('click', () => {
@@ -13506,41 +13657,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 250));
         
         // Helper function to close mobile menu with animation
-        function closeMobileMenu(restoreFocus = true) {
-            // Animate out first, then hide
-            mobileMenu.style.transform = 'translateX(100%)';
-            mobileMenu.style.opacity = '0';
-            hamburgerButton.setAttribute('aria-expanded', 'false');
-
-            // Fade out backdrop
-            const backdrop = document.getElementById('mobile-menu-backdrop');
-            if (backdrop) {
-                backdrop.style.opacity = '0';
-                setTimeout(() => backdrop.remove(), 250);
-            }
-
-            // Hide menu after animation completes
-            setTimeout(() => {
-                mobileMenu.classList.add('hidden');
-                mobileMenu.classList.remove('menu-open');
-                mobileMenu.style.display = 'none';
-                // clear link animations
-                mobileMenu.querySelectorAll('.nav-link').forEach(link => {
-                    link.style.animation = '';
-                    link.style.animationDelay = '';
-                });
-                document.body.style.overflow = ''; // Restore scrolling
-                if (restoreFocus) {
-                    hamburgerButton.focus(); // Return focus to hamburger button
-                }
-            }, 300);
-        }
-
         // Make available to showPage() and global modal close handlers
         window.closeMobileMenu = (options = {}) => {
             const restoreFocus = options.restoreFocus !== false;
             closeMobileMenu(restoreFocus);
         };
+        window.openMobileMenu = () => openMobileMenu();
     }
     
     // Initialize new features
