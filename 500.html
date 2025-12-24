@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GCSEMate | Something went wrong</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.16), transparent 30%),
+            radial-gradient(circle at 80% 0%, rgba(37, 99, 235, 0.16), transparent 34%),
+            linear-gradient(135deg, #f8fafc 0%, #e0f2fe 35%, #ecfdf3 100%);
+      --card: rgba(255,255,255,0.9);
+      --border: rgba(255,255,255,0.6);
+      --shadow: 0 28px 80px -32px rgba(15, 23, 42, 0.25);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: #0f172a;
+    }
+    .shell {
+      width: min(960px, 100%);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 24px;
+      padding: clamp(20px, 4vw, 32px);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -0.02em; }
+    p { margin: 0; color: #475569; font-size: 16px; line-height: 1.6; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: #ecfeff; color: #0ea5e9; font-weight: 700; font-size: 13px; letter-spacing: -0.01em; width: fit-content; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 18px; border-radius: 14px; font-weight: 700; text-decoration: none; border: 1px solid transparent; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #22c55e); color: #fff; box-shadow: 0 18px 40px -20px rgba(16, 185, 129, 0.65); }
+    .btn-secondary { background: #fff; color: #1e293b; border-color: rgba(148, 163, 184, 0.6); }
+    .btn:hover { transform: translateY(-1px); }
+    .panel { background: linear-gradient(180deg, rgba(16,185,129,0.08), rgba(34,197,94,0.08)); border: 1px solid rgba(255,255,255,0.7); border-radius: 18px; padding: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; color: #1f2937; }
+    .list { margin: 0; padding-left: 18px; color: #475569; line-height: 1.6; }
+    .visual { position: relative; padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(37,99,235,0.14)); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); overflow: hidden; }
+    .visual::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55), transparent 45%), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.4), transparent 55%); opacity: 0.85; pointer-events: none; }
+    .status { display: grid; gap: 8px; margin-top: 8px; }
+    .status-item { display: flex; justify-content: space-between; background: rgba(255,255,255,0.9); border: 1px solid rgba(226,232,240,0.8); border-radius: 12px; padding: 10px 12px; font-weight: 700; color: #1f2937; }
+    .status-item small { color: #475569; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <span class="tag">500 · Unexpected issue</span>
+      <h1>Something went wrong. We’re already on it.</h1>
+      <p>Try the links below, or email <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> with what you were doing so we can fix it fast.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/">Return to dashboard</a>
+        <a class="btn btn-secondary" href="/support">Support</a>
+        <a class="btn btn-secondary" href="/status">System status</a>
+      </div>
+      <div class="panel">
+        <h3>Quick checks</h3>
+        <ul class="list">
+          <li>Refresh the page or try a private window.</li>
+          <li>Make sure you’re signed in with your GCSEMate account.</li>
+          <li>If it keeps happening, include a screenshot and timestamp.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="visual">
+      <div class="status">
+        <div class="status-item"><span>Realtime sync</span><small>Auto-recovers if interrupted</small></div>
+        <div class="status-item"><span>File access</span><small>Your files stay safe</small></div>
+        <div class="status-item"><span>Billing</span><small>Stripe-secured checkout</small></div>
+        <div class="status-item"><span>Support</span><small>admin@gcsemate.com</small></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
