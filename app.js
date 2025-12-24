@@ -5261,6 +5261,9 @@ async function signInWithGoogle() {
     }
 }
 
+// Ensure inline onclick handlers can access Google sign-in
+window.signInWithGoogle = signInWithGoogle;
+
 async function handleLogout() {
     try {
         // Destroy reCAPTCHA verifier
