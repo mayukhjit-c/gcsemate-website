@@ -12186,6 +12186,26 @@ function handleBlogEditorKeydown(event) {
 document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
 document.addEventListener('DOMContentLoaded', setupBlogEditorEnhancements);
 document.addEventListener('DOMContentLoaded', setupStripeCheckoutUI);
+document.addEventListener('DOMContentLoaded', ensureAccessibleLabels);
+
+// Accessibility: add fallback aria-labels to inputs lacking a programmatic label
+function ensureAccessibleLabels() {
+    try {
+        const els = document.querySelectorAll('input, textarea, select');
+        els.forEach((el) => {
+            const hasLabel = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');
+            if (hasLabel) return;
+            const fromPlaceholder = el.getAttribute('placeholder');
+            const fromTooltip = el.getAttribute('data-tooltip');
+            const fallback = fromPlaceholder || fromTooltip || el.id || el.name;
+            if (fallback) {
+                el.setAttribute('aria-label', fallback);
+            }
+        });
+    } catch (e) {
+        logError(e, 'ensureAccessibleLabels');
+    }
+}
 
 document.addEventListener('input', (e) => {
     if (e.target && e.target.id === 'blog-post-image') {
