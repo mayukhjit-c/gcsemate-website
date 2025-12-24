@@ -2965,6 +2965,9 @@ const subjectIconMap = {
 // =================================================================================
 // CORE INITIALIZATION & AUTHENTICATION
 // =================================================================================
+let appLoadingFailsafePrimary;
+let appLoadingFailsafeSecondary;
+
 function ensureInitialView() {
     try {
         const landing = document.getElementById('landing-page');
@@ -2977,9 +2980,33 @@ function ensureInitialView() {
     } catch (_) {}
 }
 
+function clearAppLoadingFailsafes() {
+    if (appLoadingFailsafePrimary) clearTimeout(appLoadingFailsafePrimary);
+    if (appLoadingFailsafeSecondary) clearTimeout(appLoadingFailsafeSecondary);
+    appLoadingFailsafePrimary = null;
+    appLoadingFailsafeSecondary = null;
+}
+
+function scheduleAppLoadingFailsafe() {
+    clearAppLoadingFailsafes();
+
+    const attemptHide = () => {
+        try { ensureInitialView(); } catch (_) {}
+        hideAppLoading();
+    };
+
+    // Primary hide attempt at 4s, secondary at 8s to avoid stuck gray screens
+    appLoadingFailsafePrimary = setTimeout(attemptHide, 4000);
+    appLoadingFailsafeSecondary = setTimeout(attemptHide, 8000);
+}
+
 function hideAppLoading() {
     const overlay = document.getElementById('app-loading');
     if (!overlay) return;
+    if (overlay.dataset.state === 'hidden') return;
+
+    overlay.dataset.state = 'hidden';
+    clearAppLoadingFailsafes();
     
     const logo = overlay.querySelector('.animate-logo');
     if (logo) { 
@@ -3004,9 +3031,12 @@ function showAppLoading() {
     const overlay = document.getElementById('app-loading');
     if (!overlay) return;
     
+    overlay.dataset.state = 'visible';
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
     document.body.style.overflow = 'hidden';
+
+    scheduleAppLoadingFailsafe();
 }
 
 // Fallback: ensure hide after window load
@@ -3094,6 +3124,8 @@ function initializeSecurityFeatures() {
 
 // Early slide-in on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    scheduleAppLoadingFailsafe();
+
     // Initialize security features
     initializeSecurityFeatures();
     
@@ -3592,7 +3624,7 @@ function updateInlineUpsellBanner() {
 // AI Tutor functionality
 let aiConversationHistory = [];
 let aiRequestCount = 0;
-let aiMaxRequests = 50;
+let aiMaxRequests = Infinity; // AI feature retired; no request limits enforced
 let aiNameConfirmed = false; // Track if user has confirmed their name
 let isFirstAIResponse = true; // Track if this is the first AI response (for initialization message)
 let lastAIMessageId = null; // Track last AI message ID for retry replacement
@@ -3656,6 +3688,8 @@ let aiTutorEventHandlers = {
 };
 
 function initializeAITutor() {
+    // AI Tutor retired; skip initialization entirely
+    return;
     const chatForm = document.getElementById('ai-chat-form');
     const chatInput = document.getElementById('ai-chat-input');
     const sendButton = document.getElementById('ai-send-button');
@@ -5500,7 +5534,7 @@ async function viewUserTracking(userId) {
     
     try {
         const modal = document.getElementById('edit-user-modal');
-        modal.style.display = 'flex';
+        if (!modal) return;
         
         // Fetch user activities
         const activitiesSnapshot = await db.collection('userActivities')
@@ -5532,7 +5566,7 @@ async function viewUserTracking(userId) {
             <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl flex flex-col fade-in max-h-[90vh]">
                 <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-gray-800">User Activity Tracking - ${user.displayName || user.email}</h3>
-                    <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                    <button onclick="hideEditUserModal()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -5620,6 +5654,8 @@ async function viewUserTracking(userId) {
                 </div>
             </div>
         `;
+
+        showAdminModal(modal);
         
     } catch (error) {
         logError(error, 'View User Tracking');
@@ -6172,6 +6208,27 @@ async function removeProfilePicture() {
     }
 }
 
+function showAdminModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.remove('hidden');
+    modalEl.style.display = 'flex';
+    modalEl.setAttribute('aria-hidden', 'false');
+    modalEl.classList.add('admin-modal-visible');
+    document.body.classList.add('modal-open');
+}
+
+function hideEditUserModal() {
+    const modal = document.getElementById('edit-user-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    modal.removeAttribute('aria-hidden');
+    modal.classList.remove('admin-modal-visible');
+    if (!document.querySelector('.admin-modal-visible')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
 async function openEditUserModal(userId) {
     try {
         const userDoc = await db.collection('users').doc(userId).get();
@@ -6182,12 +6239,12 @@ async function openEditUserModal(userId) {
         const user = { id: userDoc.id, ...userDoc.data() };
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const modal = document.getElementById('edit-user-modal');
-        modal.style.display = 'flex';
+        if (!modal) return;
         modal.innerHTML = `
             <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
                  <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
                      <h3 class="text-lg font-semibold text-gray-800">Edit User: ${user.displayName}</h3>
-                     <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                     <button onclick="hideEditUserModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                  </div>
                  <div class="p-6 space-y-4 overflow-y-auto">
                      <div class="bg-white/60 border border-white/30 rounded-lg p-3 text-sm text-gray-700">
@@ -6237,28 +6294,15 @@ async function openEditUserModal(userId) {
                              <label class="block text-sm font-medium text-gray-700">Allowed Subjects</label>
                              <div id="edit-subject-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-sm border-t pt-2"></div>
                          </div>
-                         <div class="border-t pt-4 mt-4">
-                             <h4 class="text-sm font-semibold text-gray-700 mb-3">AI Tutor Settings</h4>
-                             <div>
-                                 <label for="edit-ai-max-requests" class="block text-sm font-medium text-gray-700">Max Daily AI Requests</label>
-                                 <input id="edit-ai-max-requests" type="number" min="0" max="200" value="${user.aiMaxRequestsDaily || 50}" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-                                 <p class="text-xs text-gray-500 mt-1">Default: 50. Set to 0 to block AI access. Admins have unlimited.</p>
-                             </div>
-                             <div class="mt-3">
-                                 <label class="flex items-center space-x-2 cursor-pointer">
-                                     <input type="checkbox" id="edit-ai-access-blocked" ${user.aiAccessBlocked === true ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
-                                     <span class="text-sm text-gray-700">Block AI Tutor Access</span>
-                                 </label>
-                             </div>
-                         </div>
                          <div class="flex justify-end gap-3 pt-4">
-                             <button type="button" onclick="document.getElementById('edit-user-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+                             <button type="button" onclick="hideEditUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
                              <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Save Changes</button>
                          </div>
                      </form>
                  </div>
             </div>
         `;
+        showAdminModal(modal);
         const subjectContainer = modal.querySelector('#edit-subject-checkboxes');
         const userSubjects = user.allowedSubjects || [];
         SUBJECTS.forEach(subject => {
@@ -6304,16 +6348,12 @@ async function handleUpdateUser(userId) {
         const newTier = document.getElementById('edit-tier').value;
         const newRole = document.getElementById('edit-role').value;
         const newSubjects = Array.from(document.querySelectorAll('#edit-user-modal input[name="edit-subjects"]:checked')).map(cb => cb.value);
-        const aiMaxRequests = parseInt(document.getElementById('edit-ai-max-requests').value) || 50;
-        const aiAccessBlocked = document.getElementById('edit-ai-access-blocked').checked;
         
         const updateData = {
             displayName: newDisplayName,
             tier: newTier,
             role: newRole,
-            allowedSubjects: newSubjects.length > 0 ? newSubjects : null,
-            aiMaxRequestsDaily: aiMaxRequests,
-            aiAccessBlocked: aiAccessBlocked
+            allowedSubjects: newSubjects.length > 0 ? newSubjects : null
         };
         
         // Handle subscription expiry
@@ -6335,8 +6375,8 @@ async function handleUpdateUser(userId) {
         }
         
         await db.collection('users').doc(userId).update(updateData);
-        
-        document.getElementById('edit-user-modal').style.display = 'none';
+
+        hideEditUserModal();
         showToast('User updated successfully!', 'success');
         
         // Refresh user list
@@ -6352,6 +6392,7 @@ async function handleUpdateUser(userId) {
 // Ensure admin edit helpers remain callable from inline buttons/modals
 window.openEditUserModal = openEditUserModal;
 window.handleUpdateUser = handleUpdateUser;
+window.hideEditUserModal = hideEditUserModal;
 
 // New Admin Functions
 function setUserSort(key) {
@@ -6486,12 +6527,12 @@ function viewUserActivity(userId) {
     }
     
     const modal = document.getElementById('edit-user-modal');
-    modal.style.display = 'flex';
+    if (!modal) return;
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl flex flex-col fade-in max-h-[90vh]">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gray-800">User Activity: ${user.displayName}</h3>
-                <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                <button onclick="hideEditUserModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
             </div>
             <div class="p-6 space-y-4 overflow-y-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -6522,11 +6563,13 @@ function viewUserActivity(userId) {
                 </div>
                 ` : ''}
                 <div class="flex justify-end">
-                    <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Close</button>
+                    <button onclick="hideEditUserModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Close</button>
                 </div>
             </div>
         </div>
     `;
+
+    showAdminModal(modal);
 }
 
 // Comprehensive System Health Diagnostic Tests
@@ -8290,16 +8333,30 @@ async function backupDatabase() {
     }
 }
 
+function closeSystemLogsModal() {
+    const modal = document.getElementById('system-logs-modal');
+    if (modal) {
+        modal.remove();
+    }
+    if (!document.querySelector('.admin-modal-visible')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
 async function viewSystemLogs() {
     if (currentUser.role !== 'admin') return;
     
     try {
         const logsSnapshot = await db.collection('systemLogs').orderBy('timestamp', 'desc').limit(100).get();
         const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Clear any stale modal before rendering a new one
+        closeSystemLogsModal();
         
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000] admin-modal-visible';
         modal.id = 'system-logs-modal';
+        document.body.classList.add('modal-open');
         
         const levelColors = {
             'ERROR': 'bg-red-100 text-red-800 border-red-300',
@@ -8325,7 +8382,7 @@ async function viewSystemLogs() {
                         </h3>
                         <p class="text-sm text-gray-600 mt-1">${logs.length} log entries loaded</p>
                     </div>
-                    <button onclick="document.getElementById('system-logs-modal').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
+                    <button onclick="closeSystemLogsModal()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -8420,7 +8477,7 @@ async function viewSystemLogs() {
                     <div class="text-sm text-gray-600">
                         Showing <span id="logs-count">${logs.length}</span> of ${logs.length} logs
                     </div>
-                    <button onclick="document.getElementById('system-logs-modal').remove()" class="px-5 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                    <button onclick="closeSystemLogsModal()" class="px-5 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
                         Close
                     </button>
                 </div>
@@ -8431,7 +8488,13 @@ async function viewSystemLogs() {
         window.currentSystemLogs = logs;
         
         document.body.appendChild(modal);
-        initializeTooltips();
+        if (typeof initializeTooltips === 'function') {
+            try { initializeTooltips(); } catch (_) {}
+        }
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closeSystemLogsModal();
+        });
 
         // Secure event delegation for log action buttons
         modal.addEventListener('click', (event) => {

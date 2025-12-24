@@ -55,6 +55,9 @@ padding-left: env(safe-area-inset-left, 0);
 line-height: 1.6;
 color: #1f2937;
         }
+
+        /* Prevent background scroll when modals are open */
+        body.modal-open { overflow: hidden; }
         
         /* Performance optimizations */
         * {
@@ -98,7 +101,7 @@ border: none;
 border-radius: var(--button-radius);
 color: white;
 font-weight: 600;
-padding: 0.875rem 1.75rem;
+     padding: 0.7rem 1.35rem;
 transition: transform 0.15s ease-out, opacity 0.15s ease-out;
         }
         
@@ -115,13 +118,13 @@ transform: translateY(0);
         input, select, textarea {
             font-size: 15px;
             line-height: 1.4;
-            padding: 0.6rem 0.75rem;
+            padding: 0.5rem 0.7rem;
             border-radius: 10px;
         }
 
         /* Tighter glass input padding without changing Tailwind classes elsewhere */
         .glass-input {
-            padding: 0.6rem 0.75rem !important;
+            padding: 0.5rem 0.7rem !important;
         }
         
         /* Enhanced Smooth Scrolling with Overscroll Behavior */
@@ -138,6 +141,17 @@ overflow-x: hidden;
         /* Smooth scroll for all containers */
         * {
 scroll-behavior: inherit;
+        }
+
+        /* Respect reduced motion preferences and trim heavy animations on low-end devices */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .animate-logo { animation: none !important; }
+            .progress-bar .bar1, .progress-bar .bar2 { animation-duration: 0.01ms !important; }
         }
         
         /* Modern scroll progress indicator */
@@ -851,6 +865,8 @@ outline-offset: 2px;
     font-weight: 700;
     letter-spacing: 0.2px;
     line-height: 1.1;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.95rem;
     transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
             opacity 0.18s ease,
             box-shadow 0.18s ease;
@@ -875,6 +891,7 @@ outline-offset: 2px;
     color: rgb(var(--brand-700));
     font-weight: 800;
     letter-spacing: 0.2px;
+    padding: 0.65rem 1.15rem;
     transition: background-color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .btn-secondary:hover { background-color: rgba(var(--brand-50), 0.9); transform: translateY(-1px); }
@@ -886,6 +903,7 @@ outline-offset: 2px;
     color: rgb(var(--brand-700));
     font-weight: 800;
     letter-spacing: 0.2px;
+    padding: 0.65rem 1.15rem;
     transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease;
         }
         .btn-inverse:hover { background-color: rgba(var(--brand-50), 0.8); transform: translateY(-1px); }
