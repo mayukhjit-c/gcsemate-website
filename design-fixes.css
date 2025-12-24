@@ -148,7 +148,6 @@
 /* Primary button - clean and professional */
 .btn-primary,
 .btn-gradient,
-button[type='submit'],
 .cta-button {
     background: linear-gradient(135deg, var(--accent-600) 0%, var(--accent-500) 100%) !important;
     border: none !important;
@@ -164,7 +163,6 @@ button[type='submit'],
 
 .btn-primary:hover,
 .btn-gradient:hover,
-button[type='submit']:hover,
 .cta-button:hover {
     background: linear-gradient(
         135deg,
@@ -213,17 +211,26 @@ nav.fixed {
 .nav-link {
     color: var(--text-secondary) !important;
     font-weight: 500 !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 6px !important;
     transition:
         color 0.15s ease,
-        background 0.15s ease !important;
+    background 0.15s ease,
+    transform 0.15s ease !important;
 }
 
 .nav-link:hover,
 .nav-link.active {
     color: var(--accent-600) !important;
     background: var(--accent-50, #eef2ff) !important;
+}
+
+/* Search icon vertical centering inside search fields */
+.relative:has(input[type="search"]) i.fa-search.absolute,
+.relative:has(input[type="search"]) .fa-search.absolute,
+.relative:has(input[type="search"]) svg.absolute {
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    line-height: 1 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════

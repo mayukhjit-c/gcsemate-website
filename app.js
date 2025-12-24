@@ -9663,8 +9663,8 @@ async function renderDashboard() {
             if (board) {
                 const logo = examBoardLogos[board] || null;
                 if (logo) {
-                    const sizeClass = board === 'OCR' ? 'h-7' : 'h-6';
-                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="${sizeClass} w-auto mt-1" style="object-fit:contain;" data-tooltip="Exam board: ${escapeHTML(board)}"/>`;
+                    const sizeClass = board === 'OCR' ? 'h-9' : 'h-7';
+                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="${sizeClass} w-auto" style="object-fit:contain;" data-tooltip="Exam board: ${escapeHTML(board)}"/>`;
                 } else {
                     badge = `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700" data-tooltip="Exam board: ${escapeHTML(board)}">${board}</span>`;
                 }

@@ -2375,29 +2375,31 @@ kbd {
     color: #374151;
 }
 
-/* Modern card improvements */
-.card-modern, .bg-white\/70, .bg-white\/50 {
+/* Modern card improvements (avoid applying hover transforms to generic utility classes) */
+.card-modern {
     backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card-modern:hover, .bg-white\/70:hover, .bg-white\/50:hover {
+.card-modern:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 /* Better button styles */
-button, .btn-primary, .btn-secondary {
-    transition: all 0.2s ease;
-    font-weight: 500;
+button {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-button:hover, .btn-primary:hover, .btn-secondary:hover {
+.btn-primary, .btn-secondary, .btn, .gs-btn {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-primary:hover, .btn-secondary:hover, .btn:hover, .gs-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-button:active, .btn-primary:active, .btn-secondary:active {
+.btn-primary:active, .btn-secondary:active, .btn:active, .gs-btn:active {
     transform: translateY(0);
 }
 
