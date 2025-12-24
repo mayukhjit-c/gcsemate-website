@@ -1,0 +1,6 @@
+/privacypolicy    /privacypolicy/index.html    200
+/privacypolicy/*   /privacypolicy/index.html    200
+/termsofservice    /termsofservice/index.html   200
+/termsofservice/*  /termsofservice/index.html   200
+
+/*                /index.html                  200

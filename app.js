@@ -18,6 +18,12 @@ let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 
+function clearAccentCSSVars() {
+    const root = document.documentElement;
+    ['--accent-50','--accent-100','--accent-300','--accent-400','--accent-500','--accent-600','--accent-700']
+        .forEach(v => root.style.removeProperty(v));
+}
+
 // Admin allowlist for elevated actions
 const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
 
@@ -3568,6 +3574,7 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         // User is signed out.
         currentUser = null;
+        try { clearAccentCSSVars(); } catch (_) {}
         updateInlineUpsellBanner();
         const mainApp = document.getElementById('main-app');
         if (mainApp) {
@@ -5284,6 +5291,8 @@ async function handleLogout() {
         try { await trackLogout(); } catch (_) {}
 
         await auth.signOut();
+        // Stop user-selected accent styling after logout (but keep it saved for next login)
+        try { clearAccentCSSVars(); } catch (_) {}
         // onAuthStateChanged will handle UI changes
         path = [{ name: 'Root', id: ROOT_FOLDER_ID }];
         currentFolderFiles = [];

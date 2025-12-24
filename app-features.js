@@ -2418,7 +2418,7 @@ function createStudyGroupModal() {
                 </div>
                 <div>
                     <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" id="group-private" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <input type="checkbox" id="group-private" class="gcse-checkbox">
                         <span class="text-sm text-gray-700 dark:text-gray-300">Private group (invite only)</span>
                     </label>
                 </div>
