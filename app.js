@@ -3445,6 +3445,8 @@ auth.onAuthStateChanged(async (user) => {
                     console.warn('User tracking init failed:', e);
                 }
                 initializeAppState();
+                try { configureStripePricingTableIdentity(); } catch (_) {}
+                try { applyRouteFromLocation(); } catch (_) {}
                 hideAppLoading();
                 // Realtime listen to own profile for instant revoke/role changes
                 unsubscribeCurrentUserDoc = db.collection('users').doc(user.uid).onSnapshot(doc => {
@@ -3509,6 +3511,8 @@ auth.onAuthStateChanged(async (user) => {
                     }
 
                     initializeAppState();
+                    try { configureStripePricingTableIdentity(); } catch (_) {}
+                    try { applyRouteFromLocation(); } catch (_) {}
                     hideAppLoading();
 
                     // Realtime listen to own profile for instant revoke/role changes
@@ -3583,6 +3587,7 @@ auth.onAuthStateChanged(async (user) => {
             landingPage.classList.remove('hidden');
             landingPage.classList.add('fade-in');
         }
+        try { applyRouteFromLocation(); } catch (_) {}
         hideAppLoading();
     }
 });
@@ -3630,6 +3635,9 @@ function initializeAppState() {
         // Check subscription expiry on login
         checkSubscriptionExpiry();
     }
+
+    // Ensure Stripe checkout sessions can associate to this user
+    try { configureStripePricingTableIdentity(); } catch (_) {}
     
     // Set up periodic subscription expiry check (every hour)
     if (!window.subscriptionExpiryInterval) {
@@ -9301,6 +9309,171 @@ function showPage(pageId) {
     } catch (_) {}
     
 }
+
+// =================================================================================
+// ROUTING (clean URLs per tab)
+// =================================================================================
+const ROUTE_BY_PAGE_ID = {
+    'subject-dashboard-page': '/',
+    'videos-page': '/videos',
+    'blog-page': '/blog',
+    'calendar-page': '/calendar',
+    'useful-links-page': '/useful-links',
+    'about-page': '/about',
+    'features-page': '/features',
+    'help-page': '/help',
+    'account-settings-page': '/account',
+    'checkout-page': '/checkout'
+};
+
+const PAGE_ID_BY_ROUTE = Object.keys(ROUTE_BY_PAGE_ID).reduce((acc, pageId) => {
+    acc[ROUTE_BY_PAGE_ID[pageId]] = pageId;
+    return acc;
+}, {});
+
+function normalizePathname(pathname) {
+    try {
+        let p = (pathname || '/').trim();
+        if (!p.startsWith('/')) p = '/' + p;
+        if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
+        return p;
+    } catch (_) {
+        return '/';
+    }
+}
+
+function showLandingOnly() {
+    try {
+        const landing = document.getElementById('landing-page');
+        const login = document.getElementById('login-page');
+        const verify = document.getElementById('email-verify-page');
+        const main = document.getElementById('main-app');
+        if (login) login.classList.add('hidden');
+        if (verify) verify.classList.add('hidden');
+        if (main) {
+            main.classList.add('hidden');
+            main.style.display = 'none';
+        }
+        if (landing) landing.classList.remove('hidden');
+    } catch (_) {}
+}
+
+async function waitForProActivation(timeoutMs = 45000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        try {
+            if (currentUser && currentUser.tier === 'paid') return true;
+            if (currentUser?.uid) {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data() || {};
+                    if (data.tier === 'paid') {
+                        currentUser = { ...currentUser, ...data };
+                        return true;
+                    }
+                }
+            }
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 1800));
+    }
+    return false;
+}
+
+function handleCheckoutQueryParamsIfPresent() {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const flag = (params.get('checkout') || '').toLowerCase();
+        if (!flag) return;
+
+        const alert = document.getElementById('checkout-alert');
+        if (!alert) return;
+        alert.classList.remove('hidden');
+
+        if (flag === 'cancel') {
+            alert.className = 'rounded-lg border p-4 text-left text-sm border-amber-200 bg-amber-50 text-amber-900';
+            alert.textContent = 'Checkout was cancelled. No payment was taken.';
+        } else if (flag === 'success') {
+            if (currentUser?.tier === 'paid') {
+                alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
+                alert.textContent = 'Payment received — your Pro access is active.';
+            } else {
+                alert.className = 'rounded-lg border p-4 text-left text-sm border-blue-200 bg-blue-50 text-blue-900';
+                alert.textContent = 'Payment received — activating Pro access. This can take a few seconds…';
+                waitForProActivation(45000).then((ok) => {
+                    if (ok) {
+                        alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
+                        alert.textContent = 'Pro access activated. Thank you!';
+                        try { showToast('Pro activated!', 'success'); } catch (_) {}
+                    } else {
+                        alert.className = 'rounded-lg border p-4 text-left text-sm border-amber-200 bg-amber-50 text-amber-900';
+                        alert.textContent = 'We are still activating your Pro access. If it does not update soon, email admin@gcsemate.com.';
+                    }
+                });
+            }
+        }
+
+        // Clean URL after we display the message.
+        try {
+            const clean = window.location.pathname;
+            window.history.replaceState({}, '', clean);
+        } catch (_) {}
+    } catch (_) {}
+}
+
+function applyRouteFromLocation() {
+    const path = normalizePathname(window.location.pathname);
+
+    if (!currentUser) {
+        showLandingOnly();
+        return;
+    }
+
+    try {
+        const landing = document.getElementById('landing-page');
+        if (landing) landing.classList.add('hidden');
+        const login = document.getElementById('login-page');
+        if (login) login.classList.add('hidden');
+        const verify = document.getElementById('email-verify-page');
+        if (verify) verify.classList.add('hidden');
+    } catch (_) {}
+
+    let pageId = PAGE_ID_BY_ROUTE[path];
+    if (!pageId) pageId = 'subject-dashboard-page';
+
+    try { showPage(pageId); } catch (_) {}
+    if (pageId === 'checkout-page') {
+        handleCheckoutQueryParamsIfPresent();
+    }
+}
+
+function navigateToPath(pathname, { replace = false } = {}) {
+    const next = normalizePathname(pathname);
+    try {
+        if (replace) window.history.replaceState({}, '', next);
+        else window.history.pushState({}, '', next);
+    } catch (_) {}
+    applyRouteFromLocation();
+}
+
+function navigateToPageId(pageId, { replace = false } = {}) {
+    const route = ROUTE_BY_PAGE_ID[pageId];
+    if (route) return navigateToPath(route, { replace });
+    showPage(pageId);
+}
+
+window.addEventListener('popstate', () => {
+    try { applyRouteFromLocation(); } catch (_) {}
+});
+
+function configureStripePricingTableIdentity() {
+    try {
+        const el = document.querySelector('stripe-pricing-table');
+        if (!el || !currentUser) return;
+        if (currentUser.email) el.setAttribute('customer-email', currentUser.email);
+        if (currentUser.uid) el.setAttribute('client-reference-id', currentUser.uid);
+    } catch (_) {}
+}
+
 function showAnnouncement(message) {
     const announcementBanner = document.getElementById('site-announcement-banner');
     if (message && message.trim() !== '') {
@@ -11217,13 +11390,13 @@ function renderCalendarAgenda() {
             if (!eventColor || !/^#([0-9a-f]{3}){1,2}$/i.test(eventColor)) {
                 const category = (e.category || '').toLowerCase();
                 if (e.isGlobal) {
-                    eventColor = '#3B82F6'; // Blue for global
+                    eventColor = 'rgb(var(--accent-500))';
                 } else if (category === 'exam' || category.includes('exam')) {
                     eventColor = '#EF4444'; // Red for exam
                 } else if (category === 'homework' || category === 'hw' || category.includes('homework')) {
                     eventColor = '#A855F7'; // Purple for homework
                 } else {
-                    eventColor = '#3B82F6'; // Default blue
+                    eventColor = 'rgb(var(--accent-500))';
                 }
             }
             return `
@@ -13862,9 +14035,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+            const href = (link.getAttribute('href') || '').trim();
+            if (href && href.startsWith('/')) {
+                navigateToPath(href);
+                return;
+            }
             const targetPage = link.dataset.page;
             if (!targetPage) return;
-            showPage(targetPage);
+            navigateToPageId(targetPage);
         });
     });
 
@@ -13888,7 +14066,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (e.key === '?') {
             e.preventDefault();
-            showPage('help-page');
+            navigateToPageId('help-page');
         } else if (e.key === '/') {
             e.preventDefault();
             const fs = document.getElementById('file-search-input');
@@ -13931,7 +14109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = map[k];
             if (target) {
                 e.preventDefault();
-                showPage(target);
+                navigateToPageId(target);
             }
         }
     });
@@ -13998,6 +14176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const def = { fifty:[239,246,255], hundred:[219,234,254], threeHundred:[147,197,253], fourHundred:[96,165,250], fiveHundred:[59,130,246], sixHundred:[37,99,235], sevenHundred:[29,78,216] };
             applyAccent(def);
             localStorage.removeItem('gcsemate_accent');
+            try { if (picker) picker.value = '#3b82f6'; } catch (_) {}
         });
     }
     // Setup modals
@@ -14221,6 +14400,9 @@ document.addEventListener('DOMContentLoaded', () => {
     gapiScript.onload = () => window.gapiLoaded();
     gapiScript.onerror = () => console.error('Failed to load Google API script');
     document.head.appendChild(gapiScript);
+
+    // Apply initial route (auth will re-apply once resolved)
+    try { applyRouteFromLocation(); } catch (_) {}
 });
 
 // Global error handling to prevent silent failures

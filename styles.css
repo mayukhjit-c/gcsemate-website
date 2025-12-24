@@ -252,6 +252,23 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
     transform: scale(0.8) translateZ(0);
     opacity: 0.6;
 }
+
+/* Accent colour picker: ensure the swatch shows the selected colour */
+#accent-picker {
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    overflow: hidden;
+}
+#accent-picker::-webkit-color-swatch-wrapper { padding: 0; }
+#accent-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.5rem;
+}
+#accent-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 0.5rem;
+}
 40% {
     transform: scale(1.2) translateZ(0);
     opacity: 1;
@@ -1137,14 +1154,20 @@ box-shadow: none !important;
         .text-blue-700 { color: rgb(var(--accent-700)) !important; }
         .bg-blue-50 { background-color: rgb(var(--accent-50)) !important; }
         .bg-blue-100 { background-color: rgb(var(--accent-100)) !important; }
+        .bg-blue-500 { background-color: rgb(var(--accent-500)) !important; }
         .bg-blue-600 { background-color: rgb(var(--accent-600)) !important; }
+        .hover\:text-blue-600:hover { color: rgb(var(--accent-600)) !important; }
+        .hover\:bg-blue-50:hover { background-color: rgb(var(--accent-50)) !important; }
         .hover\:bg-blue-700:hover { background-color: rgb(var(--accent-700)) !important; }
         .focus\:ring-blue-300:focus { --tw-ring-color: rgb(var(--accent-300)) !important; }
         .focus\:ring-blue-400:focus { --tw-ring-color: rgb(var(--accent-400)) !important; }
+        .ring-blue-500 { --tw-ring-color: rgb(var(--accent-500)) !important; }
         .ring-blue-300 { --tw-ring-color: rgb(var(--accent-300)) !important; }
         .ring-blue-400 { --tw-ring-color: rgb(var(--accent-400)) !important; }
         .border-blue-200 { border-color: rgb(var(--accent-100)) !important; }
         .border-blue-300 { border-color: rgb(var(--accent-300)) !important; }
+        .border-blue-400 { border-color: rgb(var(--accent-400)) !important; }
+        .hover\:border-blue-400:hover { border-color: rgb(var(--accent-400)) !important; }
 
         /* ═══════════════════════════════════════════════════════════════ */
         /* ENHANCED PREMIUM UI ANIMATIONS - Modern & Sleek Design System */
@@ -1383,7 +1406,7 @@ animation: slideInUp 200ms ease-out both;
         .calendar-day.has-event::after {
 content: ''; position: absolute; bottom: 6px; left: 50%;
 transform: translateX(-50%); width: 6px; height: 6px;
-border-radius: 50%; background-color: #3b82f6;
+    border-radius: 50%; background-color: rgb(var(--accent-500));
         }
 
     /* Low-spec mode: trade blur for speed */
@@ -1397,6 +1420,12 @@ border-radius: 50%; background-color: #3b82f6;
         backdrop-filter: none !important;
     }
         .calendar-day.has-global-event::after { background-color: #16a34a; }
+
+        /* Calendar hover outline should follow the accent palette */
+        .calendar-day:hover {
+            background-color: rgba(var(--accent-50), .7);
+            border-color: rgb(var(--accent-400));
+        }
         /* Landing Page Specific Animations - Optimized */
         .animate-hero-title { animation: slideInUp 300ms ease-out 50ms forwards; opacity: 0; }
         .animate-hero-subtitle { animation: slideInUp 300ms ease-out 100ms forwards; opacity: 0; }
@@ -1451,7 +1480,7 @@ filter: none !important;
         .hover-raise:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,.08); }
         .hover-tint:hover { background-color: rgba(var(--accent-50), .8); }
         a.nav-link { transition: color .2s ease, background-color .2s ease; border-radius: .5rem; padding-left: .5rem; padding-right: .5rem; }
-        a.nav-link:hover { background-color: rgba(var(--accent-50), .7); }
+        a.nav-link:hover { background-color: rgba(var(--accent-50), .7); color: rgb(var(--accent-600)); }
         
         /* Mobile menu optimizations */
         #mobile-menu { padding-top: env(safe-area-inset-top, 0); }

@@ -112,11 +112,49 @@ async function writeFirestoreStatus({ email, customerId, subscriptionId, priceId
   return { ok: true };
 }
 
+async function writeUserTier({ uid, tier, email, customerId, subscriptionId, priceId, stripeStatus, currentPeriodEnd }) {
+  if (!projectId || !clientEmail || !privateKey) return { skipped: true, reason: 'missing service account env' };
+  if (!uid) return { skipped: true, reason: 'uid missing' };
+  const token = await getAccessToken();
+  if (!token) return { skipped: true, reason: 'oauth token missing' };
+
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${encodeURIComponent(uid)}?updateMask.fieldPaths=tier&updateMask.fieldPaths=stripeStatus&updateMask.fieldPaths=stripeCustomerId&updateMask.fieldPaths=stripeSubscriptionId&updateMask.fieldPaths=stripePriceId&updateMask.fieldPaths=stripeUpdatedAt&updateMask.fieldPaths=subscriptionExpiresAt`;
+  const expiresIso = Number.isFinite(currentPeriodEnd) ? new Date(currentPeriodEnd * 1000).toISOString() : null;
+
+  const body = {
+    fields: {
+      tier: { stringValue: tier || 'free' },
+      stripeStatus: stripeStatus ? { stringValue: stripeStatus } : undefined,
+      stripeCustomerId: customerId ? { stringValue: customerId } : undefined,
+      stripeSubscriptionId: subscriptionId ? { stringValue: subscriptionId } : undefined,
+      stripePriceId: priceId ? { stringValue: priceId } : undefined,
+      stripeUpdatedAt: { timestampValue: new Date().toISOString() },
+      subscriptionExpiresAt: expiresIso ? { timestampValue: expiresIso } : undefined
+    }
+  };
+  Object.keys(body.fields).forEach((k) => { if (body.fields[k] === undefined) delete body.fields[k]; });
+
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    return { skipped: true, reason: `users write failed ${res.status} ${txt}` };
+  }
+  return { ok: true };
+}
+
 function extractEventData(event) {
   const type = event.type;
   const obj = event.data && event.data.object ? event.data.object : {};
   const base = {
     type,
+    uid: obj.client_reference_id || obj.metadata?.uid || null,
     customerId: obj.customer || obj.id || null,
     email: obj.customer_details?.email || obj.metadata?.email || obj.email || null,
     priceId: obj.subscription && obj.subscription.items ? null : obj.metadata?.priceId || null,
@@ -128,6 +166,7 @@ function extractEventData(event) {
   if (type === 'checkout.session.completed') {
     return {
       type,
+      uid: obj.client_reference_id || obj.metadata?.uid || null,
       customerId: obj.customer || null,
       email: obj.customer_details?.email || obj.metadata?.email || null,
       priceId: obj.metadata?.priceId || (obj.display_items && obj.display_items[0]?.plan?.id) || null,
@@ -182,6 +221,25 @@ async function handler(req, res) {
       const writeResult = await writeFirestoreStatus(data);
       if (writeResult?.skipped) {
         console.warn('Firestore write skipped', writeResult.reason);
+      }
+
+      // Best-effort: upgrade user after successful checkout when uid is available.
+      // This relies on the client setting client_reference_id to the Firebase uid.
+      if (data?.uid && data?.type === 'checkout.session.completed') {
+        const desiredTier = (data.status === 'active' || data.status === 'trialing') ? 'paid' : 'free';
+        const userWrite = await writeUserTier({
+          uid: data.uid,
+          tier: desiredTier,
+          email: data.email,
+          customerId: data.customerId,
+          subscriptionId: data.subscriptionId,
+          priceId: data.priceId,
+          stripeStatus: data.status,
+          currentPeriodEnd: data.currentPeriodEnd
+        });
+        if (userWrite?.skipped) {
+          console.warn('User tier write skipped', userWrite.reason);
+        }
       }
     } catch (e) {
       console.error('Firestore write failed', e);
