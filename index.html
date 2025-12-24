@@ -2246,10 +2246,13 @@
             const auth = firebase.auth();
             const db = firebase.firestore();
             try {
-                db.settings({
-                    experimentalForceLongPolling: true,
-                    useFetchStreams: false
-                });
+                if (!window.__firestoreSettingsApplied) {
+                    db.settings({
+                        experimentalForceLongPolling: true,
+                        useFetchStreams: false
+                    });
+                    window.__firestoreSettingsApplied = true;
+                }
             } catch (e) {
                 console.warn('Firestore settings could not be applied', e);
             }

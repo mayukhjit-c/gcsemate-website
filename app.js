@@ -4965,24 +4965,39 @@ async function handleLogin() {
                 await new Promise((resolve) => window.grecaptcha.ready(resolve));
                 const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                 try {
-                    const verifyRes = await fetch('/api/recaptcha-verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token, expectedAction: 'LOGIN' })
-                    });
-                    if (verifyRes.ok) {
-                        const verifyData = await verifyRes.json().catch(() => ({}));
-                        if (!verifyData.allowed) {
-                            messageEl.textContent = 'Suspicious activity detected. Please try again.';
-                            return;
+                    const recaptchaPaths = ['/api/recaptcha-verify', '/recaptcha-verify', '/functions/recaptcha-verify'];
+                    let verified = false;
+                    let lastStatus = null;
+                    for (const path of recaptchaPaths) {
+                        try {
+                            const verifyRes = await fetch(path, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ token, expectedAction: 'LOGIN' })
+                            });
+                            lastStatus = verifyRes.status;
+                            if (!verifyRes.ok) continue;
+                            const verifyData = await verifyRes.json().catch(() => ({}));
+                            if (!verifyData.allowed) {
+                                messageEl.textContent = 'Suspicious activity detected. Please try again.';
+                                return;
+                            }
+                            verified = true;
+                            break;
+                        } catch (_) {
+                            // try next path
                         }
-                    } else {
-                        // If backend not present, proceed without blocking login
-                        console.warn('reCAPTCHA verify endpoint not available, proceeding. Status:', verifyRes.status);
+                    }
+                    if (!verified && !window.__recaptchaWarningLogged) {
+                        window.__recaptchaWarningLogged = true;
+                        console.info('reCAPTCHA verify endpoint not available, proceeding. Last status:', lastStatus);
                     }
                 } catch (e) {
                     // Network/endpoint issues should not block legitimate logins
-                    console.warn('reCAPTCHA verify request failed, proceeding:', e);
+                    if (!window.__recaptchaWarningLogged) {
+                        window.__recaptchaWarningLogged = true;
+                        console.info('reCAPTCHA verify request failed, proceeding:', e);
+                    }
                 }
             }
         } catch (e) {
@@ -8966,6 +8981,7 @@ function showPage(pageId) {
 function showAnnouncement(message) {
     const announcementBanner = document.getElementById('site-announcement-banner');
     if (message && message.trim() !== '') {
+        lastAnnouncementMessage = message;
         announcementBanner.innerHTML = `<div class="bg-blue-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-between relative">
             <div class="flex items-center gap-3">
                 <span class="truncate">${message}</span>
@@ -8980,6 +8996,24 @@ function showAnnouncement(message) {
     } else {
         announcementBanner.classList.add('hidden');
     }
+}
+
+let lastAnnouncementMessage = '';
+function dismissAnnouncement() {
+    try {
+        const banner = document.getElementById('site-announcement-banner');
+        if (!banner) return;
+        const textNode = banner.querySelector('.truncate');
+        if (textNode) {
+            lastAnnouncementMessage = textNode.textContent || lastAnnouncementMessage;
+        }
+        banner.classList.add('hidden');
+    } catch (_) {}
+}
+
+function restoreLastAnnouncement() {
+    if (!lastAnnouncementMessage) return;
+    showAnnouncement(lastAnnouncementMessage);
 }
 async function postAnnouncement() {
     if (currentUser.role !== 'admin') return;
