@@ -212,6 +212,8 @@ background-clip: padding-box;
         /* Improve layout consistency and resizing */
         *, *::before, *::after { box-sizing: border-box; }
         html, body { height: 100%; }
+        /* Ensure hidden always hides, even when later rules set display (e.g. .gs-page) */
+        .hidden { display: none !important; }
         /* Utility to hide scrollbars for overflow regions */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
