@@ -323,20 +323,13 @@ const errorHandler = new ErrorHandler();
 // Firestore resilience: force long polling on recovery and reset local cache when assertion loops occur
 async function recoverFirestoreSession() {
     if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    if (window.__firestoreRecoveryRunning) return;
+    window.__firestoreRecoveryRunning = true;
     try {
         const instance = firebase.firestore();
         // Try to clean up any stuck state
         await instance.terminate();
         await instance.clearPersistence();
-    } catch (_) {
-        // ignore
-    }
-    try {
-        const instance = firebase.firestore();
-        instance.settings({
-            experimentalForceLongPolling: true,
-            useFetchStreams: false
-        });
     } catch (_) {
         // ignore
     }
@@ -1817,15 +1810,26 @@ async function sendHeartbeat() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     };
 
-    // Update session document
-    await db.collection('userSessions').doc(sessionId).set(heartbeatData, { merge: true });
-    
-    // Update user's last seen
-    await db.collection('users').doc(currentUser.uid).update({
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-        isOnline: true,
-        currentSessionId: sessionId
-    });
+    try {
+        // Update session document
+        await db.collection('userSessions').doc(sessionId).set(heartbeatData, { merge: true });
+        
+        // Update user's last seen
+        await db.collection('users').doc(currentUser.uid).update({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            isOnline: true,
+            currentSessionId: sessionId
+        });
+    } catch (error) {
+        if (typeof error?.message === 'string' && error.message.includes('INTERNAL ASSERTION FAILED')) {
+            console.warn('Firestore assertion during heartbeat; pausing heartbeats and triggering recovery.');
+            clearInterval(realtimeTracker.heartbeatInterval);
+            realtimeTracker.heartbeatInterval = null;
+            recoverFirestoreSession();
+            return;
+        }
+        throw error;
+    }
 
     realtimeTracker.lastHeartbeat = Date.now();
 }
@@ -1888,6 +1892,13 @@ async function updateAnalyticsRealtime() {
         await updateSystemHealthRealtime();
 
     } catch (error) {
+        if (typeof error?.message === 'string' && error.message.includes('INTERNAL ASSERTION FAILED')) {
+            console.warn('Firestore assertion during realtime analytics; pausing analytics updates and triggering recovery.');
+            clearInterval(realtimeTracker.analyticsInterval);
+            realtimeTracker.analyticsInterval = null;
+            recoverFirestoreSession();
+            return;
+        }
         console.error('Real-time analytics update failed:', error);
     }
 }
@@ -3035,8 +3046,15 @@ function initializeSecurityFeatures() {
             user-select: text;
         }
         
-        /* Disable drag and drop of images */
-        img:not(.blog-inline-image) {
+        } catch (error) {
+            if (typeof error?.message === 'string' && error.message.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn('Firestore assertion during realtime analytics; pausing analytics updates and triggering recovery.');
+                clearInterval(realtimeTracker.analyticsInterval);
+                realtimeTracker.analyticsInterval = null;
+                recoverFirestoreSession();
+                return;
+            }
+            logError(error, 'Realtime Analytics');
             -webkit-user-drag: none;
             -khtml-user-drag: none;
             -moz-user-drag: none;
