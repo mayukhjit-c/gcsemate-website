@@ -212,8 +212,6 @@ background-clip: padding-box;
         /* Improve layout consistency and resizing */
         *, *::before, *::after { box-sizing: border-box; }
         html, body { height: 100%; }
-        /* Ensure hidden always hides, even when later rules set display (e.g. .gs-page) */
-        .hidden { display: none !important; }
         /* Utility to hide scrollbars for overflow regions */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -2925,6 +2923,12 @@ will-change: transform;
                 radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.18), transparent 32%),
                 linear-gradient(135deg, #f8fafc 0%, #e0f2fe 35%, #f5f3ff 100%);
             color: #0f172a;
+        }
+
+        /* Allow Tailwind `hidden` to work even though `.gs-page` sets `display:flex` */
+        .gs-page.hidden,
+        #landing-page.hidden {
+            display: none !important;
         }
 
         .gs-shell {
