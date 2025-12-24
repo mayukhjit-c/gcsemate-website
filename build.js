@@ -7,8 +7,11 @@ const fs = require('fs');
 const path = require('path');
 
 const filesToCopy = [
+    '_redirects',
+    '_headers',
     'index.html',
     'styles.css',
+    'tailwind.css',
     'security.js',
     'app-preferences.js',
     'app.js',
@@ -17,7 +20,7 @@ const filesToCopy = [
     'firebase.rules',
 ];
 
-const dirsToCopy = ['docs', 'functions'];
+const dirsToCopy = ['docs', 'functions', 'privacypolicy', 'termsofservice'];
 
 const distDir = 'dist';
 
