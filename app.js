@@ -13390,8 +13390,11 @@ window.gapiLoaded = function() {
 }
 // --- RUN ON STARTUP ---
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('copyright-year').textContent = new Date().getFullYear();
-    document.getElementById('landing-copyright-year').textContent = new Date().getFullYear();
+    const copyYear = new Date().getFullYear();
+    const footerYear = document.getElementById('copyright-year');
+    if (footerYear) footerYear.textContent = copyYear;
+    const landingYear = document.getElementById('landing-copyright-year');
+    if (landingYear) landingYear.textContent = copyYear;
     // Initialize reCAPTCHA widget if enterprise API is present
     try {
         if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
@@ -13402,32 +13405,43 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('reCAPTCHA init failed:', e);
     }
     // Setup login/register form toggling
-    document.getElementById('show-register-form').addEventListener('click', (e) => {
-        e.preventDefault();
-        showAuthPage(false);
-    });
-    document.getElementById('show-login-form').addEventListener('click', (e) => {
-        e.preventDefault();
-        showAuthPage(true);
-    });
+    const showRegister = document.getElementById('show-register-form');
+    if (showRegister) {
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthPage(false);
+        });
+    }
+    const showLogin = document.getElementById('show-login-form');
+    if (showLogin) {
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthPage(true);
+        });
+    }
     // Setup password visibility toggle
-    document.getElementById('show-password-btn').addEventListener('click', () => {
-        const passwordInput = document.getElementById('password');
-        const eyeOpen = document.getElementById('eye-open');
-        const eyeClosed = document.getElementById('eye-closed');
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            eyeOpen.classList.add('hidden');
-            eyeClosed.classList.remove('hidden');
-        } else {
-            passwordInput.type = 'password';
-            eyeOpen.classList.remove('hidden');
-            eyeClosed.classList.add('hidden');
-        }
-    });
+    const showPasswordBtn = document.getElementById('show-password-btn');
+    if (showPasswordBtn) {
+        showPasswordBtn.addEventListener('click', () => {
+            const passwordInput = document.getElementById('password');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+            if (!passwordInput || !eyeOpen || !eyeClosed) return;
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                passwordInput.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        });
+    }
     
     // Setup other buttons
-    document.getElementById('logout-button').addEventListener('click', handleLogout);
+    const logoutBtn = document.getElementById('logout-button');
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     document.getElementById('mobile-logout-button').addEventListener('click', handleLogout);
     document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
     document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);

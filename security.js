@@ -7,7 +7,16 @@
     'use strict';
 
     function runSecurityChecks() {
-        const allowedDomains = ['gcsemate.com', 'www.gcsemate.com', 'localhost', '127.0.0.1', 'gcsemate-dev.web.app', 'gcsemate.web.app'];
+        const allowedDomains = [
+            'gcsemate.com',
+            'www.gcsemate.com',
+            'gcsemate.co.uk',
+            'www.gcsemate.co.uk',
+            'localhost',
+            '127.0.0.1',
+            'gcsemate-dev.web.app',
+            'gcsemate.web.app'
+        ];
         const currentDomain = window.location.hostname;
 
         if (!allowedDomains.some(domain => currentDomain === domain || currentDomain.endsWith(domain))) {
