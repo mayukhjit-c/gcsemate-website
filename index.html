@@ -2300,9 +2300,8 @@
                     try {
                         if (!window.__firestoreSettingsApplied) {
                             db.settings({
-                                experimentalForceLongPolling: true,
-                                useFetchStreams: false,
-                                merge: true
+                                experimentalAutoDetectLongPolling: true,
+                                useFetchStreams: false
                             });
                             window.__firestoreSettingsApplied = true;
                         }

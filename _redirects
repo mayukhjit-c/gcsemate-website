@@ -1,3 +1,5 @@
+/favicon.ico      /gcsemate%20favicon.png      200
+
 /privacypolicy    /privacypolicy/index.html    200
 /privacypolicy/*   /privacypolicy/index.html    200
 /termsofservice    /termsofservice/index.html   200
