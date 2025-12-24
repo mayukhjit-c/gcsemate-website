@@ -391,7 +391,7 @@
         <img src="gcsemate%20new.png" alt="" class="h-8 w-auto opacity-10 grayscale" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
     </div>
     
-    <div id="landing-page" class="hidden w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 text-center fade-in">
+    <div id="landing-page" class="hidden w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 text-center fade-in">
         <header class="flex justify-between items-center py-4 sm:py-6 mb-8 sm:mb-12">
              <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 sm:h-12 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
               <div class="flex items-center gap-3 sm:gap-4">
@@ -427,6 +427,11 @@
                             </button>
                             <button onclick="showAuthPage(true)" class="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-4 text-base min-h-[60px] flex items-center justify-center">
                                 <i class="fas fa-user-check mr-2"></i>Already have an account? Sign In
+                            </button>
+                        </div>
+                        <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4">
+                            <button onclick="signInWithGoogle()" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-lg bg-white text-gray-800 font-bold border border-gray-200 hover:bg-gray-50 transition-all min-h-[56px] flex items-center justify-center" data-tooltip="Sign in with Google">
+                                <i class="fab fa-google mr-2"></i>Sign in with Google
                             </button>
                         </div>
                         <div class="hero-trust" aria-label="GCSEMate highlights">
@@ -546,7 +551,7 @@
                 </div>
 
                 <!-- Testimonials -->
-                <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto" id="testimonials">
+                <div class="mt-12 sm:mt-14 lg:mt-16 grid md:grid-cols-3 gap-8 max-w-6xl mx-auto" id="testimonials">
                     <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
                         <div class="flex items-center mb-4">
                             <div class="flex text-yellow-400">
@@ -617,8 +622,8 @@
                 </div>
             </div>
         </main>
-        <footer class="mt-24 py-12 bg-gray-50 border-t border-gray-200">
-             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+           <footer class="mt-24 py-12 bg-gray-50 border-t border-gray-200">
+               <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                      <div>
                          <h3 class="font-bold text-gray-900 mb-4">GCSEMate</h3>
@@ -629,8 +634,8 @@
                          <ul class="space-y-2 text-sm">
                              <li><a href="#" onclick="event.preventDefault(); showAuthPage(false)" class="text-gray-600 hover:text-blue-600">Get Started</a></li>
                              <li><a href="#" onclick="event.preventDefault(); showAuthPage(true)" class="text-gray-600 hover:text-blue-600">Sign In</a></li>
-                             <li><a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="text-gray-600 hover:text-blue-600">Privacy Policy</a></li>
-                             <li><a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="text-gray-600 hover:text-blue-600">Terms of Service</a></li>
+                             <li><a href="/privacypolicy" class="text-gray-600 hover:text-blue-600">Privacy Policy</a></li>
+                             <li><a href="/termsofservice" class="text-gray-600 hover:text-blue-600">Terms of Service</a></li>
                          </ul>
                      </div>
                      <div>
@@ -665,8 +670,8 @@
              <p id="resend-message" class="text-sm text-green-600 mt-4 h-4"></p>
         </div>
     </div>
-    <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-black/20 backdrop-blur-sm">
-        <div class="w-full max-w-md modern-card login-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white/95 backdrop-blur-lg border border-white/20">
+    <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-black/40 backdrop-blur-sm">
+        <div class="w-full max-w-md modern-card login-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white border border-gray-200">
             <div class="flex justify-center items-center mb-4">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>
@@ -674,6 +679,15 @@
             <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
                 <!-- reCAPTCHA v3 runs invisibly; no widget needed -->
                 <div id="recaptcha-container" class="hidden"></div>
+                <button type="button" onclick="signInWithGoogle()" class="w-full px-4 py-3 rounded-lg bg-white text-gray-800 font-bold border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2" data-tooltip="Sign in with Google">
+                    <i class="fab fa-google"></i>
+                    <span>Continue with Google</span>
+                </button>
+                <div class="flex items-center gap-3 py-1" aria-hidden="true">
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                    <div class="text-[11px] text-gray-400 font-semibold uppercase tracking-widest">or</div>
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                </div>
                 <div>
                     <label for="email" class="sr-only">Email address</label>
                     <input id="email" type="email" placeholder="Email" autocomplete="email" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your email" aria-describedby="email-error">
@@ -689,9 +703,9 @@
                     <div id="password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                 </div>
                 <div class="flex justify-between items-center text-sm">
-                    <label class="flex items-center text-gray-600 select-none">
-                        <input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" data-tooltip="Keep me logged in">
-                        <span class="ml-2">Remember Me</span>
+                    <label class="inline-flex items-center gap-3 text-gray-700 select-none cursor-pointer">
+                        <input id="remember-me" type="checkbox" class="gcse-checkbox" data-tooltip="Keep me logged in">
+                        <span>Remember Me</span>
                     </label>
                     <a href="#" onclick="event.preventDefault(); showPasswordResetModal()" class="font-semibold text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
@@ -700,6 +714,15 @@
                 <p class="text-center text-sm text-gray-600">Don't have an account? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Register</a></p>
             </form>
             <form id="register-form" class="hidden space-y-4" onsubmit="event.preventDefault(); handleRegister();">
+                <button type="button" onclick="signInWithGoogle()" class="w-full px-4 py-3 rounded-lg bg-white text-gray-800 font-bold border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2" data-tooltip="Continue with Google">
+                    <i class="fab fa-google"></i>
+                    <span>Continue with Google</span>
+                </button>
+                <div class="flex items-center gap-3 py-1" aria-hidden="true">
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                    <div class="text-[11px] text-gray-400 font-semibold uppercase tracking-widest">or</div>
+                    <div class="h-px bg-gray-200 flex-1"></div>
+                </div>
                 <div>
                     <label for="register-displayname" class="sr-only">Full Name</label>
                     <input id="register-displayname" type="text" placeholder="Your Name" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Enter your full name" aria-describedby="register-name-error">
@@ -715,7 +738,7 @@
                     <input id="register-password" type="password" placeholder="Password (min. 6 characters)" autocomplete="new-password" required class="w-full p-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" data-tooltip="Choose a password" aria-describedby="register-password-error">
                     <div id="register-password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                 </div>
-                <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="#" onclick="event.preventDefault(); showTermsOfServiceModal()" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="#" onclick="event.preventDefault(); showPrivacyPolicyModal()" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
+                <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="/termsofservice" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="/privacypolicy" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
                 <button type="submit" id="register-button" class="w-full p-4 rounded-lg glass-button text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to create your account">Create Free Account</button>
                 <p id="register-error" class="text-red-500 text-sm text-center h-4"></p>
                 <p class="text-center text-sm text-gray-600">Already have an account? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Login</a></p>
@@ -911,7 +934,7 @@
                              <input id="playlist-tags" type="text" placeholder="Tags (comma-separated, e.g., 'AQA,Paper1,GCSE')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Add tags to help filtering">
                             <div id="add-playlist-preview" class="mt-3"></div>
                              <label class="flex items-center text-sm text-gray-700 select-none">
-                                 <input id="playlist-sync-confirm" type="checkbox" required class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                 <input id="playlist-sync-confirm" type="checkbox" required class="gcse-checkbox">
                                  <span class="ml-2">I confirm this playlist is for all paid users.</span>
                              </label>
                              <button type="submit" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new playlist">Add Playlist</button>
@@ -952,7 +975,7 @@
                             <table id="manage-playlists-table" class="w-full text-left table-auto">
                                 <thead>
                                     <tr>
-                                        <th class="p-2"><input id="manage-select-all" type="checkbox"></th>
+                                        <th class="p-2"><input id="manage-select-all" type="checkbox" class="gcse-checkbox"></th>
                                         <th class="p-2">Title</th>
                                         <th class="p-2">Subject</th>
                                         <th class="p-2">Tags</th>
@@ -2007,7 +2030,7 @@
                     <span class="font-semibold text-blue-600">Mayukhjit Chakraborty</span>
                 </div>
                 <p class="text-xs text-gray-500">Creator & Developer of GCSEMate</p>
-                <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
+                <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="/privacypolicy" class="hover:underline">Privacy Policy</a> | <a href="/termsofservice" class="hover:underline">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
                 <p class="text-sm text-gray-600">Need help? Contact <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-700">admin@gcsemate.com</a>.</p>
                 <p class="text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
             </div>

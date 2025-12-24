@@ -963,7 +963,10 @@ window.getSystemHealth = () => {
 
 // System Health Modal - Enhanced with error copying and better UI
 function showSystemHealthModal() {
-    if (currentUser?.role !== 'admin') return;
+    if (!isAdminUser()) {
+        showToast('Admin access required', 'error');
+        return;
+    }
     
     const healthData = getSystemHealth();
     const hasErrors = healthData.tests.failedTests.length > 0 || healthData.errors.totalErrors > 0;
@@ -3480,9 +3483,72 @@ auth.onAuthStateChanged(async (user) => {
                     updateAITutorNavVisibility();
                 });
             } else {
-                logError("User authenticated but no profile found in Firestore.", "Auth");
-                await handleLogout();
-                hideAppLoading();
+                // Create a default profile for providers like Google sign-in.
+                try {
+                    const fallbackName = (user.displayName && user.displayName.trim())
+                        ? user.displayName.trim()
+                        : ((user.email || '').split('@')[0] || 'User');
+
+                    await db.collection('users').doc(user.uid).set({
+                        displayName: fallbackName,
+                        email: user.email || '',
+                        tier: 'free',
+                        role: 'user',
+                        starredFiles: [],
+                        allowedSubjects: null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+
+                    const createdProfile = await db.collection('users').doc(user.uid).get();
+                    currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...(createdProfile.data() || {}) };
+
+                    try {
+                        await initializeUserTracking();
+                    } catch (e) {
+                        console.warn('User tracking init failed:', e);
+                    }
+
+                    initializeAppState();
+                    hideAppLoading();
+
+                    // Realtime listen to own profile for instant revoke/role changes
+                    unsubscribeCurrentUserDoc = db.collection('users').doc(user.uid).onSnapshot(doc => {
+                        if (!doc.exists) { return; }
+                        const before = currentUser;
+                        const after = { ...before, ...doc.data() };
+                        const tierChanged = before?.tier !== after?.tier;
+                        const roleChanged = before?.role !== after?.role;
+                        currentUser = after;
+                        // Forced logout by admin
+                        try {
+                            const forceAt = after.forceLogoutAt?.toDate ? after.forceLogoutAt.toDate().getTime() : (after.forceLogoutAt ? new Date(after.forceLogoutAt).getTime() : null);
+                            if (forceAt && (!lastForceLogoutAt || forceAt !== lastForceLogoutAt)) {
+                                lastForceLogoutAt = forceAt;
+                                handleLogout();
+                                return;
+                            }
+                        } catch(_){ }
+                        if (tierChanged && after.tier === 'free') {
+                            try {
+                                const gatedPages = ['subject-dashboard-page','videos-page','blog-page'];
+                                gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                                const modal = document.getElementById('upgrade-modal');
+                                const msgEl = document.getElementById('upgrade-modal-message');
+                                if (msgEl) msgEl.textContent = 'Your access was changed. Upgrade to continue accessing premium content.';
+                                if (modal) { modal.style.display = 'flex'; }
+                            } catch(_){ }
+                        }
+                        if (roleChanged) {
+                            try { initializeAppState(); } catch(_){ }
+                        }
+                        updateInlineUpsellBanner();
+                        updateAITutorNavVisibility();
+                    });
+                } catch (e) {
+                    logError(e, "Auth");
+                    await handleLogout();
+                    hideAppLoading();
+                }
             }
         } catch (error) {
             logError(error, "User Profile Fetch");
@@ -4557,7 +4623,7 @@ function setupRealtimeListeners() {
                 allUsers[doc.id] = { id: doc.id, ...doc.data() };
             });
             renderUserManagementPanel(allUsers);
-            updateAnalytics(); // Update analytics when user data changes
+            scheduleUpdateAnalytics(); // Update analytics when user data changes (debounced)
         }, err => logError(err, "User Management"));
         
         // Start server time updates for admin
@@ -4632,6 +4698,24 @@ function setupRealtimeListeners() {
             renderCalendar(null, events); // Re-render with new global events
             updateCountdownBanner(); // Update countdown when events change
         }, err => logError(err, "Global Events"));
+}
+
+function isAdminUser(user = currentUser) {
+    return !!user && String(user.role || '').toLowerCase() === 'admin';
+}
+
+let analyticsUpdateTimer = null;
+let analyticsUpdateInFlight = false;
+let lastAnalyticsUpdateAt = 0;
+const ANALYTICS_DEBOUNCE_MS = 600;
+const ANALYTICS_MIN_INTERVAL_MS = 2500;
+
+function scheduleUpdateAnalytics() {
+    if (!isAdminUser()) return;
+    if (analyticsUpdateTimer) clearTimeout(analyticsUpdateTimer);
+    analyticsUpdateTimer = setTimeout(() => {
+        updateAnalytics();
+    }, ANALYTICS_DEBOUNCE_MS);
 }
 
 // Update online/offline status based on maintenance mode
@@ -5124,6 +5208,59 @@ async function handleLogin() {
     }
 }
 
+async function signInWithGoogle() {
+    try {
+        if (!window.firebase || !window.firebase.auth || !auth) {
+            showToast('Google sign-in is not available right now. Please refresh and try again.', 'error');
+            return;
+        }
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        // Default to persistent sessions for Google sign-in.
+        try {
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        } catch (_) {
+            // Non-fatal: continue with default persistence.
+        }
+
+        // Prefer popup (fast) and fall back to redirect (mobile-safe).
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            const popupFailureCodes = new Set([
+                'auth/popup-blocked',
+                'auth/popup-closed-by-user',
+                'auth/cancelled-popup-request',
+                'auth/operation-not-supported-in-this-environment'
+            ]);
+
+            if (popupFailureCodes.has(error?.code)) {
+                await auth.signInWithRedirect(provider);
+                return;
+            }
+
+            // As a general fallback (some mobile/in-app browsers), attempt redirect once.
+            try {
+                await auth.signInWithRedirect(provider);
+                return;
+            } catch (_) {
+                // If redirect also fails, surface the original error.
+            }
+
+            throw error;
+        }
+    } catch (error) {
+        console.error('Google sign-in failed:', error);
+        let msg = error?.message || 'Google sign-in failed. Please try again.';
+        if (error?.code === 'auth/unauthorized-domain') {
+            msg = 'Google sign-in is not enabled for this domain.';
+        }
+        showToast(msg, 'error');
+    }
+}
+
 async function handleLogout() {
     try {
         // Destroy reCAPTCHA verifier
@@ -5254,7 +5391,7 @@ function renderUserManagementPanel(allUsers) {
         card.innerHTML = `
             <div class="flex items-start justify-between">
                 <label class="inline-flex items-center gap-2 select-none">
-                    <input type="checkbox" class="user-select h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="${user.id}">
+                    <input type="checkbox" class="user-select gcse-checkbox" value="${user.id}">
                     <span class="text-sm text-gray-600">Select</span>
                 </label>
                 <div>
@@ -6309,7 +6446,7 @@ async function openEditUserModal(userId) {
             const label = document.createElement('label');
             label.className = 'flex items-center space-x-2 cursor-pointer';
             label.innerHTML = `
-                <input type="checkbox" name="edit-subjects" value="${subject.toLowerCase()}" ${userSubjects.includes(subject.toLowerCase()) ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <input type="checkbox" name="edit-subjects" value="${subject.toLowerCase()}" ${userSubjects.includes(subject.toLowerCase()) ? 'checked' : ''} class="gcse-checkbox">
                 <span>${subject}</span>
             `;
             subjectContainer.appendChild(label);
@@ -6574,6 +6711,10 @@ function viewUserActivity(userId) {
 
 // Comprehensive System Health Diagnostic Tests
 async function checkSystemHealth() {
+    if (!isAdminUser()) {
+        showToast('Admin access required', 'error');
+        return;
+    }
     showToast('Running comprehensive system diagnostics...', 'info');
     
     const diagnosticResults = {
@@ -7069,6 +7210,9 @@ async function checkSystemHealth() {
         `System health check completed: ${diagnosticResults.passed}/${diagnosticResults.tests.length} tests passed`;
     
     showToast(statusMessage, diagnosticResults.criticalIssues > 0 ? 'error' : 'success');
+    if (typeof showSystemHealthModal === 'function') {
+        try { showSystemHealthModal(); } catch (_) {}
+    }
 }
 
 function updateSystemHealthUI(results) {
@@ -8000,7 +8144,18 @@ function refreshCalendarData() {
 
 // Advanced Analytics Functions
 async function updateAnalytics() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
+
+    const now = Date.now();
+    if (analyticsUpdateInFlight) return;
+    if (now - lastAnalyticsUpdateAt < ANALYTICS_MIN_INTERVAL_MS) {
+        const remaining = Math.max(0, ANALYTICS_MIN_INTERVAL_MS - (now - lastAnalyticsUpdateAt));
+        if (analyticsUpdateTimer) clearTimeout(analyticsUpdateTimer);
+        analyticsUpdateTimer = setTimeout(() => updateAnalytics(), remaining);
+        return;
+    }
+    analyticsUpdateInFlight = true;
+    lastAnalyticsUpdateAt = now;
     
     try {
         // Calculate active users
@@ -8046,7 +8201,7 @@ async function updateAnalytics() {
         
         // Update enhanced analytics
         const conversionRate = totalUsers > 0 ? ((paidUsers / totalUsers) * 100).toFixed(1) : '0.0';
-        const growthPercentage = await calculateGrowthPercentage();
+        const growthPercentage = await getGrowthPercentageCached();
         
         const conversionRateEl = document.getElementById('free-conversion-rate');
         if (conversionRateEl) conversionRateEl.textContent = conversionRate + '%';
@@ -8066,10 +8221,10 @@ async function updateAnalytics() {
         const blogPostsEl = document.getElementById('blog-posts-count');
         if (blogPostsEl) blogPostsEl.textContent = allBlogPosts.length;
         
-        // Get playlists count
-        const playlistsSnapshot = await db.collection('videoPlaylists').get();
+        // Get playlists count (cached to avoid repeated full reads)
+        const playlistsCount = await getPlaylistsCountCached();
         const playlistsCountEl = document.getElementById('playlists-count');
-        if (playlistsCountEl) playlistsCountEl.textContent = playlistsSnapshot.size;
+        if (playlistsCountEl && playlistsCount !== null) playlistsCountEl.textContent = playlistsCount;
         
         // Update engagement metrics
         await updateEngagementMetrics();
@@ -8079,6 +8234,45 @@ async function updateAnalytics() {
         
     } catch (error) {
         logError(error, 'Analytics Update');
+    } finally {
+        analyticsUpdateInFlight = false;
+    }
+}
+
+let cachedGrowthPercentage = '0';
+let cachedGrowthAt = 0;
+const GROWTH_TTL_MS = 60000;
+
+async function getGrowthPercentageCached() {
+    const now = Date.now();
+    if (cachedGrowthPercentage && (now - cachedGrowthAt) < GROWTH_TTL_MS) {
+        return cachedGrowthPercentage;
+    }
+    try {
+        cachedGrowthPercentage = await calculateGrowthPercentage();
+        cachedGrowthAt = now;
+        return cachedGrowthPercentage;
+    } catch (_) {
+        return cachedGrowthPercentage || '0';
+    }
+}
+
+let cachedPlaylistsCount = null;
+let cachedPlaylistsCountAt = 0;
+const PLAYLISTS_COUNT_TTL_MS = 60000;
+
+async function getPlaylistsCountCached() {
+    const now = Date.now();
+    if (cachedPlaylistsCount !== null && (now - cachedPlaylistsCountAt) < PLAYLISTS_COUNT_TTL_MS) {
+        return cachedPlaylistsCount;
+    }
+    try {
+        const snap = await db.collection('videoPlaylists').get();
+        cachedPlaylistsCount = snap.size;
+        cachedPlaylistsCountAt = now;
+        return cachedPlaylistsCount;
+    } catch (e) {
+        return cachedPlaylistsCount;
     }
 }
 
@@ -8247,7 +8441,7 @@ async function updateSystemHealth() {
 
 // Quick Actions Functions
 async function exportAllData() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     
     try {
         showToast('Preparing data export...', 'info');
@@ -8277,7 +8471,7 @@ async function exportAllData() {
 }
 
 async function sendBulkEmail() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     
     const subject = prompt('Email subject:', 'Important Update from GCSEMate');
     if (!subject) return;
@@ -8306,7 +8500,7 @@ async function sendBulkEmail() {
 }
 
 async function backupDatabase() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     
     try {
         showToast('Creating database backup...', 'info');
@@ -8344,7 +8538,10 @@ function closeSystemLogsModal() {
 }
 
 async function viewSystemLogs() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) {
+        showToast('Admin access required', 'error');
+        return;
+    }
     
     try {
         const logsSnapshot = await db.collection('systemLogs').orderBy('timestamp', 'desc').limit(100).get();
@@ -8544,6 +8741,41 @@ async function viewSystemLogs() {
         
     } catch (error) {
         console.error('Error fetching logs:', error);
+        try { closeSystemLogsModal(); } catch (_) {}
+
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000] admin-modal-visible';
+        modal.id = 'system-logs-modal';
+        document.body.classList.add('modal-open');
+
+        const message = (error && (error.message || error.code)) ? String(error.message || error.code) : 'Unknown error';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-4 flex flex-col">
+                <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-list-alt text-purple-600"></i>
+                        System Logs
+                    </h3>
+                    <button onclick="closeSystemLogsModal()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                <div class="p-5">
+                    <p class="text-sm text-gray-700">Could not load system logs.</p>
+                    <p class="text-xs text-gray-500 mt-2 font-mono whitespace-pre-wrap">${escapeHTML(message)}</p>
+                    <p class="text-xs text-gray-500 mt-3">If this is a permissions issue, check Firestore rules for reading <span class="font-mono">/systemLogs</span>.</p>
+                </div>
+                <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                    <button onclick="closeSystemLogsModal()" class="px-5 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closeSystemLogsModal();
+        });
+
         showToast('Failed to fetch system logs', 'error');
     }
 }
@@ -8674,7 +8906,10 @@ async function logSystemEvent(level, message, details = {}) {
 
 // Clear system cache function
 async function clearSystemCache() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) {
+        showToast('Admin access required', 'error');
+        return;
+    }
     
     try {
         showToast('Clearing system cache...', 'info');
@@ -10019,7 +10254,7 @@ async function renderManagePlaylistsPage() {
         rows.forEach(p => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="p-2"><input class="manage-select" data-id="${p.id}" type="checkbox"></td>
+                <td class="p-2"><input class="manage-select gcse-checkbox" data-id="${p.id}" type="checkbox"></td>
                 <td class="p-2">${escapeHTML(p.title || '(untitled)')}</td>
                 <td class="p-2">${escapeHTML(p.subject || '')}</td>
                 <td class="p-2">${(p.tags||[]).map(t=>`<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 mr-1">${escapeHTML(t)}</span>`).join('')}</td>
@@ -13505,10 +13740,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup other buttons
     const logoutBtn = document.getElementById('logout-button');
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-    document.getElementById('mobile-logout-button').addEventListener('click', handleLogout);
-    document.getElementById('add-link-btn').addEventListener('click', handleAddLink);
-    document.getElementById('post-announcement-btn').addEventListener('click', postAnnouncement);
-    document.getElementById('clear-announcement-btn').addEventListener('click', clearAnnouncement);
+    const mobileLogoutBtn = document.getElementById('mobile-logout-button');
+    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', handleLogout);
+    const addLinkBtn = document.getElementById('add-link-btn');
+    if (addLinkBtn) addLinkBtn.addEventListener('click', handleAddLink);
+    const postAnnouncementBtn = document.getElementById('post-announcement-btn');
+    if (postAnnouncementBtn) postAnnouncementBtn.addEventListener('click', postAnnouncement);
+    const clearAnnouncementBtn = document.getElementById('clear-announcement-btn');
+    if (clearAnnouncementBtn) clearAnnouncementBtn.addEventListener('click', clearAnnouncement);
     const announcementTemplateApply = document.getElementById('announcement-template-apply');
     if (announcementTemplateApply) {
         announcementTemplateApply.addEventListener('click', () => {
@@ -13891,6 +14130,11 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                // Toggle behavior: tap again to close.
+                if (!mobileMenu.classList.contains('hidden') || mobileMenuState.isOpen) {
+                    closeMobileMenu(false);
+                    return;
+                }
                 openMobileMenu();
             });
         });
@@ -14254,12 +14498,12 @@ function openEventModal(date) {
                      </div>
                      <div class="space-y-2">
                          <label class="flex items-center text-sm text-gray-700 select-none">
-                             <input id="event-countdown" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                             <input id="event-countdown" type="checkbox" class="gcse-checkbox">
                              <span class="ml-2 font-semibold">Enable Countdown Banner</span>
                          </label>
                          ${userIsAdmin ? `
                              <label class="flex items-center text-sm text-gray-700 select-none">
-                                 <input id="event-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                 <input id="event-sync" type="checkbox" class="gcse-checkbox">
                                  <span class="ml-2 font-semibold">Sync to all users (Global Event)</span>
                              </label>
                          ` : ''}
