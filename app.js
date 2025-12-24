@@ -5056,7 +5056,7 @@ async function handleRegister() {
     } finally {
         // Reset button state
         const registerButton = document.getElementById('register-button');
-        registerButton.textContent = 'Create Free Account';
+        registerButton.textContent = 'Create Account';
         registerButton.disabled = false;
     }
         
@@ -9222,7 +9222,7 @@ function showAuthPage(showLogin = true) {
     } else {
         loginForm.classList.add('hidden');
         registerForm.classList.remove('hidden');
-        formTitle.textContent = 'Create a Free Account';
+        formTitle.textContent = 'Create an Account';
     }
     document.getElementById('auth-error').textContent = '';
     document.getElementById('register-error').textContent = '';

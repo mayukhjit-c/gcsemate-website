@@ -185,7 +185,7 @@
                     "name": "Do I need a card to start?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "No card is required. Create a free account in under a minute and upgrade only if you want enhanced features."
+                        "text": "No card is required to sign up. Create an account in under a minute. Pro is £1/month if you want enhanced features."
                     }
                 }
             ]
@@ -406,7 +406,7 @@
              <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 sm:h-12 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
               <div class="flex items-center gap-3 sm:gap-4">
                   <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-tooltip="Sign in to your account">Sign In</button>
-                  <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your free account">Get Started</button>
+                  <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your account">Get Started</button>
               </div>
         </header>
         <main id="page-content" class="mt-8 sm:mt-12 lg:mt-16" role="main">
@@ -427,7 +427,7 @@
                                 Ace GCSEs with confidence and consistency using resources aligned to AQA, Edexcel and OCR — built for UK students aiming for strong grades.
                             </p>
                         </div>
-                        <div class="text-sm text-blue-700 font-semibold mt-3">Pro is £1/month. Stay free as long as you like. Any issues? Email <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a>.</div>
+                        <div class="text-sm text-blue-700 font-semibold mt-3">Pro is £1/month. Create an account in under a minute — no card required. Any issues? Email <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a>.</div>
                         <div class="hero-meta" role="list">
                             <span class="hero-meta-item" role="listitem"><i class="fas fa-award"></i>Aligned to AQA, Edexcel, and OCR</span>
                             <span class="hero-meta-item" role="listitem"><i class="fas fa-mobile-alt"></i>Optimised for phones and tablets</span>
@@ -622,13 +622,13 @@
             <div class="mt-20 sm:mt-24 brand-cta rounded-2xl p-8 sm:p-12 text-center text-white">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">Ready to Transform Your GCSE Journey?</h2>
                 <p class="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                    Join thousands of students who've already discovered the secret to stress-free revision and better grades.
+                    Join students who've already discovered the secret to stress-free revision and better grades.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <button onclick="showAuthPage(false)" class="btn-inverse w-full sm:w-auto px-8 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-white/30">
-                         <div class="inline-flex items-baseline justify-center gap-2 mt-4 w-full">
+                        <span class="w-full text-center">Get Started</span>
                     </button>
-                    <p class="text-sm text-blue-200">Free forever • No credit card required</p>
+                    <p class="text-sm text-blue-200">Pro is £1/month • No card required to sign up</p>
                 </div>
             </div>
         </main>
@@ -750,7 +750,7 @@
                     <div id="register-password-error" class="text-red-600 text-sm mt-1 h-4" role="alert" aria-live="polite"></div>
                 </div>
                 <p class="text-xs text-gray-500 text-center">By creating an account, you agree to our <a href="/termsofservice" class="font-semibold text-blue-600 hover:underline">Terms of Service</a> and <a href="/privacypolicy" class="font-semibold text-blue-600 hover:underline">Privacy Policy</a>.</p>
-                <button type="submit" id="register-button" class="w-full p-4 rounded-lg glass-button text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to create your account">Create Free Account</button>
+                <button type="submit" id="register-button" class="w-full p-4 rounded-lg glass-button text-white font-bold hover:bg-green-700 transition-all transform hover:scale-105 text-lg" data-tooltip="Click to create your account">Create Account</button>
                 <p id="register-error" class="text-red-500 text-sm text-center h-4"></p>
                 <p class="text-center text-sm text-gray-600">Already have an account? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Login</a></p>
             </form>
