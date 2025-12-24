@@ -6349,6 +6349,10 @@ async function handleUpdateUser(userId) {
     }
 }
 
+// Ensure admin edit helpers remain callable from inline buttons/modals
+window.openEditUserModal = openEditUserModal;
+window.handleUpdateUser = handleUpdateUser;
+
 // New Admin Functions
 function setUserSort(key) {
     userSortBy = key;
