@@ -5180,7 +5180,10 @@ function renderUserManagementPanel(allUsers) {
 
     list.forEach(user => {
         if (user.id === currentUser.uid) return; // Don't show the admin their own card here
-        const isActive = !!(user.isOnline || user.currentSessionId);
+        // Consider user active only if they have a current session OR last access was within 10 minutes
+        const lastAccessTs = user.lastAccess ? toDate(user.lastAccess).getTime() : 0;
+        const isRecentlySeen = lastAccessTs && (Date.now() - lastAccessTs) <= 10 * 60 * 1000;
+        const isActive = !!(user.isOnline || user.currentSessionId || isRecentlySeen);
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const card = document.createElement('div');
         card.className = `bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200 ${isActive ? 'active-user-glow' : ''}`;
@@ -9203,7 +9206,7 @@ async function renderDashboard() {
                 // Set consistent height constraints to maintain grid alignment
                 // Max height accommodates cards with up to 2 specification buttons
                 const isMaths = subject && subject.toLowerCase().includes('math');
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-hidden ' + (isMaths ? 'min-h-[240px] max-h-[340px]' : 'min-h-[200px] max-h-[280px]');
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]');
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {

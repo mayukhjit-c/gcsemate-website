@@ -110,6 +110,19 @@ opacity: 0.95;
         .btn-gradient:active {
 transform: translateY(0);
         }
+
+        /* Normalize form field sizing so inputs aren’t oversized */
+        input, select, textarea {
+            font-size: 15px;
+            line-height: 1.4;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+        }
+
+        /* Tighter glass input padding without changing Tailwind classes elsewhere */
+        .glass-input {
+            padding: 0.6rem 0.75rem !important;
+        }
         
         /* Enhanced Smooth Scrolling with Overscroll Behavior */
         html {
