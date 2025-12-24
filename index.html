@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <meta name="keywords" content="GCSE revision, GCSE past papers, GCSE study notes, GCSE exam preparation, AQA GCSE, Edexcel GCSE, OCR GCSE, GCSE Maths, GCSE Science, GCSE English, GCSE History, GCSE Geography, free GCSE resources, GCSE revision website, GCSE study guide, GCSE exam help, GCSE revision tips, GCSE online learning, GCSE student resources, UK GCSE exams">
+    <meta name="keywords" content="GCSE revision, GCSE past papers, GCSE study notes, GCSE exam preparation, AQA GCSE, Edexcel GCSE, OCR GCSE, GCSE Maths, GCSE Science, GCSE English, GCSE History, GCSE Geography, free GCSE resources, GCSE revision website, GCSE study guide, GCSE exam help, GCSE revision tips, GCSE online learning, GCSE student resources, UK GCSE exams, #GCSERevision, #PastPapers, #StudySmarter">
     <meta name="author" content="Mayukhjit Chakraborty - Creator of GCSEMate">
     <meta name="copyright" content="© 2025 Mayukhjit Chakraborty. All rights reserved.">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -406,20 +406,21 @@
                         <div class="hero-pill">Updated for the 2025 specs</div>
                         <div class="animate-hero-title">
                             <h1 id="hero-heading" class="hero-title">
-                                Ace Your GCSEs with <span class="brand-text">Zero Stress</span>
+                                Ace GCSEs with <span class="brand-text">Confidence + Consistency</span>
                             </h1>
                         </div>
                         <div class="animate-hero-subtitle">
                             <p class="hero-subtitle">
-                                Join 50+ students who already revise smarter with GCSEMate. Get organised notes, past papers, curated playlists, and mobile-first study tools in one clean dashboard.
+                                Join 50+ students already revising smarter. GCSE revision notes, past papers, flashcards, playlists, countdowns, and AI-friendly study flows in one clean, mobile-first workspace.
                             </p>
                         </div>
-                        <div class="text-sm text-blue-700 font-semibold mt-3">Pro is £1/month. Stay free as long as you like.</div>
+                        <div class="text-sm text-blue-700 font-semibold mt-3">Pro is £1/month. Stay free as long as you like. Any issues? Email <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a>.</div>
                         <div class="hero-meta" role="list">
                             <span class="hero-meta-item" role="listitem"><i class="fas fa-award"></i>Aligned to AQA, Edexcel, and OCR</span>
                             <span class="hero-meta-item" role="listitem"><i class="fas fa-mobile-alt"></i>Optimised for phones and tablets</span>
                             <span class="hero-meta-item" role="listitem"><i class="fas fa-shield-alt"></i>Secure login, private workspace</span>
                         </div>
+                        <div class="hero-hashtags" aria-label="Popular GCSE search terms">#GCSERevision #PastPapers #Edexcel #AQA #OCR #StudySmarter #UKSchools</div>
                         <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 animate-hero-buttons">
                             <button onclick="showAuthPage(false)" class="btn-primary w-full sm:w-auto px-8 sm:px-10 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Start your GCSE success journey today">
                                 <i class="fas fa-rocket mr-2"></i>Start Free Today
@@ -665,7 +666,7 @@
         </div>
     </div>
     <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-black/20 backdrop-blur-sm">
-        <div class="w-full max-w-md modern-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white/95 backdrop-blur-lg border border-white/20">
+        <div class="w-full max-w-md modern-card login-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white/95 backdrop-blur-lg border border-white/20">
             <div class="flex justify-center items-center mb-4">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>
@@ -921,7 +922,7 @@
                         <div class="flex items-center gap-2 w-full max-w-lg">
                             <div class="relative flex-1">
                                 <input id="playlist-search" type="search" placeholder="Search playlists..." class="w-full pl-10 pr-4 py-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search playlists" />
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex items-center"></i>
+                                <i class="fas fa-search absolute left-3 inset-y-0 flex items-center text-gray-400 pointer-events-none"></i>
                             </div>
                             <input id="playlist-tag-filter" type="text" placeholder="Filter by tag (comma or space separated)" class="hidden sm:block p-2 rounded-lg border-gray-200/60 bg-white/50" />
                         </div>
@@ -1986,15 +1987,11 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                            <button id="start-checkout-btn-monthly" data-checkout-button data-price-id="price_1Shd80APM42bf97sPMFkrKsq" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all" data-tooltip="Monthly subscription checkout">Start monthly checkout</button>
-                            <button id="start-checkout-btn-annual" data-checkout-button data-price-id="price_1Shn8HAPM42bf97sK2GDRnBp" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all" data-tooltip="Annual subscription checkout">Start annual checkout</button>
-                            <button id="billing-portal-btn" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition-all" data-tooltip="Manage your subscription">Manage billing</button>
-                        </div>
+                        <p class="text-sm text-gray-700 bg-white/80 border border-gray-200 rounded-lg p-3">Checkout is handled entirely by Stripe below — choose your plan in the pricing table to start or manage billing.</p>
                         <div class="rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
                             <stripe-pricing-table pricing-table-id="prctbl_1Shn9qAPM42bf97sZB2AMB2r" publishable-key="pk_live_51ShczgAPM42bf97s4Wj60qT4QXQwKnaeUEbcHNR5XA1NxfDYRl8utLirBOkwpUCImk1J2ESK1UArM5w2dFP1B8ew00K7EuQVTb"></stripe-pricing-table>
                         </div>
-                        <p class="text-sm text-gray-600">Having trouble with the checkout embed? Email <a class="underline hover:text-blue-700" href="mailto:gcsemate@outlook.com">gcsemate@outlook.com</a> and we will set up your Pro access manually.</p>
+                        <p class="text-sm text-gray-600">Having trouble with the checkout embed? Email <a class="underline hover:text-blue-700" href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> and we will set up your Pro access manually.</p>
                         <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
                     </div>
                 </div>
@@ -2011,6 +2008,7 @@
                 </div>
                 <p class="text-xs text-gray-500">Creator & Developer of GCSEMate</p>
                 <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="#" class="hover:underline" onclick="event.preventDefault(); showPrivacyPolicyModal()">Privacy Policy</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showTermsOfServiceModal()">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
+                <p class="text-sm text-gray-600">Need help? Contact <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-700">admin@gcsemate.com</a>.</p>
                 <p class="text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
             </div>
         </footer>

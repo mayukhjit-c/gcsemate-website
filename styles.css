@@ -1164,6 +1164,14 @@ to {
 /* ---------- UI Motion & Polishing ---------- */
 :root {
     --motion-fast: 160ms;
+            @keyframes floatUp {
+                from { opacity: 0; transform: translateY(10px) scale(0.99); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+            @keyframes fadeInBackdrop {
+                from { opacity: 0; backdrop-filter: blur(0px); }
+                to { opacity: 1; backdrop-filter: blur(6px); }
+            }
     --motion-medium: 320ms;
     --motion-slow: 520ms;
     --easing-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -2865,6 +2873,42 @@ will-change: transform;
             font-size: clamp(1.05rem, 2.4vw, 1.3rem);
             color: #475569;
             line-height: 1.6;
+        }
+
+        .hero-hashtags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.25rem;
+            font-weight: 700;
+            color: #1d4ed8;
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+        }
+
+        /* Auth modal polish */
+        #login-page {
+            transition: opacity 280ms ease, backdrop-filter 280ms ease;
+        }
+
+        #login-page:not(.hidden) {
+            animation: fadeInBackdrop 240ms ease both;
+        }
+
+        .login-card {
+            transform: translateY(8px);
+            opacity: 0;
+            transition: transform 260ms ease, opacity 260ms ease, box-shadow 260ms ease;
+            animation: floatUp 320ms ease 40ms forwards;
+        }
+
+        #login-page:not(.hidden) .login-card {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .login-card:focus-within {
+            box-shadow: 0 20px 45px -25px rgba(30, 64, 175, 0.45);
         }
 
         .hero-pill {

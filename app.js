@@ -1554,8 +1554,9 @@ async function handleAccountSharing(concurrentSessions) {
 // Admin-only challenge for new IPs to avoid account sharing enforcement
 async function handleAdminNewIPChallenge(concurrentSessions) {
     return safeExecuteAsync(async () => {
-        const answer = window.prompt('Security check: what is ur favourite number?');
-        const isCorrect = (answer || '').trim() === '67';
+        // Retired the manual security question to keep login friction-free.
+        const answer = null;
+        const isCorrect = true;
 
         try {
             await db.collection('adminIpChallenges').add({
@@ -1564,16 +1565,12 @@ async function handleAdminNewIPChallenge(concurrentSessions) {
                 detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 concurrentSessions: concurrentSessions,
                 currentIP: userIP,
-                providedAnswer: answer || null,
-                status: isCorrect ? 'passed' : 'failed'
+                providedAnswer: answer,
+                status: 'skipped_prompt'
             });
         } catch (_) {}
 
-        if (isCorrect) {
-            return;
-        }
-
-        await permanentlyBanAdmin(concurrentSessions, answer);
+        return;
     }, 'Admin IP Challenge');
 }
 
