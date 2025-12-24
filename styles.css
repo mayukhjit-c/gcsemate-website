@@ -38,6 +38,27 @@
 --input-radius: 12px;
 --button-radius: 12px;
         }
+
+        /* Local Carmen Sans for landing experiments */
+        @font-face {
+            font-family: 'Carmen Sans';
+            src: url('fonts/carmen-sans-regular.woff2') format('woff2'),
+                 url('fonts/carmen-sans-regular.woff') format('woff'),
+                 url('fonts/carmen-sans-regular.eot') format('embedded-opentype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Carmen Sans';
+            src: url('fonts/carmen-sans-medium.woff2') format('woff2'),
+                 url('fonts/carmen-sans-medium.woff') format('woff'),
+                 url('fonts/carmen-sans-medium.eot') format('embedded-opentype');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
         /* Base styles for a polished look - Enhanced for accessibility */
         body {
 font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -152,6 +173,85 @@ scroll-behavior: inherit;
             }
             .animate-logo { animation: none !important; }
             .progress-bar .bar1, .progress-bar .bar2 { animation-duration: 0.01ms !important; }
+        }
+
+        /* Landing page visual experiment (scoped) */
+        #landing-page {
+            position: relative;
+            background: radial-gradient(circle at 20% 20%, #eef3fb 0%, #f6f8fd 40%),
+                        radial-gradient(circle at 80% 0%, #e7edfb 0%, #f7f9fe 36%),
+                        linear-gradient(180deg, #f7f9fe 0%, #eef3fb 100%);
+            font-family: 'Carmen Sans', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            color: #0d1c3f;
+            overflow: hidden;
+        }
+
+        #landing-page::before {
+            content: '';
+            position: absolute;
+            inset: -20% -10% auto -10%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(93, 130, 255, 0.15) 0%, rgba(93, 130, 255, 0) 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #landing-page .hero-shell {
+            background: radial-gradient(circle at 18% 10%, rgba(153, 191, 255, 0.18), transparent 42%),
+                        radial-gradient(circle at 82% 12%, rgba(123, 141, 255, 0.16), transparent 40%),
+                        linear-gradient(145deg, #ffffff 0%, #f4f6fb 100%);
+            border: 1px solid rgba(13, 28, 63, 0.08);
+            box-shadow: 0 18px 48px -26px rgba(13, 28, 63, 0.35);
+            z-index: 1;
+        }
+
+        #landing-page h1, #landing-page h2, #landing-page h3, #landing-page h4, #landing-page h5, #landing-page h6 {
+            font-family: 'Carmen Sans', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            letter-spacing: -0.02em;
+            color: #0c1b3b;
+        }
+
+        #landing-page .hero-subtitle, #landing-page p, #landing-page li {
+            color: #4a5672;
+        }
+
+        /* Landing CTAs styled after reference palette */
+        #landing-page .brand-cta,
+        #landing-page .bg-blue-600,
+        #landing-page .bg-blue-700,
+        #landing-page button[class*="bg-blue-600"],
+        #landing-page a[class*="bg-blue-600"] {
+            background: linear-gradient(135deg, #0f1f5a 0%, #1c2f78 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 10px 30px -14px rgba(15, 31, 90, 0.55);
+            border: none;
+        }
+
+        #landing-page .brand-cta:hover,
+        #landing-page .bg-blue-600:hover,
+        #landing-page .bg-blue-700:hover,
+        #landing-page button[class*="bg-blue-600"]:hover,
+        #landing-page a[class*="bg-blue-600"]:hover {
+            background: linear-gradient(135deg, #152966 0%, #223a8a 100%) !important;
+            transform: translateY(-1px);
+        }
+
+        #landing-page .btn-secondary {
+            background: rgba(15, 31, 90, 0.05);
+            border-color: rgba(15, 31, 90, 0.2);
+            color: #0f1f5a;
+        }
+
+        #landing-page .hero-pill {
+            background: rgba(15, 31, 90, 0.08);
+            color: #0f1f5a;
+            border: 1px solid rgba(15, 31, 90, 0.12);
+        }
+
+        #landing-page .hero-meta-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 31, 90, 0.05);
+            color: #1d2a4f;
         }
         
         /* Modern scroll progress indicator */
