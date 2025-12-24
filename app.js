@@ -12185,6 +12185,7 @@ function handleBlogEditorKeydown(event) {
 // Setup paste handler when DOM is ready and when blog page is shown
 document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
 document.addEventListener('DOMContentLoaded', setupBlogEditorEnhancements);
+document.addEventListener('DOMContentLoaded', setupStripeCheckoutUI);
 
 document.addEventListener('input', (e) => {
     if (e.target && e.target.id === 'blog-post-image') {
@@ -12564,6 +12565,115 @@ const pageTitles = {
     'help-page': 'Help/FAQ - GCSEMate',
     'checkout-page': 'Upgrade - GCSEMate'
 };
+
+// Stripe Checkout + Billing Portal launcher
+function setupStripeCheckoutUI() {
+    const alertBox = document.getElementById('checkout-alert');
+    const checkoutBtns = document.querySelectorAll('[data-checkout-button]');
+    const portalBtn = document.getElementById('billing-portal-btn');
+
+    function showAlert(kind, message) {
+        if (!alertBox) return;
+        alertBox.classList.remove('hidden');
+        alertBox.classList.remove('bg-green-50', 'text-green-800', 'border-green-200', 'bg-yellow-50', 'text-yellow-800', 'border-yellow-200', 'bg-red-50', 'text-red-800', 'border-red-200');
+        if (kind === 'success') alertBox.classList.add('bg-green-50', 'text-green-800', 'border-green-200');
+        else if (kind === 'warning') alertBox.classList.add('bg-yellow-50', 'text-yellow-800', 'border-yellow-200');
+        else alertBox.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+        alertBox.textContent = message;
+    }
+
+    // Surface success/cancel from query string
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const checkoutStatus = params.get('checkout');
+        if (checkoutStatus === 'success') {
+            showAlert('success', 'Payment successful. Your Pro features will activate shortly.');
+            showToast('Payment successful. Unlocking Pro…', 'success');
+        } else if (checkoutStatus === 'cancel') {
+            showAlert('warning', 'Checkout was cancelled. You can try again anytime.');
+            showToast('Checkout cancelled.', 'info');
+        }
+        if (checkoutStatus) {
+            params.delete('checkout');
+            const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}${window.location.hash}`;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    } catch (e) {
+        logError(e, 'Stripe checkout query handling');
+    }
+
+    if (checkoutBtns && checkoutBtns.length) {
+        checkoutBtns.forEach((btn) => {
+            const original = btn.textContent;
+            btn.addEventListener('click', async () => {
+                const priceId = btn.dataset.priceId;
+                if (!priceId) {
+                    showAlert('warning', 'Price ID is not configured. Set data-price-id on the checkout button.');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Redirecting…';
+
+                try {
+                    const res = await fetch('/api/stripe-checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            priceId,
+                            customerEmail: currentUser && currentUser.email ? currentUser.email : undefined
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data && data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        const msg = (data && data.error) || 'Unable to start checkout.';
+                        showAlert('error', msg);
+                        btn.disabled = false;
+                        btn.textContent = original;
+                    }
+                } catch (error) {
+                    logError(error, 'Stripe checkout launch');
+                    showAlert('error', 'Network error. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = original;
+                }
+            });
+        });
+    }
+
+    if (portalBtn) {
+        portalBtn.addEventListener('click', async () => {
+            portalBtn.disabled = true;
+            portalBtn.textContent = 'Opening…';
+            try {
+                const res = await fetch('/api/stripe-portal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerEmail: currentUser && currentUser.email ? currentUser.email : undefined
+                    })
+                });
+                const data = await res.json();
+                if (data && data.url) {
+                    window.location.href = data.url;
+                } else {
+                    const msg = (data && data.error) || 'Unable to open billing portal.';
+                    showAlert('error', msg);
+                    portalBtn.disabled = false;
+                    portalBtn.textContent = 'Manage billing';
+                }
+            } catch (error) {
+                logError(error, 'Stripe portal launch');
+                showAlert('error', 'Network error. Please try again.');
+                portalBtn.disabled = false;
+                portalBtn.textContent = 'Manage billing';
+            }
+        });
+    }
+}
 
 function initializeFaqAccordion() {
     const faqContainer = document.getElementById('faq-container');
