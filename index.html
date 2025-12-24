@@ -329,7 +329,7 @@
     })();
     </script>
     <!-- Tailwind CSS - Production Build (local only, no CDN fallback) -->
-    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link" onload="document.body.classList.add('tailwind-loaded')">
+    <link rel="stylesheet" href="tailwind.css" id="tailwind-css-link" onload="document.documentElement.classList.add('tailwind-loaded')">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
@@ -358,7 +358,7 @@
     <body class="bg-gray-100 min-h-screen relative">
     <!-- Hide content until Tailwind loads to prevent FOUC -->
     <style>
-        body:not(.tailwind-loaded) > *:not(#app-loading):not(script) {
+        html:not(.tailwind-loaded) body > *:not(#app-loading):not(script) {
             visibility: hidden;
         }
         @keyframes loading-bar {
@@ -2275,21 +2275,43 @@
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       
             // Enhanced error logging for production - moved to main script section
-            // Initialize Firebase
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
+            // Initialize Firebase / Firestore exactly once (some code paths can re-evaluate this block)
+            // Use var so app.js can access these globals.
+            var auth;
+            var db;
+
             try {
-                if (!window.__firestoreSettingsApplied) {
-                    db.settings({
-                        experimentalForceLongPolling: true,
-                        useFetchStreams: false
-                    });
-                    window.__firestoreSettingsApplied = true;
+                if (!window.__gcsemateFirebaseInitOnce) {
+                    window.__gcsemateFirebaseInitOnce = true;
+
+                    if (!firebase.apps || !firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+
+                    auth = firebase.auth();
+                    db = firebase.firestore();
+
+                    try {
+                        if (!window.__firestoreSettingsApplied) {
+                            db.settings({
+                                experimentalForceLongPolling: true,
+                                useFetchStreams: false,
+                                merge: true
+                            });
+                            window.__firestoreSettingsApplied = true;
+                        }
+                    } catch (e) {
+                        console.warn('Firestore settings could not be applied', e);
+                    }
+                } else {
+                    // Reuse existing instances if this block runs again.
+                    auth = auth || firebase.auth();
+                    db = db || firebase.firestore();
                 }
             } catch (e) {
-                console.warn('Firestore settings could not be applied', e);
+                console.warn('Firebase initialization failed', e);
             }
+
             // Storage removed - using Cloudinary for free image hosting
     </script>
         <!-- External JavaScript -->
