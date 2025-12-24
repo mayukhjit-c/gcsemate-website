@@ -4,6 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GCSEMate | Page Not Found</title>
+  <script>
+    // Cloudflare Pages SPA fallback:
+    // If this 404 is for a client-side route (e.g. /videos), load the SPA entry.
+    // If it's likely a real file request (e.g. /logo.png), keep the 404 page.
+    (function () {
+      try {
+        var path = window.location.pathname || '';
+        var looksLikeFile = /\.[a-zA-Z0-9]{1,8}$/.test(path);
+        if (looksLikeFile) return;
+        fetch('/index.html', { cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+          .then(function (html) {
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch(function () {
+            // If fetch fails, fall back to the static 404 content.
+          });
+      } catch (_) {
+        // Ignore and show static 404
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
