@@ -1,7 +1,6 @@
 /* Service Worker for GCSEMate - Offline Functionality */
 /* DESIGN IMPROVEMENT #5: OFFLINE FUNCTIONALITY */
 
-const CACHE_NAME = 'gcsemate-v2';
 const RUNTIME_CACHE = 'gcsemate-runtime-v2';
 const STATIC_CACHE = 'gcsemate-static-v2';
 
@@ -11,18 +10,28 @@ const STATIC_ASSETS = [
     '/index.html',
     '/styles.css',
     '/app.js',
-    '/gcsemate%20new.png',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+    '/gcsemate%20new.png'
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(STATIC_CACHE).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
-        }).then(() => {
-            return self.skipWaiting();
-        })
+        (async () => {
+            const cache = await caches.open(STATIC_CACHE);
+            // Be resilient: if one asset fails, don't fail the entire SW install.
+            const results = await Promise.allSettled(
+                STATIC_ASSETS.map((asset) => cache.add(asset))
+            );
+            const failed = results.filter((r) => r.status === 'rejected');
+            if (failed.length) {
+                // Best-effort logging only; offline still works for whatever succeeded.
+                console.warn(
+                    '[sw] Some static assets failed to cache during install:',
+                    failed.length
+                );
+            }
+            await self.skipWaiting();
+        })()
     );
 });
 
@@ -68,7 +77,14 @@ self.addEventListener('fetch', (event) => {
                     }
                     return response;
                 })
-                .catch(() => caches.match('/index.html'))
+                .catch(async () => {
+                    const cached = await caches.match('/index.html');
+                    if (cached) return cached;
+                    return new Response('Offline', {
+                        status: 503,
+                        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+                    });
+                })
         );
         return;
     }

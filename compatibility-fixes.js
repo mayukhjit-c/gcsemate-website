@@ -64,21 +64,26 @@
         detectFeatures() {
             const html = document.documentElement;
 
+            const canCSSSupports =
+                typeof window.CSS !== 'undefined' &&
+                typeof window.CSS.supports === 'function';
+
             // Backdrop filter support
             if (
-                !CSS.supports('backdrop-filter', 'blur(10px)') &&
-                !CSS.supports('-webkit-backdrop-filter', 'blur(10px)')
+                !canCSSSupports ||
+                (!CSS.supports('backdrop-filter', 'blur(10px)') &&
+                    !CSS.supports('-webkit-backdrop-filter', 'blur(10px)'))
             ) {
                 html.classList.add('no-backdrop-filter');
             }
 
             // CSS Grid support
-            if (!CSS.supports('display', 'grid')) {
+            if (!canCSSSupports || !CSS.supports('display', 'grid')) {
                 html.classList.add('no-grid');
             }
 
             // CSS Variables support
-            if (!CSS.supports('color', 'var(--test)')) {
+            if (!canCSSSupports || !CSS.supports('color', 'var(--test)')) {
                 html.classList.add('no-css-vars');
             }
 
@@ -88,7 +93,10 @@
             }
 
             // Reduced motion preference
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (
+                typeof window.matchMedia === 'function' &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ) {
                 html.classList.add('reduced-motion');
             }
         },
@@ -100,31 +108,53 @@
 
     const DisplayFix = {
         init() {
-            // Ensure body is visible
-            document.body.style.visibility = 'visible';
-            document.body.style.opacity = '1';
-
-            // Force repaint on problematic browsers
-            this.forceRepaint();
-
-            // Fix loading overlay timeout
-            this.fixLoadingOverlay();
-
-            // Handle visibility change
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    this.forceRepaint();
+            const run = () => {
+                if (!document.body) {
+                    return;
                 }
-            });
+
+                // Ensure body is visible
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+
+                // Force repaint on problematic browsers
+                this.forceRepaint();
+
+                // Fix loading overlay timeout
+                this.fixLoadingOverlay();
+
+                // Handle visibility change
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        this.forceRepaint();
+                    }
+                });
+            };
+
+            // If this script is loaded in <head>, body may not exist yet
+            if (!document.body) {
+                document.addEventListener('DOMContentLoaded', run, { once: true });
+                return;
+            }
+
+            run();
         },
 
         forceRepaint() {
             // Force a browser repaint to fix rendering issues
+            if (!document.body) {
+                return;
+            }
+
             requestAnimationFrame(() => {
+                if (!document.body) {
+                    return;
+                }
+                const originalDisplay = document.body.style.display;
                 document.body.style.display = 'none';
                 // Trigger reflow
                 void document.body.offsetHeight;
-                document.body.style.display = '';
+                document.body.style.display = originalDisplay;
             });
         },
 
@@ -393,7 +423,18 @@
             // Catch unhandled promise rejections
             window.addEventListener('unhandledrejection', e => {
                 console.error('Unhandled promise rejection:', e.reason);
-                e.preventDefault(); // Prevent the error from breaking the page
+
+                // Avoid swallowing real errors; only suppress known benign browser issues
+                const msg =
+                    (typeof e.reason === 'string' && e.reason) ||
+                    (e.reason && (e.reason.message || e.reason.toString())) ||
+                    '';
+                if (
+                    /ResizeObserver loop limit exceeded/i.test(msg) ||
+                    /ResizeObserver loop completed with undelivered notifications/i.test(msg)
+                ) {
+                    e.preventDefault();
+                }
             });
         },
     };

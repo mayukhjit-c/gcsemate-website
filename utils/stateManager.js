@@ -16,6 +16,14 @@ class StateManager {
         this.state = initialState;
         this.listeners = [];
         this.middleware = [];
+
+        this._persistence = {
+            key: null,
+            enabled: false,
+            writeTimer: null,
+            lastWriteFailed: false,
+            throttleMs: 150,
+        };
     }
 
     /**
@@ -79,24 +87,65 @@ class StateManager {
      * @returns {void}
      */
     persist(key) {
-        // Save to localStorage on every state change
-        this.subscribe(() => {
-            try {
-                localStorage.setItem(key, JSON.stringify(this.state));
-            } catch (e) {
-                console.warn('Failed to persist state:', e);
-            }
-        });
+        this._persistence.key = key;
 
-        // Load from localStorage on init
-        try {
-            const saved = localStorage.getItem(key);
-            if (saved) {
-                this.state = { ...this.state, ...JSON.parse(saved) };
+        const canUseLocalStorage = () => {
+            try {
+                const testKey = '__gcsemate_state_test__';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                return true;
+            } catch (_) {
+                return false;
             }
-        } catch (e) {
-            console.warn('Failed to load persisted state:', e);
+        };
+
+        const safeParseJSON = (value) => {
+            if (!value || typeof value !== 'string') return null;
+            try {
+                return JSON.parse(value);
+            } catch (_) {
+                return null;
+            }
+        };
+
+        // Load from localStorage on init (best-effort)
+        if (canUseLocalStorage()) {
+            this._persistence.enabled = true;
+            try {
+                const saved = localStorage.getItem(key);
+                const parsed = safeParseJSON(saved);
+                if (parsed && typeof parsed === 'object') {
+                    this.state = { ...this.state, ...parsed };
+                } else if (saved) {
+                    // Corrupt or non-JSON; clear to avoid repeated parse errors.
+                    localStorage.removeItem(key);
+                }
+            } catch (e) {
+                console.warn('Failed to load persisted state:', e);
+            }
         }
+
+        // Save to localStorage on state change (throttled)
+        this.subscribe(() => {
+            if (!this._persistence.enabled || this._persistence.lastWriteFailed) {
+                return;
+            }
+
+            if (this._persistence.writeTimer) {
+                clearTimeout(this._persistence.writeTimer);
+            }
+
+            this._persistence.writeTimer = setTimeout(() => {
+                try {
+                    localStorage.setItem(key, JSON.stringify(this.state));
+                } catch (e) {
+                    // QuotaExceededError or private mode failures: disable for this session.
+                    this._persistence.lastWriteFailed = true;
+                    console.warn('Failed to persist state (disabled):', e);
+                }
+            }, this._persistence.throttleMs);
+        });
     }
 }
 
