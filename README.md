@@ -172,6 +172,3 @@ For issues or questions, please contact: [email protected]
 
 Created with love for GCSE students worldwide to make revision accessible and effective.
 
-## Development Philosophy
-
-This project was **proudly made using no generative AI**. Every line of code was carefully crafted by human hands. No AI assistance was used in the development, design, or implementation of this platform. All features, bug fixes, and optimizations were created through traditional programming practices and creative problem-solving.
