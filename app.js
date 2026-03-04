@@ -1600,6 +1600,9 @@ async function getLocationFromIP(ip) {
     if (!ip || ip === 'Unknown' || ip === 'IPv6_Hidden') {
         return null;
     }
+
+    const onHostedProd = /(^|\.)gcsemate\.com$/i.test(window.location.hostname || '');
+    if (onHostedProd) return null;
     
     try {
         const data = await fetchJsonWithTimeout(`https://ipapi.co/${ip}/json/`, 3500);
@@ -2539,7 +2542,9 @@ async function testTrackingSystem() {
         results.realtimeUpdates = realtimeTracker.connectionStatus === 'connected';
 
     } catch (error) {
-        console.error('Tracking system test failed:', error);
+        if (error?.code !== 'permission-denied' && isDevelopment) {
+            console.warn('Tracking system test failed:', error);
+        }
     }
 
     return results;
@@ -5517,7 +5522,10 @@ async function handleLogin() {
                 await new Promise((resolve) => window.grecaptcha.ready(resolve));
                 const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                 try {
-                    const recaptchaPaths = ['/api/recaptcha-verify', '/recaptcha-verify', '/functions/recaptcha-verify'];
+                    const onHostedProd = /(^|\.)gcsemate\.com$/i.test(window.location.hostname || '');
+                    const recaptchaPaths = onHostedProd
+                        ? []
+                        : ['/api/recaptcha-verify', '/functions/api/recaptcha-verify', '/recaptcha-verify'];
                     let verified = false;
                     let lastStatus = null;
                     for (const path of recaptchaPaths) {
@@ -16114,6 +16122,7 @@ function initializeToolsPage() {
     loadToolsState();
 
     const modeSelect = document.getElementById('tools-timer-mode');
+    const stopwatchToggle = document.getElementById('tools-stopwatch-toggle');
     const startBtn = document.getElementById('tools-timer-start');
     const pauseBtn = document.getElementById('tools-timer-pause');
     const resetBtn = document.getElementById('tools-timer-reset');

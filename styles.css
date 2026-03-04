@@ -3732,6 +3732,43 @@ will-change: transform;
                 border-color: rgba(148, 163, 184, 0.35);
                 color: #e2e8f0;
             }
+
+            #landing-page button[onclick="signInWithGoogle()"] {
+                background: rgba(15, 23, 42, 0.8) !important;
+                border-color: rgba(148, 163, 184, 0.38) !important;
+                color: #e2e8f0 !important;
+            }
+
+            #landing-page button[onclick="signInWithGoogle()"]:hover {
+                background: rgba(30, 41, 59, 0.9) !important;
+            }
+
+            #landing-page > footer {
+                background: rgba(2, 6, 23, 0.82) !important;
+                border-color: rgba(148, 163, 184, 0.28) !important;
+            }
+
+            #landing-page > footer .border-t {
+                border-color: rgba(148, 163, 184, 0.26) !important;
+            }
+
+            #landing-page > footer .text-gray-900 {
+                color: #f1f5f9 !important;
+            }
+
+            #landing-page > footer .text-gray-600,
+            #landing-page > footer .text-gray-500,
+            #landing-page > footer .text-gray-400 {
+                color: #94a3b8 !important;
+            }
+
+            #landing-page > footer a.text-gray-600 {
+                color: #cbd5e1 !important;
+            }
+
+            #landing-page > footer a.text-gray-600:hover {
+                color: #93c5fd !important;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
