@@ -35,10 +35,14 @@ const TOOLS_TIMER_MODES = {
 };
 let toolsTimerState = {
     mode: 'pomodoro',
+    timerModeBeforeStopwatch: 'pomodoro',
     remainingSeconds: TOOLS_TIMER_MODES.pomodoro.durationSeconds,
     customDurationSeconds: TOOLS_TIMER_MODES.custom.durationSeconds,
     customInputDigits: '',
     isRunning: false,
+    countdownEndAtMs: null,
+    stopwatchStartedAtMs: null,
+    stopwatchBaseSeconds: 0,
     sessionFocusedSeconds: 0,
     todayFocusedSeconds: 0,
     lastTickAt: null,
@@ -14977,6 +14981,7 @@ function saveToolsState() {
     try {
         localStorage.setItem('gcsemate_tools_state', JSON.stringify({
             mode: toolsTimerState.mode,
+            timerModeBeforeStopwatch: toolsTimerState.timerModeBeforeStopwatch,
             remainingSeconds: toolsTimerState.remainingSeconds,
             customDurationSeconds: toolsTimerState.customDurationSeconds,
             customInputDigits: toolsTimerState.customInputDigits,
@@ -14996,6 +15001,9 @@ function loadToolsState() {
         const parsed = JSON.parse(raw) || {};
         const mode = parsed.mode && TOOLS_TIMER_MODES[parsed.mode] ? parsed.mode : 'pomodoro';
         toolsTimerState.mode = mode;
+        toolsTimerState.timerModeBeforeStopwatch = parsed.timerModeBeforeStopwatch && TOOLS_TIMER_MODES[parsed.timerModeBeforeStopwatch] && parsed.timerModeBeforeStopwatch !== 'stopwatch'
+            ? parsed.timerModeBeforeStopwatch
+            : 'pomodoro';
         toolsTimerState.customDurationSeconds = Number.isFinite(parsed.customDurationSeconds)
             ? Math.max(1, parsed.customDurationSeconds)
             : TOOLS_TIMER_MODES.custom.durationSeconds;
@@ -15015,14 +15023,79 @@ function loadToolsState() {
     } catch (_) {}
 }
 
+function getTimerModeFromState() {
+    return toolsTimerState.mode === 'stopwatch'
+        ? (TOOLS_TIMER_MODES[toolsTimerState.timerModeBeforeStopwatch] ? toolsTimerState.timerModeBeforeStopwatch : 'pomodoro')
+        : toolsTimerState.mode;
+}
+
+function setToolsStopwatchEnabled(enabled, { reset = true } = {}) {
+    const shouldEnable = !!enabled;
+    if (shouldEnable) {
+        const currentTimerMode = getTimerModeFromState();
+        toolsTimerState.timerModeBeforeStopwatch = currentTimerMode;
+        if (reset) resetToolsTimer('stopwatch');
+        else toolsTimerState.mode = 'stopwatch';
+    } else {
+        const nextMode = TOOLS_TIMER_MODES[toolsTimerState.timerModeBeforeStopwatch]
+            ? toolsTimerState.timerModeBeforeStopwatch
+            : 'pomodoro';
+        if (reset) resetToolsTimer(nextMode);
+        else toolsTimerState.mode = nextMode;
+    }
+    saveToolsState();
+    updateToolsTimerUI();
+}
+
+function synchronizeToolsTimerState(now = Date.now()) {
+    if (!toolsTimerState.isRunning) return;
+
+    const today = getTodayKeyForTools();
+    if (toolsTimerState.dayKey !== today) {
+        toolsTimerState.dayKey = today;
+        toolsTimerState.todayFocusedSeconds = 0;
+    }
+
+    if (toolsTimerState.lastTickAt) {
+        const elapsedSeconds = Math.floor((now - toolsTimerState.lastTickAt) / 1000);
+        if (elapsedSeconds > 0) {
+            toolsTimerState.sessionFocusedSeconds += elapsedSeconds;
+            toolsTimerState.todayFocusedSeconds += elapsedSeconds;
+            toolsTimerState.lastTickAt += elapsedSeconds * 1000;
+        }
+    }
+
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
+    if (isStopwatch) {
+        if (!Number.isFinite(toolsTimerState.stopwatchStartedAtMs)) {
+            toolsTimerState.stopwatchStartedAtMs = now;
+            toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
+        }
+        toolsTimerState.remainingSeconds = Math.max(
+            0,
+            toolsTimerState.stopwatchBaseSeconds + Math.floor((now - toolsTimerState.stopwatchStartedAtMs) / 1000)
+        );
+        return;
+    }
+
+    if (!Number.isFinite(toolsTimerState.countdownEndAtMs)) {
+        toolsTimerState.countdownEndAtMs = now + Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+    }
+    toolsTimerState.remainingSeconds = Math.max(0, Math.ceil((toolsTimerState.countdownEndAtMs - now) / 1000));
+}
+
 function resetToolsTimer(mode = toolsTimerState.mode) {
     const safeMode = TOOLS_TIMER_MODES[mode] ? mode : 'pomodoro';
     toolsTimerState.mode = safeMode;
+    if (safeMode !== 'stopwatch') toolsTimerState.timerModeBeforeStopwatch = safeMode;
     const modeConfig = TOOLS_TIMER_MODES[safeMode];
     toolsTimerState.remainingSeconds = modeConfig.isStopwatch
         ? 0
         : (safeMode === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds);
     toolsTimerState.isRunning = false;
+    toolsTimerState.countdownEndAtMs = null;
+    toolsTimerState.stopwatchStartedAtMs = null;
+    toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
     toolsTimerState.lastTickAt = null;
     if (toolsTimerInterval) {
         clearInterval(toolsTimerInterval);
@@ -15033,7 +15106,13 @@ function resetToolsTimer(mode = toolsTimerState.mode) {
 }
 
 function stopToolsTimer() {
+    if (toolsTimerState.isRunning) {
+        synchronizeToolsTimerState(Date.now());
+    }
     toolsTimerState.isRunning = false;
+    toolsTimerState.countdownEndAtMs = null;
+    toolsTimerState.stopwatchStartedAtMs = null;
+    toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
     toolsTimerState.lastTickAt = null;
     if (toolsTimerInterval) {
         clearInterval(toolsTimerInterval);
@@ -15045,25 +15124,8 @@ function stopToolsTimer() {
 
 function onToolsTimerTick() {
     if (!toolsTimerState.isRunning) return;
-    const now = Date.now();
-    const elapsedSeconds = toolsTimerState.lastTickAt ? Math.floor((now - toolsTimerState.lastTickAt) / 1000) : 1;
-    if (elapsedSeconds <= 0) return;
-
-    toolsTimerState.lastTickAt = now;
-    const today = getTodayKeyForTools();
-    if (toolsTimerState.dayKey !== today) {
-        toolsTimerState.dayKey = today;
-        toolsTimerState.todayFocusedSeconds = 0;
-    }
-
-    const isStopwatch = !!TOOLS_TIMER_MODES[toolsTimerState.mode]?.isStopwatch;
-    if (isStopwatch) {
-        toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds + elapsedSeconds);
-    } else {
-        toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds - elapsedSeconds);
-    }
-    toolsTimerState.sessionFocusedSeconds += elapsedSeconds;
-    toolsTimerState.todayFocusedSeconds += elapsedSeconds;
+    synchronizeToolsTimerState(Date.now());
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
 
     if (!isStopwatch && toolsTimerState.remainingSeconds === 0) {
         stopToolsTimer();
@@ -15071,6 +15133,10 @@ function onToolsTimerTick() {
         return;
     }
 
+    if (toolsTimerState.lastTickAt && (Date.now() - toolsTimerState.lastTickAt) < 350) {
+        updateToolsTimerUI();
+        return;
+    }
     saveToolsState();
     updateToolsTimerUI();
 }
@@ -15081,15 +15147,25 @@ function startToolsTimer() {
     if (!modeConfig.isStopwatch && toolsTimerState.remainingSeconds <= 0) {
         resetToolsTimer(toolsTimerState.mode);
     }
+    const now = Date.now();
     toolsTimerState.isRunning = true;
-    toolsTimerState.lastTickAt = Date.now();
+    toolsTimerState.lastTickAt = now;
+    if (toolsTimerState.mode === 'stopwatch') {
+        toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
+        toolsTimerState.stopwatchStartedAtMs = now;
+        toolsTimerState.countdownEndAtMs = null;
+    } else {
+        toolsTimerState.countdownEndAtMs = now + Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+        toolsTimerState.stopwatchStartedAtMs = null;
+    }
     if (toolsTimerInterval) clearInterval(toolsTimerInterval);
-    toolsTimerInterval = setInterval(onToolsTimerTick, 1000);
+    toolsTimerInterval = setInterval(onToolsTimerTick, 250);
     updateToolsTimerUI();
 }
 
 function updateToolsTimerUI() {
     const modeSelect = document.getElementById('tools-timer-mode');
+    const stopwatchToggle = document.getElementById('tools-stopwatch-toggle');
     const displayEl = document.getElementById('tools-timer-display');
     const progressEl = document.getElementById('tools-timer-progress');
     const progressLabelEl = document.getElementById('tools-timer-progress-label');
@@ -15099,10 +15175,15 @@ function updateToolsTimerUI() {
     const customWrapEl = document.getElementById('tools-timer-custom-wrap');
     if (!displayEl || !progressEl || !statusEl || !todayEl || !sessionEl) return;
 
-    if (modeSelect) modeSelect.value = toolsTimerState.mode;
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
+    if (modeSelect) {
+        modeSelect.value = getTimerModeFromState();
+        modeSelect.disabled = isStopwatch;
+        modeSelect.classList.toggle('opacity-60', isStopwatch);
+    }
+    if (stopwatchToggle) stopwatchToggle.checked = isStopwatch;
 
-    const modeConfig = TOOLS_TIMER_MODES[toolsTimerState.mode] || TOOLS_TIMER_MODES.pomodoro;
-    const isStopwatch = !!modeConfig.isStopwatch;
+    const modeConfig = isStopwatch ? TOOLS_TIMER_MODES.stopwatch : (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro);
 
     if (customWrapEl) {
         if (toolsTimerState.mode === 'custom') customWrapEl.classList.remove('hidden');
@@ -15113,7 +15194,7 @@ function updateToolsTimerUI() {
     if (isStopwatch) {
         progress = ((toolsTimerState.remainingSeconds % 60) / 60) * 100;
     } else {
-        const full = toolsTimerState.mode === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds;
+        const full = getTimerModeFromState() === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds;
         const completed = Math.max(0, full - toolsTimerState.remainingSeconds);
         progress = full > 0 ? Math.min(100, (completed / full) * 100) : 0;
     }
@@ -15142,6 +15223,57 @@ function updateToolsTimerUI() {
     }
 
     updateToolsTimerFullscreenButton();
+}
+
+function normalizeCalculatorExpression(rawValue) {
+    return (rawValue || '')
+        .replace(/÷/g, '/')
+        .replace(/×/g, '*')
+        .replace(/−/g, '-')
+        .trim();
+}
+
+function evaluateScientificExpression(rawValue) {
+    let expr = normalizeCalculatorExpression(rawValue).toLowerCase();
+    if (!expr) return 0;
+
+    expr = expr
+        .replace(/\bpi\b/g, 'PI')
+        .replace(/\be\b/g, 'E')
+        .replace(/\bln\s*\(/g, 'log(')
+        .replace(/\blog\s*\(/g, 'log10(')
+        .replace(/\^/g, '**');
+
+    if (!/^[0-9+\-*/().,%\sA-Za-z_*]+$/.test(expr)) {
+        throw new Error('Invalid characters');
+    }
+
+    const identifiers = expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
+    const allowedIdentifiers = new Set(['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sqrt', 'abs', 'log', 'log10', 'pow', 'floor', 'ceil', 'round', 'PI', 'E']);
+    if (identifiers.some(identifier => !allowedIdentifiers.has(identifier))) {
+        throw new Error('Invalid function name');
+    }
+
+    const evaluator = Function(
+        '"use strict"; const {sin,cos,tan,asin,acos,atan,sqrt,abs,log,pow,floor,ceil,round,PI,E}=Math; const log10=Math.log10?Math.log10:(v)=>Math.log(v)/Math.LN10; return (' + expr + ');'
+    );
+    const result = evaluator();
+    if (!Number.isFinite(result)) throw new Error('Invalid result');
+    return result;
+}
+
+function updateScientificCalculatorResult() {
+    const input = document.getElementById('tools-calc-input');
+    const resultEl = document.getElementById('tools-calc-result');
+    if (!input || !resultEl) return;
+    try {
+        const result = evaluateScientificExpression(input.value);
+        resultEl.textContent = `Result: ${Number.isInteger(result) ? result : result.toFixed(8).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')}`;
+        resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-blue-700';
+    } catch (_) {
+        resultEl.textContent = 'Result: —';
+        resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-red-600';
+    }
 }
 
 async function fetchAndRenderDailyMeme(forceRefresh = false) {
@@ -15991,6 +16123,11 @@ function initializeToolsPage() {
     const customDigitButtons = document.querySelectorAll('.tools-time-digit');
     const customClearBtn = document.getElementById('tools-time-clear');
     const customBackspaceBtn = document.getElementById('tools-time-backspace');
+    const calcInput = document.getElementById('tools-calc-input');
+    const calcButtons = document.querySelectorAll('.tools-calc-btn[data-calc-value]');
+    const calcClearBtn = document.getElementById('tools-calc-clear');
+    const calcBackspaceBtn = document.getElementById('tools-calc-backspace');
+    const calcEqualsBtn = document.getElementById('tools-calc-equals');
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
     const gradeSaveBtn = document.getElementById('tools-grade-save');
@@ -16004,17 +16141,12 @@ function initializeToolsPage() {
     const gradeHistoryFilterSelect = document.getElementById('tools-grade-history-subject-filter');
 
     if (modeSelect) {
-        const ensureOption = (value, label) => {
-            if (!Array.from(modeSelect.options).some(option => option.value === value)) {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = label;
-                modeSelect.appendChild(option);
-            }
+        const removeOption = (value) => {
+            const opt = Array.from(modeSelect.options).find(option => option.value === value);
+            if (opt) opt.remove();
         };
-        ensureOption('custom', 'Custom');
-        ensureOption('stopwatch', 'Stopwatch');
-        if (!Array.from(modeSelect.options).some(option => option.value === toolsTimerState.mode)) {
+        removeOption('stopwatch');
+        if (toolsTimerState.mode !== 'stopwatch' && !Array.from(modeSelect.options).some(option => option.value === toolsTimerState.mode)) {
             toolsTimerState.mode = 'pomodoro';
         }
     }
@@ -16023,7 +16155,13 @@ function initializeToolsPage() {
         if (modeSelect) {
             modeSelect.addEventListener('change', () => {
                 const mode = modeSelect.value;
+                toolsTimerState.timerModeBeforeStopwatch = mode;
                 resetToolsTimer(mode);
+            });
+        }
+        if (stopwatchToggle) {
+            stopwatchToggle.addEventListener('change', () => {
+                setToolsStopwatchEnabled(stopwatchToggle.checked, { reset: true });
             });
         }
 
@@ -16085,6 +16223,46 @@ function initializeToolsPage() {
                 applyCustomTimerDuration(true);
             });
         }
+        if (calcInput) {
+            calcInput.addEventListener('input', updateScientificCalculatorResult);
+            calcInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    updateScientificCalculatorResult();
+                }
+            });
+        }
+        if (calcButtons && calcButtons.length > 0) {
+            calcButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (!calcInput) return;
+                    const value = button.dataset.calcValue || '';
+                    calcInput.value += value;
+                    updateScientificCalculatorResult();
+                    calcInput.focus();
+                });
+            });
+        }
+        if (calcClearBtn) {
+            calcClearBtn.addEventListener('click', () => {
+                if (!calcInput) return;
+                calcInput.value = '';
+                updateScientificCalculatorResult();
+            });
+        }
+        if (calcBackspaceBtn) {
+            calcBackspaceBtn.addEventListener('click', () => {
+                if (!calcInput) return;
+                calcInput.value = calcInput.value.slice(0, -1);
+                updateScientificCalculatorResult();
+                calcInput.focus();
+            });
+        }
+        if (calcEqualsBtn) {
+            calcEqualsBtn.addEventListener('click', () => {
+                updateScientificCalculatorResult();
+            });
+        }
         if (memeRefreshBtn) {
             memeRefreshBtn.addEventListener('click', () => {
                 fetchAndRenderDailyMeme(true);
@@ -16135,6 +16313,7 @@ function initializeToolsPage() {
     fetchAndRenderDailyMeme(false);
     fetchAndRenderDailyQuote(false);
     updateGradeSelectPreview();
+    updateScientificCalculatorResult();
 }
 
 // --- GAPI LOADER ---
