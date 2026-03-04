@@ -1213,15 +1213,41 @@
                                         <option value="pomodoro">Pomodoro (25 min)</option>
                                         <option value="exam">Exam Sprint (50 min)</option>
                                         <option value="study">Deep Study (90 min)</option>
+                                        <option value="custom">Custom</option>
+                                        <option value="stopwatch">Stopwatch</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 sm:p-8 text-center">
+                            <div id="tools-timer-card" class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 sm:p-8 text-center">
+                                <div class="flex items-center justify-end">
+                                    <button id="tools-timer-fullscreen" class="px-3 py-2 rounded-lg bg-white/80 border border-blue-100 text-gray-700 text-xs font-semibold hover:bg-white transition-colors">Fullscreen</button>
+                                </div>
                                 <div id="tools-timer-display" class="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900">25:00</div>
                                 <p id="tools-timer-status" class="mt-2 text-sm font-semibold text-blue-700">Ready to focus</p>
+                                <div id="tools-timer-custom-wrap" class="hidden mt-5 max-w-md mx-auto">
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Custom Time (Calculator Style)</p>
+                                    <input id="tools-timer-custom-input" type="text" inputmode="numeric" autocomplete="off" placeholder="00:00" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl font-semibold tracking-wide text-gray-900">
+                                    <p id="tools-timer-custom-seconds" class="mt-2 text-xs text-gray-600">Duration: 0s</p>
+                                    <div class="mt-3 grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="1">1</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="2">2</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="3">3</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="4">4</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="5">5</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="6">6</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="7">7</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="8">8</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="9">9</button>
+                                        <button type="button" id="tools-time-clear" class="px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 font-semibold text-gray-700 hover:bg-gray-200">C</button>
+                                        <button type="button" class="tools-time-digit px-3 py-2 rounded-lg bg-white/90 border border-blue-100 font-semibold text-gray-800 hover:bg-white" data-tools-time-digit="0">0</button>
+                                        <button type="button" id="tools-time-backspace" class="px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 font-semibold text-gray-700 hover:bg-gray-200">⌫</button>
+                                    </div>
+                                    <button id="tools-timer-custom-apply" class="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">Set Custom Time</button>
+                                </div>
                                 <div class="w-full h-3 rounded-full bg-white/90 border border-blue-100 mt-6 overflow-hidden">
                                     <div id="tools-timer-progress" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
                                 </div>
+                                <p id="tools-timer-progress-label" class="mt-2 text-xs font-semibold text-gray-600">0% complete</p>
                                 <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
                                     <button id="tools-timer-start" class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors min-w-[110px]">Start</button>
                                     <button id="tools-timer-pause" class="px-5 py-2.5 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors min-w-[110px]">Pause</button>

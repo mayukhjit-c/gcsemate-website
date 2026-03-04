@@ -29,11 +29,15 @@ let toolsTimerInterval = null;
 const TOOLS_TIMER_MODES = {
     pomodoro: { label: 'Pomodoro', durationSeconds: 25 * 60 },
     exam: { label: 'Exam Sprint', durationSeconds: 50 * 60 },
-    study: { label: 'Deep Study', durationSeconds: 90 * 60 }
+    study: { label: 'Deep Study', durationSeconds: 90 * 60 },
+    custom: { label: 'Custom Timer', durationSeconds: 25 * 60 },
+    stopwatch: { label: 'Stopwatch', durationSeconds: 0, isStopwatch: true }
 };
 let toolsTimerState = {
     mode: 'pomodoro',
     remainingSeconds: TOOLS_TIMER_MODES.pomodoro.durationSeconds,
+    customDurationSeconds: TOOLS_TIMER_MODES.custom.durationSeconds,
+    customInputDigits: '',
     isRunning: false,
     sessionFocusedSeconds: 0,
     todayFocusedSeconds: 0,
@@ -14847,9 +14851,92 @@ function formatDurationShort(totalSeconds) {
 
 function formatClock(totalSeconds) {
     const safe = Math.max(0, Math.floor(totalSeconds || 0));
-    const m = Math.floor(safe / 60);
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
     const s = safe % 60;
+    if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function normalizeCustomTimeDigits(rawValue) {
+    return (rawValue || '').replace(/\D/g, '').slice(-6);
+}
+
+function calculatorDigitsToSeconds(digits) {
+    const normalized = normalizeCustomTimeDigits(digits);
+    if (!normalized) return 0;
+    const padded = normalized.padStart(6, '0');
+    const hours = Number(padded.slice(0, 2));
+    const minutes = Number(padded.slice(2, 4));
+    const seconds = Number(padded.slice(4, 6));
+    return (hours * 3600) + (minutes * 60) + seconds;
+}
+
+function formatCalculatorTime(digits) {
+    const normalized = normalizeCustomTimeDigits(digits);
+    if (!normalized) return '00:00';
+    const padded = normalized.padStart(6, '0');
+    const hours = Number(padded.slice(0, 2));
+    const minutes = padded.slice(2, 4);
+    const seconds = padded.slice(4, 6);
+    if (hours > 0) return `${hours}:${minutes}:${seconds}`;
+    return `${minutes}:${seconds}`;
+}
+
+function setCustomInputDigits(digits) {
+    toolsTimerState.customInputDigits = normalizeCustomTimeDigits(digits);
+    const inputEl = document.getElementById('tools-timer-custom-input');
+    const secondsEl = document.getElementById('tools-timer-custom-seconds');
+    if (inputEl) inputEl.value = formatCalculatorTime(toolsTimerState.customInputDigits);
+    if (secondsEl) {
+        const seconds = calculatorDigitsToSeconds(toolsTimerState.customInputDigits);
+        secondsEl.textContent = `Duration: ${formatClock(seconds)}`;
+    }
+}
+
+function setCustomInputFromSeconds(seconds) {
+    const safe = Math.max(0, Math.floor(Number(seconds) || 0));
+    const capped = Math.min(safe, 99 * 3600 + 59 * 60 + 59);
+    const hours = Math.floor(capped / 3600);
+    const minutes = Math.floor((capped % 3600) / 60);
+    const secs = capped % 60;
+    const digits = `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(secs).padStart(2, '0')}`.replace(/^0+/, '') || '0';
+    setCustomInputDigits(digits);
+}
+
+function applyCustomTimerDuration(showFeedback = false) {
+    const seconds = calculatorDigitsToSeconds(toolsTimerState.customInputDigits);
+    if (seconds <= 0) {
+        if (showFeedback) {
+            try { showToast('Enter a valid custom time first.', 'warning'); } catch (_) {}
+        }
+        return false;
+    }
+    toolsTimerState.customDurationSeconds = seconds;
+    if (toolsTimerState.mode === 'custom') {
+        resetToolsTimer('custom');
+    }
+    saveToolsState();
+    if (showFeedback) {
+        try { showToast(`Custom time set to ${formatClock(seconds)}.`, 'success'); } catch (_) {}
+    }
+    return true;
+}
+
+async function toggleToolsTimerFullscreen() {
+    const card = document.getElementById('tools-timer-card');
+    if (!card || !document.fullscreenEnabled) return;
+    try {
+        if (document.fullscreenElement === card) await document.exitFullscreen();
+        else await card.requestFullscreen();
+    } catch (_) {}
+}
+
+function updateToolsTimerFullscreenButton() {
+    const btn = document.getElementById('tools-timer-fullscreen');
+    const card = document.getElementById('tools-timer-card');
+    if (!btn || !card) return;
+    btn.textContent = document.fullscreenElement === card ? 'Exit Fullscreen' : 'Fullscreen';
 }
 
 function saveToolsState() {
@@ -14857,6 +14944,8 @@ function saveToolsState() {
         localStorage.setItem('gcsemate_tools_state', JSON.stringify({
             mode: toolsTimerState.mode,
             remainingSeconds: toolsTimerState.remainingSeconds,
+            customDurationSeconds: toolsTimerState.customDurationSeconds,
+            customInputDigits: toolsTimerState.customInputDigits,
             sessionFocusedSeconds: toolsTimerState.sessionFocusedSeconds,
             todayFocusedSeconds: toolsTimerState.todayFocusedSeconds,
             dayKey: toolsTimerState.dayKey
@@ -14873,9 +14962,16 @@ function loadToolsState() {
         const parsed = JSON.parse(raw) || {};
         const mode = parsed.mode && TOOLS_TIMER_MODES[parsed.mode] ? parsed.mode : 'pomodoro';
         toolsTimerState.mode = mode;
+        toolsTimerState.customDurationSeconds = Number.isFinite(parsed.customDurationSeconds)
+            ? Math.max(1, parsed.customDurationSeconds)
+            : TOOLS_TIMER_MODES.custom.durationSeconds;
+        toolsTimerState.customInputDigits = normalizeCustomTimeDigits(parsed.customInputDigits || '');
+        const defaultDuration = mode === 'custom'
+            ? toolsTimerState.customDurationSeconds
+            : TOOLS_TIMER_MODES[mode].durationSeconds;
         toolsTimerState.remainingSeconds = Number.isFinite(parsed.remainingSeconds)
             ? Math.max(0, parsed.remainingSeconds)
-            : TOOLS_TIMER_MODES[mode].durationSeconds;
+            : defaultDuration;
         toolsTimerState.sessionFocusedSeconds = Number.isFinite(parsed.sessionFocusedSeconds)
             ? Math.max(0, parsed.sessionFocusedSeconds)
             : 0;
@@ -14888,7 +14984,10 @@ function loadToolsState() {
 function resetToolsTimer(mode = toolsTimerState.mode) {
     const safeMode = TOOLS_TIMER_MODES[mode] ? mode : 'pomodoro';
     toolsTimerState.mode = safeMode;
-    toolsTimerState.remainingSeconds = TOOLS_TIMER_MODES[safeMode].durationSeconds;
+    const modeConfig = TOOLS_TIMER_MODES[safeMode];
+    toolsTimerState.remainingSeconds = modeConfig.isStopwatch
+        ? 0
+        : (safeMode === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds);
     toolsTimerState.isRunning = false;
     toolsTimerState.lastTickAt = null;
     if (toolsTimerInterval) {
@@ -14923,11 +15022,16 @@ function onToolsTimerTick() {
         toolsTimerState.todayFocusedSeconds = 0;
     }
 
-    toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds - elapsedSeconds);
+    const isStopwatch = !!TOOLS_TIMER_MODES[toolsTimerState.mode]?.isStopwatch;
+    if (isStopwatch) {
+        toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds + elapsedSeconds);
+    } else {
+        toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds - elapsedSeconds);
+    }
     toolsTimerState.sessionFocusedSeconds += elapsedSeconds;
     toolsTimerState.todayFocusedSeconds += elapsedSeconds;
 
-    if (toolsTimerState.remainingSeconds === 0) {
+    if (!isStopwatch && toolsTimerState.remainingSeconds === 0) {
         stopToolsTimer();
         try { showToast('Focus session complete. Great work!', 'success'); } catch (_) {}
         return;
@@ -14939,6 +15043,10 @@ function onToolsTimerTick() {
 
 function startToolsTimer() {
     if (toolsTimerState.isRunning) return;
+    const modeConfig = TOOLS_TIMER_MODES[toolsTimerState.mode] || TOOLS_TIMER_MODES.pomodoro;
+    if (!modeConfig.isStopwatch && toolsTimerState.remainingSeconds <= 0) {
+        resetToolsTimer(toolsTimerState.mode);
+    }
     toolsTimerState.isRunning = true;
     toolsTimerState.lastTickAt = Date.now();
     if (toolsTimerInterval) clearInterval(toolsTimerInterval);
@@ -14950,24 +15058,56 @@ function updateToolsTimerUI() {
     const modeSelect = document.getElementById('tools-timer-mode');
     const displayEl = document.getElementById('tools-timer-display');
     const progressEl = document.getElementById('tools-timer-progress');
+    const progressLabelEl = document.getElementById('tools-timer-progress-label');
     const statusEl = document.getElementById('tools-timer-status');
     const todayEl = document.getElementById('tools-tracker-today');
     const sessionEl = document.getElementById('tools-tracker-session');
+    const customWrapEl = document.getElementById('tools-timer-custom-wrap');
     if (!displayEl || !progressEl || !statusEl || !todayEl || !sessionEl) return;
 
     if (modeSelect) modeSelect.value = toolsTimerState.mode;
 
-    const full = TOOLS_TIMER_MODES[toolsTimerState.mode].durationSeconds;
-    const completed = Math.max(0, full - toolsTimerState.remainingSeconds);
-    const progress = full > 0 ? Math.min(100, (completed / full) * 100) : 0;
+    const modeConfig = TOOLS_TIMER_MODES[toolsTimerState.mode] || TOOLS_TIMER_MODES.pomodoro;
+    const isStopwatch = !!modeConfig.isStopwatch;
+
+    if (customWrapEl) {
+        if (toolsTimerState.mode === 'custom') customWrapEl.classList.remove('hidden');
+        else customWrapEl.classList.add('hidden');
+    }
+
+    let progress = 0;
+    if (isStopwatch) {
+        progress = ((toolsTimerState.remainingSeconds % 60) / 60) * 100;
+    } else {
+        const full = toolsTimerState.mode === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds;
+        const completed = Math.max(0, full - toolsTimerState.remainingSeconds);
+        progress = full > 0 ? Math.min(100, (completed / full) * 100) : 0;
+    }
 
     displayEl.textContent = formatClock(toolsTimerState.remainingSeconds);
     progressEl.style.width = `${progress}%`;
     todayEl.textContent = formatDurationShort(toolsTimerState.todayFocusedSeconds);
     sessionEl.textContent = formatDurationShort(toolsTimerState.sessionFocusedSeconds);
-    statusEl.textContent = toolsTimerState.isRunning
-        ? `${TOOLS_TIMER_MODES[toolsTimerState.mode].label} in progress`
-        : 'Ready to focus';
+    if (progressLabelEl) {
+        progressLabelEl.textContent = isStopwatch
+            ? `${formatClock(toolsTimerState.remainingSeconds)} elapsed`
+            : `${Math.round(progress)}% complete`;
+    }
+    if (isStopwatch) {
+        statusEl.textContent = toolsTimerState.isRunning ? 'Stopwatch running' : 'Stopwatch ready';
+    } else {
+        statusEl.textContent = toolsTimerState.isRunning
+            ? `${modeConfig.label} in progress`
+            : 'Ready to focus';
+    }
+
+    if (!toolsTimerState.customInputDigits && toolsTimerState.customDurationSeconds > 0) {
+        setCustomInputFromSeconds(toolsTimerState.customDurationSeconds);
+    } else {
+        setCustomInputDigits(toolsTimerState.customInputDigits);
+    }
+
+    updateToolsTimerFullscreenButton();
 }
 
 async function fetchAndRenderDailyMeme(forceRefresh = false) {
@@ -15633,6 +15773,12 @@ function initializeToolsPage() {
     const startBtn = document.getElementById('tools-timer-start');
     const pauseBtn = document.getElementById('tools-timer-pause');
     const resetBtn = document.getElementById('tools-timer-reset');
+    const fullscreenBtn = document.getElementById('tools-timer-fullscreen');
+    const customInput = document.getElementById('tools-timer-custom-input');
+    const customApplyBtn = document.getElementById('tools-timer-custom-apply');
+    const customDigitButtons = document.querySelectorAll('.tools-time-digit');
+    const customClearBtn = document.getElementById('tools-time-clear');
+    const customBackspaceBtn = document.getElementById('tools-time-backspace');
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
     const gradeSaveBtn = document.getElementById('tools-grade-save');
@@ -15657,6 +15803,51 @@ function initializeToolsPage() {
                 resetToolsTimer(toolsTimerState.mode);
                 saveToolsState();
                 updateToolsTimerUI();
+            });
+        }
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', toggleToolsTimerFullscreen);
+        }
+        document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
+
+        if (customInput) {
+            customInput.addEventListener('input', () => {
+                setCustomInputDigits(customInput.value);
+                saveToolsState();
+            });
+            customInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyCustomTimerDuration(true);
+                }
+            });
+        }
+        if (customDigitButtons && customDigitButtons.length > 0) {
+            customDigitButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const digit = button.dataset.toolsTimeDigit;
+                    if (!digit) return;
+                    setCustomInputDigits(`${toolsTimerState.customInputDigits || ''}${digit}`);
+                    saveToolsState();
+                });
+            });
+        }
+        if (customClearBtn) {
+            customClearBtn.addEventListener('click', () => {
+                setCustomInputDigits('');
+                saveToolsState();
+            });
+        }
+        if (customBackspaceBtn) {
+            customBackspaceBtn.addEventListener('click', () => {
+                const next = (toolsTimerState.customInputDigits || '').slice(0, -1);
+                setCustomInputDigits(next);
+                saveToolsState();
+            });
+        }
+        if (customApplyBtn) {
+            customApplyBtn.addEventListener('click', () => {
+                applyCustomTimerDuration(true);
             });
         }
         if (memeRefreshBtn) {
