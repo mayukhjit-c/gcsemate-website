@@ -3030,6 +3030,33 @@ const FREE_TRIAL_ROTATION_MS = FREE_TRIAL_ROTATION_DAYS * 24 * 60 * 60 * 1000;
 const FREE_TRIAL_SUBJECT_POOL = ['Maths', 'English Language (AQA)', 'English Literature (Edexcel)', 'Biology', 'Chemistry', 'Physics'];
 const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
 
+function getUKDateParts(now = Date.now()) {
+    const date = now instanceof Date ? now : new Date(now);
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: UK_TZ,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(date);
+    const lookup = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return {
+        year: Number(lookup.year),
+        month: Number(lookup.month),
+        day: Number(lookup.day)
+    };
+}
+
+function getUKDayIndex(now = Date.now()) {
+    const { year, month, day } = getUKDateParts(now);
+    return Math.floor(Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000));
+}
+
+function getFreeTrialRotationDaysLeft(now = Date.now()) {
+    const dayIndex = getUKDayIndex(now);
+    const dayOffset = ((dayIndex % FREE_TRIAL_ROTATION_DAYS) + FREE_TRIAL_ROTATION_DAYS) % FREE_TRIAL_ROTATION_DAYS;
+    return FREE_TRIAL_ROTATION_DAYS - dayOffset;
+}
+
 function normalizeFreeTrialSubject(subjectName) {
     if (!subjectName || typeof subjectName !== 'string') return null;
     return FREE_TRIAL_SUBJECT_POOL.find(subject => subject.toLowerCase() === subjectName.toLowerCase()) || null;
@@ -3037,7 +3064,7 @@ function normalizeFreeTrialSubject(subjectName) {
 
 function getRotatingFreeTrialSubject(now = Date.now()) {
     if (!Array.isArray(FREE_TRIAL_SUBJECT_POOL) || FREE_TRIAL_SUBJECT_POOL.length === 0) return null;
-    const periodIndex = Math.floor(now / FREE_TRIAL_ROTATION_MS);
+    const periodIndex = Math.floor(getUKDayIndex(now) / FREE_TRIAL_ROTATION_DAYS);
     const normalizedIndex = ((periodIndex % FREE_TRIAL_SUBJECT_POOL.length) + FREE_TRIAL_SUBJECT_POOL.length) % FREE_TRIAL_SUBJECT_POOL.length;
     return FREE_TRIAL_SUBJECT_POOL[normalizedIndex];
 }
@@ -10574,6 +10601,13 @@ async function renderDashboard() {
                 freeTrialBadge.className = 'mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-yellow-50 border border-yellow-300 text-yellow-800';
                 freeTrialBadge.textContent = normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'Free Subject • Admin Pick' : 'Free Subject • 2-Week Rotation';
                 wrapper.appendChild(freeTrialBadge);
+                if (!normalizeFreeTrialSubject(freeTrialSubjectOverride)) {
+                    const daysLeft = getFreeTrialRotationDaysLeft();
+                    const countdown = document.createElement('p');
+                    countdown.className = 'text-[11px] font-semibold text-yellow-800 mt-1';
+                    countdown.textContent = `${daysLeft} day${daysLeft === 1 ? '' : 's'} left (rotates at UK midnight)`;
+                    wrapper.appendChild(countdown);
+                }
             }
             // Add summary text with arrow
             const summaryContainer = document.createElement('div');
@@ -15226,11 +15260,26 @@ function formatMonthLabel(monthValue) {
     return date.toLocaleString('en-GB', { month: 'short', year: 'numeric' });
 }
 
+function getGradeEntryTimestamp(entry) {
+    if (entry?.createdAt?.toDate) return entry.createdAt.toDate().getTime();
+    const direct = new Date(entry?.createdAt || 0).getTime();
+    if (Number.isFinite(direct)) return direct;
+    const month = typeof entry?.examMonth === 'string' && /^\d{4}-\d{2}$/.test(entry.examMonth)
+        ? new Date(`${entry.examMonth}-01T00:00:00Z`).getTime()
+        : 0;
+    return Number.isFinite(month) ? month : 0;
+}
+
+function getGradeChartColorByIndex(index) {
+    const palette = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0ea5e9', '#6d28d9', '#be123c'];
+    return palette[index % palette.length];
+}
+
 function getLatestGradesBySubject(entries) {
     const latestMap = new Map();
     const sorted = [...entries].sort((a, b) => {
-        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+        const aTime = getGradeEntryTimestamp(a);
+        const bTime = getGradeEntryTimestamp(b);
         return bTime - aTime;
     });
 
@@ -15273,6 +15322,8 @@ function updateGradeAverageDisplay(latestMap) {
 function renderGradeTrackerTables() {
     const latestBody = document.getElementById('tools-grades-latest-body');
     const historyBody = document.getElementById('tools-grades-history-body');
+    const historySortSelect = document.getElementById('tools-grade-history-sort');
+    const historyFilterSelect = document.getElementById('tools-grade-history-subject-filter');
     if (!latestBody || !historyBody) return;
 
     const latestMap = getLatestGradesBySubject(userGradeEntries);
@@ -15305,15 +15356,44 @@ function renderGradeTrackerTables() {
         });
     }
 
+    if (historyFilterSelect) {
+        const existingValue = historyFilterSelect.value;
+        const filterSubjects = Array.from(new Set(
+            userGradeEntries
+                .map(entry => normalizeGradeSubject(entry.subject))
+                .filter(Boolean)
+        )).sort((a, b) => a.localeCompare(b));
+        historyFilterSelect.innerHTML = '<option value="all">All Subjects</option>' +
+            filterSubjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('');
+        if (existingValue && Array.from(historyFilterSelect.options).some(option => option.value === existingValue)) {
+            historyFilterSelect.value = existingValue;
+        }
+    }
+
     historyBody.innerHTML = '';
-    const sortedHistory = [...userGradeEntries].sort((a, b) => {
-        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+    const filterValue = historyFilterSelect?.value || 'all';
+    const sortValue = historySortSelect?.value || 'newest';
+    const filteredHistory = filterValue === 'all'
+        ? [...userGradeEntries]
+        : userGradeEntries.filter(entry => normalizeGradeSubject(entry.subject) === filterValue);
+    const sortedHistory = [...filteredHistory].sort((a, b) => {
+        const aTime = getGradeEntryTimestamp(a);
+        const bTime = getGradeEntryTimestamp(b);
+        const aGrade = Number(a.grade || 0);
+        const bGrade = Number(b.grade || 0);
+        const aSubject = normalizeGradeSubject(a.subject);
+        const bSubject = normalizeGradeSubject(b.subject);
+
+        if (sortValue === 'oldest') return aTime - bTime;
+        if (sortValue === 'grade-high') return (bGrade - aGrade) || (bTime - aTime);
+        if (sortValue === 'grade-low') return (aGrade - bGrade) || (bTime - aTime);
+        if (sortValue === 'subject-az') return aSubject.localeCompare(bSubject) || (bTime - aTime);
+        if (sortValue === 'subject-za') return bSubject.localeCompare(aSubject) || (bTime - aTime);
         return bTime - aTime;
     });
 
     if (!sortedHistory.length) {
-        historyBody.innerHTML = '<tr><td colspan="5" class="px-3 py-3 text-gray-500 text-center">No grade history yet.</td></tr>';
+        historyBody.innerHTML = '<tr><td colspan="5" class="px-3 py-3 text-gray-500 text-center">No grade history for this filter yet.</td></tr>';
     } else {
         sortedHistory.forEach(entry => {
             const row = document.createElement('tr');
@@ -15340,8 +15420,8 @@ function getSortedGradeEntriesForSubject(subject) {
     return userGradeEntries
         .filter(entry => (entry.subjectKey || gradeSubjectKey(entry.subject)) === key)
         .sort((a, b) => {
-            const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-            const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+            const aTime = getGradeEntryTimestamp(a);
+            const bTime = getGradeEntryTimestamp(b);
             return aTime - bTime;
         });
 }
@@ -15371,11 +15451,17 @@ function updateGradeChartSubjectOptions() {
 function renderGradeTrendChart() {
     const canvas = document.getElementById('tools-grade-chart');
     const select = document.getElementById('tools-grade-chart-subject');
+    const scopeSelect = document.getElementById('tools-grade-chart-scope');
+    const typeSelect = document.getElementById('tools-grade-chart-type');
     const caption = document.getElementById('tools-grade-chart-caption');
     if (!canvas || !select || !caption) return;
 
     const subject = select.value;
+    const scope = scopeSelect?.value || 'subject';
+    const chartType = typeSelect?.value || 'line';
     const entries = subject ? getSortedGradeEntriesForSubject(subject) : [];
+    if (scopeSelect && scope === 'all') select.setAttribute('disabled', 'disabled');
+    else select.removeAttribute('disabled');
 
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     const rect = canvas.getBoundingClientRect();
@@ -15408,12 +15494,138 @@ function renderGradeTrendChart() {
         ctx.fillText(String(grade), padding.left - 6, y + 3);
     }
 
+    if (scope === 'all' && chartType === 'bar') {
+        const latestMap = getLatestGradesBySubject(userGradeEntries);
+        const subjects = Array.from(latestMap.values())
+            .map(entry => ({ subject: normalizeGradeSubject(entry.subject), grade: Number(entry.grade || 0) }))
+            .filter(item => item.subject && Number.isFinite(item.grade))
+            .sort((a, b) => a.subject.localeCompare(b.subject));
+
+        if (!subjects.length) {
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '12px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No grades available yet.', width / 2, height / 2);
+            caption.textContent = 'Add grades to compare latest performance by subject.';
+            return;
+        }
+
+        const barSlot = plotWidth / subjects.length;
+        const barWidth = Math.max(10, Math.min(32, barSlot * 0.7));
+        subjects.forEach((item, index) => {
+            const xCenter = padding.left + (index + 0.5) * barSlot;
+            const y = padding.top + (9 - item.grade) / 8 * plotHeight;
+            const h = (padding.top + plotHeight) - y;
+            ctx.fillStyle = getGradeChartColorByIndex(index);
+            ctx.fillRect(xCenter - barWidth / 2, y, barWidth, h);
+            if (subjects.length <= 8) {
+                ctx.save();
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '10px Plus Jakarta Sans, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.translate(xCenter, height - 8);
+                ctx.rotate(-Math.PI / 4);
+                ctx.fillText(item.subject, 0, 0);
+                ctx.restore();
+            }
+        });
+
+        const avg = subjects.reduce((sum, item) => sum + item.grade, 0) / subjects.length;
+        caption.textContent = `${subjects.length} subject${subjects.length === 1 ? '' : 's'} • latest-grade average ${avg.toFixed(2)} • bar comparison`;
+        return;
+    }
+
+    if (scope === 'all' && chartType === 'line') {
+        const grouped = new Map();
+        userGradeEntries.forEach(entry => {
+            const month = typeof entry.examMonth === 'string' && /^\d{4}-\d{2}$/.test(entry.examMonth)
+                ? entry.examMonth
+                : null;
+            const grade = Number(entry.grade || 0);
+            if (!month || !Number.isFinite(grade)) return;
+            if (!grouped.has(month)) grouped.set(month, []);
+            grouped.get(month).push(grade);
+        });
+        const monthKeys = Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
+        const pointsData = monthKeys.map((month, index) => {
+            const grades = grouped.get(month) || [];
+            const avg = grades.reduce((sum, value) => sum + value, 0) / Math.max(1, grades.length);
+            const x = monthKeys.length === 1
+                ? padding.left + plotWidth / 2
+                : padding.left + (index / (monthKeys.length - 1)) * plotWidth;
+            const y = padding.top + (9 - avg) / 8 * plotHeight;
+            return { x, y, avg, month };
+        });
+
+        if (!pointsData.length) {
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '12px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No monthly grade data yet.', width / 2, height / 2);
+            caption.textContent = 'Add exam month values to view all-grade trend over time.';
+            return;
+        }
+
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#2563eb';
+        ctx.beginPath();
+        pointsData.forEach((point, index) => {
+            if (index === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+        });
+        ctx.stroke();
+
+        pointsData.forEach(point => {
+            ctx.fillStyle = '#2563eb';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        if (pointsData.length <= 8) {
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '10px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            pointsData.forEach(point => {
+                ctx.fillText(formatMonthLabel(point.month), point.x, height - 8);
+            });
+        }
+
+        const firstAvg = pointsData[0].avg;
+        const latestAvg = pointsData[pointsData.length - 1].avg;
+        const delta = latestAvg - firstAvg;
+        const trend = delta === 0 ? 'steady' : (delta > 0 ? `up +${delta.toFixed(2)}` : `down ${delta.toFixed(2)}`);
+        caption.textContent = `${pointsData.length} month${pointsData.length === 1 ? '' : 's'} • latest avg ${latestAvg.toFixed(2)} • trend ${trend}`;
+        return;
+    }
+
     if (!entries.length) {
         ctx.fillStyle = '#9ca3af';
         ctx.font = '12px Plus Jakarta Sans, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('No grade points yet for this subject.', width / 2, height / 2);
         caption.textContent = 'Add grades to see a live trend line.';
+        return;
+    }
+
+    if (chartType === 'bar') {
+        const barSlot = plotWidth / entries.length;
+        const barWidth = Math.max(12, Math.min(34, barSlot * 0.72));
+        entries.forEach((entry, index) => {
+            const grade = Number(entry.grade || 0);
+            const xCenter = padding.left + (index + 0.5) * barSlot;
+            const y = padding.top + (9 - grade) / 8 * plotHeight;
+            const h = (padding.top + plotHeight) - y;
+            const color = getGradeTheme(grade).bg;
+            ctx.fillStyle = color;
+            ctx.fillRect(xCenter - barWidth / 2, y, barWidth, h);
+        });
+
+        const latest = entries[entries.length - 1];
+        const first = entries[0];
+        const delta = Number(latest.grade) - Number(first.grade);
+        const deltaText = delta === 0 ? 'steady' : (delta > 0 ? `up +${delta}` : `down ${delta}`);
+        caption.textContent = `${entries.length} point${entries.length === 1 ? '' : 's'} • latest ${latest.grade} (${escapeHTML(latest.assessmentName || 'assessment')}) • trend ${deltaText}`;
         return;
     }
 
@@ -15786,6 +15998,26 @@ function initializeToolsPage() {
     const gradeValueSelect = document.getElementById('tools-grade-value');
     const gradeHistoryBody = document.getElementById('tools-grades-history-body');
     const gradeChartSubjectSelect = document.getElementById('tools-grade-chart-subject');
+    const gradeChartScopeSelect = document.getElementById('tools-grade-chart-scope');
+    const gradeChartTypeSelect = document.getElementById('tools-grade-chart-type');
+    const gradeHistorySortSelect = document.getElementById('tools-grade-history-sort');
+    const gradeHistoryFilterSelect = document.getElementById('tools-grade-history-subject-filter');
+
+    if (modeSelect) {
+        const ensureOption = (value, label) => {
+            if (!Array.from(modeSelect.options).some(option => option.value === value)) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                modeSelect.appendChild(option);
+            }
+        };
+        ensureOption('custom', 'Custom');
+        ensureOption('stopwatch', 'Stopwatch');
+        if (!Array.from(modeSelect.options).some(option => option.value === toolsTimerState.mode)) {
+            toolsTimerState.mode = 'pomodoro';
+        }
+    }
 
     if (!toolsPageInitialized) {
         if (modeSelect) {
@@ -15816,6 +16048,9 @@ function initializeToolsPage() {
                 saveToolsState();
             });
             customInput.addEventListener('keydown', (event) => {
+                if (!['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(event.key) && !/^[0-9]$/.test(event.key)) {
+                    event.preventDefault();
+                }
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     applyCustomTimerDuration(true);
@@ -15864,6 +16099,10 @@ function initializeToolsPage() {
         if (gradeSubjectSelect) gradeSubjectSelect.addEventListener('change', toggleGradeCustomSubjectInput);
         if (gradeValueSelect) gradeValueSelect.addEventListener('change', updateGradeSelectPreview);
         if (gradeChartSubjectSelect) gradeChartSubjectSelect.addEventListener('change', renderGradeTrendChart);
+        if (gradeChartScopeSelect) gradeChartScopeSelect.addEventListener('change', renderGradeTrendChart);
+        if (gradeChartTypeSelect) gradeChartTypeSelect.addEventListener('change', renderGradeTrendChart);
+        if (gradeHistorySortSelect) gradeHistorySortSelect.addEventListener('change', renderGradeTrackerTables);
+        if (gradeHistoryFilterSelect) gradeHistoryFilterSelect.addEventListener('change', renderGradeTrackerTables);
         if (gradeHistoryBody) {
             gradeHistoryBody.addEventListener('click', (event) => {
                 const deleteBtn = event.target.closest('button[data-grade-delete-id]');
