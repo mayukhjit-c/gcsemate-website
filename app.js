@@ -10108,6 +10108,11 @@ const PAGE_ID_BY_ROUTE = Object.keys(ROUTE_BY_PAGE_ID).reduce((acc, pageId) => {
     return acc;
 }, {});
 
+const PAGE_ID_BY_ROUTE_LOWER = Object.keys(PAGE_ID_BY_ROUTE).reduce((acc, route) => {
+    acc[route.toLowerCase()] = PAGE_ID_BY_ROUTE[route];
+    return acc;
+}, {});
+
 function normalizePathname(pathname) {
     try {
         let p = (pathname || '/').trim();
@@ -10117,6 +10122,11 @@ function normalizePathname(pathname) {
     } catch (_) {
         return '/';
     }
+}
+
+function resolvePageIdFromPath(pathname) {
+    const normalizedPath = normalizePathname(pathname);
+    return PAGE_ID_BY_ROUTE[normalizedPath] || PAGE_ID_BY_ROUTE_LOWER[normalizedPath.toLowerCase()] || null;
 }
 
 function showLandingOnly() {
@@ -10217,7 +10227,7 @@ function applyRouteFromLocation() {
         if (verify) verify.classList.add('hidden');
     } catch (_) {}
 
-    let pageId = PAGE_ID_BY_ROUTE[path];
+    let pageId = resolvePageIdFromPath(path);
     if (!pageId) pageId = 'subject-dashboard-page';
 
     try { showPage(pageId); } catch (_) {}
@@ -10228,6 +10238,13 @@ function applyRouteFromLocation() {
 
 function navigateToPath(pathname, { replace = false } = {}) {
     const next = normalizePathname(pathname);
+
+    const targetPageId = resolvePageIdFromPath(next);
+    if (targetPageId && (currentUser?.role || '').toLowerCase() !== 'admin' && isSectionUnderMaintenance(targetPageId)) {
+        showSectionMaintenanceNotice(targetPageId);
+        return;
+    }
+
     try {
         if (replace) window.history.replaceState({}, '', next);
         else window.history.pushState({}, '', next);
