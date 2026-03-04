@@ -10,7 +10,11 @@ service cloud.firestore {
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
         : null;
     }
-    function isAdmin() { return isSignedIn() && userDoc().role == 'admin'; }
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (userDoc().role == 'admin' || userDoc().role == 'Admin');
+    }
     function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
     function hasProtectedUserFieldChanges() {
       return request.resource.data.diff(resource.data).changedKeys().hasAny([

@@ -698,11 +698,15 @@ class WebsiteValidator {
         // DOM Element Tests
         this.addTest('DOM Elements', () => {
             const criticalElements = [
-                'app-loading', 'landing-page', 'login-page', 'register-page',
+                'app-loading', 'landing-page', 'login-page',
                 'subject-dashboard-page', 'admin-panel', 'user-settings-panel'
             ];
-            
+            const hasRegisterEntryPoint = !!(document.getElementById('register-page') || document.getElementById('register-form'));
+
             const missing = criticalElements.filter(id => !document.getElementById(id));
+            if (!hasRegisterEntryPoint) {
+                missing.push('register-form');
+            }
             return {
                 passed: missing.length === 0,
                 message: missing.length === 0 ? 'All critical DOM elements present' : `Missing elements: ${missing.join(', ')}`
@@ -6632,7 +6636,10 @@ async function openEditUserModal(userId) {
         expiryTypeSelect.dispatchEvent(new Event('change'));
     } catch (error) {
         console.error("Error opening edit modal:", error);
-        showToast("Could not load user data for editing.", 'error');
+        const message = (error && (error.code === 'permission-denied' || /permission/i.test(error.message || '')))
+            ? 'Permission denied while loading user data. Check admin role casing in Firestore user document.'
+            : 'Could not load user data for editing.';
+        showToast(message, 'error');
     }
 }
 async function handleUpdateUser(userId) {
