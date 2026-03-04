@@ -354,6 +354,14 @@ border-radius: 4px;
         .page select:hover {
             border-color: rgb(var(--border) / 1);
         }
+
+        /* Ensure default checkboxes are always visible */
+        input[type="checkbox"]:not(.gcse-checkbox) {
+            border: 1.5px solid rgba(var(--text), 0.4);
+            border-radius: 0.25rem;
+            background-color: #fff;
+            accent-color: rgb(var(--brand-600));
+        }
         
         button:focus-visible,
         a:focus-visible,
