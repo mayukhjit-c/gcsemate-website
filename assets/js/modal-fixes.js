@@ -42,6 +42,8 @@
             modal.style.opacity = '1';
             modal.style.transform = 'scale(1)';
         });
+
+        markBodyModalOpen();
     }
 
     function setModalLoading(modal, isLoading) {
@@ -140,11 +142,15 @@
 
     // Click outside to close modals (backdrop or outer fixed container)
     document.addEventListener('click', function (e) {
-        if (
-            e.target.classList.contains('modal-backdrop') ||
-            (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0'))
-        ) {
+        if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
             closeAndRemoveModal(e.target);
+            return;
+        }
+
+        // Common pattern: overlay wrapper has .fixed.inset-0, click on wrapper should close
+        const overlay = e.target && e.target.closest ? e.target.closest('.fixed.inset-0') : null;
+        if (overlay && e.target === overlay) {
+            closeAndRemoveModal(overlay);
         }
     });
 
@@ -221,5 +227,9 @@
         attributeFilter: ['style', 'class'],
     });
 
-    console.log('✅ Modal improvements loaded - Escape key & click outside support enabled');
+    try {
+        if (window.location && window.location.hostname === 'localhost') {
+            console.log('✅ Modal improvements loaded - Escape key & click outside support enabled');
+        }
+    } catch (_) {}
 })();

@@ -248,7 +248,7 @@
 
         // Ensure target exists
         const mainContent =
-            document.getElementById('page-content') || document.querySelector('main');
+            document.getElementById('page-content') || document.getElementById('landing-content') || document.querySelector('main');
         if (mainContent && !mainContent.id) {
             mainContent.id = 'page-content';
         }

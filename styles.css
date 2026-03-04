@@ -41,24 +41,50 @@
 
         /* Base styles for a polished look - Enhanced for accessibility */
         body {
-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-background-color: #f8fafc;
--webkit-font-smoothing: antialiased;
--moz-osx-font-smoothing: grayscale;
-text-rendering: optimizeLegibility;
-font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
-/* Respect safe areas on iOS / notches */
-padding-top: env(safe-area-inset-top, 0);
-padding-right: env(safe-area-inset-right, 0);
-padding-bottom: env(safe-area-inset-bottom, 0);
-padding-left: env(safe-area-inset-left, 0);
-/* Enhanced accessibility */
-line-height: 1.6;
-color: #1f2937;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8fafc;
+            /* Modern subtle gradient background */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(var(--brand-50), 0.7) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(var(--accent-100), 0.4) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(var(--brand-50), 0.7) 0px, transparent 50%);
+            background-attachment: fixed;
+
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+            /* Respect safe areas on iOS / notches */
+            padding-top: env(safe-area-inset-top, 0);
+            padding-right: env(safe-area-inset-right, 0);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            padding-left: env(safe-area-inset-left, 0);
+            /* Enhanced accessibility */
+            line-height: 1.6;
+            color: #1f2937;
+        }
+
+        /* Smooth Page Transitions */
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page:not(.hidden) {
+            animation: pageFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
 
         /* Prevent background scroll when modals are open */
         body.modal-open { overflow: hidden; }
+
+        /* Ensure decorative watermark never blocks taps/clicks */
+        #site-watermark,
+        #site-watermark * {
+            pointer-events: none !important;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
         
         /* Performance optimizations */
         * {
@@ -165,6 +191,12 @@ scroll-behavior: inherit;
             background-size: 200% 200%, 200% 200%, 200% 200%;
             animation: landingGradientDrift 18s ease-in-out infinite alternate;
             overflow: hidden;
+        }
+
+        /* Low-spec: keep the look but drop expensive background animation */
+        .low-spec #landing-page {
+            animation: none !important;
+            background-size: auto;
         }
 
         @keyframes landingGradientDrift {
@@ -275,45 +307,6 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
 }
         }
 
-/* Admin dashboard: glow active users currently online */
-.active-user-glow {
-    border-color: rgba(34, 197, 94, 0.6) !important;
-    box-shadow:
-        0 0 0 2px rgba(34, 197, 94, 0.22),
-        0 8px 28px rgba(34, 197, 94, 0.25),
-        0 0 20px rgba(34, 197, 94, 0.15);
-    transition: box-shadow var(--animation-normal, 300ms) ease, transform var(--animation-normal, 300ms) ease;
-}
-
-.active-user-dot {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 9999px;
-    background: rgba(34, 197, 94, 0.15);
-    color: #065f46;
-    font-weight: 700;
-    font-size: 12px;
-    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.28);
-}
-
-.active-user-dot::before {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-radius: 9999px;
-    background: #22c55e;
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.22);
-    animation: active-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes active-pulse {
-    0% { transform: scale(0.9); opacity: 0.9; }
-    70% { transform: scale(1.4); opacity: 0; }
-    100% { transform: scale(0.9); opacity: 0; }
-}
-        
         /* Skeleton loading animation */
         .skeleton {
 background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -3130,33 +3123,37 @@ will-change: transform;
             height: 1.25rem;
             border-radius: 0.4rem;
             border: 2px solid rgba(var(--text), 0.22);
-            background: rgba(255, 255, 255, 0.96);
+            background-color: rgba(255, 255, 255, 0.96);
             box-shadow: inset 0 0 0 1px rgba(var(--border), 0.55);
-            display: inline-grid;
-            place-content: center;
             cursor: pointer;
             flex: 0 0 auto;
-            transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+            transition: all 160ms ease;
+            
+            /* Center the background image */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 0.75rem;
         }
 
         .gcse-checkbox::before {
-            content: '';
-            width: 0.62rem;
-            height: 0.62rem;
-            transform: scale(0);
-            transition: transform 120ms ease;
-            transform-origin: center;
-            background: rgb(var(--brand-600));
-            clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 74%);
+            display: none;
         }
 
         .gcse-checkbox:checked {
-            background: rgba(var(--brand-50), 0.92);
-            border-color: rgba(var(--brand-600), 0.9);
+            background-color: rgb(var(--brand-600));
+            border-color: rgb(var(--brand-600));
+            /* Checkmark icon */
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        }
+
+        .gcse-checkbox:not(:checked):hover {
+            border-color: rgb(var(--brand-400));
+            background-color: rgb(var(--brand-50));
         }
 
         .gcse-checkbox:checked::before {
-            transform: scale(1);
+            /* No longer needed */
+            content: none;
         }
 
         .gcse-checkbox:active {

@@ -27,6 +27,7 @@ gcsemate-website/
 ├── index.html          # Main HTML file
 ├── app.js             # Main JavaScript application
 ├── styles.css         # All styles and themes
+├── assets/            # Non-entrypoint JS/CSS utilities
 ├── sw.js              # Service Worker for offline support
 ├── package.json       # Dependencies and scripts
 ├── vite.config.js     # Build configuration

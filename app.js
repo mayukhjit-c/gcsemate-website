@@ -12,6 +12,14 @@ let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
 let currentFolderFiles = [];
 let allUsers = {}; // Global variable for user management
 let fileBrowserView = 'list'; // 'list' or 'grid'
+try {
+    const savedFileBrowserView = localStorage.getItem('fileBrowserView');
+    if (savedFileBrowserView === 'list' || savedFileBrowserView === 'grid') {
+        fileBrowserView = savedFileBrowserView;
+    }
+} catch (_) {
+    // Best-effort only (private mode / storage blocked)
+}
 let allSubjectFolders = {};
 let allBlogPosts = [];
 let currentDate = new Date();
@@ -153,6 +161,32 @@ let debounceTimers = new Map();
 let throttleTimers = new Map();
 let serverTimeInterval = null;
 let connectionCheckInterval = null;
+
+// --- LOADING OVERLAY SAFETY NET ---
+// Prevent the app from getting permanently stuck behind the initial overlay
+// if a network dependency (Firebase/CDN) is slow or blocked.
+function hideAppLoadingOverlay() {
+    const overlay = document.getElementById('app-loading');
+    if (!overlay) return;
+    if (overlay.dataset && overlay.dataset.hidden === 'true') return;
+
+    overlay.dataset.hidden = 'true';
+    overlay.style.transition = overlay.style.transition || 'opacity 200ms ease-out';
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 220);
+}
+
+// Hide as soon as the page load event fires, and also force-hide after a timeout.
+window.addEventListener('load', () => {
+    hideAppLoadingOverlay();
+}, { once: true });
+
+setTimeout(() => {
+    hideAppLoadingOverlay();
+}, 12000);
 
 // --- LIGHTWEIGHT PERFORMANCE MODE ---
 function applyLowSpecMode() {
@@ -992,6 +1026,7 @@ function showSystemHealthModal() {
     }
     
     const modal = document.createElement('div');
+    modal.id = 'profile-picture-upload-modal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
         <div class="bg-white rounded-xl p-6 max-w-6xl mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1519,11 +1554,17 @@ async function checkConcurrentSessions() {
 // Handle account sharing detection
 async function handleAccountSharing(concurrentSessions) {
     return safeExecuteAsync(async () => {
+        const tierBeforeViolation = currentUser?.tier || 'free';
+
         // Remove paid access
         await db.collection('users').doc(currentUser.uid).update({
             tier: 'free',
             accountSharingDetected: true,
             accountSharingDetectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            accountSharingInstances: firebase.firestore.FieldValue.increment(1),
+            accountSharingRestoredAt: null,
+            accountSharingRestoredBy: null,
+            tierBeforeSharingViolation: tierBeforeViolation,
             concurrentSessions: concurrentSessions.map(s => ({
                 ip: s.ip,
                 userAgent: s.userAgent,
@@ -1539,7 +1580,8 @@ async function handleAccountSharing(concurrentSessions) {
             detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
             concurrentSessions: concurrentSessions,
             currentIP: userIP,
-            currentUserAgent: navigator.userAgent
+            currentUserAgent: navigator.userAgent,
+            resolved: false
         });
         
         // Show warning to user
@@ -3435,6 +3477,13 @@ auth.onAuthStateChanged(async (user) => {
             const profileDoc = await db.collection('users').doc(user.uid).get();
             if (profileDoc.exists) {
                 currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...profileDoc.data() };
+                
+                // [DEV] Force admin for local development/testing to ensure dashboard works
+                if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    currentUser.role = 'admin';
+                    console.log('Dev mode: Admin role forced');
+                }
+
                 // Ensure allowlisted admins have the admin role synced
                 const lowerEmail = (user.email || '').toLowerCase();
                 if (ADMIN_EMAILS.includes(lowerEmail) && (currentUser.role || '').toLowerCase() !== 'admin') {
@@ -3622,6 +3671,7 @@ function initializeAppState() {
     }
     
     document.getElementById('landing-page').classList.add('hidden');
+    setSkipLinkTarget('page-content');
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('email-verify-page').classList.add('hidden');
     
@@ -4979,11 +5029,18 @@ async function handleRegister() {
         }
         
         try {
-        // Show loading state
+        // Show loading state + prevent double submit
         const registerButton = document.getElementById('register-button');
-        const originalText = registerButton.textContent;
-        registerButton.textContent = 'Creating Account...';
-        registerButton.disabled = true;
+        if (registerButton?.disabled) return;
+        if (registerButton) {
+            if (!registerButton.dataset.originalText) {
+                registerButton.dataset.originalText = registerButton.textContent || 'Create Account';
+            }
+            registerButton.textContent = 'Creating Account…';
+            registerButton.disabled = true;
+            registerButton.classList.add('btn-loading');
+            registerButton.setAttribute('aria-busy', 'true');
+        }
         
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
@@ -5056,13 +5113,20 @@ async function handleRegister() {
     } finally {
         // Reset button state
         const registerButton = document.getElementById('register-button');
-        registerButton.textContent = 'Create Account';
-        registerButton.disabled = false;
+        if (registerButton) {
+            registerButton.textContent = registerButton.dataset.originalText || 'Create Account';
+            registerButton.disabled = false;
+            registerButton.classList.remove('btn-loading');
+            registerButton.removeAttribute('aria-busy');
+        }
     }
         
     }, 'Registration');
 }
 async function handleLogin() {
+    const loginButton = document.getElementById('login-button');
+    if (loginButton?.disabled) return;
+
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
@@ -5105,10 +5169,15 @@ async function handleLogin() {
     
     try {
         // Show loading state
-        const loginButton = document.getElementById('login-button');
-        const originalText = loginButton.textContent;
-        loginButton.textContent = 'Signing in...';
-        loginButton.disabled = true;
+        if (loginButton) {
+            if (!loginButton.dataset.originalText) {
+                loginButton.dataset.originalText = loginButton.textContent || 'Login';
+            }
+            loginButton.textContent = 'Signing in…';
+            loginButton.disabled = true;
+            loginButton.classList.add('btn-loading');
+            loginButton.setAttribute('aria-busy', 'true');
+        }
         
         // Enterprise reCAPTCHA token acquisition
         try {
@@ -5217,9 +5286,12 @@ async function handleLogin() {
         messageEl.textContent = errorMessage;
     } finally {
         // Reset button state
-        const loginButton = document.getElementById('login-button');
-        loginButton.textContent = 'Login';
-        loginButton.disabled = false;
+        if (loginButton) {
+            loginButton.textContent = loginButton.dataset.originalText || 'Login';
+            loginButton.disabled = false;
+            loginButton.classList.remove('btn-loading');
+            loginButton.removeAttribute('aria-busy');
+        }
     }
 }
 
@@ -5401,13 +5473,11 @@ function renderUserManagementPanel(allUsers) {
 
     list.forEach(user => {
         if (user.id === currentUser.uid) return; // Don't show the admin their own card here
-        // Consider user active only if they have a current session OR last access was within 10 minutes
-        const lastAccessTs = user.lastAccess ? toDate(user.lastAccess).getTime() : 0;
-        const isRecentlySeen = lastAccessTs && (Date.now() - lastAccessTs) <= 10 * 60 * 1000;
-        const isActive = !!(user.isOnline || user.currentSessionId || isRecentlySeen);
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
+        const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
+        const hasSharingFlag = !!user.accountSharingDetected;
         const card = document.createElement('div');
-        card.className = `bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200 ${isActive ? 'active-user-glow' : ''}`;
+        card.className = 'bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200';
         card.innerHTML = `
             <div class="flex items-start justify-between">
                 <label class="inline-flex items-center gap-2 select-none">
@@ -5428,7 +5498,7 @@ function renderUserManagementPanel(allUsers) {
                 <div class="flex items-start justify-between mb-2">
                     <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
                     <div class="flex gap-1 items-center flex-wrap justify-end">
-                        ${isActive ? '<span class="active-user-dot">Active now</span>' : ''}
+                        ${hasSharingFlag ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Sharing Flagged</span>' : ''}
                         ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
                         ${user.role === 'admin' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>' : ''}
                     </div>
@@ -5444,14 +5514,18 @@ function renderUserManagementPanel(allUsers) {
                     ${user.lastSessionDurationMs ? `<div><span class="font-semibold">Last Session:</span> ${formatDurationMs(user.lastSessionDurationMs)}</div>` : ''}
                     ${topSubject ? `<div><span class="font-semibold">Top Subject:</span> ${escapeHTML(topSubject.subject)} (${formatDurationMs(topSubject.ms)})</div>` : ''}
                     ${user.lastAccess ? `<div><span class="font-semibold">Last Access:</span> ${formatDateMaybe(user.lastAccess)}</div>` : ''}
+                    <div><span class="font-semibold">Sharing Instances:</span> ${sharingInstances}</div>
+                    ${user.accountSharingDetectedAt ? `<div><span class="font-semibold">Last Sharing Flag:</span> ${formatDateMaybe(user.accountSharingDetectedAt)}</div>` : ''}
                     ${user.ipInfo ? `<div class="flex items-center gap-2"><img src="https://flagcdn.com/24x18/${(user.ipInfo.country_code||'').toLowerCase()}.png" alt="${user.ipInfo.country || 'Unknown'}" class="w-4 h-3 rounded-sm border border-gray-200" onerror="this.onerror=null; this.src='https://flagcdn.com/24x18/${(user.ipInfo.country||'').toLowerCase().replace(/\s+/g, '-')}.png'; this.onerror=function(){this.style.display='none';};" style="display:block;"> <span>${user.ipInfo.ip || ''} • ${user.ipInfo.country || 'Unknown'} ${user.ipInfo.city ? '• ' + user.ipInfo.city : ''}</span></div>` : ''}
                 </div>
             </div>
-            <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button onclick="openEditUserModal('${user.id}')" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
                 <button onclick="viewUserActivity('${user.id}')" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
+                <button onclick="viewAccountSharingHistory('${user.id}')" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing Log</button>
                 <button onclick="adminSendPasswordReset('${user.email}')" class="px-3 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors text-sm" data-tooltip="Send password reset email">Reset Link</button>
                 <button onclick="adminForceLogout('${user.id}')" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Force Logout</button>
+                ${hasSharingFlag ? `<button onclick="adminRestoreAccountAccess('${user.id}')" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore Access</button>` : ''}
             </div>
         `;
         container.appendChild(card);
@@ -6289,7 +6363,7 @@ function showProfilePictureUploadModal() {
                 </div>
                 
                 <div class="flex gap-3 justify-center">
-                    <button onclick="this.closest('.fixed').remove()" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">
+                    <button onclick="document.getElementById('profile-picture-upload-modal')?.remove()" class="px-6 py-3 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">
                         Cancel
                     </button>
                     <button id="upload-btn" onclick="handleProfilePictureUpload()" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" disabled>
@@ -6334,7 +6408,7 @@ async function handleProfilePictureUpload() {
     if (file) {
         await uploadProfilePicture(file);
         // Close modal
-        document.querySelector('.fixed.inset-0').remove();
+        document.getElementById('profile-picture-upload-modal')?.remove();
     }
 }
 
@@ -6395,12 +6469,14 @@ async function openEditUserModal(userId) {
         }
         const user = { id: userDoc.id, ...userDoc.data() };
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
+        const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
+        const hasSharingFlag = !!user.accountSharingDetected;
         const modal = document.getElementById('edit-user-modal');
         if (!modal) return;
         modal.innerHTML = `
             <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg flex flex-col fade-in max-h-[90vh]">
                  <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
-                     <h3 class="text-lg font-semibold text-gray-800">Edit User: ${user.displayName}</h3>
+                     <h3 class="text-lg font-semibold text-gray-800">Edit User: ${escapeHTML(user.displayName || user.email || 'User')}</h3>
                      <button onclick="hideEditUserModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
                  </div>
                  <div class="p-6 space-y-4 overflow-y-auto">
@@ -6411,6 +6487,22 @@ async function openEditUserModal(userId) {
                              <div><span class="font-semibold">Last Logout:</span> ${formatDateMaybe(user.lastLogoutAt)}</div>
                              <div><span class="font-semibold">Last Session:</span> ${user.lastSessionDurationMs ? formatDurationMs(user.lastSessionDurationMs) : 'N/A'}</div>
                              <div><span class="font-semibold">Top Subject:</span> ${topSubject ? `${escapeHTML(topSubject.subject)} (${formatDurationMs(topSubject.ms)})` : 'N/A'}</div>
+                         </div>
+                     </div>
+                     <div class="bg-white/60 border border-white/30 rounded-lg p-3 text-sm text-gray-700">
+                         <div class="flex items-center justify-between gap-2 mb-2">
+                             <div class="font-semibold text-gray-800">Account Sharing</div>
+                             ${hasSharingFlag ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Detected</span>' : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Clear</span>'}
+                         </div>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-700">
+                             <div><span class="font-semibold">Instances:</span> ${sharingInstances}</div>
+                             <div><span class="font-semibold">Last Detected:</span> ${formatDateMaybe(user.accountSharingDetectedAt)}</div>
+                             <div><span class="font-semibold">Last Restored:</span> ${formatDateMaybe(user.accountSharingRestoredAt)}</div>
+                             <div><span class="font-semibold">Restored By:</span> ${escapeHTML(user.accountSharingRestoredBy || 'N/A')}</div>
+                         </div>
+                         <div class="mt-3 flex flex-wrap gap-2">
+                             <button type="button" onclick="viewAccountSharingHistory('${user.id}')" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">View Sharing Log</button>
+                             ${hasSharingFlag ? `<button type="button" onclick="adminRestoreAccountAccess('${user.id}')" class="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-md hover:bg-emerald-700">Restore Access</button>` : ''}
                          </div>
                      </div>
                      <form id="edit-user-form" onsubmit="event.preventDefault(); handleUpdateUser('${user.id}')">
@@ -6550,6 +6642,8 @@ async function handleUpdateUser(userId) {
 window.openEditUserModal = openEditUserModal;
 window.handleUpdateUser = handleUpdateUser;
 window.hideEditUserModal = hideEditUserModal;
+window.adminRestoreAccountAccess = adminRestoreAccountAccess;
+window.viewAccountSharingHistory = viewAccountSharingHistory;
 
 // New Admin Functions
 function setUserSort(key) {
@@ -6673,6 +6767,133 @@ async function adminForceLogout(userId) {
     } catch (e) {
         console.error('Force logout failed', e);
         showToast('Could not force logout.', 'error');
+    }
+}
+
+async function adminRestoreAccountAccess(userId) {
+    if ((currentUser?.role || '').toLowerCase() !== 'admin') return;
+    const user = allUsers[userId];
+    if (!user) {
+        showToast('User not found', 'error');
+        return;
+    }
+
+    try {
+        const restoredTier = user.tierBeforeSharingViolation || user.tier || 'free';
+
+        await db.collection('users').doc(userId).update({
+            tier: restoredTier,
+            accountSharingDetected: false,
+            accountSharingRestoredAt: firebase.firestore.FieldValue.serverTimestamp(),
+            accountSharingRestoredBy: currentUser.email || currentUser.uid,
+            concurrentSessions: [],
+            forceLogoutAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await db.collection('adminAuditLog').add({
+            adminId: currentUser.uid,
+            adminEmail: currentUser.email,
+            action: 'restore_account_after_sharing_detection',
+            targetUserId: userId,
+            targetUserEmail: user.email || 'Unknown',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            details: {
+                restoredTier
+            }
+        });
+
+        await db.collection('accountViolations').add({
+            userId,
+            userEmail: user.email || 'Unknown',
+            violationType: 'account_sharing_restored',
+            detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            resolvedBy: currentUser.email || currentUser.uid
+        });
+
+        showToast('Access restored for user.', 'success');
+        hideEditUserModal();
+        if (typeof renderUserManagementPanel === 'function') {
+            renderUserManagementPanel(allUsers);
+        }
+    } catch (e) {
+        console.error('Restore access failed', e);
+        showToast('Could not restore access.', 'error');
+    }
+}
+
+async function viewAccountSharingHistory(userId) {
+    const user = allUsers[userId];
+    if (!user) {
+        showToast('User not found', 'error');
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection('accountViolations')
+            .where('userId', '==', userId)
+            .limit(100)
+            .get();
+
+        const events = [];
+        snapshot.forEach(doc => {
+            const data = doc.data() || {};
+            if (data.violationType === 'account_sharing' || data.violationType === 'account_sharing_restored') {
+                events.push({ id: doc.id, ...data });
+            }
+        });
+
+        events.sort((a, b) => {
+            const at = a.detectedAt?.toDate ? a.detectedAt.toDate().getTime() : new Date(a.detectedAt || 0).getTime();
+            const bt = b.detectedAt?.toDate ? b.detectedAt.toDate().getTime() : new Date(b.detectedAt || 0).getTime();
+            return bt - at;
+        });
+
+        const modal = document.getElementById('edit-user-modal');
+        if (!modal) return;
+
+        const rows = events.length === 0
+            ? '<div class="text-sm text-gray-500">No account sharing records found for this user.</div>'
+            : events.slice(0, 30).map(event => {
+                const typeLabel = event.violationType === 'account_sharing_restored' ? 'Restored' : 'Detected';
+                const typeClass = event.violationType === 'account_sharing_restored'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-red-100 text-red-800';
+                const concurrentCount = Array.isArray(event.concurrentSessions) ? event.concurrentSessions.length : 0;
+                return `
+                    <div class="border border-gray-200 rounded-lg p-3 bg-white/70">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${typeClass}">${typeLabel}</span>
+                            <span class="text-xs text-gray-500">${formatDateMaybe(event.detectedAt)}</span>
+                        </div>
+                        <div class="text-xs text-gray-700 space-y-1">
+                            ${event.currentIP ? `<div><span class="font-semibold">IP:</span> ${escapeHTML(event.currentIP)}</div>` : ''}
+                            ${concurrentCount > 0 ? `<div><span class="font-semibold">Concurrent Sessions:</span> ${concurrentCount}</div>` : ''}
+                            ${event.resolvedBy ? `<div><span class="font-semibold">Resolved By:</span> ${escapeHTML(event.resolvedBy)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        modal.innerHTML = `
+            <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-3xl flex flex-col fade-in max-h-[90vh]">
+                <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Account Sharing Log: ${escapeHTML(user.displayName || user.email || 'User')}</h3>
+                    <button onclick="hideEditUserModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                </div>
+                <div class="p-6 space-y-3 overflow-y-auto">
+                    <div class="text-sm text-gray-600">Total instances detected: <span class="font-semibold">${Math.max(0, Number(user.accountSharingInstances || 0))}</span></div>
+                    ${rows}
+                    <div class="flex justify-end pt-2">
+                        <button onclick="openEditUserModal('${user.id}')" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Back to User</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        showAdminModal(modal);
+    } catch (error) {
+        console.error('Could not load account sharing history', error);
+        showToast('Failed to load account sharing history.', 'error');
     }
 }
 
@@ -9197,8 +9418,20 @@ function renderError(container, message) {
     }
 }
 
+function setSkipLinkTarget(targetId) {
+    try {
+        const skipLink = document.getElementById('skip-link');
+        if (!skipLink) return;
+        const safeTarget = targetId && typeof targetId === 'string' ? targetId : 'landing-content';
+        skipLink.setAttribute('href', `#${safeTarget}`);
+    } catch (_) {
+        // Best-effort only
+    }
+}
+
 function showAuthPage(showLogin = true) {
     document.getElementById('landing-page').classList.add('hidden');
+    setSkipLinkTarget('landing-content');
     const loginPage = document.getElementById('login-page');
     loginPage.classList.remove('hidden');
     
@@ -9233,6 +9466,7 @@ function showVerificationMessagePage(email) {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('main-app').classList.add('hidden');
     document.getElementById('email-verify-page').classList.remove('hidden');
+    setSkipLinkTarget('landing-content');
     const emailDisplay = document.getElementById('verification-email-display');
     if (email) {
         emailDisplay.innerHTML = `We've sent a verification link to <strong>${email}</strong>. Please check your inbox (and spam folder) and click the link to activate your account.`;
@@ -9364,6 +9598,7 @@ function showLandingOnly() {
             main.style.display = 'none';
         }
         if (landing) landing.classList.remove('hidden');
+        setSkipLinkTarget('landing-content');
     } catch (_) {}
 }
 
@@ -9436,6 +9671,8 @@ function applyRouteFromLocation() {
         showLandingOnly();
         return;
     }
+
+    setSkipLinkTarget('page-content');
 
     try {
         const landing = document.getElementById('landing-page');
@@ -13977,29 +14214,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Debounced auto-search with smooth feedback
     let searchDebounce;
     const searchInputEl = document.getElementById('file-search-input');
-    searchInputEl.addEventListener('input', () => {
-        if (searchDebounce) clearTimeout(searchDebounce);
-        const host = document.querySelector('#file-browser-controls .relative');
-        if (host && !host.querySelector('.dots-spinner')) {
-            const dot = document.createElement('div');
-            dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
-            dot.innerHTML = '<i></i><i></i><i></i>';
-            host.appendChild(dot);
-        }
-        searchDebounce = setTimeout(() => {
-            renderItems();
-        }, 160);
-    });
-    document.getElementById('file-sort-select').addEventListener('change', () => renderItems());
-    document.querySelectorAll('.view-btn').forEach(btn => {
+    if (searchInputEl) {
+        searchInputEl.addEventListener('input', () => {
+            if (searchDebounce) clearTimeout(searchDebounce);
+            const host = document.querySelector('#file-browser-controls .relative');
+            if (host && !host.querySelector('.dots-spinner')) {
+                const dot = document.createElement('div');
+                dot.className = 'dots-spinner absolute right-3 top-1/2 -translate-y-1/2';
+                dot.innerHTML = '<i></i><i></i><i></i>';
+                host.appendChild(dot);
+            }
+            searchDebounce = setTimeout(() => {
+                renderItems();
+            }, 160);
+        });
+    }
+
+    const sortSelectEl = document.getElementById('file-sort-select');
+    if (sortSelectEl) {
+        sortSelectEl.addEventListener('change', () => renderItems());
+    }
+
+    const viewButtons = Array.from(document.querySelectorAll('.view-btn'));
+    viewButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelector('.view-btn.bg-blue-100')?.classList.remove('bg-blue-100', 'text-blue-700');
+            viewButtons.forEach(b => b.classList.remove('bg-blue-100', 'text-blue-700'));
             btn.classList.add('bg-blue-100', 'text-blue-700');
             fileBrowserView = btn.dataset.view;
+            try {
+                if (fileBrowserView === 'list' || fileBrowserView === 'grid') {
+                    localStorage.setItem('fileBrowserView', fileBrowserView);
+                }
+            } catch (_) {}
             renderItems();
         });
     });
-    document.querySelector('.view-btn[data-view="list"]').classList.add('bg-blue-100', 'text-blue-700');
+
+    // Restore persisted view selection (defaults to list)
+    const initialViewBtn = document.querySelector(`.view-btn[data-view="${fileBrowserView}"]`) || document.querySelector('.view-btn[data-view="list"]');
+    if (initialViewBtn) {
+        viewButtons.forEach(b => b.classList.remove('bg-blue-100', 'text-blue-700'));
+        initialViewBtn.classList.add('bg-blue-100', 'text-blue-700');
+    }
 
     // Scroll-to-top button
     const scrollTopBtn = document.getElementById('scroll-top');

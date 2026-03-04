@@ -38,7 +38,6 @@ All identified issues have been addressed through modular fix files in the `/fix
 8. [Text Readability Issues](#text-readability-issues)
 9. [Mobile & Responsive Issues](#mobile--responsive-issues)
 10. [Security Concerns](#security-concerns)
-11. [Code Quality Issues](#code-quality-issues)
 12. [Missing Features](#missing-features)
 13. [Enhancement Suggestions](#enhancement-suggestions)
 
@@ -61,7 +60,6 @@ All identified issues have been addressed through modular fix files in the `/fix
 ```javascript
 // Add to each modal's close button
 onclick = "closeModal('modal-id')";
-// Or for dynamically created modals
 onclick = "this.closest('.fixed').remove()";
 ```
 
@@ -76,7 +74,6 @@ onclick = "this.closest('.fixed').remove()";
 **Lines:** 76-82
 **Problem:** Click outside modal overlay doesn't consistently close modals.
 
-**Fix Steps:**
 
 1. Open `modal-fixes.js` line 76
 2. The current implementation only checks for `.modal-backdrop` class
@@ -99,7 +96,6 @@ document.addEventListener('click', function (e) {
 **Lines:** 1850-1920 (safeFirebaseOperation function)
 **Problem:** Some Firebase operations don't show errors to users properly.
 
-**Fix Steps:**
 
 1. Review `safeFirebaseOperation` function at line 1850
 2. Ensure all Firebase calls use this wrapper
@@ -114,7 +110,6 @@ document.addEventListener('click', function (e) {
 **Lines:** 710-750 (login form), 760-800 (register form)
 **Problem:** Forms can be submitted multiple times before processing completes.
 
-**Fix Steps:**
 
 1. Add `disabled` attribute to submit buttons during processing
 2. Add loading state to buttons:
@@ -135,7 +130,6 @@ btn.innerHTML = '<span class="loader"></span> Logging in...';
 
 **File:** `app.js`
 **Lines:** 180-220 (listener declarations), 3800-3900 (cleanup)
-**Problem:** Firestore listeners may not be properly unsubscribed, causing memory leaks.
 
 **Fix Steps:**
 
@@ -155,7 +149,6 @@ btn.innerHTML = '<span class="loader"></span> Logging in...';
 **Problem:** Tutorial may reappear if localStorage is cleared or on new device.
 
 **Fix Steps:**
-
 1. Store tutorial completion in Firestore user document
 2. Update `app.js` to check both localStorage AND Firestore
 3. Add a "Don't show again" checkbox option
@@ -181,7 +174,6 @@ btn.innerHTML = '<span class="loader"></span> Logging in...';
     #notification-panel {
         right: 0;
         left: 0;
-        margin: 0 0.5rem;
         max-width: none;
     }
 }
@@ -205,7 +197,6 @@ const debouncedSearch = debounce(function (query) {
     // search logic
 }, 300);
 document.getElementById('file-search-input').addEventListener('input', e => {
-    debouncedSearch(e.target.value);
 });
 ```
 

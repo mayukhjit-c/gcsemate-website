@@ -56,6 +56,7 @@ gcsemate-website/
 ├── index.html          # Main HTML structure
 ├── styles.css          # All CSS styles and animations
 ├── app.js              # Main JavaScript application logic
+├── assets/             # Non-entrypoint JS/CSS utilities
 ├── firebase.rules      # Firestore security rules
 ├── functions/           # Cloudflare Serverless Functions
 │   └── api/

@@ -10,17 +10,23 @@ const filesToCopy = [
     '_redirects',
     '_headers',
     'index.html',
+    '404.html',
+    '500.html',
+    'ads.txt',
+    'robots.txt',
+    'sitemap.xml',
+    'humans.txt',
     'styles.css',
     'tailwind.css',
     'security.js',
-    'app-preferences.js',
     'app.js',
-    'app-features.js',
-    'app-features-enhanced.js',
+    'sw.js',
+    'gcsemate favicon.png',
+    'gcsemate new.png',
     'firebase.rules',
 ];
 
-const dirsToCopy = ['docs', 'functions', 'privacypolicy', 'termsofservice'];
+const dirsToCopy = ['assets', 'docs', 'functions', 'privacypolicy', 'termsofservice'];
 
 const distDir = 'dist';
 
