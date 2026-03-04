@@ -721,6 +721,34 @@ transform: translateY(-8px) translateZ(0);
         .tooltip-layer { position: fixed; z-index: 10000; pointer-events: none; }
         .tooltip { max-width: 280px; font-size: 12px; line-height: 1.4; color: #0f172a; background: rgba(255,255,255,0.95); border: 1px solid rgba(15,23,42,0.08); padding: 8px 10px; border-radius: 8px; box-shadow: 0 10px 30px rgba(2,6,23,0.12); backdrop-filter: blur(10px); }
 
+        /* Upgrade modal polish */
+        #upgrade-modal {
+            transition: opacity 180ms ease;
+        }
+        #upgrade-modal > div {
+            transform: translateY(8px) scale(0.98);
+            opacity: 0;
+            transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease;
+        }
+        #upgrade-modal:not(.hidden) > div {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* Admin dashboard action/control consistency */
+        #admin-panel button,
+        #admin-panel select,
+        #admin-panel input[type="search"] {
+            min-height: 40px;
+        }
+
+        #admin-panel .grid button {
+            transition: transform 150ms ease, box-shadow 150ms ease;
+        }
+        #admin-panel .grid button:hover {
+            transform: translateY(-1px);
+        }
+
         /* Premium button styles without shadows */
         .btn-primary {
 background: linear-gradient(135deg, rgb(var(--accent-600)), rgb(var(--accent-700)));

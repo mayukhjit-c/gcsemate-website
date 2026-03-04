@@ -12,16 +12,35 @@ service cloud.firestore {
     }
     function isAdmin() { return isSignedIn() && userDoc().role == 'admin'; }
     function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
+    function hasProtectedUserFieldChanges() {
+      return request.resource.data.diff(resource.data).changedKeys().hasAny([
+        'role','tier','allowedSubjects','temporaryAccess','forceLogoutAt',
+        'subscriptionExpiresAt','subscriptionExpiredAt','subscriptionRenewedAt','lastSubscriptionWarningShown',
+        'accountSharingDetected','accountSharingDetectedAt','accountSharingInstances','accountSharingRestoredAt',
+        'accountSharingRestoredBy','tierBeforeSharingViolation','concurrentSessions'
+      ]);
+    }
+    function isSafeUserCreate(uid) {
+      return isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly([
+          'displayName','email','tier','role','starredFiles','allowedSubjects','createdAt',
+          'preferences','theme','profilePictureURL','profilePictureUpdatedAt'
+        ]) &&
+        (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'user') &&
+        (!request.resource.data.keys().hasAny(['tier']) || request.resource.data.tier == 'free') &&
+        (!request.resource.data.keys().hasAny(['allowedSubjects']) || request.resource.data.allowedSubjects == null);
+    }
 
     // Users collection
     match /users/{uid} {
       // Create own profile at signup
-      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSafeUserCreate(uid);
 
       // Read/update own profile (including preferences/storage, profile pictures, and subscription data)
       // Note: Users can update their own profile fields including subscription-related fields
       // Subscription fields are managed by the system and admin, but users can read them
-      allow read, update: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow update: if isSignedIn() && request.auth.uid == uid && !hasProtectedUserFieldChanges();
 
       // Admin full control for support (including password reset, account deletion, subscription management)
       allow read, update, delete: if isAdmin();
@@ -219,9 +238,16 @@ service cloud.firestore {
 
     // ACCOUNT VIOLATIONS (account sharing detection)
     match /accountViolations/{violationId} {
-      allow create: if isSignedIn() &&
-        request.resource.data.keys().hasOnly(['userId','userEmail','violationType','detectedAt','concurrentSessions','currentIP','currentUserAgent']) &&
-        request.resource.data.userId == request.auth.uid;
+      allow create: if
+        (
+          isSignedIn() &&
+          request.resource.data.keys().hasOnly(['userId','userEmail','violationType','detectedAt','concurrentSessions','currentIP','currentUserAgent']) &&
+          request.resource.data.userId == request.auth.uid
+        ) ||
+        (
+          isAdmin() &&
+          request.resource.data.keys().hasOnly(['userId','userEmail','violationType','detectedAt','concurrentSessions','currentIP','currentUserAgent','resolvedBy'])
+        );
       allow read: if isAdmin();
     }
 
@@ -241,6 +267,8 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['level','message','details','timestamp','userId','userAgent','url']) &&
         request.resource.data.level is string &&
         request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 5000 &&
+        (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == request.auth.uid) &&
         request.resource.data.timestamp != null;
       allow update, delete: if isAdmin();
     }
@@ -251,6 +279,8 @@ service cloud.firestore {
       allow create: if (isAdmin() || isSignedIn()) &&
         request.resource.data.keys().hasOnly(['type','message','stack','timestamp','userId','userAgent']) &&
         request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 5000 &&
+        (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == request.auth.uid) &&
         request.resource.data.timestamp != null;
       allow update, delete: if isAdmin();
     }
@@ -276,7 +306,8 @@ service cloud.firestore {
 
     // Diagnostic tests (used by admin diagnostics panel)
     match /diagnosticTests/{testId} {
-      allow read, create: if isAdmin() &&
+      allow read: if isAdmin();
+      allow create: if isAdmin() &&
         request.resource.data.keys().hasOnly(['testId','timestamp','userId']);
     }
 

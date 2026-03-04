@@ -31,12 +31,13 @@ service firebase.storage {
         request.resource.size < 2 * 1024 * 1024 && // 2MB limit
         request.resource.contentType.matches('image/.*');
       allow read: if isSignedIn();
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
     }
     
     // User file uploads (for file browser)
     match /userFiles/{userId}/{allPaths=**} {
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId &&
+        request.resource.size < 25 * 1024 * 1024;
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow delete: if isSignedIn() && request.auth.uid == userId;
       

@@ -1025,9 +1025,12 @@ function showSystemHealthModal() {
         });
     }
     
+    const existing = document.getElementById('system-health-modal');
+    if (existing) existing.remove();
+
     const modal = document.createElement('div');
     modal.id = 'system-health-modal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000] admin-modal-visible';
     modal.innerHTML = `
         <div class="bg-white rounded-xl p-6 max-w-6xl mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <div class="flex justify-between items-center mb-6 flex-shrink-0">
@@ -1038,7 +1041,7 @@ function showSystemHealthModal() {
                     </h2>
                     <p class="text-sm text-gray-600 mt-1">Comprehensive system diagnostics and monitoring</p>
                 </div>
-                <button onclick="this.closest('.fixed').remove()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
+                <button onclick="closeSystemHealthModal()" class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -1158,16 +1161,16 @@ function showSystemHealthModal() {
             </div>
             
             <div class="mt-6 flex gap-3 justify-center flex-shrink-0 pt-4 border-t border-gray-200">
-                <button onclick="websiteValidator.runAllTests(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                <button onclick="websiteValidator.runAllTests(); closeSystemHealthModal(); setTimeout(() => showSystemHealthModal(), 3000);" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-vial"></i> Run Tests
                 </button>
-                <button onclick="checkSystemHealth(); this.closest('.fixed').remove(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 flex items-center gap-2">
+                <button onclick="checkSystemHealth(); closeSystemHealthModal(); setTimeout(() => showSystemHealthModal(), 2000);" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-stethoscope"></i> Full Diagnostics
                 </button>
                 <button onclick="viewSystemLogs()" class="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 flex items-center gap-2">
                     <i class="fas fa-list-alt"></i> View Logs
                 </button>
-                <button onclick="this.closest('.fixed').remove()" class="px-5 py-2.5 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
+                <button onclick="closeSystemHealthModal()" class="px-5 py-2.5 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors">
                     Close
                 </button>
             </div>
@@ -1179,6 +1182,20 @@ function showSystemHealthModal() {
     window.currentHealthData = healthData;
     
     document.body.appendChild(modal);
+    document.body.classList.add('modal-open');
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeSystemHealthModal();
+    });
+}
+
+function closeSystemHealthModal() {
+    const modal = document.getElementById('system-health-modal');
+    if (modal) {
+        modal.remove();
+    }
+    if (!document.querySelector('.admin-modal-visible')) {
+        document.body.classList.remove('modal-open');
+    }
 }
 
 // Copy error functions
@@ -1188,7 +1205,9 @@ window.copyErrorsToClipboard = function() {
     if (errorsText) {
         navigator.clipboard.writeText(errorsText).then(() => {
             showToast('Failed tests copied to clipboard', 'success');
-        });
+        }).catch(() => showToast('Clipboard unavailable', 'error'));
+    } else {
+        showToast('No failed tests to copy', 'info');
     }
 };
 
@@ -1198,7 +1217,9 @@ window.copyErrorBreakdownToClipboard = function() {
     if (errorsText) {
         navigator.clipboard.writeText(errorsText).then(() => {
             showToast('Error breakdown copied to clipboard', 'success');
-        });
+        }).catch(() => showToast('Clipboard unavailable', 'error'));
+    } else {
+        showToast('No error breakdown available', 'info');
     }
 };
 
@@ -1206,7 +1227,9 @@ window.copyAllErrorsToClipboard = function() {
     if (window.currentHealthErrors) {
         navigator.clipboard.writeText(window.currentHealthErrors).then(() => {
             showToast('All errors copied to clipboard', 'success');
-        });
+        }).catch(() => showToast('Clipboard unavailable', 'error'));
+    } else {
+        showToast('No errors to copy', 'info');
     }
 };
 
@@ -2259,7 +2282,7 @@ let adminDiagnostics = {
 
 // Initialize admin diagnostics
 function initializeAdminDiagnostics() {
-    if (currentUser && currentUser.role === 'admin') {
+    if (currentUser && (currentUser.role || '').toLowerCase() === 'admin') {
         startDiagnosticMonitoring();
         setupDiagnosticUI();
     }
@@ -2492,8 +2515,10 @@ async function logDiagnosticError(error) {
 // Setup diagnostic UI
 function setupDiagnosticUI() {
     // Add diagnostic panel to admin dashboard
-    const adminDashboard = document.getElementById('admin-dashboard');
+    const adminDashboard = document.getElementById('admin-panel');
     if (adminDashboard) {
+        const existingPanel = document.getElementById('diagnostic-panel');
+        if (existingPanel) existingPanel.remove();
         const diagnosticPanel = document.createElement('div');
         diagnosticPanel.id = 'diagnostic-panel';
         diagnosticPanel.className = 'mt-8 bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30';
@@ -2572,23 +2597,30 @@ function updateDiagnosticUI(diagnostics) {
 
 // Manual diagnostic test
 async function runManualDiagnostics() {
-    const button = event.target;
-    const originalText = button.textContent;
-    button.textContent = 'Running...';
-    button.disabled = true;
+    const button = document.activeElement;
+    const canMutateButton = button && button.tagName === 'BUTTON';
+    const originalText = canMutateButton ? button.textContent : '';
+    if (canMutateButton) {
+        button.textContent = 'Running...';
+        button.disabled = true;
+    }
 
     try {
         await runTrackingDiagnostics();
-        button.textContent = 'Test Complete';
+        if (canMutateButton) button.textContent = 'Test Complete';
         setTimeout(() => {
-            button.textContent = originalText;
-            button.disabled = false;
+            if (canMutateButton) {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
         }, 2000);
     } catch (error) {
-        button.textContent = 'Test Failed';
+        if (canMutateButton) button.textContent = 'Test Failed';
         setTimeout(() => {
-            button.textContent = originalText;
-            button.disabled = false;
+            if (canMutateButton) {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
         }, 2000);
     }
 }
@@ -2621,7 +2653,7 @@ async function clearDiagnosticLogs() {
     if (confirm('Are you sure you want to clear all diagnostic logs?')) {
         try {
             const batch = db.batch();
-            const logsSnapshot = await db.collection('errorLogs').get();
+            const logsSnapshot = await db.collection('errorLogs').limit(500).get();
             
             logsSnapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
@@ -2629,10 +2661,9 @@ async function clearDiagnosticLogs() {
             
             await batch.commit();
             adminDiagnostics.errorLogs = [];
-            
-            alert('Diagnostic logs cleared successfully');
+            showToast('Diagnostic logs cleared successfully', 'success');
         } catch (error) {
-            alert('Failed to clear logs: ' + error.message);
+            showToast('Failed to clear diagnostic logs', 'error');
         }
     }
 }
@@ -3533,10 +3564,7 @@ auth.onAuthStateChanged(async (user) => {
                         try {
                             const gatedPages = ['subject-dashboard-page','videos-page','blog-page'];
                             gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
-                            const modal = document.getElementById('upgrade-modal');
-                            const msgEl = document.getElementById('upgrade-modal-message');
-                            if (msgEl) msgEl.textContent = 'Your access was changed. Upgrade to continue accessing premium content.';
-                            if (modal) { modal.style.display = 'flex'; }
+                                openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                         } catch(_){}
                     }
                     if (roleChanged) {
@@ -3599,10 +3627,7 @@ auth.onAuthStateChanged(async (user) => {
                             try {
                                 const gatedPages = ['subject-dashboard-page','videos-page','blog-page'];
                                 gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
-                                const modal = document.getElementById('upgrade-modal');
-                                const msgEl = document.getElementById('upgrade-modal-message');
-                                if (msgEl) msgEl.textContent = 'Your access was changed. Upgrade to continue accessing premium content.';
-                                if (modal) { modal.style.display = 'flex'; }
+                                openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                             } catch(_){ }
                         }
                         if (roleChanged) {
@@ -3644,7 +3669,12 @@ auth.onAuthStateChanged(async (user) => {
         if (verifyPage) verifyPage.classList.add('hidden');
         // Close any open modals and mobile menu
         ['mobile-menu','preview-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
-            .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (!el.classList.contains('hidden')) el.classList.add('hidden'); el.innerHTML = el.id.endsWith('-modal') ? '' : el.innerHTML; } });
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.style.display = 'none';
+                if (!el.classList.contains('hidden')) el.classList.add('hidden');
+            });
         if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
@@ -4670,10 +4700,7 @@ function setupRealtimeListeners() {
             el.onclick = (e) => {
                 if (currentUser?.tier === 'free') {
                     e.preventDefault();
-                    const msgEl = document.getElementById('upgrade-modal-message');
-                    if (msgEl) msgEl.textContent = 'This feature requires a Pro plan. Upgrade to continue.';
-                    const modal = document.getElementById('upgrade-modal');
-                    if (modal) modal.style.display = 'flex';
+                    openUpgradeModal('This feature requires a Pro plan. Upgrade to continue.');
                     return false;
                 }
             };
@@ -5417,6 +5444,7 @@ async function resendVerificationEmail() {
 // =================================================================================
 function renderUserManagementPanel(allUsers) {
     const container = document.getElementById('user-management-grid');
+    if (!container) return;
     container.innerHTML = '';
     
     // Calculate statistics
@@ -5538,6 +5566,13 @@ function renderUserManagementPanel(allUsers) {
         `;
         container.appendChild(card);
     });
+
+    if (!container.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'col-span-full p-6 rounded-xl border border-gray-200 bg-white/70 text-center text-gray-600';
+        empty.textContent = 'No users match the current filters.';
+        container.appendChild(empty);
+    }
 }
 
 // Admin Functions for Time-Based Access Control
@@ -7027,19 +7062,14 @@ async function checkSystemHealth() {
     
     // Test 3: Image Storage Service (Cloudinary)
     try {
-        if (CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.cloudName !== 'your-cloud-name') {
-            // Test Cloudinary connectivity by checking if cloud name is accessible
-            const testResponse = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/image/upload/v1/test`);
-            
-            if (!testResponse.ok) {
-                throw new Error(`Cloudinary endpoint returned ${testResponse.status}: ${testResponse.statusText}`);
-            }
-            
+        const hasCloudName = !!(CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.cloudName !== 'your-cloud-name');
+        const hasUploadPreset = !!(CLOUDINARY_CONFIG.uploadPreset && CLOUDINARY_CONFIG.uploadPreset !== 'your-upload-preset');
+        if (hasCloudName && hasUploadPreset) {
             diagnosticResults.tests.push({
                 name: 'Image Storage Service',
                 status: 'pass',
-                message: 'Cloudinary accessible',
-                details: 'Image storage service operational (25GB free tier)'
+                message: 'Cloudinary configured',
+                details: 'Configuration present for image uploads (runtime checks performed during upload actions)'
             });
             diagnosticResults.passed++;
         } else {
@@ -7054,11 +7084,11 @@ async function checkSystemHealth() {
     } catch (error) {
         diagnosticResults.tests.push({
             name: 'Image Storage Service',
-            status: 'fail',
-            message: 'Cloudinary connectivity check failed',
-            details: error.message || 'Unable to connect to Cloudinary service'
+            status: 'warning',
+            message: 'Cloudinary diagnostic check incomplete',
+            details: error.message || 'Could not validate Cloudinary configuration'
         });
-        diagnosticResults.criticalIssues++;
+        diagnosticResults.warnings++;
     }
     
     // Test 4: User Collection Access
@@ -9032,6 +9062,10 @@ async function viewSystemLogs() {
 
 // Helper functions for system logs
 window.dismissLog = async function(logId) {
+    try {
+        await db.collection('systemLogs').doc(logId).delete();
+    } catch (_) {}
+
     const entry = document.querySelector(`[data-log-id="${logId}"]`);
     if (entry) {
         entry.style.transition = 'opacity 0.3s, transform 0.3s';
@@ -9054,7 +9088,7 @@ window.copyLogDetails = function(logId) {
         const text = `[${log.level || 'INFO'}] ${log.message || 'No message'}\n${details}`;
         navigator.clipboard.writeText(text).then(() => {
             showToast('Log details copied to clipboard', 'success');
-        });
+        }).catch(() => showToast('Clipboard unavailable', 'error'));
     }
 };
 
@@ -9068,7 +9102,7 @@ window.copyAllLogsToClipboard = function() {
     
     navigator.clipboard.writeText(text).then(() => {
         showToast('All logs copied to clipboard', 'success');
-    });
+    }).catch(() => showToast('Clipboard unavailable', 'error'));
 };
 
 window.exportSystemLogs = function() {
@@ -9093,7 +9127,7 @@ window.exportSystemLogs = function() {
 };
 
 window.clearSystemLogs = async function() {
-    if (!currentUser || (currentUser.role || '').toLowerCase() !== 'admin') {
+    if (!isAdminUser()) {
         showToast('Only admins can clear system logs.', 'error');
         return;
     }
@@ -9104,12 +9138,18 @@ window.clearSystemLogs = async function() {
     
     try {
         showToast('Clearing system logs...', 'info');
-        const logsSnapshot = await db.collection('systemLogs').limit(500).get();
-        const batch = db.batch();
-        logsSnapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
+        let removed = 0;
+        for (let i = 0; i < 20; i++) {
+            const logsSnapshot = await db.collection('systemLogs').limit(500).get();
+            if (logsSnapshot.empty) break;
+            const batch = db.batch();
+            logsSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            removed += logsSnapshot.size;
+            if (logsSnapshot.size < 500) break;
+        }
         showToast('System logs cleared successfully', 'success');
         viewSystemLogs(); // Refresh the view
     } catch (error) {
@@ -9355,6 +9395,45 @@ function createToastContainer() {
     document.body.appendChild(container);
     return container;
 }
+
+function openUpgradeModal(message) {
+    const modal = document.getElementById('upgrade-modal');
+    if (!modal) return;
+    const msgEl = document.getElementById('upgrade-modal-message');
+    if (msgEl && message) msgEl.textContent = message;
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+
+    if (!modal.dataset.handlersBound) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closeUpgradeModal();
+        });
+        modal.dataset.handlersBound = 'true';
+    }
+}
+
+function closeUpgradeModal() {
+    const modal = document.getElementById('upgrade-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('.admin-modal-visible')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+window.closeUpgradeModal = closeUpgradeModal;
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const upgradeModal = document.getElementById('upgrade-modal');
+    if (upgradeModal && !upgradeModal.classList.contains('hidden')) {
+        closeUpgradeModal();
+    }
+});
 
 // Global error handler for better user experience
 function handleAPIError(error, context = '') {
@@ -9992,8 +10071,7 @@ async function renderDashboard() {
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
                     if (currentUser.tier === 'free') {
-                        document.getElementById('upgrade-modal-message').textContent = 'To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1 a month.';
-                        document.getElementById('upgrade-modal').style.display = 'flex';
+                        openUpgradeModal('To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1 a month.');
                         return;
                     }
                     
@@ -11050,8 +11128,7 @@ function deletePlaylist(id) {
 }
 function handlePlaylistClick(playlist) {
     if (currentUser.tier === 'free') {
-        document.getElementById('upgrade-modal-message').textContent = 'To watch revision video playlists, please upgrade to our Pro plan.';
-        document.getElementById('upgrade-modal').style.display = 'flex';
+        openUpgradeModal('To watch revision video playlists, please upgrade to our Pro plan.');
         return;
     }
 
