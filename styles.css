@@ -2808,6 +2808,51 @@ transition: left 0.5s;
         .efficient-button:hover::before {
 left: 100%;
         }
+
+        /* Admin dashboard polish: cleaner futuristic blue surfaces */
+        #admin-panel > div {
+            border-radius: 16px;
+        }
+
+        #admin-panel .admin-optional {
+            transition: opacity 220ms ease, transform 220ms ease;
+        }
+
+        #admin-panel .bg-white\/70.backdrop-blur-lg {
+            background: linear-gradient(140deg, rgba(var(--brand-50), 0.82), rgba(255, 255, 255, 0.92));
+            border-color: rgba(var(--brand-300), 0.28);
+        }
+
+        #admin-panel button {
+            border-radius: 12px;
+        }
+
+        #admin-panel .bg-blue-600,
+        #admin-panel .bg-blue-500 {
+            background-image: linear-gradient(135deg, rgb(var(--brand-600)), rgb(var(--brand-700))) !important;
+        }
+
+        #admin-panel .bg-blue-600:hover,
+        #admin-panel .bg-blue-500:hover {
+            filter: brightness(1.04);
+        }
+
+        @media (max-width: 768px) {
+            #admin-panel .flex.items-center.justify-between.mb-6 {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #admin-panel .flex.gap-2 {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            #admin-panel .flex.gap-2 > button {
+                flex: 1 1 auto;
+            }
+        }
         
         /* Streamlined Navigation */
         .nav-streamlined {

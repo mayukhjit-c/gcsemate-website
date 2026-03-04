@@ -180,8 +180,11 @@ function formatFilenameWithWatermark(originalName) {
 // Admin list filters
 let userFilterTier = 'all'; // all|free|paid
 let userFilterRole = 'all'; // all|user|admin
-let userFilterActive = 'any'; // any|recent
+let userFilterActive = 'logged'; // logged|any|recent
 let userSearchQuery = '';
+let userPageSize = 20;
+let userCurrentPage = 1;
+let userListCollapsed = false;
 const ANNOUNCEMENT_TEMPLATES = {
     promo: 'New mock packs unlocked today. Pro gets full mark schemes and walkthroughs. Upgrade to try them.',
     maintenance: 'Heads up: brief maintenance Sunday 7-8pm UK. Sessions auto-resume; we will post live updates if it runs long.',
@@ -193,6 +196,22 @@ let unsubscribeUserManagement;
 let unsubscribeUsefulLinks;
 let unsubscribeMaintenance;
 let userSortBy = 'recent';
+let maintenanceStateCache = {
+    enabled: false,
+    message: 'System is currently under maintenance. Please check back later.',
+    eta: null,
+    sections: {}
+};
+let adminOptionalCollapsed = true;
+const SECTION_MAINTENANCE_OPTIONS = [
+    { id: 'subject-dashboard-page', label: 'Subjects Dashboard' },
+    { id: 'videos-page', label: 'Videos' },
+    { id: 'blog-page', label: 'Blog' },
+    { id: 'calendar-page', label: 'Calendar' },
+    { id: 'useful-links-page', label: 'Useful Links' },
+    { id: 'features-page', label: 'Features & Pricing' },
+    { id: 'help-page', label: 'Help / FAQ' }
+];
 
 // --- DATE/TIME HELPERS (UK: London) ---
 const UK_TZ = 'Europe/London';
@@ -3789,17 +3808,29 @@ function initializeAppState() {
     // Check maintenance mode first (non-admin only), and subscribe to changes
     if (!unsubscribeMaintenance) {
         unsubscribeMaintenance = db.collection('settings').doc('maintenance').onSnapshot(doc => {
-            const enabled = !!doc.data()?.enabled;
-            const message = doc.data()?.message || 'System is currently under maintenance. Please check back later.';
+            const maintenanceData = normalizeMaintenanceState(doc.data() || {});
+            maintenanceStateCache = maintenanceData;
+            const enabled = maintenanceData.enabled;
+            const message = maintenanceData.message;
             
             // Update online/offline status based on maintenance mode
             updateOnlineStatus(enabled);
+            renderSectionMaintenanceControls();
+            initializeMaintenanceStatus();
             
             if (enabled && currentUser?.role !== 'admin') {
                 showMaintenancePage(message);
             } else {
                 const page = document.getElementById('maintenance-page');
                 if (page) page.remove();
+            }
+
+            if (!enabled && currentUser?.role !== 'admin') {
+                const currentVisiblePage = document.querySelector('.page:not(.hidden)');
+                if (currentVisiblePage && isSectionUnderMaintenance(currentVisiblePage.id)) {
+                    showSectionMaintenanceNotice(currentVisiblePage.id);
+                    showPage('subject-dashboard-page');
+                }
             }
         });
     }
@@ -4826,6 +4857,7 @@ function setupRealtimeListeners() {
         
         // Initialize maintenance mode status
         initializeMaintenanceStatus();
+        applyAdminDashboardFocusMode();
         renderFreeTrialControlState();
         
         // Listen for all users for the management panel
@@ -4948,13 +4980,39 @@ function updateOnlineStatus(maintenanceEnabled) {
     });
 }
 
+function normalizeMaintenanceState(rawData = {}) {
+    return {
+        enabled: !!rawData.enabled,
+        message: rawData.message || 'System is currently under maintenance. Please check back later.',
+        eta: rawData.eta || null,
+        sections: rawData.sections && typeof rawData.sections === 'object' ? rawData.sections : {}
+    };
+}
+
+function getSectionLabel(pageId) {
+    const option = SECTION_MAINTENANCE_OPTIONS.find(item => item.id === pageId);
+    return option ? option.label : 'this section';
+}
+
+function isSectionUnderMaintenance(pageId) {
+    if (!pageId || !maintenanceStateCache || !maintenanceStateCache.sections) return false;
+    return !!maintenanceStateCache.sections[pageId];
+}
+
+function showSectionMaintenanceNotice(pageId) {
+    const sectionLabel = getSectionLabel(pageId);
+    const message = maintenanceStateCache.message || 'This section is temporarily unavailable for maintenance.';
+    showToast(`${sectionLabel} is currently under maintenance. ${message}`, 'warning', 6000);
+}
+
 // Check maintenance mode on app initialization
 async function checkMaintenanceMode() {
     try {
         const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
-        if (maintenanceDoc.exists && maintenanceDoc.data().enabled) {
-            const maintenanceData = maintenanceDoc.data();
-            const message = maintenanceData.message || 'System is currently under maintenance. Please check back later.';
+        const maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
+        maintenanceStateCache = maintenanceData;
+        if (maintenanceData.enabled) {
+            const message = maintenanceData.message;
             
             // Update online status
             updateOnlineStatus(true);
@@ -4971,6 +5029,9 @@ async function checkMaintenanceMode() {
 }
 
 function showMaintenancePage(message) {
+    const existing = document.getElementById('maintenance-page');
+    if (existing) existing.remove();
+
     // Hide all pages
     document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('login-page').classList.add('hidden');
@@ -4989,6 +5050,7 @@ function showMaintenancePage(message) {
                 </svg>
                 <h1 class="text-2xl font-bold text-gray-800 mb-2">Under Maintenance</h1>
                 <p class="text-gray-600 mb-6">${message}</p>
+                ${maintenanceStateCache?.eta ? `<p class="text-sm text-blue-700 mb-4"><strong>Expected back:</strong> ${formatDateMaybe(maintenanceStateCache.eta)}</p>` : ''}
                 <div class="flex justify-center">
                     <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 w-auto" onerror="this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
                 </div>
@@ -5000,6 +5062,38 @@ function showMaintenancePage(message) {
     `;
     
     document.body.appendChild(maintenancePage);
+}
+
+function renderSectionMaintenanceControls() {
+    const host = document.getElementById('maintenance-sections-grid');
+    if (!host) return;
+    const currentSections = maintenanceStateCache.sections || {};
+    host.innerHTML = SECTION_MAINTENANCE_OPTIONS.map(option => `
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700 bg-white/70 border border-gray-200 rounded-lg px-3 py-2">
+            <input type="checkbox" class="maintenance-section-checkbox" value="${option.id}" ${currentSections[option.id] ? 'checked' : ''}>
+            <span>${option.label}</span>
+        </label>
+    `).join('');
+
+    const summary = document.getElementById('maintenance-sections-summary');
+    if (summary) {
+        const activeCount = Object.values(currentSections).filter(Boolean).length;
+        summary.textContent = activeCount > 0 ? `${activeCount} section${activeCount !== 1 ? 's' : ''} in maintenance` : 'No section-level maintenance active';
+    }
+}
+
+function applyAdminDashboardFocusMode() {
+    const optionalBlocks = document.querySelectorAll('#admin-panel .admin-optional');
+    optionalBlocks.forEach(block => block.classList.toggle('hidden', adminOptionalCollapsed));
+    const btn = document.getElementById('toggle-admin-focus-btn');
+    if (btn) {
+        btn.textContent = adminOptionalCollapsed ? 'Show More Panels' : 'Show Essential Only';
+    }
+}
+
+function toggleAdminFocusMode() {
+    adminOptionalCollapsed = !adminOptionalCollapsed;
+    applyAdminDashboardFocusMode();
 }
 
 // Rate Limiting System
@@ -5586,7 +5680,7 @@ function renderUserManagementPanel(allUsers) {
     const activeTodayEl = document.getElementById('active-today-count');
     if (activeTodayEl) activeTodayEl.textContent = activeToday;
     
-    let list = Object.values(allUsers);
+    let list = Object.values(allUsers).filter(u => u.id !== currentUser.uid);
     // Apply filters
     list = list.filter(u => {
         if (userFilterTier !== 'all' && (u.tier||'free') !== userFilterTier) return false;
@@ -5595,6 +5689,9 @@ function renderUserManagementPanel(allUsers) {
             const da = u.lastAccess ? toDate(u.lastAccess) : null;
             if (!da) return false;
             if ((Date.now() - da.getTime()) > 24*60*60*1000) return false;
+        } else if (userFilterActive === 'logged') {
+            const hasLogin = !!toDate(u.lastLoginAt) || !!toDate(u.lastAccess);
+            if (!hasLogin) return false;
         }
         if (userSearchQuery) {
             const q = userSearchQuery;
@@ -5619,8 +5716,39 @@ function renderUserManagementPanel(allUsers) {
         });
     }
 
-    list.forEach(user => {
-        if (user.id === currentUser.uid) return; // Don't show the admin their own card here
+    const totalAfterFilters = list.length;
+    const totalPages = Math.max(1, Math.ceil(totalAfterFilters / userPageSize));
+    if (userCurrentPage > totalPages) userCurrentPage = totalPages;
+    if (userCurrentPage < 1) userCurrentPage = 1;
+    const pageStart = (userCurrentPage - 1) * userPageSize;
+    const pageUsers = list.slice(pageStart, pageStart + userPageSize);
+
+    const paginationSummary = document.getElementById('user-pagination-summary');
+    if (paginationSummary) {
+        const from = totalAfterFilters === 0 ? 0 : pageStart + 1;
+        const to = Math.min(pageStart + pageUsers.length, totalAfterFilters);
+        paginationSummary.textContent = `Showing ${from}-${to} of ${totalAfterFilters}`;
+    }
+
+    const prevBtn = document.getElementById('user-page-prev-btn');
+    if (prevBtn) prevBtn.disabled = userCurrentPage <= 1 || userListCollapsed;
+    const nextBtn = document.getElementById('user-page-next-btn');
+    if (nextBtn) nextBtn.disabled = userCurrentPage >= totalPages || userListCollapsed;
+    const pageLabel = document.getElementById('user-page-label');
+    if (pageLabel) pageLabel.textContent = `Page ${userCurrentPage}/${totalPages}`;
+
+    const toggleBtn = document.getElementById('toggle-user-list-btn');
+    if (toggleBtn) {
+        toggleBtn.textContent = userListCollapsed ? 'Show Users' : 'Hide Users';
+    }
+
+    if (userListCollapsed) {
+        container.classList.add('hidden');
+        return;
+    }
+    container.classList.remove('hidden');
+
+    pageUsers.forEach(user => {
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
         const hasSharingFlag = !!user.accountSharingDetected;
@@ -6597,6 +6725,10 @@ async function removeProfilePicture() {
 
 function showAdminModal(modalEl) {
     if (!modalEl) return;
+    document.querySelectorAll('.admin-modal-visible').forEach(el => {
+        const hidden = el.classList.contains('hidden') || el.style.display === 'none';
+        if (hidden) el.classList.remove('admin-modal-visible');
+    });
     modalEl.classList.remove('hidden');
     modalEl.style.display = 'flex';
     modalEl.setAttribute('aria-hidden', 'false');
@@ -6611,6 +6743,10 @@ function hideEditUserModal() {
     modal.classList.add('hidden');
     modal.removeAttribute('aria-hidden');
     modal.classList.remove('admin-modal-visible');
+    document.querySelectorAll('.admin-modal-visible').forEach(el => {
+        const hidden = el.classList.contains('hidden') || el.style.display === 'none';
+        if (hidden) el.classList.remove('admin-modal-visible');
+    });
     if (!document.querySelector('.admin-modal-visible')) {
         document.body.classList.remove('modal-open');
     }
@@ -6807,16 +6943,36 @@ window.viewAccountSharingHistory = viewAccountSharingHistory;
 // New Admin Functions
 function setUserSort(key) {
     userSortBy = key;
+    userCurrentPage = 1;
     renderUserManagementPanel(allUsers);
 }
 function handleUserSearch(value='') {
     userSearchQuery = (value || '').trim().toLowerCase();
+    userCurrentPage = 1;
     renderUserManagementPanel(allUsers);
 }
 function setUserFilters({ tier, role, active }={}) {
     if (typeof tier === 'string') userFilterTier = tier;
     if (typeof role === 'string') userFilterRole = role;
     if (typeof active === 'string') userFilterActive = active;
+    userCurrentPage = 1;
+    renderUserManagementPanel(allUsers);
+}
+function setUserPageSize(value) {
+    const parsed = Number(value);
+    if (![10, 20, 30, 40, 50].includes(parsed)) return;
+    userPageSize = parsed;
+    userCurrentPage = 1;
+    renderUserManagementPanel(allUsers);
+}
+function changeUserPage(direction) {
+    const nextPage = userCurrentPage + Number(direction || 0);
+    if (!Number.isFinite(nextPage) || nextPage < 1) return;
+    userCurrentPage = nextPage;
+    renderUserManagementPanel(allUsers);
+}
+function toggleUserListVisibility() {
+    userListCollapsed = !userListCollapsed;
     renderUserManagementPanel(allUsers);
 }
 function toggleQuickSetMenu(btn) {
@@ -6949,7 +7105,7 @@ async function adminRestoreAccountAccess(userId) {
             forceLogoutAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        await db.collection('adminAuditLog').add({
+        const auditPromise = db.collection('adminAuditLog').add({
             adminId: currentUser.uid,
             adminEmail: currentUser.email,
             action: 'restore_account_after_sharing_detection',
@@ -6961,13 +7117,29 @@ async function adminRestoreAccountAccess(userId) {
             }
         });
 
-        await db.collection('accountViolations').add({
+        const violationPromise = db.collection('accountViolations').add({
             userId,
             userEmail: user.email || 'Unknown',
             violationType: 'account_sharing_restored',
             detectedAt: firebase.firestore.FieldValue.serverTimestamp(),
             resolvedBy: currentUser.email || currentUser.uid
         });
+
+        Promise.allSettled([auditPromise, violationPromise]).then(results => {
+            results.forEach(result => {
+                if (result.status === 'rejected') {
+                    console.warn('Non-critical restore logging failed', result.reason);
+                }
+            });
+        });
+
+        if (allUsers[userId]) {
+            allUsers[userId].tier = restoredTier;
+            allUsers[userId].accountSharingDetected = false;
+            allUsers[userId].accountSharingRestoredBy = currentUser.email || currentUser.uid;
+            allUsers[userId].accountSharingRestoredAt = new Date();
+            allUsers[userId].concurrentSessions = [];
+        }
 
         showToast('Access restored for user.', 'success');
         hideEditUserModal();
@@ -6976,9 +7148,14 @@ async function adminRestoreAccountAccess(userId) {
         }
     } catch (e) {
         console.error('Restore access failed', e);
+        hideEditUserModal();
         showToast('Could not restore access.', 'error');
     }
 }
+
+window.setUserPageSize = setUserPageSize;
+window.changeUserPage = changeUserPage;
+window.toggleUserListVisibility = toggleUserListVisibility;
 
 async function viewAccountSharingHistory(userId) {
     const user = allUsers[userId];
@@ -7641,8 +7818,10 @@ function updateSystemHealthUI(results) {
 async function initializeMaintenanceStatus() {
     try {
         const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
-        const isEnabled = maintenanceDoc.exists ? maintenanceDoc.data().enabled : false;
-        const message = maintenanceDoc.exists ? maintenanceDoc.data().message : 'System is currently under maintenance. Please check back later.';
+        const maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
+        maintenanceStateCache = maintenanceData;
+        const isEnabled = maintenanceData.enabled;
+        const message = maintenanceData.message;
         
         const statusEl = document.getElementById('maintenance-status');
         const buttonEl = document.getElementById('toggle-maintenance-btn');
@@ -7663,6 +7842,11 @@ async function initializeMaintenanceStatus() {
         if (messageEl) {
             messageEl.textContent = message;
         }
+        const etaEl = document.getElementById('maintenance-eta');
+        if (etaEl) {
+            etaEl.textContent = maintenanceData.eta ? formatDateMaybe(maintenanceData.eta) : '-';
+        }
+        renderSectionMaintenanceControls();
     } catch (error) {
         logError(error, 'Maintenance Status Initialization');
     }
@@ -7675,11 +7859,12 @@ async function toggleMaintenanceMode() {
     try {
         const maintenanceRef = db.collection('settings').doc('maintenance');
         const doc = await maintenanceRef.get();
-        const isEnabled = doc.exists ? doc.data().enabled : false;
+        const current = normalizeMaintenanceState(doc.exists ? doc.data() : {});
+        const isEnabled = current.enabled;
         
         await maintenanceRef.set({
             enabled: !isEnabled,
-            message: doc.exists ? doc.data().message : 'System is currently under maintenance. Please check back later.',
+            message: current.message,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         });
@@ -7707,6 +7892,34 @@ async function toggleMaintenanceMode() {
         console.error('Error toggling maintenance mode:', error);
         showToast('Failed to toggle maintenance mode', 'error');
     }
+}
+
+async function saveSectionMaintenanceConfig() {
+    if ((currentUser?.role || '').toLowerCase() !== 'admin') return;
+    try {
+        const selected = Array.from(document.querySelectorAll('.maintenance-section-checkbox'));
+        const sectionMap = {};
+        selected.forEach(item => {
+            sectionMap[item.value] = !!item.checked;
+        });
+
+        await db.collection('settings').doc('maintenance').set({
+            sections: sectionMap,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: currentUser.uid
+        }, { merge: true });
+
+        showToast('Section maintenance settings updated.', 'success');
+    } catch (error) {
+        logError(error, 'Save Section Maintenance Config');
+        showToast('Failed to update section maintenance settings.', 'error');
+    }
+}
+
+function setAllSectionMaintenance(enabled) {
+    document.querySelectorAll('.maintenance-section-checkbox').forEach(item => {
+        item.checked = !!enabled;
+    });
 }
 
 async function setMaintenanceMessage() {
@@ -9684,6 +9897,11 @@ function showPage(pageId) {
     });
     const newPage = document.getElementById(pageId);
     if (!newPage) return;
+
+    if ((currentUser?.role || '').toLowerCase() !== 'admin' && isSectionUnderMaintenance(pageId)) {
+        showSectionMaintenanceNotice(pageId);
+        return;
+    }
 
     // Setup paste handler when blog page is shown
     if (pageId === 'blog-page') {
