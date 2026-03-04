@@ -37,7 +37,39 @@ const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
 
 // Silence noisy Firestore internal assertions to avoid UI error loops
 const FIRESTORE_ASSERTION_PATTERN = /INTERNAL ASSERTION FAILED/i;
+const BLOCKED_BY_CLIENT_PATTERN = /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i;
+const STRIPE_BLOCKED_PATTERN = /r\.stripe\.com|errors\.stripe\.com|pricing-table/i;
+const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write)\/channel/i;
+let hasShownBlockerWarning = false;
+
+function isLikelyBlockedByClient(errorLike) {
+    const text = typeof errorLike === 'string'
+        ? errorLike
+        : `${errorLike?.message || ''} ${errorLike?.reason?.message || ''} ${errorLike?.filename || ''} ${errorLike?.target?.src || ''}`;
+    return BLOCKED_BY_CLIENT_PATTERN.test(text) && (
+        STRIPE_BLOCKED_PATTERN.test(text) ||
+        FIRESTORE_CHANNEL_PATTERN.test(text)
+    );
+}
+
+function showBlockedByClientWarningOnce() {
+    if (hasShownBlockerWarning) return;
+    hasShownBlockerWarning = true;
+    setTimeout(() => {
+        try {
+            showToast('Content blocker detected: Stripe/Firestore telemetry requests were blocked. Core app features may be limited.', 'warning', 7000);
+        } catch (_) {}
+    }, 200);
+}
+
 window.addEventListener('error', (event) => {
+    if (isLikelyBlockedByClient(event)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        console.warn('[suppressed] blocked-by-client resource error');
+        showBlockedByClientWarningOnce();
+        return;
+    }
     if (event?.message && FIRESTORE_ASSERTION_PATTERN.test(event.message)) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -48,6 +80,13 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
     const reason = event?.reason;
     const msg = (reason && (reason.message || reason.toString())) || '';
+    if (isLikelyBlockedByClient(reason || msg)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        console.warn('[suppressed] blocked-by-client rejection');
+        showBlockedByClientWarningOnce();
+        return;
+    }
     if (FIRESTORE_ASSERTION_PATTERN.test(msg)) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -233,7 +272,11 @@ class ErrorHandler {
         window.addEventListener('unhandledrejection', (event) => {
             const reasonMessage = event.reason?.message || event.reason?.toString() || 'Unknown promise rejection';
             const isFirestoreAssertion = typeof reasonMessage === 'string' && reasonMessage.includes('INTERNAL ASSERTION FAILED');
-            if (isFirestoreAssertion) {
+            const isBlockedByClient = isLikelyBlockedByClient(reasonMessage);
+            if (isBlockedByClient) {
+                event.preventDefault();
+                showBlockedByClientWarningOnce();
+            } else if (isFirestoreAssertion) {
                 // Prevent noisy console spam and immediately try recovery
                 event.preventDefault();
                 recoverFirestoreSession();
@@ -308,6 +351,7 @@ class ErrorHandler {
     }
     
     isCriticalError(errorInfo) {
+        if (isLikelyBlockedByClient(errorInfo?.message || '')) return false;
         const criticalPatterns = [
             'Firebase',
             'Authentication',
@@ -364,7 +408,9 @@ const errorHandler = new ErrorHandler();
 async function recoverFirestoreSession() {
     if (typeof firebase === 'undefined' || !firebase.firestore) return;
     if (window.__firestoreRecoveryRunning) return;
+    if (window.__lastFirestoreRecoveryAt && (Date.now() - window.__lastFirestoreRecoveryAt) < 60000) return;
     window.__firestoreRecoveryRunning = true;
+    window.__lastFirestoreRecoveryAt = Date.now();
     try {
         const instance = firebase.firestore();
         // Try to clean up any stuck state
@@ -11918,7 +11964,7 @@ function renderBlogPage(posts) {
 }
 
 async function handleSaveBlogPost() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     
     const postId = document.getElementById('blog-post-id').value;
     const title = document.getElementById('blog-post-title').value.trim();
@@ -11939,9 +11985,8 @@ async function handleSaveBlogPost() {
         title,
         content,
         image: image || null,
-        authorId: currentUser.uid,
-        authorName: currentUser.displayName,
-        imagePublicIds: imagePublicIds, // Store for cleanup when post is deleted
+        createdBy: currentUser.uid,
+        tags: [],
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     try {
@@ -11957,8 +12002,16 @@ async function handleSaveBlogPost() {
                 for (const publicId of removedImageIds) {
                     await deleteCloudinaryImage(publicId);
                 }
+                if (Array.isArray(oldData.tags)) {
+                    postData.tags = oldData.tags;
+                }
             }
-            await db.collection('blogPosts').doc(postId).update(postData);
+            await db.collection('blogPosts').doc(postId).update({
+                ...postData,
+                authorId: firebase.firestore.FieldValue.delete(),
+                authorName: firebase.firestore.FieldValue.delete(),
+                imagePublicIds: firebase.firestore.FieldValue.delete()
+            });
         } else { // Create new post
             postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('blogPosts').add(postData);
@@ -12040,23 +12093,76 @@ function insertBlogTemplate(type) {
         if (contentEl) contentEl.innerHTML = tpl.content;
 }
 // WYSIWYG Rich Text Editor Functions
+let blogEditorSavedRange = null;
+
+function isSelectionInBlogEditor(selection, editor) {
+    if (!selection || !editor || selection.rangeCount === 0) return false;
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    return editor.contains(container.nodeType === Node.TEXT_NODE ? container.parentNode : container);
+}
+
+function saveBlogEditorSelection() {
+    const editor = document.getElementById('blog-post-content');
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+    if (!isSelectionInBlogEditor(selection, editor)) return;
+    blogEditorSavedRange = selection.getRangeAt(0).cloneRange();
+}
+
+function restoreBlogEditorSelection() {
+    const editor = document.getElementById('blog-post-content');
+    if (!editor || !blogEditorSavedRange) return false;
+    const selection = window.getSelection();
+    editor.focus();
+    selection.removeAllRanges();
+    selection.addRange(blogEditorSavedRange);
+    return true;
+}
+
+function placeCaretAtEnd(element) {
+    if (!element) return;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
 // Make functions globally accessible for inline onclick handlers
 window.formatText = function(command, value = null) {
     const editor = document.getElementById('blog-post-content');
     if (!editor) return;
-    
-    editor.focus();
+
+    const selection = window.getSelection();
+    const hasLiveEditorSelection = isSelectionInBlogEditor(selection, editor);
+    if (!hasLiveEditorSelection) {
+        const restored = restoreBlogEditorSelection();
+        if (!restored) {
+            editor.focus();
+            placeCaretAtEnd(editor);
+        }
+    }
+
+    if (command === 'formatBlock' && typeof value === 'string' && value && !value.startsWith('<')) {
+        value = `<${value}>`;
+    }
+
     try {
         document.execCommand(command, false, value);
     } catch (err) {
         console.warn('Editor command failed', command, err);
     }
+    saveBlogEditorSelection();
     updateToolbarState();
 };
 
 window.insertLink = function() {
+    saveBlogEditorSelection();
     const url = prompt('Enter URL:');
     if (url) {
+        restoreBlogEditorSelection();
         window.formatText('createLink', url);
     }
 };
@@ -12079,9 +12185,24 @@ function updateToolbarState() {
 }
 
 // Initialize toolbar state updates
-document.addEventListener('selectionchange', updateToolbarState);
+document.addEventListener('selectionchange', () => {
+    saveBlogEditorSelection();
+    updateToolbarState();
+});
 document.addEventListener('mouseup', updateToolbarState);
 document.addEventListener('keyup', updateToolbarState);
+
+function setupBlogToolbarSelectionSupport() {
+    const toolbar = document.getElementById('blog-editor-toolbar');
+    if (!toolbar || toolbar.dataset.selectionGuardSetup) return;
+    toolbar.dataset.selectionGuardSetup = 'true';
+    toolbar.addEventListener('mousedown', (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        event.preventDefault();
+        restoreBlogEditorSelection();
+    });
+}
 
 // Handle paste events to preserve formatting in blog editor (now supports images)
 function setupBlogPasteHandler() {
@@ -13054,6 +13175,7 @@ function handleBlogEditorKeydown(event) {
 // Setup paste handler when DOM is ready and when blog page is shown
 document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
 document.addEventListener('DOMContentLoaded', setupBlogEditorEnhancements);
+document.addEventListener('DOMContentLoaded', setupBlogToolbarSelectionSupport);
 document.addEventListener('DOMContentLoaded', setupStripeCheckoutUI);
 document.addEventListener('DOMContentLoaded', ensureAccessibleLabels);
 
@@ -13115,7 +13237,7 @@ function editBlogPost(postId) {
     document.getElementById('add-blog-post-form-container').scrollIntoView({ behavior: 'smooth' });
 }
 async function deleteBlogPost(postId) {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     showConfirmationModal('Are you sure you want to delete this blog post? This cannot be undone.', async () => {
         try {
             // Get post data to extract image public IDs before deletion
@@ -14765,6 +14887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global error handling to prevent silent failures
 window.addEventListener('error', (e) => {
+    if (isLikelyBlockedByClient(e)) return;
     console.error('Unhandled error:', e.error || e.message);
     
     // Log error to database if user is authenticated
@@ -14786,6 +14909,7 @@ window.addEventListener('error', (e) => {
 });
 
 window.addEventListener('unhandledrejection', (e) => {
+    if (isLikelyBlockedByClient(e?.reason || e)) return;
     console.error('Unhandled promise rejection:', e.reason);
     try { 
         showToast('Something went wrong. Please try again.', 'error'); 

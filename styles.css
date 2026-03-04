@@ -3446,4 +3446,216 @@ will-change: transform;
             }
             html { scroll-behavior: auto; }
         }
+
+        :root {
+            --motion-snap-fast: 140ms;
+            --motion-snap-base: 220ms;
+            --motion-snap-slow: 320ms;
+            --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-swift: cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes morphFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(8px) scale(0.985);
+                filter: blur(6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes morphFadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-6px) scale(0.992);
+                filter: blur(4px);
+            }
+        }
+
+        @keyframes pageEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.992);
+                filter: blur(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes pageLeave {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.994);
+                filter: blur(3px);
+            }
+        }
+
+        .fade-in,
+        .animate-fade-in {
+            animation: morphFadeIn var(--motion-snap-base) var(--ease-smooth) both;
+            will-change: transform, opacity, filter;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        .page-enter-modern,
+        .page-transition-enter {
+            animation: pageEnter var(--motion-snap-base) var(--ease-smooth) both;
+            will-change: transform, opacity, filter;
+        }
+
+        .page-leave-modern,
+        .page-transition-leave {
+            animation: pageLeave var(--motion-snap-fast) var(--ease-swift) both;
+            will-change: transform, opacity, filter;
+        }
+
+        button,
+        .btn,
+        .glass-button,
+        .btn-primary,
+        .btn-secondary,
+        .mobile-cta,
+        .nav-link,
+        .card-hover,
+        .modern-card {
+            transition: transform var(--motion-snap-fast) var(--ease-swift),
+                        opacity var(--motion-snap-fast) ease,
+                        background-color var(--motion-snap-base) ease,
+                        border-color var(--motion-snap-base) ease,
+                        box-shadow var(--motion-snap-base) var(--ease-smooth);
+            transform: translateZ(0);
+        }
+
+        button:hover,
+        .btn:hover,
+        .glass-button:hover,
+        .btn-primary:hover,
+        .mobile-cta:hover,
+        .card-hover:hover,
+        .modern-card:hover {
+            transform: translateY(-2px) translateZ(0);
+        }
+
+        button:active,
+        .btn:active,
+        .glass-button:active,
+        .btn-primary:active,
+        .mobile-cta:active {
+            transform: translateY(0) scale(0.985) translateZ(0);
+        }
+
+        #mobile-menu {
+            transform: translateX(100%);
+            opacity: 0;
+            filter: blur(2px);
+            pointer-events: none;
+            transition: transform var(--motion-snap-base) var(--ease-smooth),
+                        opacity var(--motion-snap-fast) ease,
+                        filter var(--motion-snap-fast) ease;
+            will-change: transform, opacity, filter;
+        }
+
+        #mobile-menu.menu-open {
+            transform: translateX(0);
+            opacity: 1;
+            filter: blur(0);
+            pointer-events: auto;
+        }
+
+        #upgrade-modal > div,
+        #edit-user-modal > div,
+        #confirmation-modal > div,
+        #event-modal > div,
+        #profile-picture-crop-modal > div,
+        #image-crop-modal > div,
+        #keyboard-shortcuts-modal > div,
+        #maintenance-template-modal > div,
+        #blog-viewer-modal > div,
+        #preview-modal > div,
+        #legal-modal > div,
+        #dmca-modal > div {
+            transform: translateY(10px) scale(0.985);
+            opacity: 0;
+            filter: blur(6px);
+            transition: transform var(--motion-snap-base) var(--ease-smooth),
+                        opacity var(--motion-snap-fast) ease,
+                        filter var(--motion-snap-fast) ease;
+            will-change: transform, opacity, filter;
+        }
+
+        #upgrade-modal:not(.hidden) > div,
+        #edit-user-modal:not(.hidden) > div,
+        #confirmation-modal:not(.hidden) > div,
+        #event-modal:not(.hidden) > div,
+        #profile-picture-crop-modal:not(.hidden) > div,
+        #image-crop-modal:not(.hidden) > div,
+        #keyboard-shortcuts-modal:not(.hidden) > div,
+        #maintenance-template-modal:not(.hidden) > div,
+        #blog-viewer-modal:not(.hidden) > div,
+        #preview-modal:not(.hidden) > div,
+        #legal-modal:not(.hidden) > div,
+        #dmca-modal:not(.hidden) > div {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
+
+        .transition-all {
+            transition: all var(--motion-snap-base) var(--ease-smooth);
+        }
+
+        .transition-transform {
+            transition: transform var(--motion-snap-base) var(--ease-smooth);
+        }
+
+        .transition-opacity {
+            transition: opacity var(--motion-snap-base) ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .fade-in,
+            .animate-fade-in,
+            .page-enter-modern,
+            .page-leave-modern,
+            .page-transition-enter,
+            .page-transition-leave,
+            #mobile-menu,
+            #mobile-menu.menu-open,
+            #upgrade-modal > div,
+            #edit-user-modal > div,
+            #confirmation-modal > div,
+            #event-modal > div,
+            #profile-picture-crop-modal > div,
+            #image-crop-modal > div,
+            #keyboard-shortcuts-modal > div,
+            #maintenance-template-modal > div,
+            #blog-viewer-modal > div,
+            #preview-modal > div,
+            #legal-modal > div,
+            #dmca-modal > div {
+                animation: none !important;
+                transition: none !important;
+                transform: none !important;
+                filter: none !important;
+                opacity: 1 !important;
+            }
+        }
         
