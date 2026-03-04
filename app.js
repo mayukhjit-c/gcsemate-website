@@ -1464,21 +1464,38 @@ let userActivityTracker = {
 };
 
 // Enhanced IP detection with IPv4 preference and location data
+async function fetchJsonWithTimeout(url, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal,
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return await response.json();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 async function getUserIPWithLocation() {
     try {
-        // Try multiple IP services for better reliability
+        // Try lightweight free services without API keys
         const ipServices = [
             'https://api.ipify.org?format=json',
-            'https://ipapi.co/json/',
-            'https://api.ipgeolocation.io/ipgeo?apiKey=free'
+            'https://api64.ipify.org?format=json',
+            'https://ipapi.co/json/'
         ];
         
         for (const service of ipServices) {
             try {
-                const response = await fetch(service, { timeout: 5000 });
-                const data = await response.json();
+                const data = await fetchJsonWithTimeout(service, 4000);
                 
                 let ip = data.ip || data.query;
+                if (!ip) continue;
                 
                 // Convert IPv6 to IPv4 or hide if not possible
                 if (ip && isIPv6(ip)) {
@@ -1499,22 +1516,19 @@ async function getUserIPWithLocation() {
                     location: locationData,
                     timestamp: new Date().toISOString()
                 };
-            } catch (error) {
-                console.warn(`IP service ${service} failed:`, error);
+            } catch (_) {
                 continue;
             }
         }
         
         // Fallback to basic IP detection
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
+        const data = await fetchJsonWithTimeout('https://api.ipify.org?format=json', 3000);
         return {
-            ip: data.ip,
+            ip: data.ip || 'Unknown',
             location: null,
             timestamp: new Date().toISOString()
         };
-    } catch (error) {
-        console.error('Failed to get IP address:', error);
+    } catch (_) {
         return {
             ip: 'Unknown',
             location: null,
@@ -1532,10 +1546,9 @@ function isIPv6(ip) {
 async function convertIPv6ToIPv4(ipv6) {
     try {
         // Try to get IPv4 from a different service
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
+        const data = await fetchJsonWithTimeout('https://api.ipify.org?format=json', 3000);
         return data.ip && !isIPv6(data.ip) ? data.ip : null;
-    } catch (error) {
+    } catch (_) {
         return null;
     }
 }
@@ -1547,8 +1560,7 @@ async function getLocationFromIP(ip) {
     }
     
     try {
-        const response = await fetch(`https://ipapi.co/${ip}/json/`);
-        const data = await response.json();
+        const data = await fetchJsonWithTimeout(`https://ipapi.co/${ip}/json/`, 3500);
         
         return {
             country: data.country_name || 'Unknown',
@@ -1561,8 +1573,7 @@ async function getLocationFromIP(ip) {
             isp: data.org || 'Unknown',
             asn: data.asn || 'Unknown'
         };
-    } catch (error) {
-        console.warn('Failed to get location data:', error);
+    } catch (_) {
         return null;
     }
 }
@@ -6784,13 +6795,28 @@ function hideEditUserModal() {
 }
 
 async function openEditUserModal(userId) {
+    const cachedUser = allUsers[userId] ? { ...allUsers[userId] } : null;
     try {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
+        let user = null;
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                user = { id: userDoc.id, ...userDoc.data() };
+            }
+        } catch (_) {
+            user = null;
+        }
+
+        if (!user && cachedUser) {
+            user = { id: userId, ...cachedUser };
+            showToast('Live user fetch failed. Showing cached profile snapshot.', 'warning', 3500);
+        }
+
+        if (!user) {
             showToast("User not found!", 'error');
             return;
         }
-        const user = { id: userDoc.id, ...userDoc.data() };
+
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
         const hasSharingFlag = !!user.accountSharingDetected;
@@ -7258,9 +7284,30 @@ async function viewAccountSharingHistory(userId) {
         `;
 
         showAdminModal(modal);
-    } catch (error) {
-        console.error('Could not load account sharing history', error);
-        showToast('Failed to load account sharing history.', 'error');
+    } catch (_) {
+        const modal = document.getElementById('edit-user-modal');
+        if (!modal) {
+            showToast('Failed to load account sharing history.', 'error');
+            return;
+        }
+
+        modal.innerHTML = `
+            <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-2xl flex flex-col fade-in max-h-[90vh]">
+                <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Account Sharing Log: ${escapeHTML(user.displayName || user.email || 'User')}</h3>
+                    <button onclick="hideEditUserModal()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
+                </div>
+                <div class="p-6 space-y-3 overflow-y-auto">
+                    <div class="text-sm text-gray-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">Live sharing logs are temporarily unavailable (network/Firestore issue). Try again shortly.</div>
+                    <div class="text-sm text-gray-600">Known detected instances: <span class="font-semibold">${Math.max(0, Number(user.accountSharingInstances || 0))}</span></div>
+                    <div class="flex justify-end pt-2">
+                        <button onclick="openEditUserModal('${user.id}')" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Back to User</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        showAdminModal(modal);
     }
 }
 
