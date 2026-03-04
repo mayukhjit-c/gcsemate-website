@@ -62,6 +62,11 @@ const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write
 let hasShownBlockerWarning = false;
 let firestoreAssertionCount = 0;
 let hasShownFirestoreRecoveryWarning = false;
+let firestoreTransportUnstableUntil = 0;
+
+function isFirestoreTransportUnstable() {
+    return Date.now() < firestoreTransportUnstableUntil;
+}
 
 function isLikelyBlockedByClient(errorLike) {
     const text = typeof errorLike === 'string'
@@ -85,6 +90,7 @@ function showBlockedByClientWarningOnce() {
 
 function handleFirestoreAssertionEvent() {
     firestoreAssertionCount += 1;
+    firestoreTransportUnstableUntil = Date.now() + 120000;
     if (firestoreAssertionCount < 3) return;
 
     try {
@@ -471,15 +477,24 @@ const errorHandler = new ErrorHandler();
 // Firestore resilience: force long polling on recovery and reset local cache when assertion loops occur
 async function recoverFirestoreSession() {
     if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    if (!db || typeof db.disableNetwork !== 'function' || typeof db.enableNetwork !== 'function') return;
     if (window.__firestoreRecoveryRunning) return;
     if (window.__lastFirestoreRecoveryAt && (Date.now() - window.__lastFirestoreRecoveryAt) < 60000) return;
     window.__firestoreRecoveryRunning = true;
     window.__lastFirestoreRecoveryAt = Date.now();
+    firestoreTransportUnstableUntil = Date.now() + 120000;
     try {
         localStorage.setItem(FIRESTORE_FORCE_LONG_POLLING_KEY, '1');
     } catch (_) {
         // ignore
     }
+    try {
+        await db.disableNetwork();
+    } catch (_) {}
+    try {
+        await new Promise(resolve => setTimeout(resolve, 700));
+        await db.enableNetwork();
+    } catch (_) {}
     // Avoid forced-refresh loops; continue running and retry with long polling transport.
     setTimeout(() => {
         window.__firestoreRecoveryRunning = false;
@@ -2002,6 +2017,7 @@ function startHeartbeatSystem() {
 // Send heartbeat to maintain active session
 async function sendHeartbeat() {
     if (!currentUser || !sessionId) return;
+    if (isFirestoreTransportUnstable()) return;
 
     const heartbeatData = {
         userId: currentUser.uid,
@@ -2401,7 +2417,10 @@ let adminDiagnostics = {
     testResults: [],
     systemHealth: {},
     trackingStatus: {},
-    errorLogs: []
+    errorLogs: [],
+    trackingInterval: null,
+    errorCollectionInterval: null,
+    firebaseMonitorInterval: null
 };
 
 // Initialize admin diagnostics
@@ -2414,8 +2433,12 @@ function initializeAdminDiagnostics() {
 
 // Start diagnostic monitoring
 function startDiagnosticMonitoring() {
+    if (adminDiagnostics.trackingInterval) clearInterval(adminDiagnostics.trackingInterval);
+    if (adminDiagnostics.errorCollectionInterval) clearInterval(adminDiagnostics.errorCollectionInterval);
+    if (adminDiagnostics.firebaseMonitorInterval) clearInterval(adminDiagnostics.firebaseMonitorInterval);
+
     // Monitor tracking system health
-    setInterval(async () => {
+    adminDiagnostics.trackingInterval = setInterval(async () => {
         try {
             await runTrackingDiagnostics();
         } catch (error) {
@@ -2424,7 +2447,7 @@ function startDiagnosticMonitoring() {
     }, 10000); // Every 10 seconds
 
     // Monitor system errors
-    setInterval(async () => {
+    adminDiagnostics.errorCollectionInterval = setInterval(async () => {
         try {
             await collectErrorLogs();
         } catch (error) {
@@ -2433,7 +2456,7 @@ function startDiagnosticMonitoring() {
     }, 30000); // Every 30 seconds
 
     // Monitor Firebase connection
-    setInterval(async () => {
+    adminDiagnostics.firebaseMonitorInterval = setInterval(async () => {
         try {
             await testFirebaseConnection();
         } catch (error) {
@@ -2444,6 +2467,19 @@ function startDiagnosticMonitoring() {
 
 // Run comprehensive tracking diagnostics
 async function runTrackingDiagnostics() {
+    if (isFirestoreTransportUnstable()) {
+        adminDiagnostics.trackingStatus = {
+            timestamp: new Date(),
+            trackingSystem: { heartbeat: false, sessionTracking: false, activityLogging: false, realtimeUpdates: false },
+            realtimeUpdates: false,
+            databaseConnection: { connected: false, healthy: false, error: 'Firestore transport recovery in progress' },
+            userSessions: { accessible: false, healthy: false, error: 'Firestore transport recovery in progress' },
+            analytics: { usersAccessible: false, activitiesAccessible: false, healthy: false, error: 'Firestore transport recovery in progress' }
+        };
+        updateDiagnosticUI(adminDiagnostics.trackingStatus);
+        return;
+    }
+
     try {
         const diagnostics = {
             timestamp: new Date(),
@@ -2478,10 +2514,9 @@ async function testTrackingSystem() {
     };
 
     try {
-        // Test heartbeat
-        const heartbeatStart = Date.now();
-        await sendHeartbeat();
-        results.heartbeat = Date.now() - heartbeatStart < 5000;
+        // Read-only heartbeat health (avoid writing during diagnostics)
+        const now = Date.now();
+        results.heartbeat = Number.isFinite(realtimeTracker.lastHeartbeat) && (now - realtimeTracker.lastHeartbeat) < 120000;
 
         // Test session tracking
         if (sessionId) {
@@ -2489,12 +2524,8 @@ async function testTrackingSystem() {
             results.sessionTracking = sessionDoc.exists;
         }
 
-        // Test activity logging
-        await logUserActivity('diagnostic_test', {
-            testType: 'system_check',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        results.activityLogging = true;
+        // Activity logging health inferred from transport status
+        results.activityLogging = !isFirestoreTransportUnstable();
 
         // Test real-time updates
         results.realtimeUpdates = realtimeTracker.connectionStatus === 'connected';
@@ -2509,20 +2540,9 @@ async function testTrackingSystem() {
 // Test real-time updates
 async function testRealtimeUpdates() {
     try {
-        const testData = {
-            testId: `test_${Date.now()}`,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            userId: currentUser.uid
-        };
-
-        await db.collection('diagnosticTests').doc(testData.testId).set(testData);
-        
-        // Wait for update
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Verify update
-        const doc = await db.collection('diagnosticTests').doc(testData.testId).get();
-        return doc.exists;
+        if (!navigator.onLine || isFirestoreTransportUnstable()) return false;
+        await db.collection('settings').doc('maintenance').get();
+        return true;
     } catch (error) {
         return false;
     }
@@ -2612,7 +2632,11 @@ async function collectErrorLogs() {
 // Test Firebase connection
 async function testFirebaseConnection() {
     try {
-        await db.enableNetwork();
+        if (isFirestoreTransportUnstable()) {
+            adminDiagnostics.systemHealth.firebaseConnection = 'recovering';
+            return;
+        }
+        await db.collection('settings').doc('maintenance').get();
         adminDiagnostics.systemHealth.firebaseConnection = 'connected';
     } catch (error) {
         adminDiagnostics.systemHealth.firebaseConnection = 'disconnected';
@@ -2622,6 +2646,7 @@ async function testFirebaseConnection() {
 
 // Log diagnostic errors
 async function logDiagnosticError(error) {
+    if (isFirestoreTransportUnstable()) return;
     try {
         await db.collection('errorLogs').add({
             type: 'diagnostic_error',
