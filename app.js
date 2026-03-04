@@ -213,9 +213,12 @@ let unsubscribeBlogPosts;
 let unsubscribeUserEvents;
 let unsubscribeGlobalEvents;
 let unsubscribeAnnouncement;
+let unsubscribeFreeTrialSettings;
 let unsubscribeBlogComments;
 let unsubscribeCurrentUserDoc;
 let recaptchaVerifier;
+let freeTrialSubjectOverride = null;
+let lastAutoOpenedFreeTrialSubjectKey = null;
 
 // Performance optimizations
 let animationFrameId = null;
@@ -435,25 +438,14 @@ async function recoverFirestoreSession() {
     window.__firestoreRecoveryRunning = true;
     window.__lastFirestoreRecoveryAt = Date.now();
     try {
-        const instance = firebase.firestore();
-        // Try to clean up any stuck state when possible
-        const forcedLongPolling = (() => {
-            try {
-                return localStorage.getItem(FIRESTORE_FORCE_LONG_POLLING_KEY) === '1';
-            } catch (_) {
-                return false;
-            }
-        })();
-
-        if (!forcedLongPolling) {
-            await instance.terminate();
-            await instance.clearPersistence();
-        }
+        localStorage.setItem(FIRESTORE_FORCE_LONG_POLLING_KEY, '1');
     } catch (_) {
         // ignore
     }
-    // Light-touch refresh to restart listeners on a clean channel
-    setTimeout(() => window.location.reload(), 200);
+    // Avoid forced-refresh loops; continue running and retry with long polling transport.
+    setTimeout(() => {
+        window.__firestoreRecoveryRunning = false;
+    }, 2500);
 }
 
 // Enhanced logging function
@@ -2955,7 +2947,28 @@ function stopServerTimeUpdates() {
 const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
 const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
 const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+const FREE_TRIAL_ROTATION_DAYS = 14;
+const FREE_TRIAL_ROTATION_MS = FREE_TRIAL_ROTATION_DAYS * 24 * 60 * 60 * 1000;
+const FREE_TRIAL_SUBJECT_POOL = ['Maths', 'English Language (AQA)', 'English Literature (Edexcel)', 'Biology', 'Chemistry', 'Physics'];
 const uniformSubjectIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`;
+
+function normalizeFreeTrialSubject(subjectName) {
+    if (!subjectName || typeof subjectName !== 'string') return null;
+    return FREE_TRIAL_SUBJECT_POOL.find(subject => subject.toLowerCase() === subjectName.toLowerCase()) || null;
+}
+
+function getRotatingFreeTrialSubject(now = Date.now()) {
+    if (!Array.isArray(FREE_TRIAL_SUBJECT_POOL) || FREE_TRIAL_SUBJECT_POOL.length === 0) return null;
+    const periodIndex = Math.floor(now / FREE_TRIAL_ROTATION_MS);
+    const normalizedIndex = ((periodIndex % FREE_TRIAL_SUBJECT_POOL.length) + FREE_TRIAL_SUBJECT_POOL.length) % FREE_TRIAL_SUBJECT_POOL.length;
+    return FREE_TRIAL_SUBJECT_POOL[normalizedIndex];
+}
+
+function getCurrentFreeTrialSubject(now = Date.now()) {
+    const overrideSubject = normalizeFreeTrialSubject(freeTrialSubjectOverride);
+    if (overrideSubject) return overrideSubject;
+    return getRotatingFreeTrialSubject(now);
+}
 
 // Subject summaries and descriptions
 const subjectSummaries = {
@@ -3590,6 +3603,7 @@ auth.onAuthStateChanged(async (user) => {
     if (unsubscribeUserEvents) unsubscribeUserEvents();
     if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
     if (unsubscribeAnnouncement) unsubscribeAnnouncement();
+    if (unsubscribeFreeTrialSettings) { try { unsubscribeFreeTrialSettings(); } catch(_){} unsubscribeFreeTrialSettings = null; }
     if (unsubscribeCurrentUserDoc) { try { unsubscribeCurrentUserDoc(); } catch(_){} unsubscribeCurrentUserDoc = null; }
     if (clockInterval) clearInterval(clockInterval);
     if (serverTimeInterval) stopServerTimeUpdates();
@@ -3739,6 +3753,8 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         // User is signed out.
         currentUser = null;
+        lastAutoOpenedFreeTrialSubjectKey = null;
+        freeTrialSubjectOverride = null;
         try { clearAccentCSSVars(); } catch (_) {}
         updateInlineUpsellBanner();
         const mainApp = document.getElementById('main-app');
@@ -4776,6 +4792,18 @@ function setupRealtimeListeners() {
             const data = doc.data();
             showAnnouncement(data ? data.message : '');
         }, err => logError(err, "Announcement"));
+    if (unsubscribeFreeTrialSettings) {
+        try { unsubscribeFreeTrialSettings(); } catch (_) {}
+    }
+    unsubscribeFreeTrialSettings = db.collection('settings').doc('freeTrialAccess')
+        .onSnapshot(doc => {
+            const data = doc.data() || {};
+            freeTrialSubjectOverride = normalizeFreeTrialSubject(data.overrideSubject);
+            renderFreeTrialControlState();
+            if ((currentUser?.tier || 'free') === 'free') {
+                renderDashboard();
+            }
+        }, err => logError(err, 'Free Trial Settings'));
     // Ensure upgrade modal reflects current tier
     try {
         const upgradeTriggers = document.querySelectorAll('[data-requires="paid"]');
@@ -4798,6 +4826,7 @@ function setupRealtimeListeners() {
         
         // Initialize maintenance mode status
         initializeMaintenanceStatus();
+        renderFreeTrialControlState();
         
         // Listen for all users for the management panel
         unsubscribeUserManagement = db.collection('users').onSnapshot(snapshot => {
@@ -9992,6 +10021,48 @@ async function clearAnnouncement() {
         showToast("Could not clear announcement.", 'error');
     }
 }
+
+function renderFreeTrialControlState() {
+    const statusEl = document.getElementById('free-trial-subject-status');
+    const selectEl = document.getElementById('free-trial-subject-select');
+    if (!statusEl || !selectEl) return;
+
+    const activeSubject = getCurrentFreeTrialSubject();
+    const overrideSubject = normalizeFreeTrialSubject(freeTrialSubjectOverride);
+
+    statusEl.textContent = overrideSubject
+        ? `Manual override: ${overrideSubject}`
+        : `Auto-rotation active: ${activeSubject || 'Unavailable'}`;
+    selectEl.value = overrideSubject || '';
+}
+
+async function saveFreeTrialSubjectOverride(subjectName) {
+    if (!isAdminUser()) return;
+    const normalizedSubject = normalizeFreeTrialSubject(subjectName);
+
+    try {
+        await db.collection('settings').doc('freeTrialAccess').set({
+            overrideSubject: normalizedSubject || null,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: currentUser.uid
+        }, { merge: true });
+        showToast(normalizedSubject ? `Free subject set to ${normalizedSubject}.` : 'Free subject returned to auto-rotation.', 'success');
+    } catch (error) {
+        logError(error, 'Save Free Trial Subject Override');
+        showToast('Could not update free subject setting.', 'error');
+    }
+}
+
+function handleSaveFreeTrialOverride() {
+    const select = document.getElementById('free-trial-subject-select');
+    if (!select) return;
+    saveFreeTrialSubjectOverride(select.value || null);
+}
+
+function handleResetFreeTrialOverride() {
+    saveFreeTrialSubjectOverride(null);
+}
+
 async function renderDashboard() {
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
@@ -10033,6 +10104,8 @@ async function renderDashboard() {
         
         subjectGrid.innerHTML = '';
         const userAllowedSubjects = currentUser.allowedSubjects;
+        const isFreeTierUser = (currentUser?.tier || 'free') === 'free';
+        const currentFreeTrialSubject = getCurrentFreeTrialSubject();
         
         // Handle migration from old "english" to new "English Language (AQA)" and "English Literature (Edexcel)"
         // Check if user has old "english" access and grant access to both new English subjects
@@ -10049,10 +10122,28 @@ async function renderDashboard() {
         }
         
         let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
+        if (isFreeTierUser && currentFreeTrialSubject) {
+            subjectsToShow = [currentFreeTrialSubject];
+        }
         if (subjectsToShow.length === 0) {
-            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
+            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">${isFreeTierUser ? 'Your free trial subject is temporarily unavailable. Please try again shortly.' : 'Your account does not have access to any subjects. Please contact an administrator.'}</p></div>`;
             return;
         }
+        const openSubjectFolder = (subject, subjectId) => {
+            if (!subjectId) return;
+            trackSubjectChange(subject);
+            if (subject.toLowerCase() === 'english language (aqa)') {
+                path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
+                handleNavigation(subjectId, 'AQA GCSE Language');
+            } else if (subject.toLowerCase() === 'english literature (edexcel)') {
+                path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
+                handleNavigation(subjectId, 'Edexcel GCSE Language');
+            } else {
+                path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
+                handleNavigation(subjectId);
+            }
+            showPage('file-browser-page');
+        };
         const examBoardBySubject = {
             // AQA
             biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
@@ -10099,6 +10190,13 @@ async function renderDashboard() {
                 const badgeWrap = document.createElement('div');
                 badgeWrap.innerHTML = badge;
                 wrapper.appendChild(badgeWrap.firstChild);
+            }
+            const isCurrentFreeSubject = !!currentFreeTrialSubject && subject === currentFreeTrialSubject;
+            if (isCurrentFreeSubject) {
+                const freeTrialBadge = document.createElement('span');
+                freeTrialBadge.className = 'mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-yellow-50 border border-yellow-300 text-yellow-800';
+                freeTrialBadge.textContent = normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'Free Subject • Admin Pick' : 'Free Subject • 2-Week Rotation';
+                wrapper.appendChild(freeTrialBadge);
             }
             // Add summary text with arrow
             const summaryContainer = document.createElement('div');
@@ -10153,35 +10251,15 @@ async function renderDashboard() {
                 // Set consistent height constraints to maintain grid alignment
                 // Max height accommodates cards with up to 2 specification buttons
                 const isMaths = subject && subject.toLowerCase().includes('math');
-                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]');
+                const freeGlowClass = isCurrentFreeSubject ? ' ring-2 ring-yellow-300 shadow-2xl shadow-yellow-200/80 hover:ring-yellow-400' : '';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]') + freeGlowClass;
                 card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
-                    if (currentUser.tier === 'free') {
-                        openUpgradeModal('To access revision files, please upgrade to our Pro plan. Get unlimited access to all subjects and features for just £1 a month.');
+                    if (isFreeTierUser && subject !== currentFreeTrialSubject) {
+                        openUpgradeModal('Free accounts can access one rotating trial subject every 2 weeks. Upgrade to Pro for unlimited access to all subjects and features for just £1 a month.');
                         return;
                     }
-                    
-                    // Track subject selection
-                    trackSubjectChange(subject);
-                    
-                    // Handle English subjects - auto-open correct folder
-                    let targetFolderId = subjectId;
-                    if (subject.toLowerCase() === 'english language (aqa)') {
-                        // Find "AQA GCSE Language" folder within English folder
-                        const englishFolderId = subjectId;
-                        // We'll navigate to English folder first, then look for the subfolder
-                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
-                        handleNavigation(englishFolderId, 'AQA GCSE Language');
-                    } else if (subject.toLowerCase() === 'english literature (edexcel)') {
-                        // Find "Edexcel GCSE Language" folder within English folder
-                        const englishFolderId = subjectId;
-                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: englishFolderId }];
-                        handleNavigation(englishFolderId, 'Edexcel GCSE Language');
-                    } else {
-                        path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: subject, id: subjectId }];
-                        handleNavigation(subjectId);
-                    }
-                    showPage('file-browser-page');
+                    openSubjectFolder(subject, subjectId);
                 });
             } else {
                 card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[180px] max-h-[220px]';
@@ -10189,6 +10267,16 @@ async function renderDashboard() {
             }
             subjectGrid.appendChild(card);
         });
+        if (isFreeTierUser && currentFreeTrialSubject) {
+            const trialFolderId = allSubjectFolders[currentFreeTrialSubject.toLowerCase()];
+            const fileBrowserPage = document.getElementById('file-browser-page');
+            const fileBrowserVisible = !!fileBrowserPage && !fileBrowserPage.classList.contains('hidden');
+            const autoOpenKey = `${currentFreeTrialSubject}|${normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'manual' : 'auto'}`;
+            if (trialFolderId && !fileBrowserVisible && lastAutoOpenedFreeTrialSubjectKey !== autoOpenKey) {
+                lastAutoOpenedFreeTrialSubjectKey = autoOpenKey;
+                openSubjectFolder(currentFreeTrialSubject, trialFolderId);
+            }
+        }
     } catch (err) {
         renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
         showToast(`Subjects failed to load: ${err.message}`, 'error');
@@ -10198,6 +10286,19 @@ async function handleNavigation(folderId, targetSubfolderName = null) {
     await fetchAndRenderFiles(folderId, targetSubfolderName);
 }
 async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
+    if ((currentUser?.tier || 'free') === 'free') {
+        const freeTrialSubject = getCurrentFreeTrialSubject();
+        const freeTrialRootId = freeTrialSubject ? allSubjectFolders?.[freeTrialSubject.toLowerCase()] : null;
+        const rootPathSubjectId = path && path.length > 1 ? path[1].id : null;
+        const isInAllowedTrialSubject = freeTrialRootId && (rootPathSubjectId === freeTrialRootId || folderId === freeTrialRootId);
+
+        if (freeTrialRootId && !isInAllowedTrialSubject) {
+            showToast(`Free access is limited to ${freeTrialSubject} for this 2-week period.`, 'info');
+            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: freeTrialSubject, id: freeTrialRootId }];
+            folderId = freeTrialRootId;
+            targetSubfolderName = null;
+        }
+    }
     const fileListContainer = document.getElementById('file-list');
     fileListContainer.setAttribute('aria-busy','true');
     // Full-screen smooth overlay
@@ -10410,6 +10511,7 @@ function renderItems() {
         if (ds) ds.remove();
     }
     const sortOrder = document.getElementById('file-sort-select').value;
+    const canFreeUserDownload = (currentUser?.tier || 'free') !== 'free';
 
     container.innerHTML = ''; // Clear previous items
 
@@ -10481,8 +10583,8 @@ function renderItems() {
                 const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 const safeFileId = escapeJS(file.id);
                 actions.innerHTML = `
-                    <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
-                    <a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                        <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
+                        ${canFreeUserDownload ? `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>` : ''}`;
             }
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
@@ -10532,7 +10634,9 @@ function renderItems() {
                 const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 actions.innerHTML += `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
-                actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                if (canFreeUserDownload) {
+                    actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
+                }
             }
             itemElement.appendChild(mainInfo);
             itemElement.appendChild(actions);
@@ -14277,6 +14381,12 @@ function showPreview(file) {
 // Controlled download function with rate limiting and security
 function downloadFile(fileId, fileName, downloadUrl, subject = null) {
     try {
+        if ((currentUser?.tier || 'free') === 'free') {
+            openUpgradeModal('Downloads are available on Pro. Upgrade to download revision files across all subjects.');
+            showToast('Free accounts can preview files but cannot download them.', 'info');
+            return;
+        }
+
         // Check rate limit
         if (!canDownload()) {
             const secondsRemaining = getTimeUntilNextDownload();
@@ -14432,6 +14542,16 @@ document.addEventListener('DOMContentLoaded', () => {
         announcementText.addEventListener('input', updateAnnouncementCounter);
         updateAnnouncementCounter();
     }
+    const freeTrialSubjectSelect = document.getElementById('free-trial-subject-select');
+    if (freeTrialSubjectSelect) {
+        freeTrialSubjectSelect.innerHTML = '<option value="">Use automatic rotation</option>' + FREE_TRIAL_SUBJECT_POOL
+            .map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`)
+            .join('');
+    }
+    const setFreeTrialSubjectBtn = document.getElementById('set-free-trial-subject-btn');
+    if (setFreeTrialSubjectBtn) setFreeTrialSubjectBtn.addEventListener('click', handleSaveFreeTrialOverride);
+    const resetFreeTrialRotationBtn = document.getElementById('reset-free-trial-rotation-btn');
+    if (resetFreeTrialRotationBtn) resetFreeTrialRotationBtn.addEventListener('click', handleResetFreeTrialOverride);
     const prevMonthBtn = document.getElementById('prev-month-btn');
     const nextMonthBtn = document.getElementById('next-month-btn');
     if (prevMonthBtn) {

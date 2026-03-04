@@ -1515,6 +1515,22 @@
                                 </div>
                                 <button onclick="checkSystemHealth()" class="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Check Health</button>
                             </div>
+
+                            <!-- Free Subject Control -->
+                            <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30">
+                                <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                    <i class="fas fa-star text-yellow-500"></i>
+                                    Free Subject Control
+                                </h3>
+                                <p id="free-trial-subject-status" class="text-sm text-gray-700 mb-3">Auto-rotation active</p>
+                                <select id="free-trial-subject-select" class="w-full p-2 rounded-lg border border-gray-200/70 bg-white/60 mb-3">
+                                    <option value="">Use automatic rotation</option>
+                                </select>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button id="set-free-trial-subject-btn" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">Set Free Subject</button>
+                                    <button id="reset-free-trial-rotation-btn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">Use Auto Rotation</button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Maintenance Mode -->
