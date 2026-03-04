@@ -1026,7 +1026,7 @@ function showSystemHealthModal() {
     }
     
     const modal = document.createElement('div');
-    modal.id = 'profile-picture-upload-modal';
+    modal.id = 'system-health-modal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
         <div class="bg-white rounded-xl p-6 max-w-6xl mx-4 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1811,7 +1811,12 @@ function initializeRealtimeTracking() {
     startHeartbeatSystem();
     
     // Start real-time analytics updates
-    startRealtimeAnalytics();
+    if (isAdminUser() || currentUser?.role === 'admin') {
+        startRealtimeAnalytics();
+    } else if (realtimeTracker.analyticsInterval) {
+        clearInterval(realtimeTracker.analyticsInterval);
+        realtimeTracker.analyticsInterval = null;
+    }
     
     // Monitor connection status
     monitorConnectionStatus();
@@ -1829,6 +1834,9 @@ function startHeartbeatSystem() {
     }
 
     realtimeTracker.heartbeatInterval = setInterval(async () => {
+        if (document.hidden || !navigator.onLine) {
+            return;
+        }
         try {
             await sendHeartbeat();
             realtimeTracker.failedRequests = 0;
@@ -1841,7 +1849,7 @@ function startHeartbeatSystem() {
                 updateConnectionStatus('disconnected');
             }
         }
-    }, 10000); // Every 10 seconds
+    }, 30000); // Every 30 seconds
 }
 
 // Send heartbeat to maintain active session
@@ -1899,7 +1907,7 @@ function startRealtimeAnalytics() {
         } catch (error) {
             logError(error, 'Realtime Analytics Interval');
         }
-    }, 5000); // Every 5 seconds for admin users
+    }, 20000); // Every 20 seconds for admin users
 }
 
 // Enhanced real-time analytics  
@@ -2036,7 +2044,7 @@ function monitorConnectionStatus() {
             // If Firebase operation fails, we're likely disconnected
             updateConnectionStatus('disconnected');
         }
-    }, 15000); // Check every 15 seconds
+    }, 30000); // Check every 30 seconds
     
     // Initial check
     setTimeout(async () => {
@@ -2817,7 +2825,7 @@ function throttle(func, limit) {
 function startServerTimeUpdates() {
     if (serverTimeInterval) clearInterval(serverTimeInterval);
     updateServerTime();
-    serverTimeInterval = setInterval(updateServerTime, 1000);
+    serverTimeInterval = setInterval(updateServerTime, 5000);
 }
 
 // Stop server time updates
@@ -6336,6 +6344,7 @@ function showProfilePictureUploadModal() {
     // Profile pictures are now available to all users
     
     const modal = document.createElement('div');
+    modal.id = 'profile-picture-upload-modal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[20000]';
     modal.innerHTML = `
         <div class="bg-white rounded-xl p-8 max-w-md mx-4 shadow-2xl">

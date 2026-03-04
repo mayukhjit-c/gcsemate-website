@@ -210,8 +210,12 @@
     // Enhanced tooltip system with smart positioning
     (function(){
         let layer;
+        let tip;
         const TOOLTIP_OFFSET = 12;
         const TOOLTIP_MIN_DISTANCE = 8;
+        let rafId = null;
+        let pendingNode = null;
+        let pendingContent = '';
         
         function ensureLayer(){
             if (!layer) { 
@@ -219,16 +223,18 @@
                 layer.className = 'tooltip-layer'; 
                 document.body.appendChild(layer); 
             }
+            if (!tip) {
+                tip = document.createElement('div');
+                tip.className = 'tooltip';
+                layer.appendChild(tip);
+            }
             return layer;
         }
         
         function positionTooltip(node, content){
-            const l = ensureLayer();
-            l.innerHTML = '';
-            const tip = document.createElement('div'); 
-            tip.className = 'tooltip'; 
+            ensureLayer();
             tip.textContent = content;
-            l.appendChild(tip);
+            tip.style.display = 'block';
             
             // Force layout calculation
             tip.style.visibility = 'hidden';
@@ -298,6 +304,26 @@
             tip.style.top = y + 'px';
             tip.style.zIndex = '10001';
         }
+
+        function scheduleTooltipPosition(node, content){
+            pendingNode = node;
+            pendingContent = content;
+            if (rafId !== null) return;
+            rafId = window.requestAnimationFrame(function(){
+                rafId = null;
+                if (!pendingNode) return;
+                positionTooltip(pendingNode, pendingContent);
+            });
+        }
+
+        function hideTooltip(){
+            if (tip) {
+                tip.style.display = 'none';
+                tip.textContent = '';
+            }
+            pendingNode = null;
+            pendingContent = '';
+        }
         
         let currentNode = null;
         let hideTimeout = null;
@@ -305,20 +331,20 @@
         document.addEventListener('mouseover', (e)=>{
             const t = e.target.closest('[data-tooltip]');
             if (!t) { 
-                if (layer) layer.innerHTML=''; 
+                hideTooltip();
                 currentNode=null; 
                 if (hideTimeout) clearTimeout(hideTimeout);
                 return; 
             }
             if (hideTimeout) clearTimeout(hideTimeout);
             currentNode = t; 
-            positionTooltip(t, t.getAttribute('data-tooltip'));
+            scheduleTooltipPosition(t, t.getAttribute('data-tooltip'));
         }, { passive: true });
         
         document.addEventListener('mouseout', (e)=>{
             if (layer && (!currentNode || !currentNode.contains(e.relatedTarget))) {
                 hideTimeout = setTimeout(() => {
-                    if (layer) layer.innerHTML='';
+                    hideTooltip();
                     currentNode = null;
                 }, 100);
             }
@@ -326,15 +352,15 @@
         
         window.addEventListener('scroll', ()=>{ 
             if (currentNode) {
-                positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); 
+                scheduleTooltipPosition(currentNode, currentNode.getAttribute('data-tooltip')); 
             }
         }, { passive: true });
         
         window.addEventListener('resize', ()=>{ 
             if (currentNode) {
-                positionTooltip(currentNode, currentNode.getAttribute('data-tooltip')); 
+                scheduleTooltipPosition(currentNode, currentNode.getAttribute('data-tooltip')); 
             }
-        });
+        }, { passive: true });
     })();
     </script>
     <!-- Tailwind CSS - Production Build (local only, no CDN fallback) -->
@@ -356,10 +382,7 @@
     <noscript><link rel="stylesheet" href="styles.css"></noscript>
     
     <!-- Security Layer - Copyright © 2025 Mayukhjit Chakraborty -->
-    <script src="security.js"></script>
-    <!-- Preconnect to Firebase for faster connection -->
-    <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://firestore.googleapis.com">
+    <script src="security.js" defer></script>
     <link rel="dns-prefetch" href="https://www.google.com">
     
     </head>

@@ -284,27 +284,27 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
     transform: scale(0.8) translateZ(0);
     opacity: 0.6;
 }
-
-/* Accent colour picker: ensure the swatch shows the selected colour */
-#accent-picker {
-    -webkit-appearance: none;
-    appearance: none;
-    padding: 0;
-    overflow: hidden;
-}
-#accent-picker::-webkit-color-swatch-wrapper { padding: 0; }
-#accent-picker::-webkit-color-swatch {
-    border: none;
-    border-radius: 0.5rem;
-}
-#accent-picker::-moz-color-swatch {
-    border: none;
-    border-radius: 0.5rem;
-}
 40% {
     transform: scale(1.2) translateZ(0);
     opacity: 1;
 }
+        }
+
+        /* Accent colour picker: ensure the swatch shows the selected colour */
+        #accent-picker {
+            -webkit-appearance: none;
+            appearance: none;
+            padding: 0;
+            overflow: hidden;
+        }
+        #accent-picker::-webkit-color-swatch-wrapper { padding: 0; }
+        #accent-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+        #accent-picker::-moz-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
         }
 
         /* Skeleton loading animation */
@@ -335,7 +335,7 @@ border-radius: 4px;
         
         /* Enhanced accessibility - Focus states */
         *:focus-visible {
-            outline: 3px solid rgba(59, 130, 246, 0.6);
+            outline: 3px solid rgba(var(--accent-500), 0.6);
             outline-offset: 2px;
             border-radius: 4px;
         }
