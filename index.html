@@ -2370,8 +2370,17 @@
 
                     try {
                         if (!window.__firestoreSettingsApplied) {
+                            const forceLongPolling = (() => {
+                                try {
+                                    return localStorage.getItem('__gcsemate_force_long_polling') === '1';
+                                } catch (_) {
+                                    return false;
+                                }
+                            })();
+
                             db.settings({
-                                experimentalAutoDetectLongPolling: true,
+                                experimentalAutoDetectLongPolling: !forceLongPolling,
+                                experimentalForceLongPolling: forceLongPolling,
                                 useFetchStreams: false
                             });
                             window.__firestoreSettingsApplied = true;

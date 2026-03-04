@@ -37,10 +37,13 @@ const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
 
 // Silence noisy Firestore internal assertions to avoid UI error loops
 const FIRESTORE_ASSERTION_PATTERN = /INTERNAL ASSERTION FAILED/i;
+const FIRESTORE_FORCE_LONG_POLLING_KEY = '__gcsemate_force_long_polling';
 const BLOCKED_BY_CLIENT_PATTERN = /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i;
 const STRIPE_BLOCKED_PATTERN = /r\.stripe\.com|errors\.stripe\.com|pricing-table/i;
 const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write)\/channel/i;
 let hasShownBlockerWarning = false;
+let firestoreAssertionCount = 0;
+let hasShownFirestoreRecoveryWarning = false;
 
 function isLikelyBlockedByClient(errorLike) {
     const text = typeof errorLike === 'string'
@@ -62,6 +65,24 @@ function showBlockedByClientWarningOnce() {
     }, 200);
 }
 
+function handleFirestoreAssertionEvent() {
+    firestoreAssertionCount += 1;
+    if (firestoreAssertionCount < 3) return;
+
+    try {
+        localStorage.setItem(FIRESTORE_FORCE_LONG_POLLING_KEY, '1');
+    } catch (_) {}
+
+    if (!hasShownFirestoreRecoveryWarning) {
+        hasShownFirestoreRecoveryWarning = true;
+        try {
+            showToast('Detected unstable Firestore transport. Switching to compatibility mode…', 'warning', 4500);
+        } catch (_) {}
+    }
+
+    recoverFirestoreSession();
+}
+
 window.addEventListener('error', (event) => {
     if (isLikelyBlockedByClient(event)) {
         event.preventDefault();
@@ -74,6 +95,7 @@ window.addEventListener('error', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
         console.warn('[suppressed] Firestore assertion error');
+        handleFirestoreAssertionEvent();
     }
 }, { capture: true });
 
@@ -91,6 +113,7 @@ window.addEventListener('unhandledrejection', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
         console.warn('[suppressed] Firestore assertion rejection');
+        handleFirestoreAssertionEvent();
     }
 }, { capture: true });
 
@@ -413,9 +436,19 @@ async function recoverFirestoreSession() {
     window.__lastFirestoreRecoveryAt = Date.now();
     try {
         const instance = firebase.firestore();
-        // Try to clean up any stuck state
-        await instance.terminate();
-        await instance.clearPersistence();
+        // Try to clean up any stuck state when possible
+        const forcedLongPolling = (() => {
+            try {
+                return localStorage.getItem(FIRESTORE_FORCE_LONG_POLLING_KEY) === '1';
+            } catch (_) {
+                return false;
+            }
+        })();
+
+        if (!forcedLongPolling) {
+            await instance.terminate();
+            await instance.clearPersistence();
+        }
     } catch (_) {
         // ignore
     }
