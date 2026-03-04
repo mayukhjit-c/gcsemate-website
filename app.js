@@ -5651,6 +5651,38 @@ async function resendVerificationEmail() {
 function renderUserManagementPanel(allUsers) {
     const container = document.getElementById('user-management-grid');
     if (!container) return;
+
+    if (!container.dataset.actionsBound) {
+        container.addEventListener('click', async (event) => {
+            const actionBtn = event.target.closest('button[data-user-action]');
+            if (!actionBtn) return;
+
+            const action = actionBtn.dataset.userAction;
+            const userId = actionBtn.dataset.userId;
+            if (!action || !userId) return;
+
+            if (action === 'edit') {
+                openEditUserModal(userId);
+                return;
+            }
+            if (action === 'activity') {
+                viewUserActivity(userId);
+                return;
+            }
+            if (action === 'sharing-log') {
+                viewAccountSharingHistory(userId);
+                return;
+            }
+            if (action === 'force-logout') {
+                adminForceLogout(userId);
+                return;
+            }
+            if (action === 'restore-access') {
+                adminRestoreAccountAccess(userId);
+            }
+        });
+        container.dataset.actionsBound = 'true';
+    }
     container.innerHTML = '';
     
     // Calculate statistics
@@ -5796,12 +5828,11 @@ function renderUserManagementPanel(allUsers) {
                 </div>
             </div>
             <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button onclick="openEditUserModal('${user.id}')" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
-                <button onclick="viewUserActivity('${user.id}')" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
-                <button onclick="viewAccountSharingHistory('${user.id}')" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing Log</button>
-                <button onclick="adminSendPasswordReset('${user.email}')" class="px-3 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors text-sm" data-tooltip="Send password reset email">Reset Link</button>
-                <button onclick="adminForceLogout('${user.id}')" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Force Logout</button>
-                ${hasSharingFlag ? `<button onclick="adminRestoreAccountAccess('${user.id}')" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore Access</button>` : ''}
+                <button data-user-action="edit" data-user-id="${user.id}" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
+                <button data-user-action="activity" data-user-id="${user.id}" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
+                <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing Log</button>
+                <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Force Logout</button>
+                ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore Access</button>` : ''}
             </div>
         `;
         container.appendChild(card);

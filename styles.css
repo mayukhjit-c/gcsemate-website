@@ -2825,6 +2825,13 @@ left: 100%;
 
         #admin-panel button {
             border-radius: 12px;
+            border-color: rgba(var(--brand-300), 0.24) !important;
+        }
+
+        #admin-panel .border,
+        #admin-panel [class*="border-gray"],
+        #admin-panel [class*="border-black"] {
+            border-color: rgba(var(--brand-300), 0.24) !important;
         }
 
         #admin-panel .bg-blue-600,

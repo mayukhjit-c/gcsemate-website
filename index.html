@@ -1973,6 +1973,13 @@
                                     <input id="faq-search" type="search" placeholder="Search FAQs..." class="flex-1 px-3 py-2 rounded-lg border border-gray-300/60 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Search FAQs" />
                                     <span id="faq-results-count" class="text-xs text-gray-500"></span>
                                 </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-blue-50/80 border border-blue-100 rounded-lg px-4 py-3">
+                                    <p class="text-sm text-blue-800">Found a bug or have an idea? Send quick feedback directly to our team.</p>
+                                    <button onclick="openFeedbackWidget()" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors" data-tooltip="Share feedback with the GCSEMate team">
+                                        <i class="fas fa-comment-dots"></i>
+                                        Send Feedback
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     <!-- FAQ Container -->
@@ -2019,7 +2026,7 @@
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                             <div class="faq-answer px-5 pb-5 text-gray-600" style="max-height:0">
-                                <p>Please email us via the link on the Upgrade page or use the contact option in the footer. We welcome feedback to improve GCSEMate.</p>
+                                <p>Use the <strong>Send Feedback</strong> button on this page, the floating feedback button, or email us via the link on the Upgrade page. We actively use your feedback to improve GCSEMate.</p>
                             </div>
                         </div>
                         <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
@@ -2160,12 +2167,22 @@
                 <p class="text-xs text-gray-500">Creator & Developer of GCSEMate</p>
                 <p>© <span id="copyright-year"></span> GCSEMate. All Rights Reserved. | <a href="/privacypolicy" class="hover:underline">Privacy Policy</a> | <a href="/termsofservice" class="hover:underline">Terms of Service</a> | <a href="#" class="hover:underline" onclick="event.preventDefault(); showDmcaModal()">DMCA Policy</a></p>
                 <p class="text-sm text-gray-600">Need help? Contact <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-700">admin@gcsemate.com</a>.</p>
+                <div>
+                    <button onclick="openFeedbackWidget()" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors" data-tooltip="Open feedback widget">
+                        <i class="fas fa-message"></i>
+                        Send Feedback
+                    </button>
+                </div>
                 <p class="text-xs text-gray-400">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline">Terms of Service</a> apply.</p>
             </div>
         </footer>
     </div>
     
     <div id="toast-container"></div>
+    <button id="feedback-fab" onclick="openFeedbackWidget()" class="fixed bottom-4 left-4 z-[1000] inline-flex items-center gap-2 px-4 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold shadow-lg hover:bg-blue-700 transition-colors" data-tooltip="Share feedback">
+        <i class="fas fa-comment-alt"></i>
+        Feedback
+    </button>
     <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
@@ -2513,6 +2530,51 @@
         }
     })();
     </script>
+
+    <!-- Start BawkBox Feedback Code -->
+    <script data-sil-id="69a8320401e80900138d77f2">
+    (function() {
+        var widgetId = '69a8320401e80900138d77f2';
+
+        function loadWidget() {
+            if (window.__bawkboxFeedbackLoaded) return;
+            window.__bawkboxFeedbackLoaded = true;
+
+            var d = document;
+            var l = window.location;
+            var protocolPrefix = l.protocol === 'file:' ? 'http://' : '//';
+            var scripts = d.getElementsByTagName('script');
+            var anchorScript = scripts[scripts.length - 1];
+            var scriptEl = d.createElement('script');
+            scriptEl.async = true;
+            scriptEl.type = 'text/javascript';
+            scriptEl.src = protocolPrefix + 'bawkbox.com/widget/feedback/' + widgetId + '?page=' + encodeURIComponent(String(l));
+            anchorScript.parentNode.insertBefore(scriptEl, anchorScript);
+        }
+
+        if (window.Squarespace) {
+            document.addEventListener('DOMContentLoaded', loadWidget, { once: true });
+            setTimeout(loadWidget, 3000);
+        } else {
+            loadWidget();
+        }
+
+        window.openFeedbackWidget = function() {
+            var trigger = document.querySelector('#sil-widget-69a8320401e80900138d77f2 a, #sil-widget-69a8320401e80900138d77f2 button, .sil-widget-feedback a');
+            if (trigger) {
+                trigger.click();
+                return;
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('Feedback widget is loading. Please try again in a moment.', 'info');
+            }
+        };
+    })();
+    </script>
+    <div class="sil-widget-feedback sil-widget" id="sil-widget-69a8320401e80900138d77f2" aria-hidden="true">
+        <a href="//bawkbox.com/install/feedback" rel="noopener noreferrer"></a>
+    </div>
+    <!-- End BawkBox Feedback Code -->
 
         <!-- Start of OpenWidget (www.openwidget.com) code -->
         <script>
