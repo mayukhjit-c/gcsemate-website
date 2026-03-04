@@ -68,6 +68,24 @@ service cloud.firestore {
       match /flashcards/{subjectId} {
         allow read, write: if isSignedIn() && request.auth.uid == uid;
       }
+
+      // Per-user grade tracker entries
+      match /gradeEntries/{entryId} {
+        allow read: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
+        allow create, update: if isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.keys().hasOnly([
+            'userId','subject','subjectKey','grade','assessmentName','examMonth','createdAt','updatedAt'
+          ]) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.subject is string && request.resource.data.subject.size() > 0 &&
+          request.resource.data.subjectKey is string && request.resource.data.subjectKey.size() > 0 &&
+          request.resource.data.assessmentName is string && request.resource.data.assessmentName.size() > 0 &&
+          request.resource.data.examMonth is string &&
+          request.resource.data.examMonth.matches('^\\d{4}-\\d{2}$') &&
+          request.resource.data.grade is number &&
+          request.resource.data.grade >= 1 && request.resource.data.grade <= 9;
+        allow delete: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
+      }
     }
 
     // Annotations collection - NEW

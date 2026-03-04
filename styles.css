@@ -3031,11 +3031,27 @@ will-change: transform;
         }
 
         #landing-page .gs-shell {
-            width: min(1240px, 100%);
+            width: min(1380px, calc(100% - clamp(16px, 3.5vw, 48px)));
+            padding: clamp(22px, 2.8vw, 40px);
         }
 
         #landing-page .gs-shell--single {
-            max-width: 1240px;
+            max-width: 1380px;
+        }
+
+        #landing-page .hero-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+        }
+
+        #tools-page .shadow-lg,
+        #tools-page .shadow-md {
+            box-shadow: 0 18px 45px -32px rgba(15, 23, 42, 0.32);
+        }
+
+        @media (max-width: 1024px) {
+            #landing-page .hero-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .gs-tag {

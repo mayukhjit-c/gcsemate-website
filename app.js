@@ -25,6 +25,24 @@ let allBlogPosts = [];
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
+let toolsTimerInterval = null;
+const TOOLS_TIMER_MODES = {
+    pomodoro: { label: 'Pomodoro', durationSeconds: 25 * 60 },
+    exam: { label: 'Exam Sprint', durationSeconds: 50 * 60 },
+    study: { label: 'Deep Study', durationSeconds: 90 * 60 }
+};
+let toolsTimerState = {
+    mode: 'pomodoro',
+    remainingSeconds: TOOLS_TIMER_MODES.pomodoro.durationSeconds,
+    isRunning: false,
+    sessionFocusedSeconds: 0,
+    todayFocusedSeconds: 0,
+    lastTickAt: null,
+    dayKey: ''
+};
+let toolsPageInitialized = false;
+let unsubscribeGradeEntries = null;
+let userGradeEntries = [];
 
 function clearAccentCSSVars() {
     const root = document.documentElement;
@@ -208,6 +226,7 @@ const SECTION_MAINTENANCE_OPTIONS = [
     { id: 'videos-page', label: 'Videos' },
     { id: 'blog-page', label: 'Blog' },
     { id: 'calendar-page', label: 'Calendar' },
+    { id: 'tools-page', label: 'Tools' },
     { id: 'useful-links-page', label: 'Useful Links' },
     { id: 'features-page', label: 'Features & Pricing' },
     { id: 'help-page', label: 'Help / FAQ' }
@@ -3865,6 +3884,7 @@ function initializeAppState() {
     
     if (currentUser) {
         renderDashboard();
+        initializeToolsPage();
         // Log client access context for auditing
         logClientAccess().catch(() => {});
         
@@ -5605,6 +5625,11 @@ window.signInWithGoogle = signInWithGoogle;
 
 async function handleLogout() {
     try {
+        if (unsubscribeGradeEntries) {
+            try { unsubscribeGradeEntries(); } catch (_) {}
+            unsubscribeGradeEntries = null;
+        }
+
         // Destroy reCAPTCHA verifier
         if (recaptchaVerifier) {
             recaptchaVerifier.clear();
@@ -5686,6 +5711,10 @@ function renderUserManagementPanel(allUsers) {
             }
             if (action === 'force-logout') {
                 adminForceLogout(userId);
+                return;
+            }
+            if (action === 'grades') {
+                openUserGradesModal(userId);
                 return;
             }
             if (action === 'restore-access') {
@@ -5841,6 +5870,7 @@ function renderUserManagementPanel(allUsers) {
             <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button data-user-action="edit" data-user-id="${user.id}" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
                 <button data-user-action="activity" data-user-id="${user.id}" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
+                <button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>
                 <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing Log</button>
                 <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Force Logout</button>
                 ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore Access</button>` : ''}
@@ -9993,6 +10023,10 @@ function showPage(pageId) {
     if (pageId === 'useful-links-page' && Object.keys(allUsefulLinks).length > 0) {
         setTimeout(() => filterAndRenderLinks(), 100);
     }
+
+    if (pageId === 'tools-page') {
+        setTimeout(() => updateToolsTimerUI(), 50);
+    }
     
     // AI Tutor initialization removed (feature disabled)
 
@@ -10060,6 +10094,7 @@ const ROUTE_BY_PAGE_ID = {
     'videos-page': '/videos',
     'blog-page': '/blog',
     'calendar-page': '/calendar',
+    'tools-page': '/tools',
     'useful-links-page': '/useful-links',
     'about-page': '/about',
     'features-page': '/features',
@@ -14001,6 +14036,7 @@ const pageTitles = {
     'videos-page': 'Videos - GCSEMate',
     'blog-page': 'Blog - GCSEMate',
     'calendar-page': 'Calendar - GCSEMate',
+    'tools-page': 'Tools - GCSEMate',
     'useful-links-page': 'Useful Links - GCSEMate',
     'file-browser-page': 'Files - GCSEMate',
     'account-settings-page': 'Account - GCSEMate',
@@ -14755,6 +14791,880 @@ function showNotFoundPage() {
     showErrorPage('404 - Page not found', 'The page you are looking for does not exist or has been moved.');
 }
 
+function getTodayKeyForTools() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function formatDurationShort(totalSeconds) {
+    const safe = Math.max(0, Math.floor(totalSeconds || 0));
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+}
+
+function formatClock(totalSeconds) {
+    const safe = Math.max(0, Math.floor(totalSeconds || 0));
+    const m = Math.floor(safe / 60);
+    const s = safe % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function saveToolsState() {
+    try {
+        localStorage.setItem('gcsemate_tools_state', JSON.stringify({
+            mode: toolsTimerState.mode,
+            remainingSeconds: toolsTimerState.remainingSeconds,
+            sessionFocusedSeconds: toolsTimerState.sessionFocusedSeconds,
+            todayFocusedSeconds: toolsTimerState.todayFocusedSeconds,
+            dayKey: toolsTimerState.dayKey
+        }));
+    } catch (_) {}
+}
+
+function loadToolsState() {
+    const today = getTodayKeyForTools();
+    toolsTimerState.dayKey = today;
+    try {
+        const raw = localStorage.getItem('gcsemate_tools_state');
+        if (!raw) return;
+        const parsed = JSON.parse(raw) || {};
+        const mode = parsed.mode && TOOLS_TIMER_MODES[parsed.mode] ? parsed.mode : 'pomodoro';
+        toolsTimerState.mode = mode;
+        toolsTimerState.remainingSeconds = Number.isFinite(parsed.remainingSeconds)
+            ? Math.max(0, parsed.remainingSeconds)
+            : TOOLS_TIMER_MODES[mode].durationSeconds;
+        toolsTimerState.sessionFocusedSeconds = Number.isFinite(parsed.sessionFocusedSeconds)
+            ? Math.max(0, parsed.sessionFocusedSeconds)
+            : 0;
+        toolsTimerState.todayFocusedSeconds = parsed.dayKey === today && Number.isFinite(parsed.todayFocusedSeconds)
+            ? Math.max(0, parsed.todayFocusedSeconds)
+            : 0;
+    } catch (_) {}
+}
+
+function resetToolsTimer(mode = toolsTimerState.mode) {
+    const safeMode = TOOLS_TIMER_MODES[mode] ? mode : 'pomodoro';
+    toolsTimerState.mode = safeMode;
+    toolsTimerState.remainingSeconds = TOOLS_TIMER_MODES[safeMode].durationSeconds;
+    toolsTimerState.isRunning = false;
+    toolsTimerState.lastTickAt = null;
+    if (toolsTimerInterval) {
+        clearInterval(toolsTimerInterval);
+        toolsTimerInterval = null;
+    }
+    saveToolsState();
+    updateToolsTimerUI();
+}
+
+function stopToolsTimer() {
+    toolsTimerState.isRunning = false;
+    toolsTimerState.lastTickAt = null;
+    if (toolsTimerInterval) {
+        clearInterval(toolsTimerInterval);
+        toolsTimerInterval = null;
+    }
+    saveToolsState();
+    updateToolsTimerUI();
+}
+
+function onToolsTimerTick() {
+    if (!toolsTimerState.isRunning) return;
+    const now = Date.now();
+    const elapsedSeconds = toolsTimerState.lastTickAt ? Math.floor((now - toolsTimerState.lastTickAt) / 1000) : 1;
+    if (elapsedSeconds <= 0) return;
+
+    toolsTimerState.lastTickAt = now;
+    const today = getTodayKeyForTools();
+    if (toolsTimerState.dayKey !== today) {
+        toolsTimerState.dayKey = today;
+        toolsTimerState.todayFocusedSeconds = 0;
+    }
+
+    toolsTimerState.remainingSeconds = Math.max(0, toolsTimerState.remainingSeconds - elapsedSeconds);
+    toolsTimerState.sessionFocusedSeconds += elapsedSeconds;
+    toolsTimerState.todayFocusedSeconds += elapsedSeconds;
+
+    if (toolsTimerState.remainingSeconds === 0) {
+        stopToolsTimer();
+        try { showToast('Focus session complete. Great work!', 'success'); } catch (_) {}
+        return;
+    }
+
+    saveToolsState();
+    updateToolsTimerUI();
+}
+
+function startToolsTimer() {
+    if (toolsTimerState.isRunning) return;
+    toolsTimerState.isRunning = true;
+    toolsTimerState.lastTickAt = Date.now();
+    if (toolsTimerInterval) clearInterval(toolsTimerInterval);
+    toolsTimerInterval = setInterval(onToolsTimerTick, 1000);
+    updateToolsTimerUI();
+}
+
+function updateToolsTimerUI() {
+    const modeSelect = document.getElementById('tools-timer-mode');
+    const displayEl = document.getElementById('tools-timer-display');
+    const progressEl = document.getElementById('tools-timer-progress');
+    const statusEl = document.getElementById('tools-timer-status');
+    const todayEl = document.getElementById('tools-tracker-today');
+    const sessionEl = document.getElementById('tools-tracker-session');
+    if (!displayEl || !progressEl || !statusEl || !todayEl || !sessionEl) return;
+
+    if (modeSelect) modeSelect.value = toolsTimerState.mode;
+
+    const full = TOOLS_TIMER_MODES[toolsTimerState.mode].durationSeconds;
+    const completed = Math.max(0, full - toolsTimerState.remainingSeconds);
+    const progress = full > 0 ? Math.min(100, (completed / full) * 100) : 0;
+
+    displayEl.textContent = formatClock(toolsTimerState.remainingSeconds);
+    progressEl.style.width = `${progress}%`;
+    todayEl.textContent = formatDurationShort(toolsTimerState.todayFocusedSeconds);
+    sessionEl.textContent = formatDurationShort(toolsTimerState.sessionFocusedSeconds);
+    statusEl.textContent = toolsTimerState.isRunning
+        ? `${TOOLS_TIMER_MODES[toolsTimerState.mode].label} in progress`
+        : 'Ready to focus';
+}
+
+async function fetchAndRenderDailyMeme(forceRefresh = false) {
+    const statusEl = document.getElementById('tools-meme-status');
+    const imgEl = document.getElementById('tools-meme-image');
+    const nameEl = document.getElementById('tools-meme-name');
+    if (!statusEl || !imgEl || !nameEl) return;
+
+    const todayKey = getTodayKeyForTools();
+    const cacheKey = 'gcsemate_daily_meme';
+
+    if (!forceRefresh) {
+        try {
+            const cachedRaw = localStorage.getItem(cacheKey);
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw);
+                if (cached?.dayKey === todayKey && cached?.url) {
+                    imgEl.src = cached.url;
+                    imgEl.classList.remove('hidden');
+                    nameEl.textContent = cached.name || '';
+                    statusEl.textContent = 'Daily meme loaded';
+                    return;
+                }
+            }
+        } catch (_) {}
+    }
+
+    statusEl.textContent = 'Loading meme...';
+    imgEl.classList.add('hidden');
+    nameEl.textContent = '';
+
+    try {
+        const response = await fetch('https://api.imgflip.com/get_memes?type=image', { method: 'GET' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const payload = await response.json();
+        const memes = payload?.data?.memes;
+        if (!payload?.success || !Array.isArray(memes) || memes.length === 0) {
+            throw new Error('No memes returned');
+        }
+
+        const selected = memes[Math.floor(Math.random() * memes.length)];
+        if (!selected?.url) throw new Error('Invalid meme payload');
+
+        imgEl.src = selected.url;
+        imgEl.classList.remove('hidden');
+        nameEl.textContent = selected.name || '';
+        statusEl.textContent = 'Fresh meme loaded';
+
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                dayKey: todayKey,
+                name: selected.name || '',
+                url: selected.url
+            }));
+        } catch (_) {}
+    } catch (error) {
+        statusEl.textContent = 'Could not load meme right now. Try again.';
+        try { logError(error, 'Daily Meme Fetch'); } catch (_) {}
+    }
+}
+
+
+function getGradeTheme(grade) {
+    const value = Number(grade);
+    const themeMap = {
+        9: { bg: '#14532d', text: '#ecfdf5', border: '#14532d' },
+        8: { bg: '#166534', text: '#ecfdf5', border: '#166534' },
+        7: { bg: '#65a30d', text: '#1f2937', border: '#4d7c0f' },
+        6: { bg: '#ca8a04', text: '#1f2937', border: '#a16207' },
+        5: { bg: '#d97706', text: '#111827', border: '#b45309' },
+        4: { bg: '#ea580c', text: '#fff7ed', border: '#c2410c' },
+        3: { bg: '#dc2626', text: '#fef2f2', border: '#b91c1c' },
+        2: { bg: '#b91c1c', text: '#fef2f2', border: '#991b1b' },
+        1: { bg: '#7f1d1d', text: '#fef2f2', border: '#7f1d1d' }
+    };
+    return themeMap[value] || { bg: '#e5e7eb', text: '#374151', border: '#d1d5db' };
+}
+
+function normalizeGradeSubject(value) {
+    return (value || '').trim();
+}
+
+function gradeSubjectKey(value) {
+    return normalizeGradeSubject(value).toLowerCase();
+}
+
+function getAccessibleSubjectsForGradeTracker() {
+    if (!currentUser) return [];
+
+    const isFreeTierUser = (currentUser?.tier || 'free') === 'free';
+    const userAllowedSubjects = currentUser.allowedSubjects;
+
+    if (isFreeTierUser) {
+        const freeTrialSubject = getCurrentFreeTrialSubject();
+        return freeTrialSubject ? [freeTrialSubject] : [];
+    }
+
+    if (userAllowedSubjects === null || userAllowedSubjects === undefined) {
+        return [...SUBJECTS];
+    }
+
+    const normalizedAllowedSubjects = [...userAllowedSubjects];
+    if (normalizedAllowedSubjects.includes('english')) {
+        if (!normalizedAllowedSubjects.includes('english language (aqa)')) normalizedAllowedSubjects.push('english language (aqa)');
+        if (!normalizedAllowedSubjects.includes('english literature (edexcel)')) normalizedAllowedSubjects.push('english literature (edexcel)');
+    }
+
+    return SUBJECTS.filter(subject => normalizedAllowedSubjects.includes(subject.toLowerCase()));
+}
+
+function formatMonthLabel(monthValue) {
+    if (!monthValue || !/^\d{4}-\d{2}$/.test(monthValue)) return '-';
+    const [year, month] = monthValue.split('-').map(Number);
+    const date = new Date(year, (month || 1) - 1, 1);
+    return date.toLocaleString('en-GB', { month: 'short', year: 'numeric' });
+}
+
+function getLatestGradesBySubject(entries) {
+    const latestMap = new Map();
+    const sorted = [...entries].sort((a, b) => {
+        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+        return bTime - aTime;
+    });
+
+    sorted.forEach(entry => {
+        const key = entry.subjectKey || gradeSubjectKey(entry.subject);
+        if (!key || latestMap.has(key)) return;
+        latestMap.set(key, entry);
+    });
+
+    return latestMap;
+}
+
+function renderGradeBadge(grade) {
+    const value = Number(grade);
+    if (!Number.isFinite(value) || value < 1 || value > 9) return '<span class="text-gray-400">-</span>';
+    const theme = getGradeTheme(value);
+    return `<span class="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-md text-xs font-bold transition-all duration-300" style="background:${theme.bg}; color:${theme.text}; border:1px solid ${theme.border};">${value}</span>`;
+}
+
+function updateGradeAverageDisplay(latestMap) {
+    const averageEl = document.getElementById('tools-grade-average');
+    if (!averageEl) return;
+
+    const grades = Array.from(latestMap.values())
+        .map(entry => Number(entry.grade))
+        .filter(value => Number.isFinite(value) && value >= 1 && value <= 9);
+
+    if (!grades.length) {
+        averageEl.textContent = '-';
+        averageEl.style.color = '';
+        return;
+    }
+
+    const average = grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+    averageEl.textContent = average.toFixed(2);
+    const theme = getGradeTheme(Math.round(average));
+    averageEl.style.color = theme.bg;
+}
+
+function renderGradeTrackerTables() {
+    const latestBody = document.getElementById('tools-grades-latest-body');
+    const historyBody = document.getElementById('tools-grades-history-body');
+    if (!latestBody || !historyBody) return;
+
+    const latestMap = getLatestGradesBySubject(userGradeEntries);
+    updateGradeAverageDisplay(latestMap);
+
+    const accessibleSubjects = getAccessibleSubjectsForGradeTracker();
+    const customSubjects = Array.from(new Set(
+        userGradeEntries
+            .map(entry => normalizeGradeSubject(entry.subject))
+            .filter(Boolean)
+            .filter(subject => !accessibleSubjects.some(base => base.toLowerCase() === subject.toLowerCase()))
+    ));
+    const subjectRows = [...accessibleSubjects, ...customSubjects].sort((a, b) => a.localeCompare(b));
+
+    latestBody.innerHTML = '';
+    if (!subjectRows.length) {
+        latestBody.innerHTML = '<tr><td colspan="4" class="px-3 py-3 text-gray-500 text-center">No grades saved yet.</td></tr>';
+    } else {
+        subjectRows.forEach(subject => {
+            const entry = latestMap.get(gradeSubjectKey(subject));
+            const row = document.createElement('tr');
+            row.className = 'border-t border-gray-100';
+            row.innerHTML = `
+                <td class="px-3 py-2 text-gray-800 font-medium">${escapeHTML(subject || '-')}</td>
+                <td class="px-3 py-2">${entry ? renderGradeBadge(entry.grade) : '<span class="text-gray-400">-</span>'}</td>
+                <td class="px-3 py-2 text-gray-700">${escapeHTML(entry?.assessmentName || '-')}</td>
+                <td class="px-3 py-2 text-gray-600">${escapeHTML(formatMonthLabel(entry?.examMonth))}</td>
+            `;
+            latestBody.appendChild(row);
+        });
+    }
+
+    historyBody.innerHTML = '';
+    const sortedHistory = [...userGradeEntries].sort((a, b) => {
+        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+        return bTime - aTime;
+    });
+
+    if (!sortedHistory.length) {
+        historyBody.innerHTML = '<tr><td colspan="5" class="px-3 py-3 text-gray-500 text-center">No grade history yet.</td></tr>';
+    } else {
+        sortedHistory.forEach(entry => {
+            const row = document.createElement('tr');
+            row.className = 'border-t border-gray-100';
+            row.innerHTML = `
+                <td class="px-3 py-2 text-gray-800">${escapeHTML(entry.subject || '-')}</td>
+                <td class="px-3 py-2">${renderGradeBadge(entry.grade)}</td>
+                <td class="px-3 py-2 text-gray-700">${escapeHTML(entry.assessmentName || '-')}</td>
+                <td class="px-3 py-2 text-gray-600">${escapeHTML(formatMonthLabel(entry.examMonth))}</td>
+                <td class="px-3 py-2">
+                    <button class="px-2 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold transition-colors" data-grade-delete-id="${entry.id}">Delete</button>
+                </td>
+            `;
+            historyBody.appendChild(row);
+        });
+    }
+
+    updateGradeChartSubjectOptions();
+    renderGradeTrendChart();
+}
+
+function getSortedGradeEntriesForSubject(subject) {
+    const key = gradeSubjectKey(subject);
+    return userGradeEntries
+        .filter(entry => (entry.subjectKey || gradeSubjectKey(entry.subject)) === key)
+        .sort((a, b) => {
+            const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+            const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+            return aTime - bTime;
+        });
+}
+
+function updateGradeChartSubjectOptions() {
+    const select = document.getElementById('tools-grade-chart-subject');
+    if (!select) return;
+
+    const latestMap = getLatestGradesBySubject(userGradeEntries);
+    const subjects = Array.from(new Set([
+        ...getAccessibleSubjectsForGradeTracker(),
+        ...Array.from(latestMap.values()).map(entry => normalizeGradeSubject(entry.subject)).filter(Boolean)
+    ])).sort((a, b) => a.localeCompare(b));
+
+    const currentValue = select.value;
+    select.innerHTML = subjects
+        .map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`)
+        .join('');
+
+    if (currentValue && Array.from(select.options).some(option => option.value === currentValue)) {
+        select.value = currentValue;
+    } else if (subjects.length > 0) {
+        select.value = subjects[0];
+    }
+}
+
+function renderGradeTrendChart() {
+    const canvas = document.getElementById('tools-grade-chart');
+    const select = document.getElementById('tools-grade-chart-subject');
+    const caption = document.getElementById('tools-grade-chart-caption');
+    if (!canvas || !select || !caption) return;
+
+    const subject = select.value;
+    const entries = subject ? getSortedGradeEntriesForSubject(subject) : [];
+
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(220, Math.floor(rect.width));
+    const height = Math.max(120, Math.floor(rect.height));
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const padding = { top: 12, right: 14, bottom: 26, left: 30 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    for (let grade = 1; grade <= 9; grade += 2) {
+        const y = padding.top + (9 - grade) / 8 * plotHeight;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '10px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(String(grade), padding.left - 6, y + 3);
+    }
+
+    if (!entries.length) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No grade points yet for this subject.', width / 2, height / 2);
+        caption.textContent = 'Add grades to see a live trend line.';
+        return;
+    }
+
+    const points = entries.map((entry, index) => {
+        const x = entries.length === 1
+            ? padding.left + plotWidth / 2
+            : padding.left + (index / (entries.length - 1)) * plotWidth;
+        const grade = Number(entry.grade);
+        const y = padding.top + (9 - grade) / 8 * plotHeight;
+        return { x, y, grade, entry };
+    });
+
+    const avg = entries.reduce((sum, entry) => sum + Number(entry.grade || 0), 0) / entries.length;
+    const theme = getGradeTheme(Math.round(avg));
+
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = theme.bg;
+    ctx.beginPath();
+    points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+    });
+    ctx.stroke();
+
+    points.forEach(point => {
+        const pointTheme = getGradeTheme(point.grade);
+        ctx.fillStyle = pointTheme.bg;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    });
+
+    const latest = entries[entries.length - 1];
+    const first = entries[0];
+    const delta = Number(latest.grade) - Number(first.grade);
+    const deltaText = delta === 0 ? 'steady' : (delta > 0 ? `up +${delta}` : `down ${delta}`);
+    caption.textContent = `${entries.length} point${entries.length === 1 ? '' : 's'} • latest ${latest.grade} (${escapeHTML(latest.assessmentName || 'assessment')}) • trend ${deltaText}`;
+}
+
+function updateGradeSubjectOptions() {
+    const subjectSelect = document.getElementById('tools-grade-subject');
+    if (!subjectSelect) return;
+
+    const baseSubjects = getAccessibleSubjectsForGradeTracker();
+    const customSubjects = Array.from(new Set(
+        userGradeEntries
+            .map(entry => normalizeGradeSubject(entry.subject))
+            .filter(subject => subject && !SUBJECTS.map(s => s.toLowerCase()).includes(subject.toLowerCase()))
+    )).sort((a, b) => a.localeCompare(b));
+
+    const options = [
+        ...baseSubjects,
+        ...customSubjects.filter(subject => !baseSubjects.some(base => base.toLowerCase() === subject.toLowerCase()))
+    ];
+
+    const currentValue = subjectSelect.value;
+    subjectSelect.innerHTML = options
+        .map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`)
+        .join('');
+    subjectSelect.insertAdjacentHTML('beforeend', '<option value="__custom__">+ Add custom subject</option>');
+
+    if (currentValue && Array.from(subjectSelect.options).some(option => option.value === currentValue)) {
+        subjectSelect.value = currentValue;
+    } else if (options.length) {
+        subjectSelect.value = options[0];
+    } else {
+        subjectSelect.value = '__custom__';
+    }
+
+    toggleGradeCustomSubjectInput();
+}
+
+function toggleGradeCustomSubjectInput() {
+    const subjectSelect = document.getElementById('tools-grade-subject');
+    const customWrap = document.getElementById('tools-grade-custom-wrap');
+    if (!subjectSelect || !customWrap) return;
+
+    if (subjectSelect.value === '__custom__') customWrap.classList.remove('hidden');
+    else customWrap.classList.add('hidden');
+}
+
+function updateGradeSelectPreview() {
+    const gradeSelect = document.getElementById('tools-grade-value');
+    if (!gradeSelect) return;
+    const grade = Number(gradeSelect.value);
+    if (!Number.isFinite(grade)) {
+        gradeSelect.style.background = '';
+        gradeSelect.style.color = '';
+        gradeSelect.style.borderColor = '';
+        return;
+    }
+    const theme = getGradeTheme(grade);
+    gradeSelect.style.background = `${theme.bg}22`;
+    gradeSelect.style.color = '#111827';
+    gradeSelect.style.borderColor = theme.border;
+}
+
+async function saveGradeEntry() {
+    const messageEl = document.getElementById('tools-grade-message');
+    const subjectSelect = document.getElementById('tools-grade-subject');
+    const customSubjectInput = document.getElementById('tools-grade-custom-subject');
+    const gradeSelect = document.getElementById('tools-grade-value');
+    const assessmentInput = document.getElementById('tools-grade-assessment');
+    const monthInput = document.getElementById('tools-grade-month');
+
+    if (!currentUser || !db || !subjectSelect || !gradeSelect || !assessmentInput || !monthInput) return;
+
+    let subject = subjectSelect.value;
+    if (subject === '__custom__') subject = normalizeGradeSubject(customSubjectInput?.value || '');
+    subject = normalizeGradeSubject(subject);
+    const grade = Number(gradeSelect.value);
+    const assessmentName = normalizeGradeSubject(assessmentInput.value);
+    const examMonth = monthInput.value;
+
+    if (!subject) {
+        if (messageEl) {
+            messageEl.textContent = 'Please choose or enter a subject.';
+            messageEl.className = 'text-sm h-5 mb-2 text-red-600';
+        }
+        return;
+    }
+    if (!Number.isFinite(grade) || grade < 1 || grade > 9) {
+        if (messageEl) {
+            messageEl.textContent = 'Please choose a grade from 1 to 9.';
+            messageEl.className = 'text-sm h-5 mb-2 text-red-600';
+        }
+        return;
+    }
+    if (!assessmentName) {
+        if (messageEl) {
+            messageEl.textContent = 'Please add an assessment name (e.g. Mock Paper 1).';
+            messageEl.className = 'text-sm h-5 mb-2 text-red-600';
+        }
+        return;
+    }
+    if (!examMonth) {
+        if (messageEl) {
+            messageEl.textContent = 'Please choose the month for this assessment.';
+            messageEl.className = 'text-sm h-5 mb-2 text-red-600';
+        }
+        return;
+    }
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('gradeEntries').add({
+            userId: currentUser.uid,
+            subject,
+            subjectKey: gradeSubjectKey(subject),
+            grade,
+            assessmentName,
+            examMonth,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        assessmentInput.value = '';
+        gradeSelect.value = '';
+        updateGradeSelectPreview();
+        if (messageEl) {
+            messageEl.textContent = 'Grade saved.';
+            messageEl.className = 'text-sm h-5 mb-2 text-green-600';
+        }
+    } catch (error) {
+        if (messageEl) {
+            messageEl.textContent = 'Could not save grade right now.';
+            messageEl.className = 'text-sm h-5 mb-2 text-red-600';
+        }
+        logError(error, 'Save Grade Entry');
+    }
+}
+
+async function deleteGradeEntry(entryId) {
+    if (!entryId || !currentUser || !db) return;
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('gradeEntries').doc(entryId).delete();
+        showToast('Grade deleted.', 'success');
+    } catch (error) {
+        logError(error, 'Delete Grade Entry');
+        showToast('Could not delete this grade entry.', 'error');
+    }
+}
+
+function subscribeToGradeEntries() {
+    if (!currentUser || !db) return;
+    if (unsubscribeGradeEntries) {
+        try { unsubscribeGradeEntries(); } catch (_) {}
+        unsubscribeGradeEntries = null;
+    }
+
+    unsubscribeGradeEntries = db.collection('users').doc(currentUser.uid)
+        .collection('gradeEntries')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            userGradeEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            updateGradeSubjectOptions();
+            renderGradeTrackerTables();
+        }, error => {
+            logError(error, 'Subscribe Grade Entries');
+        });
+}
+
+function getQuoteElements() {
+    return {
+        loadingTextEl: document.getElementById('loading-quote'),
+        loadingAuthorEl: document.getElementById('loading-quote-author'),
+        toolsStatusEl: document.getElementById('tools-quote-status'),
+        toolsTextEl: document.getElementById('tools-quote-text'),
+        toolsAuthorEl: document.getElementById('tools-quote-author')
+    };
+}
+
+function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
+    const elements = getQuoteElements();
+    if (elements.loadingTextEl) elements.loadingTextEl.textContent = quoteText || 'No quote available right now.';
+    if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `— ${quoteAuthor}` : '';
+    if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
+    if (elements.toolsTextEl) elements.toolsTextEl.textContent = quoteText || '';
+    if (elements.toolsAuthorEl) elements.toolsAuthorEl.textContent = quoteAuthor ? `— ${quoteAuthor}` : '';
+}
+
+async function fetchAndRenderDailyQuote(forceRefresh = false) {
+    const dayKey = getTodayKeyForTools();
+    const cacheKey = 'gcsemate_daily_quote';
+
+    if (!forceRefresh) {
+        try {
+            const cachedRaw = localStorage.getItem(cacheKey);
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw);
+                if (cached?.dayKey === dayKey && cached?.text) {
+                    applyQuoteToUI(cached.text, cached.author || '', 'Daily quote loaded');
+                    return;
+                }
+            }
+        } catch (_) {}
+    }
+
+    applyQuoteToUI('Loading quote...', '', 'Loading quote...');
+
+    const endpoints = [
+        'https://thequoteshub.com/api/today',
+        'https://thequoteshub.com/api/'
+    ];
+
+    let payload = null;
+    let lastError = null;
+    for (const endpoint of endpoints) {
+        try {
+            const response = await fetch(endpoint, { method: 'GET' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            payload = await response.json();
+            if (payload?.text) break;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    if (!payload?.text) {
+        applyQuoteToUI('Could not load quote right now.', '', 'Quote unavailable');
+        if (lastError) logError(lastError, 'Fetch Daily Quote');
+        return;
+    }
+
+    const quoteText = String(payload.text || '').trim();
+    const quoteAuthor = String(payload.author || '').trim();
+    applyQuoteToUI(quoteText, quoteAuthor, 'Daily quote loaded');
+
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+            dayKey,
+            text: quoteText,
+            author: quoteAuthor
+        }));
+    } catch (_) {}
+}
+
+function closeUserGradesModal() {
+    const modal = document.getElementById('grades-admin-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.innerHTML = '';
+}
+
+async function openUserGradesModal(userId) {
+    if (!isAdminUser()) {
+        showToast('Admin access required', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('grades-admin-modal');
+    if (!modal) return;
+
+    const user = allUsers[userId] || {};
+    modal.innerHTML = '<div class="bg-white rounded-xl shadow-xl p-6 max-w-3xl w-full text-center">Loading grades...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const snapshot = await db.collection('users').doc(userId).collection('gradeEntries').orderBy('createdAt', 'desc').get();
+        const entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const latestMap = getLatestGradesBySubject(entries);
+        const grades = Array.from(latestMap.values()).map(entry => Number(entry.grade)).filter(value => Number.isFinite(value));
+        const average = grades.length ? (grades.reduce((sum, value) => sum + value, 0) / grades.length).toFixed(2) : '-';
+
+        const rows = entries.length
+            ? entries.map(entry => `
+                <tr class="border-t border-gray-100">
+                    <td class="px-3 py-2 text-left">${escapeHTML(entry.subject || '-')}</td>
+                    <td class="px-3 py-2 text-left">${renderGradeBadge(entry.grade)}</td>
+                    <td class="px-3 py-2 text-left">${escapeHTML(entry.assessmentName || '-')}</td>
+                    <td class="px-3 py-2 text-left">${escapeHTML(formatMonthLabel(entry.examMonth))}</td>
+                    <td class="px-3 py-2 text-left text-xs text-gray-500">${escapeHTML(formatDateMaybe(entry.createdAt))}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="5" class="px-3 py-4 text-center text-gray-500">No grades available for this user.</td></tr>';
+
+        modal.innerHTML = `
+            <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">${escapeHTML(user.displayName || user.email || 'User')} • Grade Tracker</h3>
+                        <p class="text-sm text-gray-600">Average (latest by subject): <span class="font-bold text-blue-700">${average}</span></p>
+                    </div>
+                    <button onclick="closeUserGradesModal()" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Close</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-700 sticky top-0">
+                            <tr>
+                                <th class="text-left px-3 py-2">Subject</th>
+                                <th class="text-left px-3 py-2">Grade</th>
+                                <th class="text-left px-3 py-2">Assessment</th>
+                                <th class="text-left px-3 py-2">Month</th>
+                                <th class="text-left px-3 py-2">Saved</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        logError(error, 'Open User Grades Modal');
+        modal.innerHTML = '<div class="bg-white rounded-xl shadow-xl p-6 max-w-lg w-full text-center text-red-700">Could not load grade data for this user.</div>';
+    }
+}
+
+window.closeUserGradesModal = closeUserGradesModal;
+
+function initializeToolsPage() {
+    loadToolsState();
+
+    const modeSelect = document.getElementById('tools-timer-mode');
+    const startBtn = document.getElementById('tools-timer-start');
+    const pauseBtn = document.getElementById('tools-timer-pause');
+    const resetBtn = document.getElementById('tools-timer-reset');
+    const memeRefreshBtn = document.getElementById('tools-meme-refresh');
+    const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
+    const gradeSaveBtn = document.getElementById('tools-grade-save');
+    const gradeSubjectSelect = document.getElementById('tools-grade-subject');
+    const gradeValueSelect = document.getElementById('tools-grade-value');
+    const gradeHistoryBody = document.getElementById('tools-grades-history-body');
+    const gradeChartSubjectSelect = document.getElementById('tools-grade-chart-subject');
+
+    if (!toolsPageInitialized) {
+        if (modeSelect) {
+            modeSelect.addEventListener('change', () => {
+                const mode = modeSelect.value;
+                resetToolsTimer(mode);
+            });
+        }
+
+        if (startBtn) startBtn.addEventListener('click', startToolsTimer);
+        if (pauseBtn) pauseBtn.addEventListener('click', stopToolsTimer);
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                toolsTimerState.sessionFocusedSeconds = 0;
+                resetToolsTimer(toolsTimerState.mode);
+                saveToolsState();
+                updateToolsTimerUI();
+            });
+        }
+        if (memeRefreshBtn) {
+            memeRefreshBtn.addEventListener('click', () => {
+                fetchAndRenderDailyMeme(true);
+            });
+        }
+        if (quoteRefreshBtn) {
+            quoteRefreshBtn.addEventListener('click', () => {
+                fetchAndRenderDailyQuote(true);
+            });
+        }
+        if (gradeSaveBtn) gradeSaveBtn.addEventListener('click', saveGradeEntry);
+        if (gradeSubjectSelect) gradeSubjectSelect.addEventListener('change', toggleGradeCustomSubjectInput);
+        if (gradeValueSelect) gradeValueSelect.addEventListener('change', updateGradeSelectPreview);
+        if (gradeChartSubjectSelect) gradeChartSubjectSelect.addEventListener('change', renderGradeTrendChart);
+        if (gradeHistoryBody) {
+            gradeHistoryBody.addEventListener('click', (event) => {
+                const deleteBtn = event.target.closest('button[data-grade-delete-id]');
+                if (!deleteBtn) return;
+                deleteGradeEntry(deleteBtn.dataset.gradeDeleteId);
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            const page = document.getElementById('tools-page');
+            if (page && !page.classList.contains('hidden')) {
+                renderGradeTrendChart();
+            }
+        });
+
+        const monthInput = document.getElementById('tools-grade-month');
+        if (monthInput && !monthInput.value) {
+            const now = new Date();
+            monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        toolsPageInitialized = true;
+    }
+
+    updateGradeSubjectOptions();
+    renderGradeTrackerTables();
+    if (currentUser) subscribeToGradeEntries();
+
+    updateToolsTimerUI();
+    fetchAndRenderDailyMeme(false);
+    fetchAndRenderDailyQuote(false);
+    updateGradeSelectPreview();
+}
+
 // --- GAPI LOADER ---
 window.gapiLoaded = function() {
     isGapiReady = true;
@@ -14975,6 +15885,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    initializeToolsPage();
+
     // Keyboard shortcuts and navigation
     let goPrefix = false; // 'g' then key
     document.addEventListener('keydown', (e) => {
@@ -15029,6 +15941,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 v: 'videos-page', 
                 b: 'blog-page', 
                 c: 'calendar-page', 
+                t: 'tools-page',
                 u: 'useful-links-page', 
                 a: 'about-page', 
                 f: 'features-page', 
@@ -15109,7 +16022,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // Setup modals
-    ['preview-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal'].forEach(id => {
+    ['preview-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'grades-admin-modal'].forEach(id => {
         const modal = document.getElementById(id);
         if(modal) {
             modal.addEventListener('click', (e) => {
