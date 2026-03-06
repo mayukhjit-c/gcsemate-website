@@ -10,10 +10,19 @@ service cloud.firestore {
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
         : null;
     }
+    function isAdminEmail() {
+      return isSignedIn() &&
+        request.auth.token.email in ['admin@gcsemate.com', 'support@gcsemate.com'];
+    }
     function isAdmin() {
       return isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        (userDoc().role == 'admin' || userDoc().role == 'Admin');
+        (
+          isAdminEmail() ||
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            (userDoc().role == 'admin' || userDoc().role == 'Admin')
+          )
+        );
     }
     function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
     function hasProtectedUserFieldChanges() {
@@ -119,10 +128,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin() &&
         // Only allow a controlled set of fields so clients cannot inject arbitrary data.
-        request.resource.data.keys().hasOnly(['title','playlistId','subject','tags','url','createdAt','createdBy','updatedAt']) &&
+        request.resource.data.keys().hasOnly(['title','playlistId','subject','tags','url','createdAt','createdBy','updatedAt','description']) &&
         // Basic type checks
         request.resource.data.title is string &&
         request.resource.data.playlistId is string &&
+        (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
+        (!request.resource.data.keys().hasAny(['url']) || request.resource.data.url == null || request.resource.data.url is string) &&
+        (!request.resource.data.keys().hasAny(['description']) || request.resource.data.description == null || request.resource.data.description is string) &&
         // tags must be a list (may be empty); limit size for safety
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;
@@ -140,9 +152,15 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin() &&
         // Enforce a constrained set of fields for blog posts
-        request.resource.data.keys().hasOnly(['title','content','image','tags','subject','createdAt','createdBy','updatedAt']) &&
+        request.resource.data.keys().hasOnly(['title','content','image','tags','subject','createdAt','createdBy','updatedAt','authorId','authorName','imagePublicIds']) &&
         request.resource.data.title is string &&
         request.resource.data.content is string &&
+        (!request.resource.data.keys().hasAny(['image']) || request.resource.data.image == null || request.resource.data.image is string) &&
+        (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
+        (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy is string) &&
+        (!request.resource.data.keys().hasAny(['authorId']) || request.resource.data.authorId is string) &&
+        (!request.resource.data.keys().hasAny(['authorName']) || request.resource.data.authorName is string) &&
+        (!request.resource.data.keys().hasAny(['imagePublicIds']) || request.resource.data.imagePublicIds is list) &&
         // tags optional but if present must be a list and limited in size
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;

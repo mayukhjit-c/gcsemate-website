@@ -39,6 +39,20 @@
 --button-radius: 12px;
         }
 
+        html.dark-theme,
+        body.dark-theme {
+            color-scheme: dark;
+        }
+
+        body.dark-theme {
+            background-color: #020617;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(30, 41, 59, 0.82) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(var(--accent-700), 0.28) 0px, transparent 48%),
+                radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.96) 0px, transparent 56%);
+            color: #e2e8f0;
+        }
+
         /* Base styles for a polished look - Enhanced for accessibility */
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -62,6 +76,86 @@
             /* Enhanced accessibility */
             line-height: 1.6;
             color: #1f2937;
+        }
+
+        body.dark-theme #app-loading,
+        body.dark-theme #mobile-menu,
+        body.dark-theme #main-app,
+        body.dark-theme .bg-white,
+        body.dark-theme .bg-white\/50,
+        body.dark-theme .bg-white\/70,
+        body.dark-theme .bg-white\/80,
+        body.dark-theme .bg-white\/90,
+        body.dark-theme .bg-gray-50,
+        body.dark-theme .bg-gray-100,
+        body.dark-theme .glass-card-premium,
+        body.dark-theme .timer-setting-card,
+        body.dark-theme .timer-metric-card,
+        body.dark-theme #tools-page .tools-panel-card,
+        body.dark-theme .theme-preset-btn {
+            background-color: rgba(15, 23, 42, 0.82) !important;
+            background-image: none !important;
+            border-color: rgba(71, 85, 105, 0.82) !important;
+            color: #e2e8f0 !important;
+            box-shadow: 0 24px 60px -38px rgba(2, 6, 23, 0.9) !important;
+        }
+
+        body.dark-theme .text-gray-900,
+        body.dark-theme .text-gray-800,
+        body.dark-theme .text-gray-700 {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-theme .text-gray-600,
+        body.dark-theme .text-gray-500,
+        body.dark-theme .timer-setting-label,
+        body.dark-theme .timer-metric-label {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-theme .border-gray-100,
+        body.dark-theme .border-gray-200,
+        body.dark-theme .border-gray-200\/60,
+        body.dark-theme .border-gray-300,
+        body.dark-theme .border-gray-300\/60,
+        body.dark-theme .border-gray-300\/70,
+        body.dark-theme .border-white\/30,
+        body.dark-theme .border-white\/40,
+        body.dark-theme .border-white\/50 {
+            border-color: rgba(71, 85, 105, 0.82) !important;
+        }
+
+        body.dark-theme input,
+        body.dark-theme select,
+        body.dark-theme textarea,
+        body.dark-theme #tools-page input[type="text"],
+        body.dark-theme #tools-page input[type="number"],
+        body.dark-theme #tools-page input[type="search"],
+        body.dark-theme #tools-page textarea,
+        body.dark-theme #account-settings-page .tools-select {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: #e2e8f0 !important;
+            border-color: rgba(71, 85, 105, 0.85) !important;
+        }
+
+        body.dark-theme input::placeholder,
+        body.dark-theme textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-theme #tools-notes-input,
+        body.dark-theme #tools-randomiser-output,
+        body.dark-theme .timer-setting-card,
+        body.dark-theme .timer-metric-card {
+            background: rgba(15, 23, 42, 0.72) !important;
+        }
+
+        body.dark-theme .theme-preset-btn.is-active,
+        body.dark-theme .tools-calc-btn.is-active,
+        body.dark-theme .tools-calc-toggle.is-active {
+            background: linear-gradient(135deg, rgba(var(--accent-600), 0.94), rgba(var(--accent-700), 0.94)) !important;
+            color: #eff6ff !important;
+            border-color: rgba(var(--accent-300), 0.95) !important;
         }
 
         /* Smooth Page Transitions */
@@ -4441,6 +4535,29 @@ will-change: transform;
         #tools-page button,
         #account-settings-page button {
             transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+        }
+
+        .tools-panel-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tools-panel-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 38%);
+            opacity: 0.9;
+        }
+
+        body.dark-theme .tools-panel-card::after {
+            background: linear-gradient(135deg, rgba(148,163,184,0.08), transparent 42%);
+        }
+
+        .tools-calc-toggle {
+            min-height: 2.75rem;
+            font-weight: 800;
         }
 
         .tools-calc-btn:hover,

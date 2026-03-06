@@ -26,6 +26,7 @@ const BLOG_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519682337058-a94d
 const BLOG_COMMENT_COUNTS = new Map();
 const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
 const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
+const TOOLS_NOTES_DOC_ID = 'quick-notes';
 const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
@@ -48,6 +49,13 @@ let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 let toolsTimerInterval = null;
+let unsubscribeToolsNotes = null;
+let toolsNotesSaveTimeout = null;
+let toolsNotesSyncState = 'idle';
+let hasResolvedInitialAuthState = false;
+let calcShiftEnabled = false;
+let calcLastResult = 0;
+let calcLastExpression = '';
 const TOOLS_PLANNER_STORAGE_KEY = 'gcsemate_tools_planner';
 const TOOLS_TIMER_MODES = {
     pomodoro: { label: 'Pomodoro', durationSeconds: 25 * 60 },
@@ -97,6 +105,7 @@ const FIRESTORE_FORCE_LONG_POLLING_KEY = '__gcsemate_force_long_polling';
 const BLOCKED_BY_CLIENT_PATTERN = /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i;
 const STRIPE_BLOCKED_PATTERN = /r\.stripe\.com|errors\.stripe\.com|pricing-table/i;
 const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write)\/channel/i;
+const EXTENSION_NOISE_PATTERN = /chrome-extension:\/\/|moz-extension:\/\/|safari-extension:\/\/|extension context invalidated|message channel closed|content script/i;
 let hasShownBlockerWarning = false;
 let firestoreAssertionCount = 0;
 let hasShownFirestoreRecoveryWarning = false;
@@ -114,6 +123,13 @@ function isLikelyBlockedByClient(errorLike) {
         STRIPE_BLOCKED_PATTERN.test(text) ||
         FIRESTORE_CHANNEL_PATTERN.test(text)
     );
+}
+
+function isIgnorableExtensionNoise(errorLike) {
+    const text = typeof errorLike === 'string'
+        ? errorLike
+        : `${errorLike?.message || ''} ${errorLike?.reason?.message || ''} ${errorLike?.filename || ''} ${errorLike?.target?.src || ''}`;
+    return EXTENSION_NOISE_PATTERN.test(text);
 }
 
 function showBlockedByClientWarningOnce() {
@@ -146,6 +162,11 @@ function handleFirestoreAssertionEvent() {
 }
 
 window.addEventListener('error', (event) => {
+    if (isIgnorableExtensionNoise(event)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+    }
     if (isLikelyBlockedByClient(event)) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -164,6 +185,11 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
     const reason = event?.reason;
     const msg = (reason && (reason.message || reason.toString())) || '';
+    if (isIgnorableExtensionNoise(reason || msg)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+    }
     if (isLikelyBlockedByClient(reason || msg)) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -3772,8 +3798,12 @@ window.addEventListener('load', () => {
     const overlay = document.getElementById('app-loading');
     const logo = overlay?.querySelector?.('.animate-logo');
     if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
-    // If auth callback hasn't resolved, ensure the landing view is shown and then hide
-    setTimeout(() => { ensureInitialView(); hideAppLoading(); }, 1200);
+    // Only fall back to the landing view if auth has still not resolved.
+    setTimeout(() => {
+        if (hasResolvedInitialAuthState) return;
+        ensureInitialView();
+        hideAppLoading();
+    }, 2600);
 }, { once: true });
 
 // Cleanup on page unload
@@ -3804,6 +3834,7 @@ if (!isAuthAvailable()) {
 }
 
 auth.onAuthStateChanged(async (user) => {
+    hasResolvedInitialAuthState = true;
     if (!isFirestoreAvailable()) {
         handleFirebaseBootstrapFailure(getFirebaseBootstrapError() || new Error('Firestore is unavailable'));
         return;
@@ -3818,6 +3849,7 @@ auth.onAuthStateChanged(async (user) => {
     if (unsubscribeAnnouncement) unsubscribeAnnouncement();
     if (unsubscribeFreeTrialSettings) { try { unsubscribeFreeTrialSettings(); } catch(_){} unsubscribeFreeTrialSettings = null; }
     if (unsubscribeCurrentUserDoc) { try { unsubscribeCurrentUserDoc(); } catch(_){} unsubscribeCurrentUserDoc = null; }
+    if (unsubscribeToolsNotes) { try { unsubscribeToolsNotes(); } catch(_){} unsubscribeToolsNotes = null; }
     if (clockInterval) clearInterval(clockInterval);
     if (serverTimeInterval) stopServerTimeUpdates();
     if (user && user.emailVerified) {
@@ -5156,7 +5188,10 @@ function setupRealtimeListeners() {
 }
 
 function isAdminUser(user = currentUser) {
-    return !!user && String(user.role || '').toLowerCase() === 'admin';
+    if (!user) return false;
+    const role = String(user.role || '').toLowerCase();
+    const email = String(user.email || '').toLowerCase();
+    return role === 'admin' || ADMIN_EMAILS.includes(email);
 }
 
 let analyticsUpdateTimer = null;
@@ -15277,54 +15312,35 @@ function formatClock(totalSeconds) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function normalizeCustomTimeDigits(rawValue) {
-    return (rawValue || '').replace(/\D/g, '').slice(-6);
+function normalizeCustomTimeValue(value, max) {
+    const numeric = Math.floor(Number(value) || 0);
+    return Math.max(0, Math.min(max, numeric));
 }
 
-function calculatorDigitsToSeconds(digits) {
-    const normalized = normalizeCustomTimeDigits(digits);
-    if (!normalized) return 0;
-    const padded = normalized.padStart(6, '0');
-    const hours = Number(padded.slice(0, 2));
-    const minutes = Number(padded.slice(2, 4));
-    const seconds = Number(padded.slice(4, 6));
-    return (hours * 3600) + (minutes * 60) + seconds;
+function getCustomTimerDurationFromInputs() {
+    const hoursInput = document.getElementById('tools-timer-custom-hours');
+    const minutesInput = document.getElementById('tools-timer-custom-minutes');
+    const hours = normalizeCustomTimeValue(hoursInput?.value, 23);
+    const minutes = normalizeCustomTimeValue(minutesInput?.value, 59);
+    return (hours * 3600) + (minutes * 60);
 }
 
-function formatCalculatorTime(digits) {
-    const normalized = normalizeCustomTimeDigits(digits);
-    if (!normalized) return '00:00';
-    const padded = normalized.padStart(6, '0');
-    const hours = Number(padded.slice(0, 2));
-    const minutes = padded.slice(2, 4);
-    const seconds = padded.slice(4, 6);
-    if (hours > 0) return `${hours}:${minutes}:${seconds}`;
-    return `${minutes}:${seconds}`;
-}
-
-function setCustomInputDigits(digits) {
-    toolsTimerState.customInputDigits = normalizeCustomTimeDigits(digits);
-    const inputEl = document.getElementById('tools-timer-custom-input');
-    const secondsEl = document.getElementById('tools-timer-custom-seconds');
-    if (inputEl) inputEl.value = formatCalculatorTime(toolsTimerState.customInputDigits);
-    if (secondsEl) {
-        const seconds = calculatorDigitsToSeconds(toolsTimerState.customInputDigits);
-        secondsEl.textContent = `Duration: ${formatClock(seconds)}`;
-    }
-}
-
-function setCustomInputFromSeconds(seconds) {
+function updateCustomTimerInputs(seconds = toolsTimerState.customDurationSeconds) {
     const safe = Math.max(0, Math.floor(Number(seconds) || 0));
-    const capped = Math.min(safe, 99 * 3600 + 59 * 60 + 59);
-    const hours = Math.floor(capped / 3600);
-    const minutes = Math.floor((capped % 3600) / 60);
-    const secs = capped % 60;
-    const digits = `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(secs).padStart(2, '0')}`.replace(/^0+/, '') || '0';
-    setCustomInputDigits(digits);
+    const hours = Math.floor(safe / 3600);
+    const minutes = Math.floor((safe % 3600) / 60);
+    const hoursInput = document.getElementById('tools-timer-custom-hours');
+    const minutesInput = document.getElementById('tools-timer-custom-minutes');
+    const hiddenInput = document.getElementById('tools-timer-custom-input');
+    const secondsEl = document.getElementById('tools-timer-custom-seconds');
+    if (hoursInput) hoursInput.value = String(hours);
+    if (minutesInput) minutesInput.value = String(minutes);
+    if (hiddenInput) hiddenInput.value = String(safe);
+    if (secondsEl) secondsEl.textContent = `Duration: ${formatClock(safe)}`;
 }
 
 function applyCustomTimerDuration(showFeedback = false) {
-    const seconds = calculatorDigitsToSeconds(toolsTimerState.customInputDigits);
+    const seconds = getCustomTimerDurationFromInputs();
     if (seconds <= 0) {
         if (showFeedback) {
             try { showToast('Enter a valid custom time first.', 'warning'); } catch (_) {}
@@ -15332,9 +15348,10 @@ function applyCustomTimerDuration(showFeedback = false) {
         return false;
     }
     toolsTimerState.customDurationSeconds = seconds;
-    if (toolsTimerState.mode === 'custom') {
-        resetToolsTimer('custom');
-    }
+    toolsTimerState.mode = 'custom';
+    toolsTimerState.timerModeBeforeStopwatch = 'custom';
+    updateCustomTimerInputs(seconds);
+    resetToolsTimer('custom');
     saveToolsState();
     if (showFeedback) {
         try { showToast(`Custom time set to ${formatClock(seconds)}.`, 'success'); } catch (_) {}
@@ -15394,7 +15411,6 @@ function loadToolsState() {
         toolsTimerState.customDurationSeconds = Number.isFinite(parsed.customDurationSeconds)
             ? Math.max(1, parsed.customDurationSeconds)
             : TOOLS_TIMER_MODES.custom.durationSeconds;
-        toolsTimerState.customInputDigits = normalizeCustomTimeDigits(parsed.customInputDigits || '');
         const defaultDuration = mode === 'custom'
             ? toolsTimerState.customDurationSeconds
             : TOOLS_TIMER_MODES[mode].durationSeconds;
@@ -15546,7 +15562,7 @@ function startToolsBreakCycle() {
     toolsTimerState.isBreakMode = true;
     toolsTimerState.mode = 'custom';
     toolsTimerState.customDurationSeconds = toolsTimerState.breakDurationMinutes * 60;
-    setCustomInputFromSeconds(toolsTimerState.customDurationSeconds);
+    updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
     resetToolsTimer('custom');
     toolsTimerState.isBreakMode = true;
     startToolsTimer();
@@ -15604,6 +15620,7 @@ function startToolsTimer() {
     }
     if (toolsTimerInterval) clearInterval(toolsTimerInterval);
     toolsTimerInterval = setInterval(onToolsTimerTick, 250);
+    saveToolsState();
     updateToolsTimerUI();
 }
 
@@ -15621,6 +15638,8 @@ function updateToolsTimerUI() {
     const breakLengthSelect = document.getElementById('tools-timer-break-length');
     const soundToggle = document.getElementById('tools-timer-sound');
     const timerThemeSelect = document.getElementById('tools-timer-theme');
+    const startBtn = document.getElementById('tools-timer-start');
+    const pauseBtn = document.getElementById('tools-timer-pause');
     const completedEl = document.getElementById('tools-timer-completed-count');
     const breakStateEl = document.getElementById('tools-timer-break-state');
     const modeLabelEl = document.getElementById('tools-timer-mode-label');
@@ -15642,10 +15661,7 @@ function updateToolsTimerUI() {
 
     const modeConfig = isStopwatch ? TOOLS_TIMER_MODES.stopwatch : (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro);
 
-    if (customWrapEl) {
-        if (toolsTimerState.mode === 'custom') customWrapEl.classList.remove('hidden');
-        else customWrapEl.classList.add('hidden');
-    }
+    if (customWrapEl) customWrapEl.classList.remove('hidden');
 
     let progress = 0;
     if (isStopwatch) {
@@ -15682,11 +15698,19 @@ function updateToolsTimerUI() {
         timerCard.classList.toggle('is-break-mode', !!toolsTimerState.isBreakMode);
     }
 
-    if (!toolsTimerState.customInputDigits && toolsTimerState.customDurationSeconds > 0) {
-        setCustomInputFromSeconds(toolsTimerState.customDurationSeconds);
-    } else {
-        setCustomInputDigits(toolsTimerState.customInputDigits);
+    const defaultDuration = toolsTimerState.mode === 'custom'
+        ? toolsTimerState.customDurationSeconds
+        : (TOOLS_TIMER_MODES[getTimerModeFromState()]?.durationSeconds || TOOLS_TIMER_MODES.pomodoro.durationSeconds);
+    const needsResume = !toolsTimerState.isRunning && toolsTimerState.remainingSeconds > 0 && toolsTimerState.remainingSeconds < defaultDuration;
+    if (startBtn) {
+        startBtn.textContent = toolsTimerState.isRunning ? 'Pause' : (needsResume ? 'Resume' : 'Start');
+        startBtn.classList.toggle('bg-amber-500', toolsTimerState.isRunning);
+        startBtn.classList.toggle('hover:bg-amber-600', toolsTimerState.isRunning);
+        startBtn.classList.toggle('bg-blue-600', !toolsTimerState.isRunning);
+        startBtn.classList.toggle('hover:bg-blue-700', !toolsTimerState.isRunning);
     }
+    if (pauseBtn) pauseBtn.classList.add('hidden');
+    updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
 
     updateToolsTimerFullscreenButton();
 }
@@ -15720,25 +15744,178 @@ function evaluateScientificExpression(rawValue) {
         throw new Error('Invalid function name');
     }
 
+    const useDegrees = (document.getElementById('tools-calc-angle-mode')?.value || 'deg') === 'deg';
     const evaluator = Function(
-        '"use strict"; const {sin,cos,tan,asin,acos,atan,sqrt,abs,log,pow,floor,ceil,round,PI,E}=Math; const log10=Math.log10?Math.log10:(v)=>Math.log(v)/Math.LN10; return (' + expr + ');'
+        '"use strict"; const degToRad=(v)=>v*(Math.PI/180); const radToDeg=(v)=>v*(180/Math.PI); const sin=(v)=>Math.sin(' + (useDegrees ? 'degToRad(v)' : 'v') + '); const cos=(v)=>Math.cos(' + (useDegrees ? 'degToRad(v)' : 'v') + '); const tan=(v)=>Math.tan(' + (useDegrees ? 'degToRad(v)' : 'v') + '); const asin=(v)=>' + (useDegrees ? 'radToDeg(Math.asin(v))' : 'Math.asin(v)') + '; const acos=(v)=>' + (useDegrees ? 'radToDeg(Math.acos(v))' : 'Math.acos(v)') + '; const atan=(v)=>' + (useDegrees ? 'radToDeg(Math.atan(v))' : 'Math.atan(v)') + '; const {sqrt,abs,log,pow,floor,ceil,round,PI,E}=Math; const log10=Math.log10?Math.log10:(v)=>Math.log(v)/Math.LN10; return (' + expr + ');'
     );
     const result = evaluator();
     if (!Number.isFinite(result)) throw new Error('Invalid result');
     return result;
 }
 
+function gcd(a, b) {
+    let x = Math.abs(Math.round(a));
+    let y = Math.abs(Math.round(b));
+    while (y) {
+        const t = y;
+        y = x % y;
+        x = t;
+    }
+    return x || 1;
+}
+
+function decimalToFraction(value, tolerance = 1e-10, maxDenominator = 10000) {
+    if (!Number.isFinite(value)) return null;
+    if (Number.isInteger(value)) return { numerator: value, denominator: 1 };
+    const sign = value < 0 ? -1 : 1;
+    const x = Math.abs(value);
+    let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+    let b = x;
+    while (true) {
+        const a = Math.floor(b);
+        const h = a * h1 + h2;
+        const k = a * k1 + k2;
+        if (k > maxDenominator) break;
+        h2 = h1; h1 = h; k2 = k1; k1 = k;
+        const remainder = b - a;
+        if (Math.abs(x - (h / k)) <= tolerance || remainder === 0) {
+            const divisor = gcd(h, k);
+            return { numerator: sign * (h / divisor), denominator: k / divisor };
+        }
+        b = 1 / remainder;
+    }
+    const numerator = Math.round(value * maxDenominator);
+    const divisor = gcd(numerator, maxDenominator);
+    return { numerator: numerator / divisor, denominator: maxDenominator / divisor };
+}
+
+function formatDecimal(value) {
+    if (!Number.isFinite(value)) return '—';
+    if (Number.isInteger(value)) return String(value);
+    return Number(value.toPrecision(12)).toString();
+}
+
+function formatScientific(value) {
+    if (!Number.isFinite(value)) return '—';
+    if (value === 0) return '0 × 10^0';
+    const exponent = Math.floor(Math.log10(Math.abs(value)));
+    const mantissa = value / (10 ** exponent);
+    return `${formatDecimal(mantissa)} × 10^${exponent}`;
+}
+
+function formatFraction(value) {
+    const fraction = decimalToFraction(value);
+    if (!fraction) return '—';
+    if (fraction.denominator === 1) return String(fraction.numerator);
+    return `${fraction.numerator}/${fraction.denominator}`;
+}
+
+function formatRecurringDecimal(value) {
+    const fraction = decimalToFraction(value, 1e-10, 5000);
+    if (!fraction) return formatDecimal(value);
+    const sign = fraction.numerator < 0 ? '-' : '';
+    let numerator = Math.abs(fraction.numerator);
+    const denominator = Math.abs(fraction.denominator);
+    const integerPart = Math.floor(numerator / denominator);
+    let remainder = numerator % denominator;
+    if (remainder === 0) return `${sign}${integerPart}`;
+    const seen = new Map();
+    let decimals = '';
+    let repeatIndex = -1;
+    while (remainder !== 0 && !seen.has(remainder) && decimals.length < 40) {
+        seen.set(remainder, decimals.length);
+        remainder *= 10;
+        decimals += Math.floor(remainder / denominator);
+        remainder %= denominator;
+    }
+    if (remainder !== 0 && seen.has(remainder)) repeatIndex = seen.get(remainder);
+    if (repeatIndex >= 0) {
+        return `${sign}${integerPart}.${decimals.slice(0, repeatIndex)}(${decimals.slice(repeatIndex)})`;
+    }
+    return `${sign}${integerPart}.${decimals}`;
+}
+
+function formatSurd(value) {
+    if (!Number.isFinite(value) || value === 0) return String(value);
+    const sign = value < 0 ? '-' : '';
+    const absValue = Math.abs(value);
+    for (let denominator = 1; denominator <= 12; denominator += 1) {
+        for (let coefficient = 1; coefficient <= 12; coefficient += 1) {
+            const radicand = Math.round(((absValue * denominator) / coefficient) ** 2);
+            if (radicand <= 1) continue;
+            const rebuilt = (coefficient * Math.sqrt(radicand)) / denominator;
+            if (Math.abs(rebuilt - absValue) < 1e-9) {
+                let outside = coefficient;
+                let inside = radicand;
+                for (let factor = Math.floor(Math.sqrt(inside)); factor >= 2; factor -= 1) {
+                    const square = factor * factor;
+                    while (inside % square === 0) {
+                        inside /= square;
+                        outside *= factor;
+                    }
+                }
+                const prefix = outside === 1 ? '' : String(outside);
+                return `${sign}${denominator === 1 ? `${prefix}√${inside}` : `${prefix}√${inside}/${denominator}`}`;
+            }
+        }
+    }
+    return formatDecimal(value);
+}
+
+function getFormattedCalculatorResult(value, format = 'auto') {
+    if (format === 'fraction') return formatFraction(value);
+    if (format === 'scientific') return formatScientific(value);
+    if (format === 'surd') return formatSurd(value);
+    if (format === 'recurring') return formatRecurringDecimal(value);
+    if (format === 'decimal') return formatDecimal(value);
+    const fraction = formatFraction(value);
+    if (Math.abs(value) >= 10000 || (Math.abs(value) > 0 && Math.abs(value) < 0.001)) return formatScientific(value);
+    if (fraction !== formatDecimal(value) && String(fraction).length <= 10) return fraction;
+    return formatDecimal(value);
+}
+
+function updateCalculatorShiftButtons() {
+    const shiftBtn = document.getElementById('tools-calc-shift');
+    const labels = [
+        ['tools-calc-sin', 'sin', 'sin⁻¹'],
+        ['tools-calc-cos', 'cos', 'cos⁻¹'],
+        ['tools-calc-tan', 'tan', 'tan⁻¹']
+    ];
+    if (shiftBtn) {
+        shiftBtn.textContent = calcShiftEnabled ? 'Shift On' : 'Shift Off';
+        shiftBtn.classList.toggle('is-active', calcShiftEnabled);
+    }
+    labels.forEach(([id, normalLabel, shiftLabel]) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.dataset.calcValue = calcShiftEnabled ? (button.dataset.calcSecondary || button.dataset.calcValue) : (button.dataset.calcPrimary || button.dataset.calcValue);
+        button.textContent = calcShiftEnabled ? shiftLabel : normalLabel;
+    });
+}
+
 function updateScientificCalculatorResult() {
     const input = document.getElementById('tools-calc-input');
     const resultEl = document.getElementById('tools-calc-result');
+    const secondaryEl = document.getElementById('tools-calc-secondary');
+    const formatSelect = document.getElementById('tools-calc-format');
     if (!input || !resultEl) return;
     try {
         const result = evaluateScientificExpression(input.value);
-        resultEl.textContent = `Result: ${Number.isInteger(result) ? result : result.toFixed(8).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')}`;
+        calcLastResult = result;
+        calcLastExpression = input.value;
+        resultEl.textContent = `Result: ${getFormattedCalculatorResult(result, formatSelect?.value || 'auto')}`;
         resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-blue-700';
+        if (secondaryEl) {
+            secondaryEl.textContent = `Fraction ${formatFraction(result)} • Standard form ${formatScientific(result)} • Surd ${formatSurd(result)} • Recurring ${formatRecurringDecimal(result)}`;
+            secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-gray-500';
+        }
     } catch (_) {
         resultEl.textContent = 'Result: —';
         resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-red-600';
+        if (secondaryEl) {
+            secondaryEl.textContent = 'Use valid scientific input such as sin(30), 1/3, sqrt(2), or 6.02*10^23.';
+            secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-red-500';
+        }
     }
 }
 
@@ -15762,7 +15939,10 @@ function updateToolsNotesMeta(value = '') {
     const metaEl = document.getElementById('tools-notes-meta');
     if (!metaEl) return;
     const wordCount = String(value || '').trim() ? String(value).trim().split(/\s+/).length : 0;
-    metaEl.textContent = `${wordCount} word${wordCount === 1 ? '' : 's'} • autosaved`;
+    const stateLabel = toolsNotesSyncState === 'saving'
+        ? 'syncing…'
+        : (toolsNotesSyncState === 'error' ? 'saved locally' : 'synced');
+    metaEl.textContent = `${wordCount} word${wordCount === 1 ? '' : 's'} • ${stateLabel}`;
 }
 
 function loadToolsNotes() {
@@ -15771,12 +15951,73 @@ function loadToolsNotes() {
     let saved = '';
     try { saved = localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) {}
     notesInput.value = saved;
+    toolsNotesSyncState = currentUser ? 'saving' : 'idle';
     updateToolsNotesMeta(saved);
 }
 
-function saveToolsNotes(value = '') {
+function getToolsNotesDocRef() {
+    if (!currentUser || !db) return null;
+    return db.collection('users').doc(currentUser.uid).collection('notes').doc(TOOLS_NOTES_DOC_ID);
+}
+
+function subscribeToToolsNotes() {
+    if (!currentUser || !db) return;
+    const docRef = getToolsNotesDocRef();
+    const notesInput = document.getElementById('tools-notes-input');
+    if (!docRef || !notesInput) return;
+    if (unsubscribeToolsNotes) {
+        try { unsubscribeToolsNotes(); } catch (_) {}
+    }
+    unsubscribeToolsNotes = docRef.onSnapshot(async (doc) => {
+        const serverValue = String(doc.data()?.content || '');
+        const localValue = (() => {
+            try { return localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) { return ''; }
+        })();
+        const nextValue = serverValue || localValue;
+        if (!doc.exists && localValue) {
+            try {
+                await docRef.set({
+                    content: localValue,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (_) {}
+        }
+        if (document.activeElement !== notesInput || !notesInput.value.trim()) {
+            notesInput.value = nextValue;
+        }
+        toolsNotesSyncState = 'idle';
+        updateToolsNotesMeta(notesInput.value || nextValue);
+    }, () => {
+        toolsNotesSyncState = 'error';
+        updateToolsNotesMeta(notesInput.value || '');
+    });
+}
+
+function saveToolsNotes(value = '', { immediate = false } = {}) {
     try { localStorage.setItem(TOOLS_NOTES_STORAGE_KEY, value); } catch (_) {}
+    toolsNotesSyncState = currentUser ? 'saving' : 'idle';
     updateToolsNotesMeta(value);
+    if (!currentUser || !db) return;
+
+    const persist = async () => {
+        try {
+            await getToolsNotesDocRef()?.set({
+                content: value,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            toolsNotesSyncState = 'idle';
+        } catch (_) {
+            toolsNotesSyncState = 'error';
+        }
+        updateToolsNotesMeta(value);
+    };
+
+    if (toolsNotesSaveTimeout) clearTimeout(toolsNotesSaveTimeout);
+    if (immediate) {
+        persist();
+        return;
+    }
+    toolsNotesSaveTimeout = setTimeout(persist, 350);
 }
 
 function populateStudyRandomiserSubjects() {
@@ -15793,13 +16034,44 @@ function populateStudyRandomiserSubjects() {
 function generateStudyRandomiserTask() {
     const subjectSelect = document.getElementById('tools-randomiser-subject');
     const durationSelect = document.getElementById('tools-randomiser-duration');
+    const typeSelect = document.getElementById('tools-randomiser-type');
+    const energySelect = document.getElementById('tools-randomiser-energy');
     const outputEl = document.getElementById('tools-randomiser-output');
     if (!outputEl) return;
 
     const subject = subjectSelect?.value || 'your weakest topic';
     const minutes = Number(durationSelect?.value || 20);
-    const generator = STUDY_RANDOMISER_TEMPLATES[Math.floor(Math.random() * STUDY_RANDOMISER_TEMPLATES.length)];
-    outputEl.textContent = generator({ subject, minutes });
+    const type = typeSelect?.value || 'any';
+    const energy = energySelect?.value || 'any';
+    const templates = {
+        exam: [
+            `Do a ${minutes}-minute exam sprint in ${subject}: answer one long question, then mark it using the scheme.`,
+            `Use ${minutes} minutes on ${subject}: complete 4 exam-style retrieval questions under timed conditions.`
+        ],
+        recall: [
+            `Spend ${minutes} minutes on ${subject}: close your notes and brain-dump everything you remember onto one page.`,
+            `Use ${minutes} minutes for ${subject}: create 8 flashcard questions from memory, then self-check.`
+        ],
+        notes: [
+            `Turn ${subject} into a ${minutes}-minute summary sprint: condense one topic into a one-page revision sheet.`,
+            `Spend ${minutes} minutes on ${subject}: list formulas, definitions, and common mistakes for one unit.`
+        ],
+        teaching: [
+            `Teach ${subject} aloud for ${minutes} minutes as if you were helping a friend who missed the lesson.`,
+            `Record a ${minutes}-minute mini explanation of a tricky ${subject} topic, then note the gaps you noticed.`
+        ],
+        any: STUDY_RANDOMISER_TEMPLATES.map(template => template({ subject, minutes }))
+    };
+    const energyPrefix = {
+        light: 'Keep it gentle: ',
+        steady: 'Stay consistent: ',
+        intense: 'Push for a challenge: ',
+        any: ''
+    };
+    const pool = type === 'any'
+        ? [...templates.any, ...templates.exam, ...templates.recall, ...templates.notes, ...templates.teaching]
+        : (templates[type] || templates.any);
+    outputEl.textContent = `${energyPrefix[energy] || ''}${pool[Math.floor(Math.random() * pool.length)]}`;
 }
 
 function getToolsPlannerPriorityLabel(priority) {
@@ -16821,15 +17093,17 @@ function initializeToolsPage() {
     const soundToggle = document.getElementById('tools-timer-sound');
     const timerThemeSelect = document.getElementById('tools-timer-theme');
     const customInput = document.getElementById('tools-timer-custom-input');
+    const customHoursInput = document.getElementById('tools-timer-custom-hours');
+    const customMinutesInput = document.getElementById('tools-timer-custom-minutes');
     const customApplyBtn = document.getElementById('tools-timer-custom-apply');
-    const customDigitButtons = document.querySelectorAll('.tools-time-digit');
-    const customClearBtn = document.getElementById('tools-time-clear');
-    const customBackspaceBtn = document.getElementById('tools-time-backspace');
     const calcInput = document.getElementById('tools-calc-input');
     const calcButtons = document.querySelectorAll('.tools-calc-btn[data-calc-value]');
     const calcClearBtn = document.getElementById('tools-calc-clear');
     const calcBackspaceBtn = document.getElementById('tools-calc-backspace');
     const calcEqualsBtn = document.getElementById('tools-calc-equals');
+    const calcShiftBtn = document.getElementById('tools-calc-shift');
+    const calcAngleMode = document.getElementById('tools-calc-angle-mode');
+    const calcFormatSelect = document.getElementById('tools-calc-format');
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
     const notesInput = document.getElementById('tools-notes-input');
@@ -16874,7 +17148,12 @@ function initializeToolsPage() {
             });
         }
 
-        if (startBtn) startBtn.addEventListener('click', startToolsTimer);
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                if (toolsTimerState.isRunning) stopToolsTimer();
+                else startToolsTimer();
+            });
+        }
         if (pauseBtn) pauseBtn.addEventListener('click', stopToolsTimer);
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
@@ -16916,44 +17195,9 @@ function initializeToolsPage() {
         }
         document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
 
-        if (customInput) {
-            customInput.addEventListener('input', () => {
-                setCustomInputDigits(customInput.value);
-                saveToolsState();
-            });
-            customInput.addEventListener('keydown', (event) => {
-                if (!['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(event.key) && !/^[0-9]$/.test(event.key)) {
-                    event.preventDefault();
-                }
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    applyCustomTimerDuration(true);
-                }
-            });
-        }
-        if (customDigitButtons && customDigitButtons.length > 0) {
-            customDigitButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const digit = button.dataset.toolsTimeDigit;
-                    if (!digit) return;
-                    setCustomInputDigits(`${toolsTimerState.customInputDigits || ''}${digit}`);
-                    saveToolsState();
-                });
-            });
-        }
-        if (customClearBtn) {
-            customClearBtn.addEventListener('click', () => {
-                setCustomInputDigits('');
-                saveToolsState();
-            });
-        }
-        if (customBackspaceBtn) {
-            customBackspaceBtn.addEventListener('click', () => {
-                const next = (toolsTimerState.customInputDigits || '').slice(0, -1);
-                setCustomInputDigits(next);
-                saveToolsState();
-            });
-        }
+        if (customHoursInput) customHoursInput.addEventListener('input', () => updateCustomTimerInputs(getCustomTimerDurationFromInputs()));
+        if (customMinutesInput) customMinutesInput.addEventListener('input', () => updateCustomTimerInputs(getCustomTimerDurationFromInputs()));
+        if (customInput) customInput.value = String(toolsTimerState.customDurationSeconds || 0);
         if (customApplyBtn) {
             customApplyBtn.addEventListener('click', () => {
                 applyCustomTimerDuration(true);
@@ -16999,6 +17243,15 @@ function initializeToolsPage() {
                 updateScientificCalculatorResult();
             });
         }
+        if (calcShiftBtn) {
+            calcShiftBtn.addEventListener('click', () => {
+                calcShiftEnabled = !calcShiftEnabled;
+                updateCalculatorShiftButtons();
+                if (calcInput) calcInput.focus();
+            });
+        }
+        if (calcAngleMode) calcAngleMode.addEventListener('change', updateScientificCalculatorResult);
+        if (calcFormatSelect) calcFormatSelect.addEventListener('change', updateScientificCalculatorResult);
         if (memeRefreshBtn) {
             memeRefreshBtn.addEventListener('click', () => {
                 fetchAndRenderDailyMeme(true);
@@ -17015,7 +17268,7 @@ function initializeToolsPage() {
         if (notesClearBtn) {
             notesClearBtn.addEventListener('click', () => {
                 if (notesInput) notesInput.value = '';
-                saveToolsNotes('');
+                saveToolsNotes('', { immediate: true });
             });
         }
         if (notesCopyBtn) {
@@ -17089,11 +17342,14 @@ function initializeToolsPage() {
     populateStudyRandomiserSubjects();
     renderGradeTrackerTables();
     if (currentUser) subscribeToGradeEntries();
+    if (currentUser) subscribeToToolsNotes();
 
     updateToolsTimerUI();
     fetchAndRenderDailyMeme(false);
     fetchAndRenderDailyQuote(false);
     loadToolsNotes();
+    updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
+    updateCalculatorShiftButtons();
     renderToolsPlanner();
     generateStudyRandomiserTask();
     updateGradeSelectPreview();
@@ -17828,23 +18084,36 @@ function saveUIPreferences(nextPrefs = {}) {
 function applyUserInterfacePreferences() {
     const prefs = getSavedUIPreferences();
     const body = document.body;
-    if (!body) return;
+    const root = document.documentElement;
+    if (!body || !root) return;
+
+    const themeMode = prefs.themeMode || 'auto';
+    const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const resolvedDark = themeMode === 'dark' || (themeMode === 'auto' && prefersDark);
 
     body.classList.toggle('compact-ui', prefs.density === 'compact');
     body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
     body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
     body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
+    body.classList.toggle('dark-theme', resolvedDark);
+    root.classList.toggle('dark-theme', resolvedDark);
+    root.style.colorScheme = resolvedDark ? 'dark' : 'light';
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', resolvedDark ? '#020617' : '#2563eb');
 
     const densitySelect = document.getElementById('ui-density-select');
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
     if (densitySelect) densitySelect.value = prefs.density || 'comfortable';
     if (radiusSelect) radiusSelect.value = prefs.radius || 'soft';
     if (motionSelect) motionSelect.value = prefs.motion || 'smooth';
     if (compactBadgesToggle) compactBadgesToggle.checked = !!prefs.compactBadges;
+    if (themeModeSelect) themeModeSelect.value = themeMode;
     if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
 
@@ -17883,6 +18152,7 @@ function initializeUserExperienceControls() {
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
 
@@ -17902,6 +18172,10 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ compactBadges: compactBadgesToggle.checked });
         applyUserInterfacePreferences();
     });
+    themeModeSelect?.addEventListener('change', () => {
+        saveUIPreferences({ themeMode: themeModeSelect.value });
+        applyUserInterfacePreferences();
+    });
     adminDensitySelect?.addEventListener('change', () => {
         saveUIPreferences({ density: adminDensitySelect.value });
         applyUserInterfacePreferences();
@@ -17910,6 +18184,17 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ motion: adminMotionSelect.value });
         applyUserInterfacePreferences();
     });
+
+    if (window.matchMedia) {
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = () => {
+            if ((getSavedUIPreferences().themeMode || 'auto') === 'auto') {
+                applyUserInterfacePreferences();
+            }
+        };
+        if (media.addEventListener) media.addEventListener('change', handler);
+        else if (media.addListener) media.addListener(handler);
+    }
 }
 // Accent helpers
 function hexToRgb(hex) {
