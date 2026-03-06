@@ -1268,12 +1268,21 @@
                     </div>
                 </div>
                 <div id="tools-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                    <div class="mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Tools</h2>
-                        <p class="text-gray-600 mt-2">Focus better with a smart timer, track your study time, and take a quick meme break.</p>
+                    <section class="tools-shell">
+                    <div class="tools-page-hero mb-6">
+                        <div>
+                            <p class="tools-section-eyebrow">Study space</p>
+                            <h2 class="text-3xl font-bold text-gray-800">Tools</h2>
+                            <p class="text-gray-600 mt-2 max-w-3xl">Everything is grouped to be easier to scan: timer first, quick stats beside it, then your calculator, planner, notes, randomiser, and grade tracker below.</p>
+                        </div>
+                        <div class="tools-page-hero-chips">
+                            <span class="tools-page-chip"><i class="fas fa-bolt"></i> Faster flow</span>
+                            <span class="tools-page-chip"><i class="fas fa-layer-group"></i> Cleaner layout</span>
+                            <span class="tools-page-chip"><i class="fas fa-moon"></i> Dark mode tuned</span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div class="xl:col-span-2 tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                    <div class="tools-stage-grid">
+                        <div class="tools-panel-card tools-hero-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                                 <h3 class="text-xl font-bold text-gray-800">Focus Timer</h3>
                                 <div class="flex items-center gap-3 flex-wrap justify-end">
@@ -1380,8 +1389,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-6">
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                        <div class="tools-sidebar-stack">
+                            <div class="tools-panel-card tools-compact-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <h3 class="text-lg font-bold text-gray-800 mb-4">Study Tracker</h3>
                                 <div class="space-y-3">
                                     <div class="rounded-xl border border-gray-200 bg-white/90 px-4 py-3">
@@ -1394,7 +1403,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-compact-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-center justify-between gap-3 mb-3">
                                     <h3 class="text-lg font-bold text-gray-800">Quote of the Day</h3>
                                     <button id="tools-quote-refresh" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">Refresh</button>
@@ -1403,7 +1412,7 @@
                                 <blockquote id="tools-quote-text" class="text-sm text-gray-800 leading-relaxed border-l-4 border-blue-200 pl-3"></blockquote>
                                 <p id="tools-quote-author" class="mt-3 text-xs font-semibold text-gray-600"></p>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-compact-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-center justify-between gap-3 mb-3">
                                     <h3 class="text-lg font-bold text-gray-800">Daily Meme</h3>
                                     <button id="tools-meme-refresh" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">New Meme</button>
@@ -1414,7 +1423,11 @@
                                 </div>
                                 <p id="tools-meme-name" class="mt-3 text-sm font-semibold text-gray-700"></p>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                        </div>
+                    </div>
+
+                    <div class="tools-utility-grid mt-8">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <h3 class="text-lg font-bold text-gray-800 mb-3">Scientific Calculator</h3>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 calculator-shell-top">
                                     <button id="tools-calc-shift" type="button" class="tools-calc-btn tools-calc-toggle">Shift Off</button>
@@ -1472,7 +1485,7 @@
                                     <button id="tools-calc-equals" class="tools-calc-btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700">=</button>
                                 </div>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-start justify-between gap-3 mb-4">
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-800">Revision Sprint Planner</h3>
@@ -1499,7 +1512,7 @@
                                 <div id="tools-planner-empty" class="mt-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-5 text-sm text-gray-500">No tasks yet. Add your first study target to build a focused revision plan.</div>
                                 <div id="tools-planner-list" class="mt-4 space-y-3"></div>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-center justify-between gap-3 mb-3">
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-800">Quick Notes</h3>
@@ -1513,7 +1526,7 @@
                                     <button id="tools-notes-copy" class="text-blue-700 hover:text-blue-800 font-semibold text-sm">Copy notes</button>
                                 </div>
                             </div>
-                            <div class="tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-center justify-between gap-3 mb-3">
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-800">Study Randomiser</h3>
@@ -1549,10 +1562,9 @@
                                 </div>
                                 <div id="tools-randomiser-output" class="mt-4 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-4 text-sm text-blue-900 min-h-[96px] flex items-center">Generate a task to get an instant study direction.</div>
                             </div>
-                        </div>
                     </div>
 
-                    <div class="mt-8 tools-panel-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                    <div class="mt-8 tools-panel-card tools-grade-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                             <div>
                                 <h3 class="text-xl font-bold text-gray-800">Grade Tracker</h3>
@@ -1675,6 +1687,7 @@
                             </div>
                         </div>
                     </div>
+                    </section>
                 </div>
                 <div id="useful-links-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

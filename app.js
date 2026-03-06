@@ -10843,13 +10843,7 @@ async function renderDashboard() {
             const board = examBoardBySubject[subject.toLowerCase()];
             let badge = '';
             if (board) {
-                const logo = examBoardLogos[board] || null;
-                if (logo) {
-                    const sizeClass = board === 'OCR' ? 'h-9' : 'h-7';
-                    badge = `<img src="${logo}" alt="${escapeHTML(board)} logo" class="${sizeClass} w-auto" style="object-fit:contain;" data-tooltip="Exam board: ${escapeHTML(board)}"/>`;
-                } else {
-                    badge = `<span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/60 border border-white/40 text-gray-700" data-tooltip="Exam board: ${escapeHTML(board)}">${board}</span>`;
-                }
+                badge = `<span class="dashboard-board-badge" data-tooltip="Exam board: ${escapeHTML(board)}">${escapeHTML(board)}</span>`;
             }
             const name = subject && subject.trim() ? subject : 'Subject';
             const subjectData = subjectSummaries[subject.toLowerCase()] || { summary: 'Access revision materials and resources for this subject.', description: '' };
@@ -16596,16 +16590,21 @@ function renderGradeTrendChart() {
     if (scopeSelect && scope === 'all') select.setAttribute('disabled', 'disabled');
     else select.removeAttribute('disabled');
 
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(220, Math.floor(rect.width));
     const height = Math.max(120, Math.floor(rect.height));
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
 
     const padding = { top: 12, right: 14, bottom: 26, left: 30 };
@@ -16615,7 +16614,7 @@ function renderGradeTrendChart() {
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
     for (let grade = 1; grade <= 9; grade += 2) {
-        const y = padding.top + (9 - grade) / 8 * plotHeight;
+        const y = Math.round(padding.top + (9 - grade) / 8 * plotHeight) + 0.5;
         ctx.beginPath();
         ctx.moveTo(padding.left, y);
         ctx.lineTo(width - padding.right, y);
@@ -16687,7 +16686,7 @@ function renderGradeTrendChart() {
                 ? padding.left + plotWidth / 2
                 : padding.left + (index / (monthKeys.length - 1)) * plotWidth;
             const y = padding.top + (9 - avg) / 8 * plotHeight;
-            return { x, y, avg, month };
+            return { x: Math.round(x), y: Math.round(y), avg, month };
         });
 
         if (!pointsData.length) {
@@ -16763,12 +16762,12 @@ function renderGradeTrendChart() {
     }
 
     const points = entries.map((entry, index) => {
-        const x = entries.length === 1
+            const x = entries.length === 1
             ? padding.left + plotWidth / 2
             : padding.left + (index / (entries.length - 1)) * plotWidth;
         const grade = Number(entry.grade);
         const y = padding.top + (9 - grade) / 8 * plotHeight;
-        return { x, y, grade, entry };
+        return { x: Math.round(x), y: Math.round(y), grade, entry };
     });
 
     const avg = entries.reduce((sum, entry) => sum + Number(entry.grade || 0), 0) / entries.length;
