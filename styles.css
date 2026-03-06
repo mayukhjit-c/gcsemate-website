@@ -4105,6 +4105,17 @@ will-change: transform;
             color: #94a3b8 !important;
         }
 
+        #command-palette-modal .rounded-2xl {
+            border-radius: 1.35rem;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.82));
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        body.dark-theme #command-palette-modal .rounded-2xl {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82)) !important;
+        }
+
         .hero-cta-links {
             display: flex;
             flex-wrap: wrap;
@@ -4800,6 +4811,20 @@ will-change: transform;
             position: relative;
         }
 
+        button i,
+        button svg,
+        .nav-link i,
+        .nav-link svg,
+        .tools-page-chip i,
+        .tools-status-pill i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
         .tools-page-hero {
             display: flex;
             align-items: flex-end;
@@ -4863,6 +4888,23 @@ will-change: transform;
 
         .tools-utility-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .tools-status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            min-height: 2.5rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid rgba(191, 219, 254, 0.8);
+            background: linear-gradient(135deg, rgba(239, 246, 255, 0.9), rgba(255, 255, 255, 0.76));
+            color: #1d4ed8;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .tools-hero-panel,
@@ -4957,6 +4999,602 @@ will-change: transform;
 
         body.dark-theme #tools-page .tools-panel-card::before {
             border-color: rgba(148, 163, 184, 0.12);
+        }
+
+        body.dark-theme .tools-status-pill {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.78));
+            border-color: rgba(96, 165, 250, 0.24);
+            color: #dbeafe;
+        }
+
+        .dashboard-clock-shell {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 1rem;
+            min-width: min(100%, 22rem);
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        .dashboard-clock-analog {
+            position: relative;
+            width: 5.25rem;
+            height: 5.25rem;
+            border-radius: 999px;
+            border: 1px solid rgba(191, 219, 254, 0.9);
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,0.92) 0 35%, transparent 36%),
+                radial-gradient(circle at 30% 30%, rgba(191, 219, 254, 0.65), transparent 55%),
+                linear-gradient(145deg, rgba(255,255,255,0.98), rgba(224, 231, 255, 0.92));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 18px 35px -24px rgba(37, 99, 235, 0.42);
+        }
+
+        .dashboard-clock-analog::before {
+            content: '';
+            position: absolute;
+            inset: 0.5rem;
+            border-radius: inherit;
+            border: 1px dashed rgba(96, 165, 250, 0.22);
+        }
+
+        .dashboard-clock-hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            width: 0.24rem;
+            border-radius: 999px;
+            transform-origin: center bottom;
+            transform: translateX(-50%) rotate(0deg);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+        }
+
+        .dashboard-clock-hand.hour {
+            height: 1.25rem;
+            background: #1e293b;
+        }
+
+        .dashboard-clock-hand.minute {
+            height: 1.72rem;
+            background: #2563eb;
+        }
+
+        .dashboard-clock-hand.second {
+            width: 0.12rem;
+            height: 2rem;
+            background: #ec4899;
+        }
+
+        .dashboard-clock-center {
+            position: absolute;
+            inset: 50% auto auto 50%;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 999px;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.82);
+        }
+
+        .dashboard-clock-digital {
+            min-width: 0;
+            text-align: left;
+        }
+
+        .dashboard-clock-focus-label {
+            margin-top: 0.35rem;
+            color: #2563eb;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .calendar-shell {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .calendar-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.75rem;
+            padding: 0.65rem 1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(191, 219, 254, 0.85);
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(239,246,255,0.88));
+            color: #1d4ed8;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .calendar-insights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .calendar-insight-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.15rem;
+            border: 1px solid rgba(191, 219, 254, 0.6);
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(239,246,255,0.72), rgba(224,231,255,0.7));
+            padding: 1rem 1.1rem;
+            box-shadow: 0 20px 40px -30px rgba(37, 99, 235, 0.32);
+        }
+
+        .calendar-insight-card::after {
+            content: '';
+            position: absolute;
+            inset: auto -1.5rem -1.5rem auto;
+            width: 4.25rem;
+            height: 4.25rem;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.22), transparent 68%);
+        }
+
+        .calendar-insight-card-wide {
+            grid-column: span 1;
+        }
+
+        .calendar-insight-label {
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .calendar-insight-value,
+        .calendar-insight-feature {
+            margin-top: 0.45rem;
+            font-size: 1.7rem;
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: #0f172a;
+        }
+
+        .calendar-insight-feature {
+            font-size: 1.1rem;
+            line-height: 1.35;
+        }
+
+        .calendar-insight-subtext {
+            margin-top: 0.35rem;
+            color: #64748b;
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .calendar-board {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-board::before {
+            content: '';
+            position: absolute;
+            inset: -15% auto auto 65%;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.16), transparent 68%);
+            pointer-events: none;
+        }
+
+        .calendar-day {
+            overflow: hidden;
+        }
+
+        #calendar-agenda {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        #calendar-agenda .calendar-agenda-item,
+        #calendar-agenda > div {
+            border-radius: 1rem;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,250,252,0.92));
+            box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.14);
+        }
+
+        .flashcards-workspace {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.5fr);
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .flashcards-sidebar,
+        .flashcards-editor,
+        .flashcards-study-shell,
+        .flashcards-composer-card,
+        .flashcards-editor-card,
+        .flashcards-stat-card,
+        .flashcards-empty-state {
+            border-radius: 1.1rem;
+            border: 1px solid rgba(191, 219, 254, 0.52);
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(239,246,255,0.76));
+            box-shadow: 0 20px 40px -34px rgba(37, 99, 235, 0.34), inset 0 1px 0 rgba(255,255,255,0.78);
+        }
+
+        .flashcards-sidebar,
+        .flashcards-editor,
+        .flashcards-study-shell {
+            padding: 1rem;
+        }
+
+        .flashcards-create-form {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .flashcards-section-heading h4,
+        .flashcards-editor-title {
+            color: #0f172a;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .flashcards-section-heading p,
+        .flashcards-editor-description,
+        .flashcards-empty-state p {
+            margin-top: 0.2rem;
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .flashcards-deck-list,
+        .flashcards-card-list {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .flashcards-deck-item {
+            display: grid;
+            gap: 0.55rem;
+            width: 100%;
+            padding: 0.95rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(191, 219, 254, 0.45);
+            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.92));
+            text-align: left;
+        }
+
+        .flashcards-deck-item.is-active {
+            border-color: rgba(37, 99, 235, 0.55);
+            box-shadow: 0 22px 36px -30px rgba(37, 99, 235, 0.55);
+            transform: translateY(-1px);
+        }
+
+        .flashcards-deck-item-header,
+        .flashcards-editor-header,
+        .flashcards-study-topbar,
+        .flashcards-study-progress-meta,
+        .flashcards-editor-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .flashcards-deck-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .flashcards-deck-subject,
+        .flashcards-editor-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #2563eb;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .flashcards-deck-meta {
+            color: #64748b;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .flashcards-editor-grid,
+        .flashcards-composer-grid,
+        .flashcards-stats-row {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .flashcards-editor-grid,
+        .flashcards-stats-row {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .flashcards-composer-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .flashcards-editor-card,
+        .flashcards-composer-card {
+            padding: 1rem;
+        }
+
+        .flashcards-editor-card-wide {
+            grid-column: span 1;
+        }
+
+        .flashcards-input-label,
+        .flashcards-stat-label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .flashcards-stat-value {
+            font-size: 1.4rem;
+            line-height: 1.1;
+            font-weight: 900;
+            color: #0f172a;
+        }
+
+        .flashcards-card-item {
+            display: grid;
+            gap: 0.9rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: rgba(255,255,255,0.92);
+        }
+
+        .flashcards-card-item-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .flashcards-card-item-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .flashcards-empty-state {
+            min-height: 20rem;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 1.4rem;
+        }
+
+        .flashcards-empty-state i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3.25rem;
+            height: 3.25rem;
+            margin-bottom: 0.9rem;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(219,234,254,0.9), rgba(224,231,255,0.8));
+            color: #2563eb;
+            font-size: 1.2rem;
+        }
+
+        .flashcards-study-progress-bar {
+            width: 100%;
+            height: 0.7rem;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(191, 219, 254, 0.44);
+            border: 1px solid rgba(191, 219, 254, 0.65);
+        }
+
+        .flashcards-study-progress-bar span {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #2563eb, #7c3aed, #0ea5e9);
+            transition: width 220ms ease;
+        }
+
+        .flashcards-study-card {
+            width: 100%;
+            min-height: 20rem;
+            margin-top: 1rem;
+            perspective: 1600px;
+            border: none;
+            background: transparent !important;
+            padding: 0;
+        }
+
+        .flashcards-study-card:hover {
+            transform: none !important;
+        }
+
+        .flashcards-study-card-inner {
+            position: relative;
+            display: block;
+            width: 100%;
+            min-height: 20rem;
+            transform-style: preserve-3d;
+            transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .flashcards-study-card.is-flipped .flashcards-study-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcards-study-face {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1rem;
+            padding: 2rem;
+            border-radius: 1.4rem;
+            border: 1px solid rgba(191, 219, 254, 0.58);
+            background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(239,246,255,0.86), rgba(224,231,255,0.82));
+            box-shadow: 0 30px 60px -44px rgba(37, 99, 235, 0.52);
+            backface-visibility: hidden;
+        }
+
+        .flashcards-study-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, rgba(239,246,255,0.96), rgba(224,231,255,0.9), rgba(233,213,255,0.84));
+        }
+
+        .flashcards-study-face-label {
+            color: #2563eb;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .flashcards-study-copy {
+            color: #0f172a;
+            font-size: clamp(1.2rem, 2vw, 1.65rem);
+            line-height: 1.45;
+            font-weight: 800;
+            white-space: pre-wrap;
+        }
+
+        .flashcards-study-hint {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .flashcards-study-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        body.dark-theme .dashboard-clock-shell,
+        body.dark-theme .calendar-insight-card,
+        body.dark-theme .flashcards-sidebar,
+        body.dark-theme .flashcards-editor,
+        body.dark-theme .flashcards-study-shell,
+        body.dark-theme .flashcards-composer-card,
+        body.dark-theme .flashcards-editor-card,
+        body.dark-theme .flashcards-stat-card,
+        body.dark-theme .flashcards-empty-state,
+        body.dark-theme .flashcards-card-item,
+        body.dark-theme .flashcards-deck-item,
+        body.dark-theme .flashcards-study-face,
+        body.dark-theme #calendar-agenda > div {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8), rgba(30, 64, 175, 0.14)) !important;
+            border-color: rgba(96, 165, 250, 0.18) !important;
+            color: #e2e8f0;
+        }
+
+        body.dark-theme .dashboard-clock-analog {
+            background:
+                radial-gradient(circle at center, rgba(15,23,42,0.96) 0 35%, transparent 36%),
+                radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.24), transparent 55%),
+                linear-gradient(145deg, rgba(15,23,42,0.98), rgba(30,41,59,0.92));
+            border-color: rgba(96, 165, 250, 0.24);
+        }
+
+        body.dark-theme .dashboard-clock-hand.hour {
+            background: #e2e8f0;
+        }
+
+        body.dark-theme .dashboard-clock-hand.minute {
+            background: #60a5fa;
+        }
+
+        body.dark-theme .dashboard-clock-focus-label,
+        body.dark-theme .calendar-insight-value,
+        body.dark-theme .calendar-insight-feature,
+        body.dark-theme .flashcards-section-heading h4,
+        body.dark-theme .flashcards-editor-title,
+        body.dark-theme .flashcards-deck-title,
+        body.dark-theme .flashcards-stat-value,
+        body.dark-theme .flashcards-study-copy {
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .calendar-insight-label,
+        body.dark-theme .calendar-insight-subtext,
+        body.dark-theme .flashcards-section-heading p,
+        body.dark-theme .flashcards-editor-description,
+        body.dark-theme .flashcards-deck-meta,
+        body.dark-theme .flashcards-input-label,
+        body.dark-theme .flashcards-study-hint,
+        body.dark-theme .flashcards-study-progress-meta {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-theme .calendar-action-btn {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.86));
+            border-color: rgba(96, 165, 250, 0.24);
+            color: #dbeafe;
+        }
+
+        body.dark-theme .flashcards-study-back {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.92), rgba(49, 46, 129, 0.82), rgba(91, 33, 182, 0.24)) !important;
+        }
+
+        @media (max-width: 1100px) {
+            .flashcards-workspace,
+            .tools-stage-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-insights-grid,
+            .tools-utility-grid,
+            .flashcards-composer-grid,
+            .flashcards-editor-grid,
+            .flashcards-stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .dashboard-clock-shell {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+
+            .dashboard-clock-digital {
+                text-align: center;
+            }
+
+            .calendar-top-controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .flashcards-study-face {
+                padding: 1.35rem;
+            }
+
+            .flashcards-card-item-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* About page redesign */

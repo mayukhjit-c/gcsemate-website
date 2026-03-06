@@ -91,6 +91,34 @@ let toolsPageInitialized = false;
 let toolsPlannerItems = [];
 let unsubscribeGradeEntries = null;
 let userGradeEntries = [];
+let unsubscribeFlashcardDecks = null;
+let flashcardDecks = [];
+let selectedFlashcardDeckId = null;
+let flashcardsInitialized = false;
+let flashcardStudySession = {
+    deckId: null,
+    order: [],
+    index: 0,
+    flipped: false,
+    correct: 0,
+    incorrect: 0,
+    streak: 0,
+    bestStreak: 0
+};
+let interactionTrackingInitialized = false;
+let interactionFlushTimeout = null;
+let pageVisitState = {
+    currentPageId: 'subject-dashboard-page',
+    lastLoggedPageId: null,
+    currentStartedAt: Date.now()
+};
+let interactionBatch = {
+    counts: {},
+    contexts: {},
+    startedAt: Date.now(),
+    lastInteractionAt: 0,
+    pageId: 'subject-dashboard-page'
+};
 
 function clearAccentCSSVars() {
     const root = document.documentElement;
@@ -1723,6 +1751,181 @@ let userActivityTracker = {
     }
 };
 
+function toMillis(value) {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value?.toMillis === 'function') return value.toMillis();
+    if (typeof value?.toDate === 'function') return value.toDate().getTime();
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function setFlashcardsStatus(message, tone = 'info') {
+    const statusEl = document.getElementById('tools-flashcards-sync-status');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.dataset.tone = tone;
+}
+
+function setButtonBusy(button, isBusy, busyLabel = 'Working...') {
+    if (!button) return;
+    if (isBusy) {
+        if (!button.dataset.originalLabel) button.dataset.originalLabel = button.innerHTML;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.innerHTML = `<span class="inline-flex items-center gap-2"><span class="loading-orb" style="width: 1rem; height: 1rem; border-width: 2px;"></span><span>${escapeHTML(busyLabel)}</span></span>`;
+        return;
+    }
+
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    if (button.dataset.originalLabel) {
+        button.innerHTML = button.dataset.originalLabel;
+        delete button.dataset.originalLabel;
+    }
+}
+
+function getElementActivityLabel(target) {
+    if (!target) return 'unknown';
+    const labelled = target.closest('[data-page], [data-tools-planner-id], [data-grade-delete-id], button, input, select, textarea, a');
+    if (!labelled) return target.tagName?.toLowerCase() || 'unknown';
+    return labelled.id || labelled.name || labelled.dataset.page || labelled.dataset.toolsPlannerId || labelled.dataset.gradeDeleteId || labelled.getAttribute('aria-label') || labelled.textContent?.trim()?.slice(0, 60) || labelled.tagName?.toLowerCase() || 'unknown';
+}
+
+function flushInteractionBatch({ immediate = false } = {}) {
+    if (!currentUser) return Promise.resolve();
+    const countEntries = Object.entries(interactionBatch.counts || {});
+    if (!countEntries.length) return Promise.resolve();
+
+    const payload = {
+        pageId: interactionBatch.pageId || pageVisitState.currentPageId || 'unknown',
+        counts: { ...interactionBatch.counts },
+        contexts: Object.fromEntries(
+            Object.entries(interactionBatch.contexts || {}).map(([key, value]) => [key, Array.from(value).slice(0, 8)])
+        ),
+        startedAtMs: interactionBatch.startedAt,
+        endedAtMs: Date.now(),
+        lastInteractionAtMs: interactionBatch.lastInteractionAt || Date.now()
+    };
+
+    interactionBatch = {
+        counts: {},
+        contexts: {},
+        startedAt: Date.now(),
+        lastInteractionAt: 0,
+        pageId: pageVisitState.currentPageId || 'unknown'
+    };
+
+    if (interactionFlushTimeout) {
+        clearTimeout(interactionFlushTimeout);
+        interactionFlushTimeout = null;
+    }
+
+    return logUserActivity('interaction_batch', payload);
+}
+
+function recordUserInteraction(type, metadata = {}) {
+    if (!currentUser || !type) return;
+    const pageId = metadata.pageId || pageVisitState.currentPageId || 'unknown';
+    interactionBatch.pageId = pageId;
+    interactionBatch.lastInteractionAt = Date.now();
+    interactionBatch.counts[type] = (interactionBatch.counts[type] || 0) + 1;
+
+    const targetLabel = metadata.target || metadata.tool || metadata.subject || metadata.fileName;
+    if (targetLabel) {
+        if (!interactionBatch.contexts[type]) interactionBatch.contexts[type] = new Set();
+        interactionBatch.contexts[type].add(String(targetLabel).slice(0, 80));
+    }
+
+    if (interactionFlushTimeout) clearTimeout(interactionFlushTimeout);
+    const shouldFlushNow = metadata.important || Object.values(interactionBatch.counts).reduce((sum, value) => sum + value, 0) >= 12;
+    if (shouldFlushNow) {
+        flushInteractionBatch({ immediate: true });
+        return;
+    }
+
+    interactionFlushTimeout = setTimeout(() => {
+        flushInteractionBatch();
+    }, 15000);
+}
+
+function initializeMicroInteractionTracking() {
+    if (interactionTrackingInitialized) return;
+    interactionTrackingInitialized = true;
+
+    const throttledScroll = throttle(() => {
+        recordUserInteraction('scroll', { target: pageVisitState.currentPageId });
+    }, 12000);
+    const throttledInput = throttle((target) => {
+        recordUserInteraction('input', { target });
+    }, 5000);
+    const throttledFocus = throttle((target) => {
+        recordUserInteraction('focus', { target });
+    }, 4000);
+
+    document.addEventListener('click', (event) => {
+        recordUserInteraction('click', { target: getElementActivityLabel(event.target) });
+    }, { passive: true });
+
+    document.addEventListener('change', (event) => {
+        recordUserInteraction('change', { target: getElementActivityLabel(event.target), important: event.target?.matches?.('input[type="checkbox"], select') });
+    }, { passive: true });
+
+    document.addEventListener('input', (event) => {
+        throttledInput(getElementActivityLabel(event.target));
+    }, { passive: true });
+
+    document.addEventListener('focusin', (event) => {
+        throttledFocus(getElementActivityLabel(event.target));
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+            recordUserInteraction('shortcut', { target: `${event.key}`, important: true });
+            return;
+        }
+        recordUserInteraction('key', { target: event.key });
+    });
+
+    document.addEventListener('submit', (event) => {
+        recordUserInteraction('submit', { target: getElementActivityLabel(event.target), important: true });
+    });
+
+    const pageContent = document.getElementById('page-content');
+    if (pageContent) pageContent.addEventListener('scroll', throttledScroll, { passive: true });
+}
+
+function trackPageVisit(pageId) {
+    if (!pageId || !currentUser) {
+        pageVisitState.currentPageId = pageId || pageVisitState.currentPageId;
+        pageVisitState.currentStartedAt = Date.now();
+        currentPageStart = pageVisitState.currentStartedAt;
+        return;
+    }
+
+    const previousPageId = pageVisitState.currentPageId;
+    const now = Date.now();
+    const dwellMs = Math.max(0, now - (pageVisitState.currentStartedAt || now));
+
+    if (previousPageId && pageVisitState.lastLoggedPageId !== `${previousPageId}:${pageId}:${dwellMs}`) {
+        logUserActivity('page_view', {
+            fromPageId: previousPageId,
+            toPageId: pageId,
+            dwellMs,
+            dwellSeconds: Math.round(dwellMs / 1000),
+            currentSubject: userActivityTracker.currentSubject || null,
+            currentFile: userActivityTracker.currentFile || null
+        });
+        pageVisitState.lastLoggedPageId = `${previousPageId}:${pageId}:${dwellMs}`;
+    }
+
+    pageVisitState.currentPageId = pageId;
+    pageVisitState.currentStartedAt = now;
+    currentPageStart = now;
+    interactionBatch.pageId = pageId;
+    recordUserInteraction('page', { target: pageId, important: true });
+}
+
 // Enhanced IP detection with IPv4 preference and location data
 async function fetchJsonWithTimeout(url, timeoutMs = 4000) {
     const controller = new AbortController();
@@ -1858,6 +2061,13 @@ async function initializeUserTracking() {
         userSessionStart = Date.now();
         currentPageStart = Date.now();
         sessionId = null;
+        interactionBatch = {
+            counts: {},
+            contexts: {},
+            startedAt: Date.now(),
+            lastInteractionAt: 0,
+            pageId: pageVisitState.currentPageId || 'subject-dashboard-page'
+        };
         
         // Get user's IP address with IPv4 preference and location data
         const ipData = await getUserIPWithLocation();
@@ -1905,6 +2115,8 @@ async function initializeUserTracking() {
         
         // Initialize real-time tracking
         initializeRealtimeTracking();
+        initializeMicroInteractionTracking();
+        trackPageVisit(pageVisitState.currentPageId || 'subject-dashboard-page');
         
         // Initialize admin diagnostics if user is admin
         initializeAdminDiagnostics();
@@ -2145,6 +2357,7 @@ async function trackLogout() {
     // Prevent double-logging (e.g., logout button + beforeunload)
     if (hasTrackedLogout) return;
     hasTrackedLogout = true;
+    try { await flushInteractionBatch({ immediate: true }); } catch (_) {}
     
     userActivityTracker.logoutTime = Date.now();
     const sessionDuration = userActivityTracker.logoutTime - userActivityTracker.loginTime;
@@ -2477,6 +2690,7 @@ function updateConnectionStatus(status) {
 function trackPageVisibility() {
     document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
+            try { await flushInteractionBatch({ immediate: true }); } catch (_) {}
             // User switched tabs or minimized window
             await logUserActivity('page_hidden', {
                 sessionId: sessionId,
@@ -2488,6 +2702,7 @@ function trackPageVisibility() {
                 sessionId: sessionId,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            recordUserInteraction('return_to_tab', { target: pageVisitState.currentPageId, important: true });
             
             // Send immediate heartbeat
             await sendHeartbeat();
@@ -3077,6 +3292,7 @@ function trackSubjectChange(subjectName) {
     logUserActivity('subject_start', {
         subject: subjectName
     });
+    recordUserInteraction('subject_focus', { subject: subjectName, important: true });
     
     // Update daily stats
     updateDailyStats();
@@ -3113,6 +3329,7 @@ function trackFileOpen(fileName, fileType, subjectName) {
         fileType: fileType,
         subject: subjectName
     });
+    recordUserInteraction('file_open', { fileName, subject: subjectName, important: true });
     
     // Update daily stats
     updateDailyStats();
@@ -3142,6 +3359,7 @@ function trackFileClose(fileName) {
 // Log periodic activity to track session duration
 async function logPeriodicActivity() {
     if (!currentUser) return;
+    try { await flushInteractionBatch(); } catch (_) {}
     
     await logUserActivity('heartbeat', {
         pageViewTime: Date.now() - currentPageStart,
@@ -10332,8 +10550,12 @@ function showVerificationMessagePage(email) {
 function showPage(pageId) {
     const pages = document.querySelectorAll('.page');
     let current = null;
+    let currentId = null;
     pages.forEach(page => {
-        if (!page.classList.contains('hidden')) current = page;
+        if (!page.classList.contains('hidden')) {
+            current = page;
+            currentId = page.id;
+        }
     });
     const newPage = document.getElementById(pageId);
     if (!newPage) return;
@@ -10413,6 +10635,13 @@ function showPage(pageId) {
                 mobileMenu.style.display = 'none';
                 document.body.style.overflow = '';
             }
+        }
+    } catch (_) {}
+
+    try {
+        if (currentId !== pageId) {
+            pageVisitState.currentPageId = currentId || pageVisitState.currentPageId || pageId;
+            trackPageVisit(pageId);
         }
     } catch (_) {}
     
@@ -12537,14 +12766,61 @@ function renderCalendar(userEvents, globalEvents) {
         dayEl.addEventListener('click', () => openEventModal(dateKey));
         calendarGrid.appendChild(dayEl);
     }
+    updateCalendarInsights();
     renderCalendarAgenda();
     updateCountdownBanner();
+}
+
+function updateCalendarInsights() {
+    const upcomingEl = document.getElementById('calendar-upcoming-count');
+    const importantEl = document.getElementById('calendar-important-count');
+    const nextEventEl = document.getElementById('calendar-next-event');
+    const nextEventMetaEl = document.getElementById('calendar-next-event-meta');
+
+    const events = [];
+    [calendarUserEvents, calendarGlobalEvents].forEach((eventMap, mapIndex) => {
+        Object.entries(eventMap || {}).forEach(([fallbackDate, items]) => {
+            (items || []).forEach((event) => {
+                const dateText = event.date || fallbackDate;
+                const startDate = new Date(`${dateText}T00:00:00`);
+                events.push({
+                    ...event,
+                    isGlobal: mapIndex === 1,
+                    startDate,
+                    categoryText: `${event.category || ''} ${event.title || ''}`.toLowerCase()
+                });
+            });
+        });
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const soon = new Date(today);
+    soon.setDate(soon.getDate() + 14);
+    const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const upcoming = events.filter(event => event.startDate >= today && event.startDate <= soon);
+    const important = events.filter(event => {
+        const monthKey = `${event.startDate.getFullYear()}-${String(event.startDate.getMonth() + 1).padStart(2, '0')}`;
+        return monthKey === currentMonthKey && /(exam|homework|due)/i.test(event.categoryText || '');
+    });
+    const nextEvent = [...events].filter(event => event.startDate >= today).sort((a, b) => a.startDate - b.startDate)[0];
+
+    if (upcomingEl) upcomingEl.textContent = String(upcoming.length);
+    if (importantEl) importantEl.textContent = String(important.length);
+    if (nextEventEl) nextEventEl.textContent = nextEvent ? (nextEvent.title || 'Untitled event') : 'No events yet';
+    if (nextEventMetaEl) {
+        nextEventMetaEl.textContent = nextEvent
+            ? `${nextEvent.startDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${nextEvent.category || (nextEvent.isGlobal ? 'Global event' : 'Personal event')}`
+            : 'Add a revision event or deadline to populate this space.';
+    }
 }
 
 // New: Support multiple view modes for calendar
 const calendarViewSelect = document.getElementById('calendar-view-mode');
 if (calendarViewSelect) {
     calendarViewSelect.addEventListener('change', () => {
+        recordUserInteraction('calendar_view_change', { target: calendarViewSelect.value, important: true });
         renderCalendar(calendarUserEvents, calendarGlobalEvents);
         // Scroll calendar page to top to prevent footer covering
         const calendarPage = document.getElementById('calendar-page');
@@ -12556,6 +12832,7 @@ if (calendarViewSelect) {
 const calendarFilterSelect = document.getElementById('calendar-category-filter');
 if (calendarFilterSelect) {
     calendarFilterSelect.addEventListener('change', () => {
+        recordUserInteraction('calendar_filter_change', { target: calendarFilterSelect.value, important: true });
         renderCalendar(calendarUserEvents, calendarGlobalEvents);
         // Scroll calendar page to top to prevent footer covering
         const calendarPage = document.getElementById('calendar-page');
@@ -12606,7 +12883,7 @@ function renderCalendarAgenda() {
                 }
             }
             return `
-            <div class="flex items-start gap-3 py-2 border-b border-gray-100" draggable="true" ondragstart="onAgendaDragStart(event, '${e.id||''}', '${e.date.toISOString()}')" ondrop="onAgendaDrop(event, '${e.id||''}')" ondragover="event.preventDefault()">
+            <div class="calendar-agenda-item flex items-start gap-3 py-3 px-4" draggable="true" ondragstart="onAgendaDragStart(event, '${e.id||''}', '${e.date.toISOString()}')" ondrop="onAgendaDrop(event, '${e.id||''}')" ondragover="event.preventDefault()">
                 <div class="w-28 text-sm text-gray-600">${e.date.toLocaleDateString('en-GB')}</div>
                 <div class="flex-1">
                     <div class="font-semibold text-gray-800 flex items-center gap-2">
@@ -16215,7 +16492,7 @@ function renderToolsPlanner() {
         .sort((a, b) => Number(a.completed) - Number(b.completed))
         .map(item => `
             <div class="tools-planner-item ${item.completed ? 'is-complete' : ''}" data-tools-planner-id="${escapeHTML(item.id)}">
-                <input class="tools-planner-check" type="checkbox" ${item.completed ? 'checked' : ''} data-tools-planner-toggle="${escapeHTML(item.id)}" aria-label="Mark task complete">
+                <input class="gcse-checkbox tools-planner-check" type="checkbox" ${item.completed ? 'checked' : ''} data-tools-planner-toggle="${escapeHTML(item.id)}" aria-label="Mark task complete">
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                         <p class="text-sm font-semibold text-gray-800 ${item.completed ? 'line-through text-gray-400' : ''}">${escapeHTML(item.text)}</p>
@@ -17196,6 +17473,658 @@ function executeCommandPaletteAction(actionId) {
     action.action();
 }
 
+function getFlashcardsCollectionRef() {
+    if (!currentUser || !db) return null;
+    return db.collection('users').doc(currentUser.uid).collection('flashcards');
+}
+
+function getFlashcardsCacheKey() {
+    return currentUser?.uid ? `gcsemate_flashcards_${currentUser.uid}` : 'gcsemate_flashcards_guest';
+}
+
+function createFlashcardId() {
+    return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function normaliseFlashcardDeck(deck = {}) {
+    const cards = Array.isArray(deck.cards) ? deck.cards : [];
+    const stats = deck.stats && typeof deck.stats === 'object' ? deck.stats : {};
+    return {
+        id: deck.id,
+        name: String(deck.name || 'Untitled deck').trim() || 'Untitled deck',
+        subject: String(deck.subject || 'General').trim() || 'General',
+        description: String(deck.description || '').trim(),
+        cards: cards.map(card => ({
+            id: card.id || createFlashcardId(),
+            front: String(card.front || '').trim(),
+            back: String(card.back || '').trim(),
+            hint: String(card.hint || '').trim(),
+            attempts: Number(card.attempts || 0),
+            correct: Number(card.correct || 0),
+            incorrect: Number(card.incorrect || 0),
+            lastReviewedAt: card.lastReviewedAt || null,
+            createdAt: card.createdAt || null
+        })).filter(card => card.front && card.back),
+        stats: {
+            sessionsCompleted: Number(stats.sessionsCompleted || 0),
+            cardsReviewed: Number(stats.cardsReviewed || 0),
+            correct: Number(stats.correct || 0),
+            incorrect: Number(stats.incorrect || 0),
+            bestStreak: Number(stats.bestStreak || 0),
+            lastScore: Number(stats.lastScore || 0),
+            lastStudiedAt: stats.lastStudiedAt || null
+        },
+        createdAt: deck.createdAt || null,
+        updatedAt: deck.updatedAt || null
+    };
+}
+
+function getSelectedFlashcardDeck() {
+    return flashcardDecks.find(deck => deck.id === selectedFlashcardDeckId) || null;
+}
+
+function cacheFlashcardDecks() {
+    try {
+        localStorage.setItem(getFlashcardsCacheKey(), JSON.stringify(flashcardDecks));
+    } catch (_) {}
+}
+
+function restoreCachedFlashcards() {
+    try {
+        const cached = JSON.parse(localStorage.getItem(getFlashcardsCacheKey()) || '[]');
+        if (!Array.isArray(cached)) return;
+        flashcardDecks = cached.map(normaliseFlashcardDeck);
+        if (!selectedFlashcardDeckId && flashcardDecks[0]) selectedFlashcardDeckId = flashcardDecks[0].id;
+        renderFlashcardsWorkspace();
+    } catch (_) {}
+}
+
+function updateFlashcardFilterOptions() {
+    const filterEl = document.getElementById('tools-flashcards-filter');
+    if (!filterEl) return;
+    const currentValue = filterEl.value || 'all';
+    const subjects = Array.from(new Set(flashcardDecks.map(deck => deck.subject).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    filterEl.innerHTML = '<option value="all">All subject groups</option>' + subjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('');
+    filterEl.value = subjects.includes(currentValue) || currentValue === 'all' ? currentValue : 'all';
+}
+
+function renderFlashcardDecksList() {
+    const listEl = document.getElementById('tools-flashcards-decks');
+    const countEl = document.getElementById('tools-flashcards-count');
+    const filterEl = document.getElementById('tools-flashcards-filter');
+    if (!listEl) return;
+
+    updateFlashcardFilterOptions();
+    const filterValue = filterEl?.value || 'all';
+    const visibleDecks = flashcardDecks.filter(deck => filterValue === 'all' || deck.subject === filterValue);
+    if (countEl) countEl.textContent = `${visibleDecks.length} deck${visibleDecks.length === 1 ? '' : 's'}`;
+
+    if (!visibleDecks.length) {
+        listEl.innerHTML = '<div class="flashcards-empty-state !min-h-0"><div><h4>No flashcard decks yet</h4><p>Create a deck or change the subject filter to see more.</p></div></div>';
+        return;
+    }
+
+    listEl.innerHTML = visibleDecks.map(deck => {
+        const reviewed = Number(deck.stats?.cardsReviewed || 0);
+        const correct = Number(deck.stats?.correct || 0);
+        const accuracy = reviewed > 0 ? Math.round((correct / reviewed) * 100) : 0;
+        return `
+            <button type="button" class="flashcards-deck-item ${deck.id === selectedFlashcardDeckId ? 'is-active' : ''}" data-flashcards-select="${escapeHTML(deck.id)}">
+                <div class="flashcards-deck-item-header">
+                    <span class="flashcards-deck-subject">${escapeHTML(deck.subject || 'General')}</span>
+                    <span class="tools-status-pill">${deck.cards.length} cards</span>
+                </div>
+                <div class="flashcards-deck-title">${escapeHTML(deck.name)}</div>
+                <div class="flashcards-deck-meta">${escapeHTML(deck.description || 'No description yet.')}</div>
+                <div class="flashcards-deck-item-header text-xs text-slate-500">
+                    <span>${accuracy}% accuracy</span>
+                    <span>${Number(deck.stats?.sessionsCompleted || 0)} session${Number(deck.stats?.sessionsCompleted || 0) === 1 ? '' : 's'}</span>
+                </div>
+            </button>`;
+    }).join('');
+}
+
+function renderSelectedFlashcardDeck() {
+    const emptyEl = document.getElementById('tools-flashcards-empty');
+    const editorEl = document.getElementById('tools-flashcards-editor');
+    const studyEl = document.getElementById('tools-flashcards-study');
+    const deck = getSelectedFlashcardDeck();
+    if (!emptyEl || !editorEl || !studyEl) return;
+
+    if (!deck || flashcardStudySession.deckId) {
+        if (!flashcardStudySession.deckId) {
+            emptyEl.classList.remove('hidden');
+            editorEl.classList.add('hidden');
+        }
+        return;
+    }
+
+    emptyEl.classList.add('hidden');
+    editorEl.classList.remove('hidden');
+    studyEl.classList.add('hidden');
+
+    const reviewed = Number(deck.stats?.cardsReviewed || 0);
+    const correct = Number(deck.stats?.correct || 0);
+    const accuracy = reviewed > 0 ? Math.round((correct / reviewed) * 100) : 0;
+
+    const titleEl = document.getElementById('tools-flashcards-editor-title');
+    const subjectEl = document.getElementById('tools-flashcards-editor-subject');
+    const descEl = document.getElementById('tools-flashcards-editor-description');
+    const editNameEl = document.getElementById('tools-flashcards-editor-name');
+    const editSubjectEl = document.getElementById('tools-flashcards-editor-subject-input');
+    const editDescriptionEl = document.getElementById('tools-flashcards-editor-description-input');
+    const countEl = document.getElementById('tools-flashcards-card-count');
+    const sessionEl = document.getElementById('tools-flashcards-session-count');
+    const accuracyEl = document.getElementById('tools-flashcards-accuracy');
+    const streakEl = document.getElementById('tools-flashcards-best-streak');
+    const cardsEl = document.getElementById('tools-flashcards-cards');
+
+    if (titleEl) titleEl.textContent = deck.name;
+    if (subjectEl) subjectEl.textContent = deck.subject;
+    if (descEl) descEl.textContent = deck.description || 'Add a short description so you remember what this set covers.';
+    if (editNameEl) editNameEl.value = deck.name;
+    if (editSubjectEl) editSubjectEl.value = deck.subject;
+    if (editDescriptionEl) editDescriptionEl.value = deck.description;
+    if (countEl) countEl.textContent = String(deck.cards.length);
+    if (sessionEl) sessionEl.textContent = String(Number(deck.stats?.sessionsCompleted || 0));
+    if (accuracyEl) accuracyEl.textContent = `${accuracy}%`;
+    if (streakEl) streakEl.textContent = String(Number(deck.stats?.bestStreak || 0));
+
+    if (cardsEl) {
+        cardsEl.innerHTML = deck.cards.length
+            ? deck.cards.map((card, index) => `
+                <div class="flashcards-card-item" data-flashcard-card-id="${escapeHTML(card.id)}">
+                    <div class="flashcards-card-item-grid">
+                        <div>
+                            <label class="flashcards-input-label">Front</label>
+                            <textarea data-flashcard-edit-front rows="3" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900 resize-y">${escapeHTML(card.front)}</textarea>
+                        </div>
+                        <div>
+                            <label class="flashcards-input-label">Back</label>
+                            <textarea data-flashcard-edit-back rows="3" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900 resize-y">${escapeHTML(card.back)}</textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="flashcards-input-label">Hint</label>
+                        <input data-flashcard-edit-hint type="text" value="${escapeHTML(card.hint || '')}" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900">
+                    </div>
+                    <div class="flashcards-card-item-actions">
+                        <span class="text-xs text-slate-500">Card ${index + 1} • ${Number(card.correct || 0)}/${Math.max(0, Number(card.attempts || 0))} correct</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 font-semibold hover:bg-gray-50 transition-colors" data-flashcard-save-card="${escapeHTML(card.id)}">Save</button>
+                            <button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 border border-red-100 font-semibold hover:bg-red-100 transition-colors" data-flashcard-delete-card="${escapeHTML(card.id)}">Delete</button>
+                        </div>
+                    </div>
+                </div>`).join('')
+            : '<div class="flashcards-empty-state !min-h-0"><div><h4>No cards in this deck yet</h4><p>Add one manually or bulk import a list of prompts and answers.</p></div></div>';
+    }
+}
+
+function renderFlashcardStudySession() {
+    const editorEl = document.getElementById('tools-flashcards-editor');
+    const studyEl = document.getElementById('tools-flashcards-study');
+    if (!editorEl || !studyEl) return;
+    const deck = flashcardDecks.find(item => item.id === flashcardStudySession.deckId);
+    if (!deck) {
+        flashcardStudySession.deckId = null;
+        renderFlashcardsWorkspace();
+        return;
+    }
+
+    editorEl.classList.add('hidden');
+    studyEl.classList.remove('hidden');
+
+    const currentCard = deck.cards[flashcardStudySession.order[flashcardStudySession.index]];
+    if (!currentCard) {
+        finishFlashcardStudySession(deck);
+        return;
+    }
+
+    document.getElementById('tools-flashcards-study-kicker').textContent = deck.subject;
+    document.getElementById('tools-flashcards-study-title').textContent = deck.name;
+    document.getElementById('tools-flashcards-study-front').textContent = currentCard.front;
+    document.getElementById('tools-flashcards-study-back').textContent = currentCard.back;
+    document.getElementById('tools-flashcards-study-hint').textContent = currentCard.hint ? `Hint: ${currentCard.hint}` : 'Tap the card or use the flip button to reveal the answer.';
+    document.getElementById('tools-flashcards-study-count').textContent = `Card ${flashcardStudySession.index + 1} of ${deck.cards.length}`;
+    document.getElementById('tools-flashcards-study-score').textContent = `Score ${flashcardStudySession.correct}/${flashcardStudySession.correct + flashcardStudySession.incorrect}`;
+    document.getElementById('tools-flashcards-study-progress-fill').style.width = `${((flashcardStudySession.index) / Math.max(deck.cards.length, 1)) * 100}%`;
+    document.getElementById('tools-flashcards-card').classList.toggle('is-flipped', !!flashcardStudySession.flipped);
+}
+
+function renderFlashcardsWorkspace() {
+    renderFlashcardDecksList();
+    if (flashcardStudySession.deckId) renderFlashcardStudySession();
+    else renderSelectedFlashcardDeck();
+}
+
+function parseFlashcardImport(text) {
+    return String(text || '')
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => {
+            const delimiter = ['::', '\t', '|'].find(token => line.includes(token));
+            if (!delimiter) return null;
+            const [front, ...rest] = line.split(delimiter);
+            const back = rest.join(delimiter);
+            if (!front?.trim() || !back?.trim()) return null;
+            return {
+                id: createFlashcardId(),
+                front: front.trim(),
+                back: back.trim(),
+                hint: '',
+                attempts: 0,
+                correct: 0,
+                incorrect: 0,
+                createdAt: new Date().toISOString(),
+                lastReviewedAt: null
+            };
+        })
+        .filter(Boolean);
+}
+
+async function persistFlashcardDeck(deckId, updater, successMessage) {
+    const deck = getSelectedFlashcardDeck();
+    if (!deck || deck.id !== deckId) return;
+    const nextDeck = normaliseFlashcardDeck(typeof updater === 'function' ? updater(deck) : updater);
+    nextDeck.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+    try {
+        await getFlashcardsCollectionRef()?.doc(deckId).set({
+            name: nextDeck.name,
+            subject: nextDeck.subject,
+            description: nextDeck.description,
+            cards: nextDeck.cards,
+            stats: nextDeck.stats,
+            createdAt: deck.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        setFlashcardsStatus(successMessage || 'Saved', 'success');
+    } catch (error) {
+        logError(error, 'Persist Flashcard Deck');
+        setFlashcardsStatus('Sync issue', 'error');
+        showToast('Could not save this flashcard change right now.', 'error');
+    }
+}
+
+async function createFlashcardDeck() {
+    const nameEl = document.getElementById('tools-flashcards-deck-name');
+    const subjectEl = document.getElementById('tools-flashcards-deck-subject');
+    const descriptionEl = document.getElementById('tools-flashcards-deck-description');
+    const createBtn = document.getElementById('tools-flashcards-create-btn');
+    if (!nameEl || !subjectEl || !descriptionEl || !createBtn) return;
+
+    const name = nameEl.value.trim();
+    const subject = subjectEl.value.trim();
+    const description = descriptionEl.value.trim();
+    if (!name || !subject) {
+        showToast('Add a deck name and subject group first.', 'warning');
+        return;
+    }
+
+    if (!currentUser || !db) {
+        showToast('Sign in to save flashcard decks to your account.', 'warning');
+        return;
+    }
+
+    setButtonBusy(createBtn, true, 'Creating...');
+    try {
+        const deckRef = getFlashcardsCollectionRef()?.doc();
+        if (!deckRef) throw new Error('Flashcards unavailable');
+        await deckRef.set({
+            name,
+            subject,
+            description,
+            cards: [],
+            stats: {
+                sessionsCompleted: 0,
+                cardsReviewed: 0,
+                correct: 0,
+                incorrect: 0,
+                bestStreak: 0,
+                lastScore: 0,
+                lastStudiedAt: null
+            },
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        selectedFlashcardDeckId = deckRef.id;
+        nameEl.value = '';
+        subjectEl.value = '';
+        descriptionEl.value = '';
+        recordUserInteraction('flashcards_create_deck', { target: subject, important: true });
+        showToast('Flashcard deck created.', 'success');
+        setFlashcardsStatus('Deck created', 'success');
+    } catch (error) {
+        logError(error, 'Create Flashcard Deck');
+        showToast('Could not create this flashcard deck.', 'error');
+        setFlashcardsStatus('Create failed', 'error');
+    } finally {
+        setButtonBusy(createBtn, false);
+    }
+}
+
+async function saveSelectedFlashcardMeta() {
+    const deck = getSelectedFlashcardDeck();
+    if (!deck) return;
+    const saveBtn = document.getElementById('tools-flashcards-save-meta');
+    const name = document.getElementById('tools-flashcards-editor-name')?.value.trim() || '';
+    const subject = document.getElementById('tools-flashcards-editor-subject-input')?.value.trim() || '';
+    const description = document.getElementById('tools-flashcards-editor-description-input')?.value.trim() || '';
+    if (!name || !subject) {
+        showToast('Deck name and subject group are required.', 'warning');
+        return;
+    }
+    setButtonBusy(saveBtn, true, 'Saving...');
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        name,
+        subject,
+        description
+    }, 'Deck details saved');
+    recordUserInteraction('flashcards_update_meta', { target: subject, important: true });
+    setButtonBusy(saveBtn, false);
+}
+
+async function addCardToSelectedFlashcardDeck() {
+    const deck = getSelectedFlashcardDeck();
+    if (!deck) return;
+    const frontEl = document.getElementById('tools-flashcards-front');
+    const backEl = document.getElementById('tools-flashcards-back');
+    const hintEl = document.getElementById('tools-flashcards-hint');
+    const addBtn = document.getElementById('tools-flashcards-add-card');
+    if (!frontEl || !backEl || !hintEl || !addBtn) return;
+
+    const front = frontEl.value.trim();
+    const back = backEl.value.trim();
+    const hint = hintEl.value.trim();
+    if (!front || !back) {
+        showToast('Each flashcard needs a front and a back.', 'warning');
+        return;
+    }
+
+    setButtonBusy(addBtn, true, 'Adding...');
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        cards: [
+            {
+                id: createFlashcardId(),
+                front,
+                back,
+                hint,
+                attempts: 0,
+                correct: 0,
+                incorrect: 0,
+                createdAt: new Date().toISOString(),
+                lastReviewedAt: null
+            },
+            ...deck.cards
+        ]
+    }, 'Card added');
+    frontEl.value = '';
+    backEl.value = '';
+    hintEl.value = '';
+    recordUserInteraction('flashcards_add_card', { target: deck.subject, important: true });
+    setButtonBusy(addBtn, false);
+}
+
+async function importCardsToSelectedDeck() {
+    const deck = getSelectedFlashcardDeck();
+    const importEl = document.getElementById('tools-flashcards-import');
+    const importBtn = document.getElementById('tools-flashcards-import-btn');
+    if (!deck || !importEl || !importBtn) return;
+    const parsedCards = parseFlashcardImport(importEl.value);
+    if (!parsedCards.length) {
+        showToast('Paste cards using front :: back, tab, or | on each line.', 'warning');
+        return;
+    }
+
+    setButtonBusy(importBtn, true, 'Importing...');
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        cards: [...parsedCards, ...deck.cards]
+    }, `${parsedCards.length} card${parsedCards.length === 1 ? '' : 's'} imported`);
+    importEl.value = '';
+    recordUserInteraction('flashcards_import', { target: deck.subject, important: true });
+    setButtonBusy(importBtn, false);
+}
+
+async function saveFlashcardCard(cardId) {
+    const deck = getSelectedFlashcardDeck();
+    const cardEl = Array.from(document.querySelectorAll('[data-flashcard-card-id]')).find(element => element.dataset.flashcardCardId === cardId);
+    if (!deck || !cardEl) return;
+    const front = cardEl.querySelector('[data-flashcard-edit-front]')?.value.trim() || '';
+    const back = cardEl.querySelector('[data-flashcard-edit-back]')?.value.trim() || '';
+    const hint = cardEl.querySelector('[data-flashcard-edit-hint]')?.value.trim() || '';
+    if (!front || !back) {
+        showToast('Front and back are both required.', 'warning');
+        return;
+    }
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        cards: deck.cards.map(card => card.id === cardId ? { ...card, front, back, hint } : card)
+    }, 'Card saved');
+    recordUserInteraction('flashcards_edit_card', { target: deck.subject });
+}
+
+async function deleteFlashcardCard(cardId) {
+    const deck = getSelectedFlashcardDeck();
+    if (!deck) return;
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        cards: deck.cards.filter(card => card.id !== cardId)
+    }, 'Card deleted');
+    recordUserInteraction('flashcards_delete_card', { target: deck.subject, important: true });
+}
+
+async function deleteSelectedFlashcardDeck() {
+    const deck = getSelectedFlashcardDeck();
+    const deleteBtn = document.getElementById('tools-flashcards-delete-deck');
+    if (!deck || !deleteBtn) return;
+    if (!confirm(`Delete "${deck.name}" and all of its cards?`)) return;
+    setButtonBusy(deleteBtn, true, 'Deleting...');
+    try {
+        await getFlashcardsCollectionRef()?.doc(deck.id).delete();
+        if (selectedFlashcardDeckId === deck.id) selectedFlashcardDeckId = null;
+        recordUserInteraction('flashcards_delete_deck', { target: deck.subject, important: true });
+        showToast('Flashcard deck deleted.', 'success');
+        setFlashcardsStatus('Deck deleted', 'success');
+    } catch (error) {
+        logError(error, 'Delete Flashcard Deck');
+        showToast('Could not delete that flashcard deck.', 'error');
+        setFlashcardsStatus('Delete failed', 'error');
+    } finally {
+        setButtonBusy(deleteBtn, false);
+    }
+}
+
+function startFlashcardStudySession() {
+    const deck = getSelectedFlashcardDeck();
+    if (!deck) return;
+    if (!deck.cards.length) {
+        showToast('Add at least one card before starting a study session.', 'warning');
+        return;
+    }
+    const order = deck.cards.map((_, index) => index).sort(() => Math.random() - 0.5);
+    flashcardStudySession = {
+        deckId: deck.id,
+        order,
+        index: 0,
+        flipped: false,
+        correct: 0,
+        incorrect: 0,
+        streak: 0,
+        bestStreak: 0
+    };
+    recordUserInteraction('flashcards_start_study', { target: deck.subject, important: true });
+    renderFlashcardsWorkspace();
+}
+
+function toggleFlashcardStudyFlip(forceValue) {
+    if (!flashcardStudySession.deckId) return;
+    flashcardStudySession.flipped = typeof forceValue === 'boolean' ? forceValue : !flashcardStudySession.flipped;
+    renderFlashcardStudySession();
+}
+
+async function markFlashcardStudyCard(isCorrect) {
+    const deck = flashcardDecks.find(item => item.id === flashcardStudySession.deckId);
+    if (!deck) return;
+    const cardIndex = flashcardStudySession.order[flashcardStudySession.index];
+    const card = deck.cards[cardIndex];
+    if (!card) return;
+
+    const nextCards = deck.cards.map((item, index) => index === cardIndex ? {
+        ...item,
+        attempts: Number(item.attempts || 0) + 1,
+        correct: Number(item.correct || 0) + (isCorrect ? 1 : 0),
+        incorrect: Number(item.incorrect || 0) + (isCorrect ? 0 : 1),
+        lastReviewedAt: new Date().toISOString()
+    } : item);
+
+    flashcardStudySession.correct += isCorrect ? 1 : 0;
+    flashcardStudySession.incorrect += isCorrect ? 0 : 1;
+    flashcardStudySession.streak = isCorrect ? flashcardStudySession.streak + 1 : 0;
+    flashcardStudySession.bestStreak = Math.max(flashcardStudySession.bestStreak, flashcardStudySession.streak);
+
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        cards: nextCards,
+        stats: {
+            ...deck.stats,
+            cardsReviewed: Number(deck.stats?.cardsReviewed || 0) + 1,
+            correct: Number(deck.stats?.correct || 0) + (isCorrect ? 1 : 0),
+            incorrect: Number(deck.stats?.incorrect || 0) + (isCorrect ? 0 : 1),
+            bestStreak: Math.max(Number(deck.stats?.bestStreak || 0), flashcardStudySession.bestStreak)
+        }
+    }, isCorrect ? 'Marked correct' : 'Marked for review');
+
+    recordUserInteraction('flashcards_mark_card', { target: isCorrect ? 'correct' : 'incorrect', important: true });
+    flashcardStudySession.index += 1;
+    flashcardStudySession.flipped = false;
+    if (flashcardStudySession.index >= flashcardStudySession.order.length) {
+        finishFlashcardStudySession(deck);
+        return;
+    }
+    renderFlashcardStudySession();
+}
+
+async function finishFlashcardStudySession(deck) {
+    const total = flashcardStudySession.correct + flashcardStudySession.incorrect;
+    await persistFlashcardDeck(deck.id, {
+        ...deck,
+        stats: {
+            ...deck.stats,
+            sessionsCompleted: Number(deck.stats?.sessionsCompleted || 0) + 1,
+            lastScore: total > 0 ? Math.round((flashcardStudySession.correct / total) * 100) : 0,
+            bestStreak: Math.max(Number(deck.stats?.bestStreak || 0), flashcardStudySession.bestStreak),
+            lastStudiedAt: new Date().toISOString()
+        }
+    }, 'Session saved');
+    showToast(`Study session finished: ${flashcardStudySession.correct}/${total || 0} correct.`, 'success');
+    recordUserInteraction('flashcards_finish_study', { target: deck.subject, important: true });
+    flashcardStudySession = {
+        deckId: null,
+        order: [],
+        index: 0,
+        flipped: false,
+        correct: 0,
+        incorrect: 0,
+        streak: 0,
+        bestStreak: 0
+    };
+    renderFlashcardsWorkspace();
+}
+
+function closeFlashcardStudySession() {
+    flashcardStudySession = {
+        deckId: null,
+        order: [],
+        index: 0,
+        flipped: false,
+        correct: 0,
+        incorrect: 0,
+        streak: 0,
+        bestStreak: 0
+    };
+    renderFlashcardsWorkspace();
+}
+
+function subscribeToFlashcardDecks() {
+    const collectionRef = getFlashcardsCollectionRef();
+    if (!collectionRef) {
+        flashcardDecks = [];
+        renderFlashcardsWorkspace();
+        return;
+    }
+    if (unsubscribeFlashcardDecks) {
+        try { unsubscribeFlashcardDecks(); } catch (_) {}
+        unsubscribeFlashcardDecks = null;
+    }
+
+    setFlashcardsStatus('Syncing', 'info');
+    unsubscribeFlashcardDecks = collectionRef.orderBy('updatedAt', 'desc').onSnapshot(snapshot => {
+        flashcardDecks = snapshot.docs
+            .map(doc => normaliseFlashcardDeck({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => (toMillis(b.updatedAt) || toMillis(b.createdAt)) - (toMillis(a.updatedAt) || toMillis(a.createdAt)));
+        if (!selectedFlashcardDeckId && flashcardDecks[0]) selectedFlashcardDeckId = flashcardDecks[0].id;
+        if (selectedFlashcardDeckId && !flashcardDecks.some(deck => deck.id === selectedFlashcardDeckId)) {
+            selectedFlashcardDeckId = flashcardDecks[0]?.id || null;
+        }
+        cacheFlashcardDecks();
+        setFlashcardsStatus('Saved', 'success');
+        renderFlashcardsWorkspace();
+    }, error => {
+        logError(error, 'Subscribe Flashcard Decks');
+        setFlashcardsStatus('Offline cache', 'error');
+        restoreCachedFlashcards();
+    });
+}
+
+function initializeFlashcardsTool() {
+    if (flashcardsInitialized) return;
+    flashcardsInitialized = true;
+
+    document.getElementById('tools-flashcards-create-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await createFlashcardDeck();
+    });
+    document.getElementById('tools-flashcards-save-meta')?.addEventListener('click', saveSelectedFlashcardMeta);
+    document.getElementById('tools-flashcards-add-card')?.addEventListener('click', addCardToSelectedFlashcardDeck);
+    document.getElementById('tools-flashcards-import-btn')?.addEventListener('click', importCardsToSelectedDeck);
+    document.getElementById('tools-flashcards-delete-deck')?.addEventListener('click', deleteSelectedFlashcardDeck);
+    document.getElementById('tools-flashcards-start-study')?.addEventListener('click', startFlashcardStudySession);
+    document.getElementById('tools-flashcards-close-study')?.addEventListener('click', closeFlashcardStudySession);
+    document.getElementById('tools-flashcards-flip')?.addEventListener('click', () => toggleFlashcardStudyFlip());
+    document.getElementById('tools-flashcards-card')?.addEventListener('click', () => toggleFlashcardStudyFlip());
+    document.getElementById('tools-flashcards-mark-again')?.addEventListener('click', async () => {
+        await markFlashcardStudyCard(false);
+    });
+    document.getElementById('tools-flashcards-mark-good')?.addEventListener('click', async () => {
+        await markFlashcardStudyCard(true);
+    });
+    document.getElementById('tools-flashcards-filter')?.addEventListener('change', () => {
+        recordUserInteraction('flashcards_filter', { target: document.getElementById('tools-flashcards-filter')?.value || 'all', important: true });
+        renderFlashcardDecksList();
+    });
+    document.getElementById('tools-flashcards-decks')?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-flashcards-select]');
+        if (!button) return;
+        selectedFlashcardDeckId = button.dataset.flashcardsSelect || null;
+        recordUserInteraction('flashcards_select_deck', { target: selectedFlashcardDeckId, important: true });
+        renderFlashcardsWorkspace();
+    });
+    document.getElementById('tools-flashcards-cards')?.addEventListener('click', async (event) => {
+        const saveButton = event.target.closest('[data-flashcard-save-card]');
+        if (saveButton) {
+            await saveFlashcardCard(saveButton.dataset.flashcardSaveCard || '');
+            return;
+        }
+        const deleteButton = event.target.closest('[data-flashcard-delete-card]');
+        if (deleteButton) {
+            await deleteFlashcardCard(deleteButton.dataset.flashcardDeleteCard || '');
+        }
+    });
+}
+
 function initializeToolsPage() {
     loadToolsState();
     loadToolsPlannerItems();
@@ -17380,42 +18309,74 @@ function initializeToolsPage() {
         if (calcAngleMode) calcAngleMode.addEventListener('change', updateScientificCalculatorResult);
         if (calcFormatSelect) calcFormatSelect.addEventListener('change', updateScientificCalculatorResult);
         if (memeRefreshBtn) {
-            memeRefreshBtn.addEventListener('click', () => {
-                fetchAndRenderDailyMeme(true);
+            memeRefreshBtn.addEventListener('click', async () => {
+                setButtonBusy(memeRefreshBtn, true, 'Loading...');
+                try {
+                    await fetchAndRenderDailyMeme(true);
+                    recordUserInteraction('tools_meme_refresh', { target: 'meme', important: true });
+                } finally {
+                    setButtonBusy(memeRefreshBtn, false);
+                }
             });
         }
         if (quoteRefreshBtn) {
-            quoteRefreshBtn.addEventListener('click', () => {
-                fetchAndRenderDailyQuote(true);
+            quoteRefreshBtn.addEventListener('click', async () => {
+                setButtonBusy(quoteRefreshBtn, true, 'Loading...');
+                try {
+                    await fetchAndRenderDailyQuote(true);
+                    recordUserInteraction('tools_quote_refresh', { target: 'quote', important: true });
+                } finally {
+                    setButtonBusy(quoteRefreshBtn, false);
+                }
             });
         }
         if (notesInput) {
-            notesInput.addEventListener('input', () => saveToolsNotes(notesInput.value));
+            notesInput.addEventListener('input', () => {
+                saveToolsNotes(notesInput.value);
+                recordUserInteraction('tools_notes_input', { target: 'notes' });
+            });
         }
         if (notesClearBtn) {
             notesClearBtn.addEventListener('click', () => {
                 if (notesInput) notesInput.value = '';
                 saveToolsNotes('', { immediate: true });
+                recordUserInteraction('tools_notes_clear', { target: 'notes', important: true });
             });
         }
         if (notesCopyBtn) {
             notesCopyBtn.addEventListener('click', async () => {
+                setButtonBusy(notesCopyBtn, true, 'Copying...');
                 try {
                     await navigator.clipboard.writeText(notesInput?.value || '');
                     showToast('Notes copied to clipboard.', 'success');
+                    recordUserInteraction('tools_notes_copy', { target: 'notes', important: true });
                 } catch (_) {
                     showToast('Could not copy notes right now.', 'error');
+                } finally {
+                    setButtonBusy(notesCopyBtn, false);
                 }
             });
         }
         if (randomiserBtn) {
-            randomiserBtn.addEventListener('click', generateStudyRandomiserTask);
+            randomiserBtn.addEventListener('click', () => {
+                generateStudyRandomiserTask();
+                recordUserInteraction('tools_randomiser', { target: document.getElementById('tools-randomiser-subject')?.value || 'any', important: true });
+            });
         }
-        if (gradeSaveBtn) gradeSaveBtn.addEventListener('click', saveGradeEntry);
+        if (gradeSaveBtn) gradeSaveBtn.addEventListener('click', async () => {
+            setButtonBusy(gradeSaveBtn, true, 'Saving...');
+            try {
+                await saveGradeEntry();
+                recordUserInteraction('tools_save_grade', { target: document.getElementById('tools-grade-subject')?.value || 'grade', important: true });
+            } finally {
+                setButtonBusy(gradeSaveBtn, false);
+            }
+        });
         if (plannerForm) {
             plannerForm.addEventListener('submit', (event) => {
                 event.preventDefault();
                 addToolsPlannerItem();
+                recordUserInteraction('tools_planner_add', { target: document.getElementById('tools-planner-priority')?.value || 'task', important: true });
             });
         }
         if (plannerList) {
@@ -17432,7 +18393,10 @@ function initializeToolsPage() {
             });
         }
         if (plannerClearCompleted) {
-            plannerClearCompleted.addEventListener('click', clearCompletedToolsPlannerItems);
+            plannerClearCompleted.addEventListener('click', () => {
+                clearCompletedToolsPlannerItems();
+                recordUserInteraction('tools_planner_clear_completed', { target: 'planner', important: true });
+            });
         }
         if (gradeSubjectSelect) gradeSubjectSelect.addEventListener('change', toggleGradeCustomSubjectInput);
         if (gradeValueSelect) gradeValueSelect.addEventListener('change', updateGradeSelectPreview);
@@ -17465,11 +18429,15 @@ function initializeToolsPage() {
         toolsPageInitialized = true;
     }
 
+    initializeFlashcardsTool();
+
     updateGradeSubjectOptions();
     populateStudyRandomiserSubjects();
     renderGradeTrackerTables();
     if (currentUser) subscribeToGradeEntries();
     if (currentUser) subscribeToToolsNotes();
+    if (currentUser) subscribeToFlashcardDecks();
+    else restoreCachedFlashcards();
 
     updateToolsTimerUI();
     fetchAndRenderDailyMeme(false);
@@ -17481,6 +18449,7 @@ function initializeToolsPage() {
     generateStudyRandomiserTask();
     updateGradeSelectPreview();
     updateScientificCalculatorResult();
+    renderFlashcardsWorkspace();
 }
 
 // --- GAPI LOADER ---
@@ -17580,8 +18549,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetFreeTrialRotationBtn) resetFreeTrialRotationBtn.addEventListener('click', handleResetFreeTrialOverride);
     const prevMonthBtn = document.getElementById('prev-month-btn');
     const nextMonthBtn = document.getElementById('next-month-btn');
+    const todayMonthBtn = document.getElementById('calendar-today-btn');
+    const addCalendarEventBtn = document.getElementById('calendar-add-event-btn');
     if (prevMonthBtn) {
         prevMonthBtn.addEventListener('click', () => {
+            recordUserInteraction('calendar_nav', { target: 'previous_month', important: true });
             currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar(calendarUserEvents, calendarGlobalEvents);
             updateCountdownBanner(); // Update countdown when month changes
@@ -17594,6 +18566,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (nextMonthBtn) {
         nextMonthBtn.addEventListener('click', () => {
+            recordUserInteraction('calendar_nav', { target: 'next_month', important: true });
             currentDate.setMonth(currentDate.getMonth() + 1);
             renderCalendar(calendarUserEvents, calendarGlobalEvents);
             updateCountdownBanner(); // Update countdown when month changes
@@ -17602,6 +18575,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (calendarPage) {
                 calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        });
+    }
+    if (todayMonthBtn) {
+        todayMonthBtn.addEventListener('click', () => {
+            recordUserInteraction('calendar_nav', { target: 'today', important: true });
+            currentDate = new Date();
+            renderCalendar(calendarUserEvents, calendarGlobalEvents);
+            const calendarPage = document.getElementById('calendar-page');
+            if (calendarPage) calendarPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+    if (addCalendarEventBtn) {
+        addCalendarEventBtn.addEventListener('click', () => {
+            recordUserInteraction('calendar_add_event', { target: 'toolbar', important: true });
+            const todayKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+            openEventModal(todayKey);
         });
     }
     // Setup file browser controls
@@ -18724,11 +19713,28 @@ function updateCountdownBanner() {
 function startClock() {
     const timeEl = document.getElementById('clock-time');
     const dateEl = document.getElementById('clock-date');
+    const hourHand = document.getElementById('clock-hour-hand');
+    const minuteHand = document.getElementById('clock-minute-hand');
+    const secondHand = document.getElementById('clock-second-hand');
+    const focusLabel = document.getElementById('clock-focus-label');
     if (!timeEl || !dateEl) return;
     function update() {
         const now = new Date();
         timeEl.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        if (hourHand && minuteHand && secondHand) {
+            const seconds = now.getSeconds();
+            const minutes = now.getMinutes() + seconds / 60;
+            const hours = (now.getHours() % 12) + minutes / 60;
+            hourHand.style.transform = `translateX(-50%) rotate(${hours * 30}deg)`;
+            minuteHand.style.transform = `translateX(-50%) rotate(${minutes * 6}deg)`;
+            secondHand.style.transform = `translateX(-50%) rotate(${seconds * 6}deg)`;
+        }
+
+        if (focusLabel) {
+            const hour = now.getHours();
+            focusLabel.textContent = hour < 12 ? 'Morning reset' : (hour < 18 ? 'Afternoon push' : 'Evening review');
+        }
     }
     update();
     clockInterval = setInterval(update, 1000);
