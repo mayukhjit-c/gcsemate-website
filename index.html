@@ -813,6 +813,7 @@
         </div>
         <div id="event-countdown-banner" class="hidden"></div>
         <div id="site-announcement-banner" class="hidden"></div>
+        <div id="app-status-banner" class="hidden"></div>
         
         <header class="bg-white/90 backdrop-blur-xl p-3 sm:p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 relative shadow-sm" role="banner">
             <div class="flex-shrink-0">
@@ -860,6 +861,11 @@
                 </a>
             </nav>
             <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
+                <button id="command-palette-button" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/85 px-3 py-2 text-sm font-semibold text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-colors" aria-label="Open quick navigation" data-tooltip="Quick navigation and actions (Ctrl+K)">
+                    <i class="fas fa-magnifying-glass text-xs"></i>
+                    <span>Quick actions</span>
+                    <span class="hidden 2xl:inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-500">Ctrl+K</span>
+                </button>
                 <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600 mr-3">
                     <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse online-status"></div>
                     <span class="online-text">Online</span>
@@ -953,6 +959,7 @@
                 </a>
             </nav>
             <div class="flex flex-col p-6 border-t border-gray-200 space-y-4 bg-gray-50">
+                <button id="mobile-command-palette-button" class="w-full px-4 py-4 rounded-xl bg-white text-gray-800 border border-gray-200 font-semibold hover:bg-blue-50 hover:text-blue-700 transition-colors text-lg min-h-[56px] flex items-center justify-center gap-2" tabindex="0" data-tooltip="Quick navigation and actions"><i class="fas fa-magnifying-glass"></i> Quick actions</button>
                 <a href="/account" class="nav-link w-full text-left px-4 py-4 text-lg font-semibold text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors min-h-[56px] flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" data-page="account-settings-page" tabindex="0"><i class="fas fa-cog"></i> Account</a>
                 <button id="mobile-logout-button" class="w-full px-4 py-4 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors text-lg min-h-[56px] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2" tabindex="0" data-tooltip="Sign out of your account"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -1051,7 +1058,36 @@
                     </div>
                 </div>
                 <div id="blog-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">The GCSEMate Blog</h2>
+                    <section class="blog-hero-card mb-6 overflow-hidden rounded-[28px] border border-blue-100/80 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 text-white shadow-2xl">
+                        <div class="grid gap-6 lg:grid-cols-[1.4fr,0.9fr] p-6 sm:p-8">
+                            <div>
+                                <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-blue-100">GCSEMate editorial hub</div>
+                                <h2 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight">Smarter study updates, revision strategy, and product news.</h2>
+                                <p class="mt-3 max-w-2xl text-sm sm:text-base text-blue-100/90">Browse curated exam tips, release notes, subject-specific guidance, and platform updates in one polished space. Search by topic, tag, or subject and jump straight into the latest post.</p>
+                                <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3" id="blog-insight-cards">
+                                    <div class="blog-insight-tile">
+                                        <span class="blog-insight-label">Published posts</span>
+                                        <span id="blog-total-posts" class="blog-insight-value">0</span>
+                                    </div>
+                                    <div class="blog-insight-tile">
+                                        <span class="blog-insight-label">Subjects covered</span>
+                                        <span id="blog-total-subjects" class="blog-insight-value">0</span>
+                                    </div>
+                                    <div class="blog-insight-tile">
+                                        <span class="blog-insight-label">Latest update</span>
+                                        <span id="blog-latest-date" class="blog-insight-value text-base sm:text-lg">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="blog-featured-post" class="blog-featured-shell">
+                                <div class="animate-pulse rounded-3xl border border-white/10 bg-white/5 p-5">
+                                    <div class="h-4 w-28 rounded bg-white/10"></div>
+                                    <div class="mt-4 h-8 w-3/4 rounded bg-white/10"></div>
+                                    <div class="mt-3 h-20 rounded-xl bg-white/10"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                     <div id="blog-status-message" class="hidden mb-4 rounded-lg border border-red-200/60 bg-red-50/60 px-4 py-3 text-sm text-red-700" role="alert" aria-live="polite"></div>
                     <div id="add-blog-post-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
                         <h3 id="blog-form-title" class="text-xl font-semibold mb-4">Create New Blog Post</h3>
@@ -1144,14 +1180,30 @@
                         </form>
                         <p id="add-blog-post-message" class="text-sm mt-2 h-4"></p>
                     </div>
-                    <div class="flex items-center justify-between gap-3 mb-4">
-                        <div class="flex items-center gap-2 w-full max-w-lg">
-                            <input id="blog-search" type="search" placeholder="Search blog posts..." class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select id="blog-subject-filter" class="rounded-lg border-gray-300/60 bg-white/70 px-2 py-2 text-sm">
-                                <option value="all">All Subjects</option>
-                            </select>
+                    <div class="rounded-2xl border border-white/50 bg-white/75 backdrop-blur-lg p-4 sm:p-5 shadow-lg mb-4">
+                        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto_auto] gap-3">
+                                <div class="relative">
+                                    <input id="blog-search" type="search" placeholder="Search by title, keyword, or summary..." class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search blog posts" />
+                                    <i class="fas fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                                <input id="blog-tag-filter" type="text" placeholder="Filter by tag (exam, update, maths...)" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Filter blog posts by tag" />
+                                <select id="blog-subject-filter" class="rounded-xl border border-gray-200 bg-white/90 px-4 py-3 text-sm font-semibold text-gray-700">
+                                    <option value="all">All Subjects</option>
+                                </select>
+                                <select id="blog-sort" class="rounded-xl border border-gray-200 bg-white/90 px-4 py-3 text-sm font-semibold text-gray-700">
+                                    <option value="newest">Newest first</option>
+                                    <option value="oldest">Oldest first</option>
+                                    <option value="title">A–Z</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-3 justify-between xl:justify-end">
+                                <p id="blog-results-summary" class="text-sm font-semibold text-gray-600">Loading posts…</p>
+                                <button id="blog-clear-filters" type="button" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-rotate-left text-xs"></i>
+                                    Reset
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="blog-post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1227,6 +1279,39 @@
                                 </div>
                                 <div id="tools-timer-display" class="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900">25:00</div>
                                 <p id="tools-timer-status" class="mt-2 text-sm font-semibold text-blue-700">Ready to focus</p>
+                                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-left">
+                                    <label class="timer-setting-card">
+                                        <span class="timer-setting-label">Auto break</span>
+                                        <span class="timer-setting-control">
+                                            <input id="tools-timer-autobreak" type="checkbox" class="gcse-checkbox">
+                                            <span class="text-sm font-semibold text-gray-700">Start a break automatically</span>
+                                        </span>
+                                    </label>
+                                    <label class="timer-setting-card">
+                                        <span class="timer-setting-label">Break length</span>
+                                        <select id="tools-timer-break-length" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                            <option value="5">5 min break</option>
+                                            <option value="10">10 min break</option>
+                                            <option value="15">15 min break</option>
+                                        </select>
+                                    </label>
+                                    <label class="timer-setting-card">
+                                        <span class="timer-setting-label">Sound cues</span>
+                                        <span class="timer-setting-control">
+                                            <input id="tools-timer-sound" type="checkbox" class="gcse-checkbox" checked>
+                                            <span class="text-sm font-semibold text-gray-700">Play a gentle finish chime</span>
+                                        </span>
+                                    </label>
+                                    <label class="timer-setting-card">
+                                        <span class="timer-setting-label">Visual theme</span>
+                                        <select id="tools-timer-theme" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                            <option value="blue">Classic Blue</option>
+                                            <option value="sunset">Sunset</option>
+                                            <option value="forest">Forest</option>
+                                            <option value="midnight">Midnight</option>
+                                        </select>
+                                    </label>
+                                </div>
                                 <div id="tools-timer-custom-wrap" class="hidden mt-5 max-w-md mx-auto">
                                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Custom Time (Calculator Style)</p>
                                     <input id="tools-timer-custom-input" type="text" inputmode="numeric" autocomplete="off" placeholder="00:00" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl font-semibold tracking-wide text-gray-900">
@@ -1255,6 +1340,24 @@
                                     <button id="tools-timer-start" class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors min-w-[110px]">Start</button>
                                     <button id="tools-timer-pause" class="px-5 py-2.5 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors min-w-[110px]">Pause</button>
                                     <button id="tools-timer-reset" class="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition-colors min-w-[110px]">Reset</button>
+                                </div>
+                                <div class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div class="timer-metric-card">
+                                        <span class="timer-metric-label">Sessions done</span>
+                                        <span id="tools-timer-completed-count" class="timer-metric-value">0</span>
+                                    </div>
+                                    <div class="timer-metric-card">
+                                        <span class="timer-metric-label">Break mode</span>
+                                        <span id="tools-timer-break-state" class="timer-metric-value text-lg">Off</span>
+                                    </div>
+                                    <div class="timer-metric-card">
+                                        <span class="timer-metric-label">Current preset</span>
+                                        <span id="tools-timer-mode-label" class="timer-metric-value text-lg">Pomodoro</span>
+                                    </div>
+                                    <div class="timer-metric-card">
+                                        <span class="timer-metric-label">Deep focus today</span>
+                                        <span id="tools-timer-focus-score" class="timer-metric-value text-lg">0m</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1328,6 +1431,68 @@
                                     <button class="tools-calc-btn" data-calc-value="+">+</button>
                                     <button id="tools-calc-equals" class="tools-calc-btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700">=</button>
                                 </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                                <div class="flex items-start justify-between gap-3 mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">Revision Sprint Planner</h3>
+                                        <p class="text-sm text-gray-600 mt-1">Plan quick wins for today and tick them off as you go.</p>
+                                    </div>
+                                    <div class="rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-center min-w-[88px]">
+                                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">Progress</p>
+                                        <p id="tools-planner-progress" class="text-lg font-black text-blue-800">0%</p>
+                                    </div>
+                                </div>
+                                <form id="tools-planner-form" class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
+                                    <input id="tools-planner-input" type="text" placeholder="Add a task e.g. Finish Biology flashcards" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900" maxlength="120">
+                                    <select id="tools-planner-priority" class="tools-select px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="high">High priority</option>
+                                        <option value="medium">Medium priority</option>
+                                        <option value="low">Low priority</option>
+                                    </select>
+                                    <button id="tools-planner-add" type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">Add</button>
+                                </form>
+                                <div class="mt-4 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                                    <span>Today's checklist</span>
+                                    <button id="tools-planner-clear-completed" type="button" class="text-blue-700 hover:text-blue-800 normal-case tracking-normal text-sm font-semibold">Clear completed</button>
+                                </div>
+                                <div id="tools-planner-empty" class="mt-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-5 text-sm text-gray-500">No tasks yet. Add your first study target to build a focused revision plan.</div>
+                                <div id="tools-planner-list" class="mt-4 space-y-3"></div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">Quick Notes</h3>
+                                        <p class="text-sm text-gray-600 mt-1">Capture ideas, mnemonics, or last-minute reminders. Auto-saves locally.</p>
+                                    </div>
+                                    <button id="tools-notes-clear" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">Clear</button>
+                                </div>
+                                <textarea id="tools-notes-input" rows="7" placeholder="Write quick revision notes here..." class="w-full px-4 py-3 rounded-xl border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 resize-y"></textarea>
+                                <div class="mt-3 flex items-center justify-between gap-3 text-xs text-gray-500">
+                                    <span id="tools-notes-meta">0 words • autosaved</span>
+                                    <button id="tools-notes-copy" class="text-blue-700 hover:text-blue-800 font-semibold text-sm">Copy notes</button>
+                                </div>
+                            </div>
+                            <div class="bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">Study Randomiser</h3>
+                                        <p class="text-sm text-gray-600 mt-1">Generate a focused next action when you are stuck.</p>
+                                    </div>
+                                    <button id="tools-randomiser-generate" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">Generate</button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <select id="tools-randomiser-subject" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="">Any subject</option>
+                                    </select>
+                                    <select id="tools-randomiser-duration" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="10">10 minute sprint</option>
+                                        <option value="20">20 minute push</option>
+                                        <option value="30">30 minute block</option>
+                                        <option value="45">45 minute deep dive</option>
+                                    </select>
+                                </div>
+                                <div id="tools-randomiser-output" class="mt-4 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-4 text-sm text-blue-900 min-h-[96px] flex items-center">Generate a task to get an instant study direction.</div>
                             </div>
                         </div>
                     </div>
@@ -1921,6 +2086,43 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="bg-white/70 backdrop-blur-lg p-5 rounded-xl shadow-md border border-white/30 admin-optional">
+                            <div class="flex items-center justify-between gap-3 mb-4">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <i class="fas fa-palette text-blue-600"></i>
+                                        Site Experience Presets
+                                    </h4>
+                                    <p class="text-sm text-gray-500 mt-1">Preview brand directions, interface density, and motion while managing the dashboard.</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr_1fr] gap-4">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2">Brand presets</p>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <button type="button" class="theme-preset-btn admin-theme-preset" data-theme-preset="classic">Classic</button>
+                                        <button type="button" class="theme-preset-btn admin-theme-preset" data-theme-preset="forest">Forest</button>
+                                        <button type="button" class="theme-preset-btn admin-theme-preset" data-theme-preset="violet">Violet</button>
+                                        <button type="button" class="theme-preset-btn admin-theme-preset" data-theme-preset="sunset">Sunset</button>
+                                    </div>
+                                </div>
+                                <label class="block">
+                                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2 block">Density</span>
+                                    <select id="admin-density-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="comfortable">Comfortable</option>
+                                        <option value="compact">Compact</option>
+                                    </select>
+                                </label>
+                                <label class="block">
+                                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2 block">Motion</span>
+                                    <select id="admin-motion-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="smooth">Smooth</option>
+                                        <option value="reduced">Reduced</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div id="user-settings-panel" class="hidden bg-white/50 p-8 rounded-xl shadow-lg border border-white/30 max-w-lg mx-auto">
                         <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Account</h3>
@@ -1981,6 +2183,44 @@
                                 <span class="text-xs text-gray-500">Preview:</span>
                                 <span class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold">Button</span>
                                 <span class="px-3 py-1.5 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold">Highlight</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2">Theme presets</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <button type="button" class="theme-preset-btn" data-theme-preset="classic">Classic</button>
+                                    <button type="button" class="theme-preset-btn" data-theme-preset="forest">Forest</button>
+                                    <button type="button" class="theme-preset-btn" data-theme-preset="violet">Violet</button>
+                                    <button type="button" class="theme-preset-btn" data-theme-preset="sunset">Sunset</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label>
+                                    <span class="block text-sm text-gray-700 mb-1">Layout density</span>
+                                    <select id="ui-density-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="comfortable">Comfortable</option>
+                                        <option value="compact">Compact</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span class="block text-sm text-gray-700 mb-1">Corners</span>
+                                    <select id="ui-radius-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="soft">Soft</option>
+                                        <option value="sharp">Sharp</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label>
+                                    <span class="block text-sm text-gray-700 mb-1">Motion style</span>
+                                    <select id="ui-motion-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="smooth">Smooth</option>
+                                        <option value="reduced">Reduced</option>
+                                    </select>
+                                </label>
+                                <label class="flex items-center justify-between rounded-xl border border-gray-200 bg-white/80 px-4 py-3 mt-6 sm:mt-0">
+                                    <span class="text-sm font-semibold text-gray-700">Compact nav badges</span>
+                                    <input id="ui-compact-badges" type="checkbox" class="gcse-checkbox">
+                                </label>
                             </div>
                         </div>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
@@ -2439,6 +2679,22 @@
     <div id="toast-container"></div>
     <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="blog-viewer-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
+    <div id="command-palette-modal" class="fixed inset-0 bg-slate-950/65 backdrop-blur-sm hidden items-start justify-center p-4 pt-[10vh] z-[10001]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+        <div class="w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/95 text-white shadow-2xl">
+            <div class="border-b border-white/10 px-4 py-4 sm:px-5">
+                <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <i class="fas fa-magnifying-glass text-blue-200"></i>
+                    <input id="command-palette-input" type="text" placeholder="Search pages and actions..." class="w-full bg-transparent text-base text-white placeholder:text-slate-400 focus:outline-none" autocomplete="off" aria-labelledby="command-palette-title">
+                    <button type="button" data-modal-close class="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-slate-200 hover:bg-white/15">Esc</button>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+                    <h3 id="command-palette-title" class="font-bold uppercase tracking-[0.22em] text-slate-300">Quick actions</h3>
+                    <span>Jump anywhere faster with keyboard shortcuts.</span>
+                </div>
+            </div>
+            <div id="command-palette-results" class="max-h-[60vh] overflow-y-auto p-3 sm:p-4"></div>
+        </div>
+    </div>
     <div id="dmca-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
@@ -2681,6 +2937,7 @@
             // Use var so app.js can access these globals.
             var auth;
             var db;
+            window.__gcsemateFirebaseInitError = null;
 
             try {
                 if (!window.__gcsemateFirebaseInitOnce) {
@@ -2719,6 +2976,7 @@
                     db = db || firebase.firestore();
                 }
             } catch (e) {
+                window.__gcsemateFirebaseInitError = e;
                 console.warn('Firebase initialization failed', e);
             }
 

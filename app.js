@@ -22,10 +22,33 @@ try {
 }
 let allSubjectFolders = {};
 let allBlogPosts = [];
+const BLOG_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1600&auto=format&fit=crop';
+const BLOG_COMMENT_COUNTS = new Map();
+const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
+const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
+const THEME_PRESETS = {
+    classic: '#3b82f6',
+    forest: '#15803d',
+    violet: '#7c3aed',
+    sunset: '#ea580c'
+};
+const STUDY_RANDOMISER_TEMPLATES = [
+    ({ subject, minutes }) => `Spend ${minutes} minutes on ${subject}: summarise one topic from memory, then check what you missed.`,
+    ({ subject, minutes }) => `Do a ${minutes}-minute exam sprint in ${subject}: answer 3 quick questions and mark them immediately.`,
+    ({ subject, minutes }) => `Use ${minutes} minutes to build a mini cheat-sheet for ${subject} with formulas, keywords, and common mistakes.`,
+    ({ subject, minutes }) => `Teach ${subject} aloud for ${minutes} minutes without notes, then write down the gaps you noticed.`
+];
+const BLOG_VIEW_STATE = {
+    search: '',
+    tag: '',
+    subject: 'all',
+    sort: 'newest'
+};
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 let toolsTimerInterval = null;
+const TOOLS_PLANNER_STORAGE_KEY = 'gcsemate_tools_planner';
 const TOOLS_TIMER_MODES = {
     pomodoro: { label: 'Pomodoro', durationSeconds: 25 * 60 },
     exam: { label: 'Exam Sprint', durationSeconds: 50 * 60 },
@@ -45,10 +68,17 @@ let toolsTimerState = {
     stopwatchBaseSeconds: 0,
     sessionFocusedSeconds: 0,
     todayFocusedSeconds: 0,
+    completedSessions: 0,
+    autoBreakEnabled: false,
+    breakDurationMinutes: 5,
+    soundEnabled: true,
+    timerTheme: 'blue',
+    isBreakMode: false,
     lastTickAt: null,
     dayKey: ''
 };
 let toolsPageInitialized = false;
+let toolsPlannerItems = [];
 let unsubscribeGradeEntries = null;
 let userGradeEntries = [];
 
@@ -507,6 +537,65 @@ async function recoverFirestoreSession() {
     setTimeout(() => {
         window.__firestoreRecoveryRunning = false;
     }, 2500);
+}
+
+function getFirebaseBootstrapError() {
+    return window.__gcsemateFirebaseInitError || null;
+}
+
+function isAuthAvailable() {
+    return !!(auth && typeof auth.onAuthStateChanged === 'function');
+}
+
+function isFirestoreAvailable() {
+    return !!(db && typeof db.collection === 'function');
+}
+
+function getFirebaseFriendlyMessage(errorLike, fallback = 'A live service is temporarily unavailable. Please try again in a moment.') {
+    const code = errorLike?.code || '';
+    const text = `${code} ${errorLike?.message || errorLike || ''}`.toLowerCase();
+
+    if (text.includes('permission-denied')) return 'You do not have permission to complete that action.';
+    if (text.includes('unauthenticated') || text.includes('auth/')) return 'Your session could not be verified. Please sign in again.';
+    if (text.includes('network-request-failed') || text.includes('failed to fetch') || text.includes('offline')) return 'Network connection lost. Check your internet connection and try again.';
+    if (text.includes('unavailable') || text.includes('deadline-exceeded')) return 'The live database is busy right now. Please retry in a few seconds.';
+    if (text.includes('failed-precondition')) return 'A required Firebase setting is missing or still loading.';
+    if (text.includes('resource-exhausted')) return 'The service is temporarily rate-limited. Please wait a moment and try again.';
+    if (text.includes('internal assertion failed') || text.includes('internal')) return 'A temporary Firebase transport issue was detected. GCSEMate will keep retrying in compatibility mode.';
+
+    return fallback;
+}
+
+function setAppStatusBanner(message, tone = 'warning') {
+    const banner = document.getElementById('app-status-banner');
+    if (!banner) return;
+    if (!message) {
+        banner.textContent = '';
+        banner.className = 'hidden';
+        return;
+    }
+
+    const classes = ['mx-4', 'sm:mx-6', 'mb-2', 'rounded-2xl', 'px-4', 'py-3', 'text-sm', 'font-semibold', 'shadow-md'];
+    if (tone === 'error') classes.push('is-error');
+    else if (tone === 'success') classes.push('is-success');
+
+    banner.className = classes.join(' ');
+    banner.textContent = message;
+}
+
+function showFirebaseDegradedBanner(context = 'Live sync', errorLike = null) {
+    const message = getFirebaseFriendlyMessage(errorLike, `${context} is temporarily unavailable. Some synced features may be limited until the connection recovers.`);
+    setAppStatusBanner(message, 'warning');
+}
+
+function handleFirebaseBootstrapFailure(errorLike) {
+    const message = getFirebaseFriendlyMessage(
+        errorLike,
+        'GCSEMate could not connect to Firebase. Public pages are still available, but sign-in and synced tools are temporarily unavailable.'
+    );
+    hideAppLoadingOverlay();
+    try { showLandingOnly(); } catch (_) {}
+    setTimeout(() => setAppStatusBanner(message, 'warning'), 0);
 }
 
 // Enhanced logging function
@@ -3708,7 +3797,17 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
+function registerAuthStateListener() {
+if (!isAuthAvailable()) {
+    handleFirebaseBootstrapFailure(getFirebaseBootstrapError() || new Error('Firebase Auth is unavailable'));
+    return;
+}
+
 auth.onAuthStateChanged(async (user) => {
+    if (!isFirestoreAvailable()) {
+        handleFirebaseBootstrapFailure(getFirebaseBootstrapError() || new Error('Firestore is unavailable'));
+        return;
+    }
     // Detach old listeners to prevent memory leaks on re-login
     if (unsubscribeUserManagement) unsubscribeUserManagement();
     if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
@@ -3898,8 +3997,15 @@ auth.onAuthStateChanged(async (user) => {
         hideAppLoading();
     }
 });
+}
+
+registerAuthStateListener();
 
 function initializeAppState() {
+    if (!isFirestoreAvailable()) {
+        handleFirebaseBootstrapFailure(getFirebaseBootstrapError() || new Error('Firestore is unavailable'));
+        return;
+    }
     // Check maintenance mode first (non-admin only), and subscribe to changes
     if (!unsubscribeMaintenance) {
         unsubscribeMaintenance = db.collection('settings').doc('maintenance').onSnapshot(doc => {
@@ -3989,6 +4095,7 @@ function initializeAppState() {
         const saved = localStorage.getItem('gcsemate_accent');
         if (saved) applyAccent(JSON.parse(saved));
     } catch (e) {}
+    applyUserInterfacePreferences();
     
     // Update AI Tutor navigation visibility
     updateAITutorNavVisibility();
@@ -4913,6 +5020,11 @@ function showFirstTimeTutorial() {
     skip.onclick = () => { overlay.style.display='none'; overlay.classList.add('hidden'); localStorage.setItem('gcsemate_tutorial_shown','1'); };
 }
 function setupRealtimeListeners() {
+    if (!isFirestoreAvailable()) {
+        showFirebaseDegradedBanner('Realtime updates', getFirebaseBootstrapError());
+        return;
+    }
+    setAppStatusBanner('');
     // Listen for announcements
     unsubscribeAnnouncement = db.collection('settings').doc('announcement')
         .onSnapshot(doc => {
@@ -5011,8 +5123,11 @@ function setupRealtimeListeners() {
             renderBlogPage(posts);
         }, err => {
             logError(err, "Blog Posts");
-            try { setBlogStatusMessage('Could not load blog posts. Please refresh and try again.'); } catch (_) {}
-            try { showToast('Could not load blog posts.', 'error'); } catch (_) {}
+            try {
+                const friendly = getFirebaseFriendlyMessage(err, 'Could not load blog posts. Please refresh and try again.');
+                setBlogStatusMessage(friendly);
+                showToast(friendly, 'error');
+            } catch (_) {}
         });
     // Listen for user-specific events
     unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
@@ -9739,6 +9854,10 @@ async function clearSystemCache() {
 async function handleUpdateUserSettings() {
     const displayNameInput = document.getElementById('user-displayname');
     const passwordInput = document.getElementById('user-password');
+    const densitySelect = document.getElementById('ui-density-select');
+    const radiusSelect = document.getElementById('ui-radius-select');
+    const motionSelect = document.getElementById('ui-motion-select');
+    const compactBadgesToggle = document.getElementById('ui-compact-badges');
     const displayName = displayNameInput.value.trim();
     const newPassword = passwordInput.value;
     const messageEl = document.getElementById('user-settings-message');
@@ -9789,6 +9908,13 @@ async function handleUpdateUserSettings() {
         
         // Update local state
         currentUser.displayName = displayName;
+        saveUIPreferences({
+            density: densitySelect?.value || 'comfortable',
+            radius: radiusSelect?.value || 'soft',
+            motion: motionSelect?.value || 'smooth',
+            compactBadges: !!compactBadgesToggle?.checked
+        });
+        applyUserInterfacePreferences();
         updateWelcomeMessage();
         messageEl.textContent = 'Settings saved successfully!';
         messageEl.className = 'text-green-600 text-sm text-center h-4';
@@ -12435,15 +12561,203 @@ function setBlogStatusMessage(message) {
     el.classList.remove('hidden');
 }
 
+function normalizeBlogToken(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function parseBlogTags(value) {
+    if (Array.isArray(value)) {
+        return [...new Set(value.map(tag => String(tag || '').trim()).filter(Boolean))];
+    }
+    return [...new Set(String(value || '')
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean))];
+}
+
+function getBlogPostDate(post) {
+    const direct = post?.createdAt?.toDate ? post.createdAt.toDate() : new Date(post?.createdAt || post?.updatedAt || Date.now());
+    return Number.isNaN(direct.getTime()) ? new Date() : direct;
+}
+
+function getBlogPostSearchBlob(post) {
+    return [
+        post?.title,
+        post?.subject,
+        ...(Array.isArray(post?.tags) ? post.tags : []),
+        String(post?.content || '').replace(/<[^>]+>/g, ' ')
+    ].join(' ').toLowerCase();
+}
+
+function getProcessedBlogPosts(posts = []) {
+    const processed = posts.map(post => ({
+        ...post,
+        subject: String(post?.subject || '').trim(),
+        tags: parseBlogTags(post?.tags),
+        safeDate: getBlogPostDate(post)
+    }));
+
+    const query = normalizeBlogToken(BLOG_VIEW_STATE.search);
+    const tagQuery = normalizeBlogToken(BLOG_VIEW_STATE.tag);
+    const subjectQuery = normalizeBlogToken(BLOG_VIEW_STATE.subject);
+
+    const filtered = processed.filter(post => {
+        const blob = getBlogPostSearchBlob(post);
+        const tags = post.tags.map(normalizeBlogToken);
+        const subject = normalizeBlogToken(post.subject);
+        const matchesSearch = !query || blob.includes(query);
+        const matchesTag = !tagQuery || tags.some(tag => tag.includes(tagQuery));
+        const matchesSubject = !subjectQuery || subjectQuery === 'all' || subject === subjectQuery;
+        return matchesSearch && matchesTag && matchesSubject;
+    });
+
+    const sorter = BLOG_VIEW_STATE.sort;
+    filtered.sort((a, b) => {
+        if (sorter === 'title') return (a.title || '').localeCompare(b.title || '');
+        if (sorter === 'oldest') return a.safeDate - b.safeDate;
+        return b.safeDate - a.safeDate;
+    });
+
+    return { processed, filtered };
+}
+
+function updateBlogFilterControls(posts = []) {
+    const subjectSelect = document.getElementById('blog-subject-filter');
+    if (!subjectSelect) return;
+
+    const current = BLOG_VIEW_STATE.subject || 'all';
+    const subjects = [...new Set(posts.map(post => String(post?.subject || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+
+    subjectSelect.innerHTML = `<option value="all">All Subjects</option>${subjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('')}`;
+    subjectSelect.value = subjects.some(subject => normalizeBlogToken(subject) === normalizeBlogToken(current)) ? current : 'all';
+    BLOG_VIEW_STATE.subject = subjectSelect.value;
+}
+
+function renderBlogFeaturedPost(posts = []) {
+    const featuredEl = document.getElementById('blog-featured-post');
+    const totalPostsEl = document.getElementById('blog-total-posts');
+    const totalSubjectsEl = document.getElementById('blog-total-subjects');
+    const latestDateEl = document.getElementById('blog-latest-date');
+    if (!featuredEl) return;
+
+    const subjectCount = new Set(posts.map(post => normalizeBlogToken(post.subject)).filter(Boolean)).size;
+    const latestPost = [...posts].sort((a, b) => b.safeDate - a.safeDate)[0];
+    if (totalPostsEl) totalPostsEl.textContent = String(posts.length);
+    if (totalSubjectsEl) totalSubjectsEl.textContent = String(subjectCount);
+    if (latestDateEl) latestDateEl.textContent = latestPost ? latestPost.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+    const featuredPost = posts[0] || latestPost;
+    if (!featuredPost) {
+        featuredEl.innerHTML = `
+            <div class="blog-featured-card">
+                <div>
+                    <span class="blog-featured-pill">Coming soon</span>
+                    <h3 class="mt-4 text-2xl font-black">Fresh study tips will appear here.</h3>
+                    <p class="mt-3 text-sm text-blue-100/85">As soon as the first post is published, this featured panel will spotlight it automatically.</p>
+                </div>
+            </div>`;
+        return;
+    }
+
+    const featuredSummary = escapeHTML(String(featuredPost.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220));
+    const tags = featuredPost.tags.slice(0, 3).map(tag => `<span class="blog-featured-pill">#${escapeHTML(tag)}</span>`).join('');
+    featuredEl.innerHTML = `
+        <article class="blog-featured-card">
+            <div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="blog-featured-pill"><i class="fas fa-sparkles"></i> Featured post</span>
+                    ${featuredPost.subject ? `<span class="blog-featured-pill">${escapeHTML(featuredPost.subject)}</span>` : ''}
+                </div>
+                <h3 class="mt-4 text-2xl font-black leading-tight">${escapeHTML(featuredPost.title || 'Untitled post')}</h3>
+                <p class="mt-3 text-sm text-blue-100/90">${featuredSummary || 'Open this post to read the latest revision guidance and GCSEMate updates.'}</p>
+                <div class="mt-4 flex flex-wrap gap-2">${tags}</div>
+            </div>
+            <div class="mt-6 flex items-center justify-between gap-3 flex-wrap">
+                <div class="text-sm text-blue-100/80">Updated ${featuredPost.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                <button class="inline-flex items-center gap-2 rounded-xl bg-white text-slate-900 px-4 py-2 font-bold hover:bg-blue-50 transition-colors" onclick="showBlogPostViewer('${escapeJS(featuredPost.id)}')">
+                    Read featured post
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </article>`;
+}
+
+function renderBlogResultsSummary(visibleCount, totalCount) {
+    const summaryEl = document.getElementById('blog-results-summary');
+    if (!summaryEl) return;
+    const filtersActive = !!(BLOG_VIEW_STATE.search || BLOG_VIEW_STATE.tag || (BLOG_VIEW_STATE.subject && BLOG_VIEW_STATE.subject !== 'all'));
+    if (!totalCount) {
+        summaryEl.textContent = 'No posts yet';
+        return;
+    }
+    if (!filtersActive) {
+        summaryEl.textContent = `${visibleCount} post${visibleCount === 1 ? '' : 's'} available`;
+        return;
+    }
+    summaryEl.textContent = `${visibleCount} of ${totalCount} post${totalCount === 1 ? '' : 's'} match your filters`;
+}
+
+function setupBlogFilters() {
+    if (window.__gcsemateBlogFiltersBound) return;
+    window.__gcsemateBlogFiltersBound = true;
+
+    const searchInput = document.getElementById('blog-search');
+    const tagInput = document.getElementById('blog-tag-filter');
+    const subjectSelect = document.getElementById('blog-subject-filter');
+    const sortSelect = document.getElementById('blog-sort');
+    const clearBtn = document.getElementById('blog-clear-filters');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            BLOG_VIEW_STATE.search = searchInput.value.trim();
+            renderBlogPage(allBlogPosts);
+        });
+    }
+    if (tagInput) {
+        tagInput.addEventListener('input', () => {
+            BLOG_VIEW_STATE.tag = tagInput.value.trim();
+            renderBlogPage(allBlogPosts);
+        });
+    }
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', () => {
+            BLOG_VIEW_STATE.subject = subjectSelect.value;
+            renderBlogPage(allBlogPosts);
+        });
+    }
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            BLOG_VIEW_STATE.sort = sortSelect.value;
+            renderBlogPage(allBlogPosts);
+        });
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            BLOG_VIEW_STATE.search = '';
+            BLOG_VIEW_STATE.tag = '';
+            BLOG_VIEW_STATE.subject = 'all';
+            BLOG_VIEW_STATE.sort = 'newest';
+            if (searchInput) searchInput.value = '';
+            if (tagInput) tagInput.value = '';
+            if (subjectSelect) subjectSelect.value = 'all';
+            if (sortSelect) sortSelect.value = 'newest';
+            renderBlogPage(allBlogPosts);
+        });
+    }
+}
+
 function renderBlogPage(posts) {
     const grid = document.getElementById('blog-post-grid');
     if (!grid) return;
+    setupBlogFilters();
     setBlogStatusMessage('');
     grid.innerHTML = '';
-    if (!posts || posts.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Blog Posts Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for news and revision tips.</p></div>`;
-        return;
-    }
+    const { processed, filtered } = getProcessedBlogPosts(posts || []);
+    updateBlogFilterControls(processed);
+    renderBlogFeaturedPost(filtered.length > 0 ? filtered : processed);
+    renderBlogResultsSummary(filtered.length, processed.length);
+
     // Inject page-level JSON-LD for Blog with BlogPosting list
     try {
         const ldId = 'jsonld-blog';
@@ -12453,7 +12767,7 @@ function renderBlogPage(posts) {
             "@type": "Blog",
             "name": "GCSEMate Blog",
             "url": "https://gcsemate.com/blog",
-            "blogPost": (posts||[]).slice(0, 25).map(p => ({
+            "blogPost": (processed||[]).slice(0, 25).map(p => ({
                 "@type": "BlogPosting",
                 "headline": p.title,
                 "image": p.image || undefined,
@@ -12470,34 +12784,53 @@ function renderBlogPage(posts) {
         if (existing) { existing.replaceWith(node); } else { document.head.appendChild(node); }
     } catch(_){}
 
-    posts.forEach(post => {
+    if (!processed.length) {
+        grid.innerHTML = `<div class="col-span-full blog-empty-state"><div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><i class="fas fa-feather-pointed text-xl"></i></div><h3 class="mt-4 text-lg font-bold text-gray-800">No blog posts yet</h3><p class="mt-2 text-sm text-gray-500">Check back later for new revision tips, release notes, and study updates.</p></div>`;
+        return;
+    }
+
+    if (!filtered.length) {
+        grid.innerHTML = `<div class="col-span-full blog-empty-state"><div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><i class="fas fa-filter-circle-xmark text-xl"></i></div><h3 class="mt-4 text-lg font-bold text-gray-800">No posts match those filters</h3><p class="mt-2 text-sm text-gray-500">Try a different keyword, remove the tag filter, or reset back to all subjects.</p></div>`;
+        return;
+    }
+
+    filtered.forEach(post => {
         const card = document.createElement('div');
-        card.className = 'bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg flex flex-col overflow-hidden';
-        const contentPreview = (post.content || '').replace(/<[^>]+>/g, '').substring(0, 120);
-        const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB') : 'Just now';
+        card.className = 'blog-card flex flex-col overflow-hidden';
+        const contentPreview = escapeHTML((post.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 160));
+        const postDate = post.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         let adminButtons = '';
         if(currentUser && currentUser.role === 'admin') {
             adminButtons = `
                 <div class="absolute top-2 right-2 flex gap-1">
-                    <button onclick="event.stopPropagation(); editBlogPost('${post.id}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Post">
+                    <button onclick="event.stopPropagation(); editBlogPost('${escapeJS(post.id)}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Post">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
                     </button>
-                    <button onclick="event.stopPropagation(); deleteBlogPost('${post.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Post">
+                    <button onclick="event.stopPropagation(); deleteBlogPost('${escapeJS(post.id)}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Post">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
             `;
         }
+        const tags = post.tags.slice(0, 3).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
+        const safeImage = escapeHTML(post.image || BLOG_DEFAULT_IMAGE);
         card.innerHTML = `
-            <div class="relative cursor-pointer" onclick="showBlogPostViewer('${post.id}')">
-                ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover" loading="lazy" decoding="async">` : '<img src="https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1600&auto=format&fit=crop" alt="Study desk" class="w-full h-48 object-cover" loading="lazy" decoding="async">'}
+            <div class="relative cursor-pointer" onclick="showBlogPostViewer('${escapeJS(post.id)}')">
+                <img src="${safeImage}" alt="${escapeHTML(post.title || 'Blog post')}" class="blog-card-image" loading="lazy" decoding="async">
                 <div class="p-6 flex-grow flex flex-col">
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <h3 class="text-xl font-bold text-gray-900">${post.title}</h3>
+                    <div class="blog-meta-row mb-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            ${post.subject ? `<span class="blog-tag-chip">${escapeHTML(post.subject)}</span>` : '<span class="blog-tag-chip">General</span>'}
+                            ${tags}
+                        </div>
                         <span class="comment-badge text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-1 rounded-full whitespace-nowrap" data-post-id="${post.id}">0 comments</span>
                     </div>
-                    <p class="text-gray-600 text-sm flex-grow">${contentPreview}...</p>
-                    <p class="text-xs text-gray-500 mt-4">${postDate}</p>
+                    <h3 class="text-xl font-bold text-gray-900 leading-tight">${escapeHTML(post.title || 'Untitled post')}</h3>
+                    <p class="blog-card-summary text-gray-600 text-sm flex-grow mt-3">${contentPreview || 'Open this post to read the full revision note and update.'}${contentPreview ? '…' : ''}</p>
+                    <div class="blog-meta-row mt-5">
+                        <p class="text-xs text-gray-500">${postDate}</p>
+                        <p class="text-xs font-semibold text-gray-500">${escapeHTML(post.authorName || 'GCSEMate')}</p>
+                    </div>
                 </div>
                 ${adminButtons}
             </div>
@@ -12506,31 +12839,54 @@ function renderBlogPage(posts) {
     });
     // Fetch comment counts (lightweight) and animate badges
     try {
-        posts.forEach(async (p, i) => {
-            try {
-                const snap = await db.collection('blogPosts').doc(p.id).collection('comments').get();
-                const n = snap.size || 0;
-                const badge = grid.querySelector(`.comment-badge[data-post-id="${p.id}"]`);
-                if (badge) {
-                    badge.textContent = n === 1 ? '1 comment' : `${n} comments`;
-                    badge.style.transform = 'scale(0.9)';
-                    badge.style.transition = 'transform 200ms ease';
-                    setTimeout(() => { badge.style.transform = 'scale(1)'; }, 20 + i * 15);
+        if (isFirestoreAvailable()) {
+            filtered.forEach(async (p, i) => {
+                try {
+                    const cached = BLOG_COMMENT_COUNTS.get(p.id);
+                    const badge = grid.querySelector(`.comment-badge[data-post-id="${p.id}"]`);
+                    if (Number.isFinite(cached)) {
+                        if (badge) badge.textContent = cached === 1 ? '1 comment' : `${cached} comments`;
+                        return;
+                    }
+                    const snap = await db.collection('blogPosts').doc(p.id).collection('comments').get();
+                    const n = snap.size || 0;
+                    BLOG_COMMENT_COUNTS.set(p.id, n);
+                    if (badge) {
+                        badge.textContent = n === 1 ? '1 comment' : `${n} comments`;
+                        badge.style.transform = 'scale(0.9)';
+                        badge.style.transition = 'transform 200ms ease';
+                        setTimeout(() => { badge.style.transform = 'scale(1)'; }, 20 + i * 15);
+                    }
+                } catch (error) {
+                    BLOG_COMMENT_COUNTS.set(p.id, 0);
+                    if (isDevelopment) console.warn('Comment count load failed', error);
                 }
-            } catch (_) {}
-        });
+            });
+        }
     } catch (_) {}
     initializeTooltips();
 }
 
 async function handleSaveBlogPost() {
     if (!isAdminUser()) return;
+    if (!isFirestoreAvailable()) {
+        const messageEl = document.getElementById('add-blog-post-message');
+        const friendly = getFirebaseFriendlyMessage(getFirebaseBootstrapError(), 'Blog publishing is temporarily unavailable. Please try again shortly.');
+        if (messageEl) {
+            messageEl.textContent = friendly;
+            messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        }
+        showToast(friendly, 'error');
+        return;
+    }
     
     const postId = document.getElementById('blog-post-id').value;
     const title = document.getElementById('blog-post-title').value.trim();
     const contentEl = document.getElementById('blog-post-content');
     const content = contentEl ? contentEl.innerHTML.trim() : '';
     const image = document.getElementById('blog-post-image').value.trim();
+    const subject = document.getElementById('blog-post-subject').value.trim();
+    const tags = parseBlogTags(document.getElementById('blog-post-tags').value.trim());
     const messageEl = document.getElementById('add-blog-post-message');
     if (!title || !content) {
         messageEl.textContent = "Title and content are required.";
@@ -12545,8 +12901,12 @@ async function handleSaveBlogPost() {
         title,
         content,
         image: image || null,
+        subject: subject || null,
+        tags,
         createdBy: currentUser.uid,
-        tags: [],
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email || 'GCSEMate',
+        imagePublicIds,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     try {
@@ -12562,16 +12922,8 @@ async function handleSaveBlogPost() {
                 for (const publicId of removedImageIds) {
                     await deleteCloudinaryImage(publicId);
                 }
-                if (Array.isArray(oldData.tags)) {
-                    postData.tags = oldData.tags;
-                }
             }
-            await db.collection('blogPosts').doc(postId).update({
-                ...postData,
-                authorId: firebase.firestore.FieldValue.delete(),
-                authorName: firebase.firestore.FieldValue.delete(),
-                imagePublicIds: firebase.firestore.FieldValue.delete()
-            });
+            await db.collection('blogPosts').doc(postId).update(postData);
         } else { // Create new post
             postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('blogPosts').add(postData);
@@ -12582,10 +12934,7 @@ async function handleSaveBlogPost() {
         setTimeout(() => messageEl.textContent = '', 3000);
     } catch (error) {
         console.error("Error saving blog post:", error);
-        const code = error?.code || '';
-        const friendly = code === 'permission-denied'
-            ? 'You do not have permission to save blog posts.'
-            : 'Could not save blog post. Please try again.';
+        const friendly = getFirebaseFriendlyMessage(error, 'Could not save blog post. Please try again.');
         messageEl.textContent = friendly;
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
         showToast(friendly, 'error');
@@ -12773,6 +13122,8 @@ function setupBlogPasteHandler() {
             const clipboard = e.clipboardData || window.clipboardData;
             if (!clipboard) return;
 
+            saveBlogEditorSelection();
+
             const items = clipboard.items ? Array.from(clipboard.items) : [];
             const imageItems = items.filter(item => item.type && item.type.startsWith('image/'));
 
@@ -12781,11 +13132,7 @@ function setupBlogPasteHandler() {
                 for (const item of imageItems) {
                     const file = item.getAsFile();
                     if (file) {
-                    window.allBlogPosts = posts || [];
-                    grid.innerHTML = '';
-                    populateBlogSubjectFilter(window.allBlogPosts);
-                    applyBlogFilters();
-                    return;
+                        await insertBlogImageFromFile(file, 'paste');
                     }
                 }
                 return;
@@ -12799,8 +13146,12 @@ function setupBlogPasteHandler() {
                 const sanitized = sanitizeHTML(htmlData);
                 document.execCommand('insertHTML', false, sanitized);
             } else if (textData) {
-                document.execCommand('insertText', false, textData);
+                const escaped = escapeHTML(textData).replace(/\n/g, '<br>');
+                document.execCommand('insertHTML', false, escaped);
             }
+
+            saveBlogEditorSelection();
+            updateToolbarState();
         });
     }
 }
@@ -13781,6 +14132,8 @@ function resetBlogPostForm() {
     if (contentEl) {
         contentEl.innerHTML = '';
     }
+    const previewWrap = document.getElementById('blog-image-preview');
+    if (previewWrap) previewWrap.classList.add('hidden');
 }
 function editBlogPost(postId) {
     const post = allBlogPosts.find(p => p.id === postId);
@@ -13794,6 +14147,8 @@ function editBlogPost(postId) {
         contentEl.innerHTML = post.content || '';
     }
     document.getElementById('blog-post-image').value = post.image || '';
+    document.getElementById('blog-post-subject').value = post.subject || '';
+    document.getElementById('blog-post-tags').value = parseBlogTags(post.tags).join(', ');
     document.getElementById('add-blog-post-form-container').scrollIntoView({ behavior: 'smooth' });
 }
 async function deleteBlogPost(postId) {
@@ -13839,22 +14194,25 @@ function showBlogPostViewer(postId) {
     if (!post) return;
     const modal = document.getElementById('blog-viewer-modal');
     const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const shareUrl = `${window.location.origin}/blog#${encodeURIComponent(post.id)}`;
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
                 <div class="flex items-center gap-2 min-w-0">
                     <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
-                    <h3 class="text-lg font-semibold text-gray-800 truncate">${post.title}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">${escapeHTML(post.title || 'Blog post')}</h3>
                 </div>
                 <button onclick="handleCloseBlogViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
             </div>
             <div class="overflow-y-auto">
-                ${post.image ? `<img src="${post.image}" alt="${post.title}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
+                ${post.image ? `<img src="${escapeHTML(post.image)}" alt="${escapeHTML(post.title || 'Blog post')}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
                 <div class="p-8 prose prose-lg max-w-none">
-                    <p class="text-sm text-gray-500">Posted on ${postDate} by ${post.authorName}</p>
+                    <p class="text-sm text-gray-500">Posted on ${postDate} by ${escapeHTML(post.authorName || 'GCSEMate')}</p>
                     <div class="blog-content">${formatBlogLinks(sanitizeHTML(post.content))}</div>
-                    <div class="mt-6 flex items-center gap-2">
-                        <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${post.title.replace(/'/g, "\'")}', url: location.href }) : window.open(location.href, '_blank')">Share</button>
+                    <div class="mt-6 flex items-center gap-2 flex-wrap">
+                        ${post.subject ? `<span class="blog-tag-chip">${escapeHTML(post.subject)}</span>` : ''}
+                        ${parseBlogTags(post.tags).slice(0, 5).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('')}
+                        <button class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-semibold" onclick="navigator.share ? navigator.share({ title: '${escapeJS(post.title || 'Blog post')}', url: '${escapeJS(shareUrl)}' }) : window.open('${escapeJS(shareUrl)}', '_blank')">Share</button>
                     </div>
                 </div>
                 <div class="px-8 pb-8">
@@ -13876,12 +14234,21 @@ function showBlogPostViewer(postId) {
     modal.style.display = 'flex';
 
     // Comments realtime listener
+    if (!isFirestoreAvailable()) {
+        const list = document.getElementById('comments-list');
+        if (list) {
+            list.innerHTML = `<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Comments are temporarily unavailable while the live database reconnects.</div>`;
+        }
+        showFirebaseDegradedBanner('Blog comments', getFirebaseBootstrapError());
+        return;
+    }
     if (unsubscribeBlogComments) { try { unsubscribeBlogComments(); } catch (_) {} }
     unsubscribeBlogComments = db.collection('blogPosts').doc(postId).collection('comments')
         .orderBy('createdAt', 'asc')
         .onSnapshot(snapshot => {
             const comments = [];
             snapshot.forEach(doc => comments.push({ id: doc.id, ...doc.data() }));
+            BLOG_COMMENT_COUNTS.set(postId, comments.length);
             const list = document.getElementById('comments-list');
             if (!list) return;
             if (comments.length === 0) {
@@ -13955,7 +14322,13 @@ function showBlogPostViewer(postId) {
                     }, { okText: 'Delete' });
                 });
             });
-        }, err => console.error('Error fetching comments:', err));
+        }, err => {
+            console.error('Error fetching comments:', err);
+            const list = document.getElementById('comments-list');
+            if (list) {
+                list.innerHTML = `<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">${escapeHTML(getFirebaseFriendlyMessage(err, 'Could not load comments right now.'))}</div>`;
+            }
+        });
 
     // Add comment handler (paid/admin only)
     const form = document.getElementById('add-comment-form');
@@ -13986,7 +14359,7 @@ function showBlogPostViewer(postId) {
                 setTimeout(() => { if (messageEl) messageEl.textContent=''; }, 2000);
             } catch (error) {
                 console.error('Error posting comment:', error);
-                messageEl.textContent = 'Could not post comment.';
+                messageEl.textContent = getFirebaseFriendlyMessage(error, 'Could not post comment.');
                 messageEl.className = 'text-red-600 text-sm h-4';
             }
         });
@@ -14995,6 +15368,12 @@ function saveToolsState() {
             customInputDigits: toolsTimerState.customInputDigits,
             sessionFocusedSeconds: toolsTimerState.sessionFocusedSeconds,
             todayFocusedSeconds: toolsTimerState.todayFocusedSeconds,
+            completedSessions: toolsTimerState.completedSessions,
+            autoBreakEnabled: toolsTimerState.autoBreakEnabled,
+            breakDurationMinutes: toolsTimerState.breakDurationMinutes,
+            soundEnabled: toolsTimerState.soundEnabled,
+            timerTheme: toolsTimerState.timerTheme,
+            isBreakMode: toolsTimerState.isBreakMode,
             dayKey: toolsTimerState.dayKey
         }));
     } catch (_) {}
@@ -15028,6 +15407,16 @@ function loadToolsState() {
         toolsTimerState.todayFocusedSeconds = parsed.dayKey === today && Number.isFinite(parsed.todayFocusedSeconds)
             ? Math.max(0, parsed.todayFocusedSeconds)
             : 0;
+        toolsTimerState.completedSessions = Number.isFinite(parsed.completedSessions)
+            ? Math.max(0, parsed.completedSessions)
+            : 0;
+        toolsTimerState.autoBreakEnabled = !!parsed.autoBreakEnabled;
+        toolsTimerState.breakDurationMinutes = Number.isFinite(parsed.breakDurationMinutes)
+            ? Math.min(30, Math.max(1, parsed.breakDurationMinutes))
+            : 5;
+        toolsTimerState.soundEnabled = parsed.soundEnabled !== false;
+        toolsTimerState.timerTheme = ['blue', 'sunset', 'forest', 'midnight'].includes(parsed.timerTheme) ? parsed.timerTheme : 'blue';
+        toolsTimerState.isBreakMode = !!parsed.isBreakMode;
     } catch (_) {}
 }
 
@@ -15096,6 +15485,7 @@ function resetToolsTimer(mode = toolsTimerState.mode) {
     const safeMode = TOOLS_TIMER_MODES[mode] ? mode : 'pomodoro';
     toolsTimerState.mode = safeMode;
     if (safeMode !== 'stopwatch') toolsTimerState.timerModeBeforeStopwatch = safeMode;
+    if (safeMode !== 'custom') toolsTimerState.isBreakMode = false;
     const modeConfig = TOOLS_TIMER_MODES[safeMode];
     toolsTimerState.remainingSeconds = modeConfig.isStopwatch
         ? 0
@@ -15130,14 +15520,60 @@ function stopToolsTimer() {
     updateToolsTimerUI();
 }
 
+function playToolsTimerChime() {
+    if (!toolsTimerState.soundEnabled) return;
+    try {
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+        const context = new AudioContextCtor();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(660, context.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(880, context.currentTime + 0.18);
+        gainNode.gain.setValueAtTime(0.001, context.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.05, context.currentTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.5);
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.55);
+        oscillator.onended = () => context.close().catch(() => {});
+    } catch (_) {}
+}
+
+function startToolsBreakCycle() {
+    toolsTimerState.isBreakMode = true;
+    toolsTimerState.mode = 'custom';
+    toolsTimerState.customDurationSeconds = toolsTimerState.breakDurationMinutes * 60;
+    setCustomInputFromSeconds(toolsTimerState.customDurationSeconds);
+    resetToolsTimer('custom');
+    toolsTimerState.isBreakMode = true;
+    startToolsTimer();
+}
+
 function onToolsTimerTick() {
     if (!toolsTimerState.isRunning) return;
     synchronizeToolsTimerState(Date.now());
     const isStopwatch = toolsTimerState.mode === 'stopwatch';
 
     if (!isStopwatch && toolsTimerState.remainingSeconds === 0) {
+        const completedBreak = toolsTimerState.isBreakMode;
         stopToolsTimer();
+        playToolsTimerChime();
+        if (completedBreak) {
+            toolsTimerState.isBreakMode = false;
+            toolsTimerState.mode = toolsTimerState.timerModeBeforeStopwatch || 'pomodoro';
+            resetToolsTimer(toolsTimerState.mode);
+            try { showToast('Break finished. Ready for the next focus block.', 'success'); } catch (_) {}
+            return;
+        }
+        toolsTimerState.completedSessions += 1;
+        saveToolsState();
         try { showToast('Focus session complete. Great work!', 'success'); } catch (_) {}
+        if (toolsTimerState.autoBreakEnabled) {
+            startToolsBreakCycle();
+        }
         return;
     }
 
@@ -15181,6 +15617,15 @@ function updateToolsTimerUI() {
     const todayEl = document.getElementById('tools-tracker-today');
     const sessionEl = document.getElementById('tools-tracker-session');
     const customWrapEl = document.getElementById('tools-timer-custom-wrap');
+    const autoBreakToggle = document.getElementById('tools-timer-autobreak');
+    const breakLengthSelect = document.getElementById('tools-timer-break-length');
+    const soundToggle = document.getElementById('tools-timer-sound');
+    const timerThemeSelect = document.getElementById('tools-timer-theme');
+    const completedEl = document.getElementById('tools-timer-completed-count');
+    const breakStateEl = document.getElementById('tools-timer-break-state');
+    const modeLabelEl = document.getElementById('tools-timer-mode-label');
+    const focusScoreEl = document.getElementById('tools-timer-focus-score');
+    const timerCard = document.getElementById('tools-timer-card');
     if (!displayEl || !progressEl || !statusEl || !todayEl || !sessionEl) return;
 
     const isStopwatch = toolsTimerState.mode === 'stopwatch';
@@ -15190,6 +15635,10 @@ function updateToolsTimerUI() {
         modeSelect.classList.toggle('opacity-60', isStopwatch);
     }
     if (stopwatchToggle) stopwatchToggle.checked = isStopwatch;
+    if (autoBreakToggle) autoBreakToggle.checked = !!toolsTimerState.autoBreakEnabled;
+    if (breakLengthSelect) breakLengthSelect.value = String(toolsTimerState.breakDurationMinutes || 5);
+    if (soundToggle) soundToggle.checked = toolsTimerState.soundEnabled !== false;
+    if (timerThemeSelect) timerThemeSelect.value = toolsTimerState.timerTheme || 'blue';
 
     const modeConfig = isStopwatch ? TOOLS_TIMER_MODES.stopwatch : (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro);
 
@@ -15219,9 +15668,18 @@ function updateToolsTimerUI() {
     if (isStopwatch) {
         statusEl.textContent = toolsTimerState.isRunning ? 'Stopwatch running' : 'Stopwatch ready';
     } else {
-        statusEl.textContent = toolsTimerState.isRunning
-            ? `${modeConfig.label} in progress`
-            : 'Ready to focus';
+        statusEl.textContent = toolsTimerState.isBreakMode
+            ? (toolsTimerState.isRunning ? 'Break in progress' : 'Break ready')
+            : (toolsTimerState.isRunning ? `${modeConfig.label} in progress` : 'Ready to focus');
+    }
+
+    if (completedEl) completedEl.textContent = String(toolsTimerState.completedSessions || 0);
+    if (breakStateEl) breakStateEl.textContent = toolsTimerState.isBreakMode ? `${toolsTimerState.breakDurationMinutes}m` : 'Off';
+    if (modeLabelEl) modeLabelEl.textContent = toolsTimerState.isBreakMode ? 'Break' : modeConfig.label;
+    if (focusScoreEl) focusScoreEl.textContent = formatDurationShort(toolsTimerState.todayFocusedSeconds);
+    if (timerCard) {
+        timerCard.dataset.timerTheme = toolsTimerState.timerTheme || 'blue';
+        timerCard.classList.toggle('is-break-mode', !!toolsTimerState.isBreakMode);
     }
 
     if (!toolsTimerState.customInputDigits && toolsTimerState.customDurationSeconds > 0) {
@@ -15282,6 +15740,150 @@ function updateScientificCalculatorResult() {
         resultEl.textContent = 'Result: —';
         resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-red-600';
     }
+}
+
+function loadToolsPlannerItems() {
+    try {
+        const raw = localStorage.getItem(TOOLS_PLANNER_STORAGE_KEY);
+        const parsed = JSON.parse(raw || '[]');
+        toolsPlannerItems = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+        toolsPlannerItems = [];
+    }
+}
+
+function saveToolsPlannerItems() {
+    try {
+        localStorage.setItem(TOOLS_PLANNER_STORAGE_KEY, JSON.stringify(toolsPlannerItems));
+    } catch (_) {}
+}
+
+function updateToolsNotesMeta(value = '') {
+    const metaEl = document.getElementById('tools-notes-meta');
+    if (!metaEl) return;
+    const wordCount = String(value || '').trim() ? String(value).trim().split(/\s+/).length : 0;
+    metaEl.textContent = `${wordCount} word${wordCount === 1 ? '' : 's'} • autosaved`;
+}
+
+function loadToolsNotes() {
+    const notesInput = document.getElementById('tools-notes-input');
+    if (!notesInput) return;
+    let saved = '';
+    try { saved = localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) {}
+    notesInput.value = saved;
+    updateToolsNotesMeta(saved);
+}
+
+function saveToolsNotes(value = '') {
+    try { localStorage.setItem(TOOLS_NOTES_STORAGE_KEY, value); } catch (_) {}
+    updateToolsNotesMeta(value);
+}
+
+function populateStudyRandomiserSubjects() {
+    const subjectSelect = document.getElementById('tools-randomiser-subject');
+    if (!subjectSelect) return;
+    const current = subjectSelect.value;
+    const subjects = Array.from(new Set(getAccessibleSubjectsForGradeTracker().concat(SUBJECTS || []))).filter(Boolean);
+    subjectSelect.innerHTML = `<option value="">Any subject</option>${subjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('')}`;
+    if (current && Array.from(subjectSelect.options).some(option => option.value === current)) {
+        subjectSelect.value = current;
+    }
+}
+
+function generateStudyRandomiserTask() {
+    const subjectSelect = document.getElementById('tools-randomiser-subject');
+    const durationSelect = document.getElementById('tools-randomiser-duration');
+    const outputEl = document.getElementById('tools-randomiser-output');
+    if (!outputEl) return;
+
+    const subject = subjectSelect?.value || 'your weakest topic';
+    const minutes = Number(durationSelect?.value || 20);
+    const generator = STUDY_RANDOMISER_TEMPLATES[Math.floor(Math.random() * STUDY_RANDOMISER_TEMPLATES.length)];
+    outputEl.textContent = generator({ subject, minutes });
+}
+
+function getToolsPlannerPriorityLabel(priority) {
+    if (priority === 'high') return 'High';
+    if (priority === 'low') return 'Low';
+    return 'Medium';
+}
+
+function renderToolsPlanner() {
+    const listEl = document.getElementById('tools-planner-list');
+    const emptyEl = document.getElementById('tools-planner-empty');
+    const progressEl = document.getElementById('tools-planner-progress');
+    if (!listEl || !emptyEl || !progressEl) return;
+
+    const total = toolsPlannerItems.length;
+    const completed = toolsPlannerItems.filter(item => item.completed).length;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    progressEl.textContent = `${progress}%`;
+
+    if (!total) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+    }
+
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = toolsPlannerItems
+        .sort((a, b) => Number(a.completed) - Number(b.completed))
+        .map(item => `
+            <div class="tools-planner-item ${item.completed ? 'is-complete' : ''}" data-tools-planner-id="${escapeHTML(item.id)}">
+                <input class="tools-planner-check" type="checkbox" ${item.completed ? 'checked' : ''} data-tools-planner-toggle="${escapeHTML(item.id)}" aria-label="Mark task complete">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <p class="text-sm font-semibold text-gray-800 ${item.completed ? 'line-through text-gray-400' : ''}">${escapeHTML(item.text)}</p>
+                        <span class="tools-priority-chip ${escapeHTML(item.priority || 'medium')}">${escapeHTML(getToolsPlannerPriorityLabel(item.priority || 'medium'))}</span>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">Added ${timeAgo(new Date(item.createdAt || Date.now()))}</p>
+                </div>
+                <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors" data-tools-planner-delete="${escapeHTML(item.id)}">Remove</button>
+            </div>`)
+        .join('');
+}
+
+function addToolsPlannerItem() {
+    const input = document.getElementById('tools-planner-input');
+    const prioritySelect = document.getElementById('tools-planner-priority');
+    if (!input || !prioritySelect) return;
+
+    const text = input.value.trim();
+    if (!text) {
+        showToast('Add a study task before saving it.', 'warning');
+        input.focus();
+        return;
+    }
+
+    toolsPlannerItems.unshift({
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        text,
+        priority: prioritySelect.value || 'medium',
+        completed: false,
+        createdAt: new Date().toISOString()
+    });
+    saveToolsPlannerItems();
+    renderToolsPlanner();
+    input.value = '';
+    input.focus();
+}
+
+function toggleToolsPlannerItem(itemId) {
+    toolsPlannerItems = toolsPlannerItems.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item);
+    saveToolsPlannerItems();
+    renderToolsPlanner();
+}
+
+function deleteToolsPlannerItem(itemId) {
+    toolsPlannerItems = toolsPlannerItems.filter(item => item.id !== itemId);
+    saveToolsPlannerItems();
+    renderToolsPlanner();
+}
+
+function clearCompletedToolsPlannerItems() {
+    toolsPlannerItems = toolsPlannerItems.filter(item => !item.completed);
+    saveToolsPlannerItems();
+    renderToolsPlanner();
 }
 
 async function fetchAndRenderDailyMeme(forceRefresh = false) {
@@ -16118,8 +16720,95 @@ async function openUserGradesModal(userId) {
 
 window.closeUserGradesModal = closeUserGradesModal;
 
+function getCommandPaletteActions() {
+    const actions = [
+        { id: 'subjects', group: 'Navigate', icon: 'fa-folder-open', title: 'Open Subjects', description: 'Go to your subject dashboard', shortcut: 'G D', action: () => navigateToPageId('subject-dashboard-page') },
+        { id: 'videos', group: 'Navigate', icon: 'fa-play-circle', title: 'Open Videos', description: 'Browse revision playlists', shortcut: 'G V', action: () => navigateToPageId('videos-page') },
+        { id: 'blog', group: 'Navigate', icon: 'fa-blog', title: 'Open Blog', description: 'Jump to revision tips and updates', shortcut: 'G B', action: () => navigateToPageId('blog-page') },
+        { id: 'calendar', group: 'Navigate', icon: 'fa-calendar-alt', title: 'Open Calendar', description: 'Check deadlines and events', shortcut: 'G C', action: () => navigateToPageId('calendar-page') },
+        { id: 'tools', group: 'Navigate', icon: 'fa-toolbox', title: 'Open Tools', description: 'Use timers, planner, calculator, and trackers', shortcut: 'G T', action: () => navigateToPageId('tools-page') },
+        { id: 'links', group: 'Navigate', icon: 'fa-link', title: 'Open Useful Links', description: 'Browse quick external resources', shortcut: 'G U', action: () => navigateToPageId('useful-links-page') },
+        { id: 'account', group: 'Navigate', icon: 'fa-user-cog', title: 'Open Account', description: 'Manage your profile and preferences', shortcut: '', action: () => navigateToPageId('account-settings-page') },
+        { id: 'help', group: 'Navigate', icon: 'fa-question-circle', title: 'Open Help & FAQ', description: 'Find answers and keyboard shortcuts', shortcut: '?', action: () => navigateToPageId('help-page') },
+        { id: 'focus-blog-search', group: 'Actions', icon: 'fa-magnifying-glass', title: 'Focus blog search', description: 'Search through the latest blog posts', shortcut: '', action: () => { navigateToPageId('blog-page'); setTimeout(() => document.getElementById('blog-search')?.focus(), 120); } },
+        { id: 'focus-planner', group: 'Actions', icon: 'fa-list-check', title: 'Add planner task', description: 'Jump to the revision sprint planner input', shortcut: '', action: () => { navigateToPageId('tools-page'); setTimeout(() => document.getElementById('tools-planner-input')?.focus(), 120); } },
+        { id: 'checkout', group: 'Actions', icon: 'fa-bolt', title: 'Open upgrade checkout', description: 'View the GCSEMate Pro checkout page', shortcut: '', action: () => navigateToPageId('checkout-page') }
+    ];
+
+    return actions.filter(item => currentUser || !['account'].includes(item.id));
+}
+
+function closeCommandPalette() {
+    const modal = document.getElementById('command-palette-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+}
+
+function renderCommandPaletteResults(query = '') {
+    const resultsEl = document.getElementById('command-palette-results');
+    if (!resultsEl) return [];
+
+    const needle = normalizeBlogToken(query);
+    const matches = getCommandPaletteActions().filter(item => {
+        if (!needle) return true;
+        return `${item.title} ${item.description} ${item.group}`.toLowerCase().includes(needle);
+    });
+
+    if (!matches.length) {
+        resultsEl.innerHTML = '<div class="command-palette-empty">No matching actions. Try another keyword.</div>';
+        return [];
+    }
+
+    const groups = matches.reduce((acc, item) => {
+        if (!acc[item.group]) acc[item.group] = [];
+        acc[item.group].push(item);
+        return acc;
+    }, {});
+
+    resultsEl.innerHTML = Object.entries(groups).map(([group, items]) => `
+        <div class="command-palette-group">
+            <div class="command-palette-label">${escapeHTML(group)}</div>
+            <div class="space-y-2">
+                ${items.map((item, index) => `
+                    <button type="button" class="command-palette-item ${index === 0 ? 'active' : ''}" data-command-palette-id="${escapeHTML(item.id)}">
+                        <span class="command-palette-icon"><i class="fas ${escapeHTML(item.icon)}"></i></span>
+                        <span class="min-w-0">
+                            <span class="block text-sm font-bold text-white">${escapeHTML(item.title)}</span>
+                            <span class="block text-xs text-slate-400">${escapeHTML(item.description)}</span>
+                        </span>
+                        ${item.shortcut ? `<span class="command-palette-shortcut">${escapeHTML(item.shortcut)}</span>` : '<span></span>'}
+                    </button>`).join('')}
+            </div>
+        </div>`).join('');
+
+    const paletteItems = resultsEl.querySelectorAll('.command-palette-item');
+    paletteItems.forEach((item, index) => item.classList.toggle('active', index === 0));
+
+    return matches;
+}
+
+function openCommandPalette(initialQuery = '') {
+    const modal = document.getElementById('command-palette-modal');
+    const input = document.getElementById('command-palette-input');
+    if (!modal || !input) return;
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    input.value = initialQuery;
+    renderCommandPaletteResults(initialQuery);
+    setTimeout(() => input.focus(), 20);
+}
+
+function executeCommandPaletteAction(actionId) {
+    const action = getCommandPaletteActions().find(item => item.id === actionId);
+    if (!action) return;
+    closeCommandPalette();
+    action.action();
+}
+
 function initializeToolsPage() {
     loadToolsState();
+    loadToolsPlannerItems();
 
     const modeSelect = document.getElementById('tools-timer-mode');
     const stopwatchToggle = document.getElementById('tools-stopwatch-toggle');
@@ -16127,6 +16816,10 @@ function initializeToolsPage() {
     const pauseBtn = document.getElementById('tools-timer-pause');
     const resetBtn = document.getElementById('tools-timer-reset');
     const fullscreenBtn = document.getElementById('tools-timer-fullscreen');
+    const autoBreakToggle = document.getElementById('tools-timer-autobreak');
+    const breakLengthSelect = document.getElementById('tools-timer-break-length');
+    const soundToggle = document.getElementById('tools-timer-sound');
+    const timerThemeSelect = document.getElementById('tools-timer-theme');
     const customInput = document.getElementById('tools-timer-custom-input');
     const customApplyBtn = document.getElementById('tools-timer-custom-apply');
     const customDigitButtons = document.querySelectorAll('.tools-time-digit');
@@ -16139,7 +16832,14 @@ function initializeToolsPage() {
     const calcEqualsBtn = document.getElementById('tools-calc-equals');
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
+    const notesInput = document.getElementById('tools-notes-input');
+    const notesClearBtn = document.getElementById('tools-notes-clear');
+    const notesCopyBtn = document.getElementById('tools-notes-copy');
+    const randomiserBtn = document.getElementById('tools-randomiser-generate');
     const gradeSaveBtn = document.getElementById('tools-grade-save');
+    const plannerForm = document.getElementById('tools-planner-form');
+    const plannerList = document.getElementById('tools-planner-list');
+    const plannerClearCompleted = document.getElementById('tools-planner-clear-completed');
     const gradeSubjectSelect = document.getElementById('tools-grade-subject');
     const gradeValueSelect = document.getElementById('tools-grade-value');
     const gradeHistoryBody = document.getElementById('tools-grades-history-body');
@@ -16186,6 +16886,33 @@ function initializeToolsPage() {
         }
         if (fullscreenBtn) {
             fullscreenBtn.addEventListener('click', toggleToolsTimerFullscreen);
+        }
+        if (autoBreakToggle) {
+            autoBreakToggle.addEventListener('change', () => {
+                toolsTimerState.autoBreakEnabled = autoBreakToggle.checked;
+                saveToolsState();
+                updateToolsTimerUI();
+            });
+        }
+        if (breakLengthSelect) {
+            breakLengthSelect.addEventListener('change', () => {
+                toolsTimerState.breakDurationMinutes = Math.max(1, Number(breakLengthSelect.value || 5));
+                saveToolsState();
+                updateToolsTimerUI();
+            });
+        }
+        if (soundToggle) {
+            soundToggle.addEventListener('change', () => {
+                toolsTimerState.soundEnabled = soundToggle.checked;
+                saveToolsState();
+            });
+        }
+        if (timerThemeSelect) {
+            timerThemeSelect.addEventListener('change', () => {
+                toolsTimerState.timerTheme = timerThemeSelect.value || 'blue';
+                saveToolsState();
+                updateToolsTimerUI();
+            });
         }
         document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
 
@@ -16282,7 +17009,51 @@ function initializeToolsPage() {
                 fetchAndRenderDailyQuote(true);
             });
         }
+        if (notesInput) {
+            notesInput.addEventListener('input', () => saveToolsNotes(notesInput.value));
+        }
+        if (notesClearBtn) {
+            notesClearBtn.addEventListener('click', () => {
+                if (notesInput) notesInput.value = '';
+                saveToolsNotes('');
+            });
+        }
+        if (notesCopyBtn) {
+            notesCopyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(notesInput?.value || '');
+                    showToast('Notes copied to clipboard.', 'success');
+                } catch (_) {
+                    showToast('Could not copy notes right now.', 'error');
+                }
+            });
+        }
+        if (randomiserBtn) {
+            randomiserBtn.addEventListener('click', generateStudyRandomiserTask);
+        }
         if (gradeSaveBtn) gradeSaveBtn.addEventListener('click', saveGradeEntry);
+        if (plannerForm) {
+            plannerForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                addToolsPlannerItem();
+            });
+        }
+        if (plannerList) {
+            plannerList.addEventListener('click', (event) => {
+                const toggle = event.target.closest('[data-tools-planner-toggle]');
+                if (toggle) {
+                    toggleToolsPlannerItem(toggle.dataset.toolsPlannerToggle);
+                    return;
+                }
+                const remove = event.target.closest('[data-tools-planner-delete]');
+                if (remove) {
+                    deleteToolsPlannerItem(remove.dataset.toolsPlannerDelete);
+                }
+            });
+        }
+        if (plannerClearCompleted) {
+            plannerClearCompleted.addEventListener('click', clearCompletedToolsPlannerItems);
+        }
         if (gradeSubjectSelect) gradeSubjectSelect.addEventListener('change', toggleGradeCustomSubjectInput);
         if (gradeValueSelect) gradeValueSelect.addEventListener('change', updateGradeSelectPreview);
         if (gradeChartSubjectSelect) gradeChartSubjectSelect.addEventListener('change', renderGradeTrendChart);
@@ -16315,12 +17086,16 @@ function initializeToolsPage() {
     }
 
     updateGradeSubjectOptions();
+    populateStudyRandomiserSubjects();
     renderGradeTrackerTables();
     if (currentUser) subscribeToGradeEntries();
 
     updateToolsTimerUI();
     fetchAndRenderDailyMeme(false);
     fetchAndRenderDailyQuote(false);
+    loadToolsNotes();
+    renderToolsPlanner();
+    generateStudyRandomiserTask();
     updateGradeSelectPreview();
     updateScientificCalculatorResult();
 }
@@ -16339,6 +17114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (footerYear) footerYear.textContent = copyYear;
     const landingYear = document.getElementById('landing-copyright-year');
     if (landingYear) landingYear.textContent = copyYear;
+    initializeUserExperienceControls();
+    applyUserInterfacePreferences();
     // Initialize reCAPTCHA widget if enterprise API is present
     try {
         if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
@@ -16545,11 +17322,70 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const commandPaletteButton = document.getElementById('command-palette-button');
+    const mobileCommandPaletteButton = document.getElementById('mobile-command-palette-button');
+    const commandPaletteInput = document.getElementById('command-palette-input');
+    const commandPaletteResults = document.getElementById('command-palette-results');
+
+    if (commandPaletteButton) {
+        commandPaletteButton.addEventListener('click', () => openCommandPalette());
+    }
+    if (mobileCommandPaletteButton) {
+        mobileCommandPaletteButton.addEventListener('click', () => {
+            if (typeof window.closeMobileMenu === 'function') {
+                window.closeMobileMenu({ restoreFocus: false });
+            }
+            setTimeout(() => openCommandPalette(), 120);
+        });
+    }
+    if (commandPaletteInput) {
+        commandPaletteInput.addEventListener('input', () => {
+            renderCommandPaletteResults(commandPaletteInput.value);
+        });
+        commandPaletteInput.addEventListener('keydown', (event) => {
+            const items = Array.from(document.querySelectorAll('.command-palette-item'));
+            const activeIndex = items.findIndex(item => item.classList.contains('active'));
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (!items.length) return;
+                const delta = event.key === 'ArrowDown' ? 1 : -1;
+                const nextIndex = activeIndex === -1 ? 0 : (activeIndex + delta + items.length) % items.length;
+                items.forEach((item, index) => item.classList.toggle('active', index === nextIndex));
+                items[nextIndex]?.scrollIntoView({ block: 'nearest' });
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                const activeItem = items.find(item => item.classList.contains('active')) || items[0];
+                if (activeItem) executeCommandPaletteAction(activeItem.dataset.commandPaletteId);
+            }
+        });
+    }
+    if (commandPaletteResults) {
+        commandPaletteResults.addEventListener('mousemove', (event) => {
+            const targetItem = event.target.closest('.command-palette-item');
+            if (!targetItem) return;
+            document.querySelectorAll('.command-palette-item.active').forEach(item => item.classList.remove('active'));
+            targetItem.classList.add('active');
+        });
+        commandPaletteResults.addEventListener('click', (event) => {
+            const targetItem = event.target.closest('.command-palette-item');
+            if (!targetItem) return;
+            executeCommandPaletteAction(targetItem.dataset.commandPaletteId);
+        });
+    }
+
     initializeToolsPage();
 
     // Keyboard shortcuts and navigation
     let goPrefix = false; // 'g' then key
     document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            const paletteOpen = document.getElementById('command-palette-modal')?.style.display === 'flex';
+            if (paletteOpen) closeCommandPalette();
+            else openCommandPalette();
+            return;
+        }
+
         // Don't interfere with text inputs / editors (including contenteditable blog editor)
         const target = e.target;
         const tagName = target && target.tagName;
@@ -16660,6 +17496,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const palette = generateAccentPalette(rgb);
             applyAccent(palette);
             localStorage.setItem('gcsemate_accent', JSON.stringify(palette));
+            saveUIPreferences({ themePreset: 'custom' });
+            syncThemePresetButtons('__custom__');
         });
         // Initialize picker value based on current accent if stored
         try {
@@ -16678,6 +17516,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const def = { fifty:[239,246,255], hundred:[219,234,254], threeHundred:[147,197,253], fourHundred:[96,165,250], fiveHundred:[59,130,246], sixHundred:[37,99,235], sevenHundred:[29,78,216] };
             applyAccent(def);
             localStorage.removeItem('gcsemate_accent');
+            saveUIPreferences({ themePreset: 'classic' });
+            syncThemePresetButtons('classic');
             try { if (picker) picker.value = '#3b82f6'; } catch (_) {}
         });
     }
@@ -16966,6 +17806,111 @@ function handleNetworkError(error, context = '') {
     showToast('Something went wrong. Please try again.', 'error');
     return 'An error occurred';
 }
+
+function getSavedUIPreferences() {
+    try {
+        return JSON.parse(localStorage.getItem(UI_PREFS_STORAGE_KEY) || '{}') || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function saveUIPreferences(nextPrefs = {}) {
+    const merged = {
+        ...getSavedUIPreferences(),
+        ...nextPrefs
+    };
+    try {
+        localStorage.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify(merged));
+    } catch (_) {}
+}
+
+function applyUserInterfacePreferences() {
+    const prefs = getSavedUIPreferences();
+    const body = document.body;
+    if (!body) return;
+
+    body.classList.toggle('compact-ui', prefs.density === 'compact');
+    body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
+    body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
+    body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
+
+    const densitySelect = document.getElementById('ui-density-select');
+    const radiusSelect = document.getElementById('ui-radius-select');
+    const motionSelect = document.getElementById('ui-motion-select');
+    const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const adminDensitySelect = document.getElementById('admin-density-select');
+    const adminMotionSelect = document.getElementById('admin-motion-select');
+    if (densitySelect) densitySelect.value = prefs.density || 'comfortable';
+    if (radiusSelect) radiusSelect.value = prefs.radius || 'soft';
+    if (motionSelect) motionSelect.value = prefs.motion || 'smooth';
+    if (compactBadgesToggle) compactBadgesToggle.checked = !!prefs.compactBadges;
+    if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
+    if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
+
+    syncThemePresetButtons(prefs.themePreset || 'classic');
+}
+
+function applyThemePreset(presetName = 'classic') {
+    const hex = THEME_PRESETS[presetName] || THEME_PRESETS.classic;
+    const rgb = hexToRgb(hex);
+    if (!rgb) return;
+    const palette = generateAccentPalette(rgb);
+    applyAccent(palette);
+    try { localStorage.setItem('gcsemate_accent', JSON.stringify(palette)); } catch (_) {}
+    saveUIPreferences({ themePreset: presetName });
+    syncThemePresetButtons(presetName);
+}
+
+function syncThemePresetButtons(activePreset = 'classic') {
+    document.querySelectorAll('.theme-preset-btn').forEach(button => {
+        button.classList.toggle('is-active', button.dataset.themePreset === activePreset);
+    });
+}
+
+function initializeUserExperienceControls() {
+    if (window.__gcsemateExperienceControlsSetup) return;
+    window.__gcsemateExperienceControlsSetup = true;
+
+    document.querySelectorAll('.theme-preset-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const preset = button.dataset.themePreset || 'classic';
+            applyThemePreset(preset);
+        });
+    });
+
+    const densitySelect = document.getElementById('ui-density-select');
+    const radiusSelect = document.getElementById('ui-radius-select');
+    const motionSelect = document.getElementById('ui-motion-select');
+    const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const adminDensitySelect = document.getElementById('admin-density-select');
+    const adminMotionSelect = document.getElementById('admin-motion-select');
+
+    densitySelect?.addEventListener('change', () => {
+        saveUIPreferences({ density: densitySelect.value });
+        applyUserInterfacePreferences();
+    });
+    radiusSelect?.addEventListener('change', () => {
+        saveUIPreferences({ radius: radiusSelect.value });
+        applyUserInterfacePreferences();
+    });
+    motionSelect?.addEventListener('change', () => {
+        saveUIPreferences({ motion: motionSelect.value });
+        applyUserInterfacePreferences();
+    });
+    compactBadgesToggle?.addEventListener('change', () => {
+        saveUIPreferences({ compactBadges: compactBadgesToggle.checked });
+        applyUserInterfacePreferences();
+    });
+    adminDensitySelect?.addEventListener('change', () => {
+        saveUIPreferences({ density: adminDensitySelect.value });
+        applyUserInterfacePreferences();
+    });
+    adminMotionSelect?.addEventListener('change', () => {
+        saveUIPreferences({ motion: adminMotionSelect.value });
+        applyUserInterfacePreferences();
+    });
+}
 // Accent helpers
 function hexToRgb(hex) {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -16996,6 +17941,15 @@ function applyAccent(p) {
     r.style.setProperty('--accent-500', get(p.fiveHundred).join(' '));
     r.style.setProperty('--accent-600', get(p.sixHundred).join(' '));
     r.style.setProperty('--accent-700', get(p.sevenHundred || p.sevenHunded || p.sixHundred).join(' '));
+    const accentSwatch = document.getElementById('accent-swatch');
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    const toCss = (triplet) => `rgb(${get(triplet).join(' ')})`;
+    if (accentSwatch) accentSwatch.style.background = toCss(p.sixHundred);
+    if (themeMeta) themeMeta.setAttribute('content', rgbArrayToHex(get(p.sixHundred).map(Number)));
+}
+
+function rgbArrayToHex(rgb = []) {
+    return `#${rgb.map(value => Math.max(0, Math.min(255, Number(value) || 0)).toString(16).padStart(2, '0')).join('')}`;
 }
 
 // Security helper: Escape JavaScript string for use in onclick handlers
