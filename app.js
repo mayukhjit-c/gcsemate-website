@@ -4233,8 +4233,8 @@ let currentTipIndex = 0;
 function cleanAIResponse(text) {
     if (!text || typeof text !== 'string') return text;
     
-    // Replace em dashes (—) and en dashes (–) with regular hyphens or colons
-    text = text.replace(/—/g, '-').replace(/–/g, '-');
+    // Replace long dash characters with regular hyphens
+    text = text.replace(/[\u2014\u2013]/g, '-');
     
     // Remove emojis and emoticons (common Unicode ranges)
     // This covers most emoji ranges including:
@@ -10467,10 +10467,10 @@ function handleCheckoutQueryParamsIfPresent() {
         } else if (flag === 'success') {
             if (currentUser?.tier === 'paid') {
                 alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
-                alert.textContent = 'Payment received — your Pro access is active.';
+                alert.textContent = 'Payment received. Your Pro access is active.';
             } else {
                 alert.className = 'rounded-lg border p-4 text-left text-sm border-blue-200 bg-blue-50 text-blue-900';
-                alert.textContent = 'Payment received — activating Pro access. This can take a few seconds…';
+                alert.textContent = 'Payment received. Activating Pro access now. This can take a few seconds.';
                 waitForProActivation(45000).then((ok) => {
                     if (ok) {
                         alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
@@ -11556,7 +11556,7 @@ function attachAddPlaylistPreview() {
             embed.innerHTML = `
                 <div class="w-full rounded overflow-hidden border border-gray-200/60">
                     <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-                    <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong> — <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+                    <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong>. <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
                 </div>`;
             preview.appendChild(embed);
         } catch (e) {
@@ -11904,7 +11904,7 @@ async function editPlaylist(id, currentTitle) {
                 embed.innerHTML = `
                     <div class="w-full rounded overflow-hidden border border-gray-200/60">
                         <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-                        <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong> — <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+                        <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong>. <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
                     </div>`;
                 preview.appendChild(embed);
             } catch (e) {
@@ -12738,7 +12738,7 @@ function renderBlogFeaturedPost(posts = []) {
     const latestPost = [...posts].sort((a, b) => b.safeDate - a.safeDate)[0];
     if (totalPostsEl) totalPostsEl.textContent = String(posts.length);
     if (totalSubjectsEl) totalSubjectsEl.textContent = String(subjectCount);
-    if (latestDateEl) latestDateEl.textContent = latestPost ? latestPost.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    if (latestDateEl) latestDateEl.textContent = latestPost ? latestPost.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not yet';
 
     const featuredPost = posts[0] || latestPost;
     if (!featuredPost) {
@@ -15848,13 +15848,13 @@ function decimalToFraction(value, tolerance = 1e-10, maxDenominator = 10000) {
 }
 
 function formatDecimal(value) {
-    if (!Number.isFinite(value)) return '—';
+    if (!Number.isFinite(value)) return 'Undefined';
     if (Number.isInteger(value)) return String(value);
     return Number(value.toPrecision(12)).toString();
 }
 
 function formatScientific(value) {
-    if (!Number.isFinite(value)) return '—';
+    if (!Number.isFinite(value)) return 'Undefined';
     if (value === 0) return '0 × 10^0';
     const exponent = Math.floor(Math.log10(Math.abs(value)));
     const mantissa = value / (10 ** exponent);
@@ -15863,7 +15863,7 @@ function formatScientific(value) {
 
 function formatFraction(value) {
     const fraction = decimalToFraction(value);
-    if (!fraction) return '—';
+    if (!fraction) return 'Unavailable';
     if (fraction.denominator === 1) return String(fraction.numerator);
     return `${fraction.numerator}/${fraction.denominator}`;
 }
@@ -15968,7 +15968,7 @@ function updateScientificCalculatorResult() {
             secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-gray-500';
         }
     } catch (_) {
-        resultEl.textContent = 'Result: —';
+        resultEl.textContent = 'Result: Invalid input';
         resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-red-600';
         if (secondaryEl) {
             secondaryEl.textContent = 'Use valid scientific input such as sin(30), 1/3, sqrt(2), or 6.02*10^23.';
@@ -16929,10 +16929,10 @@ function getQuoteElements() {
 function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
     const elements = getQuoteElements();
     if (elements.loadingTextEl) elements.loadingTextEl.textContent = quoteText || 'No quote available right now.';
-    if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `— ${quoteAuthor}` : '';
+    if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `By ${quoteAuthor}` : '';
     if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
     if (elements.toolsTextEl) elements.toolsTextEl.textContent = quoteText || '';
-    if (elements.toolsAuthorEl) elements.toolsAuthorEl.textContent = quoteAuthor ? `— ${quoteAuthor}` : '';
+    if (elements.toolsAuthorEl) elements.toolsAuthorEl.textContent = quoteAuthor ? `By ${quoteAuthor}` : '';
 }
 
 async function fetchAndRenderDailyQuote(forceRefresh = false) {

@@ -1608,7 +1608,7 @@ border: none !important;
 outline: none !important;
 filter: none !important;
         }
-        /* Note: Avoid global suppression of blur/shadows — Tailwind utilities handle this.
+        /* Note: Avoid global suppression of blur/shadows. Tailwind utilities handle this.
            Use the `.low-spec` class for performance-focused fallbacks instead. */
 
         /* Seamless page loading overlay */
@@ -4650,6 +4650,357 @@ will-change: transform;
             box-shadow: 0 16px 34px -24px rgba(var(--accent-500), 0.42);
         }
 
+        /* About page redesign */
+        #about-page {
+            max-width: 76rem;
+        }
+
+        .about-shell {
+            position: relative;
+            isolation: isolate;
+        }
+
+        .about-orb {
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(54px);
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .about-orb-one {
+            width: 14rem;
+            height: 14rem;
+            top: 2rem;
+            right: 6%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.42), rgba(59, 130, 246, 0));
+        }
+
+        .about-orb-two {
+            width: 12rem;
+            height: 12rem;
+            left: 2%;
+            bottom: 5rem;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.28), rgba(59, 130, 246, 0));
+        }
+
+        .about-hero-card,
+        .about-focus-panel,
+        .about-cta-card,
+        .about-story-card,
+        .about-visual-card,
+        .about-stat-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(191, 219, 254, 0.62);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(239, 246, 255, 0.72));
+            box-shadow: 0 26px 60px -42px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255,255,255,0.8);
+            backdrop-filter: blur(18px);
+        }
+
+        .about-hero-card::before,
+        .about-focus-panel::before,
+        .about-cta-card::before,
+        .about-story-card::before,
+        .about-visual-card::before,
+        .about-stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.34), transparent 42%);
+            pointer-events: none;
+        }
+
+        .about-hero-card {
+            border-radius: 2rem;
+            padding: clamp(1.4rem, 3vw, 2.4rem);
+        }
+
+        .about-hero-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.88fr);
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .about-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid rgba(147, 197, 253, 0.6);
+            background: rgba(239, 246, 255, 0.84);
+            color: rgb(30, 64, 175);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .about-chip--soft {
+            background: rgba(255,255,255,0.72);
+            color: rgb(51, 65, 85);
+        }
+
+        .about-title {
+            font-size: clamp(2.1rem, 4vw, 3.7rem);
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #0f172a;
+            max-width: 14ch;
+        }
+
+        .about-lead {
+            font-size: clamp(1.02rem, 2vw, 1.18rem);
+            line-height: 1.75;
+            color: #334155;
+            max-width: 58ch;
+        }
+
+        .about-body {
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #475569;
+            max-width: 62ch;
+        }
+
+        .about-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .about-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-height: 2.75rem;
+            padding: 0.7rem 1rem;
+            border-radius: 1rem;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(191, 219, 254, 0.72);
+            color: #1e3a8a;
+            font-weight: 700;
+            box-shadow: 0 12px 26px -22px rgba(37, 99, 235, 0.3);
+        }
+
+        .about-visual-card {
+            border-radius: 1.75rem;
+            padding: 1rem;
+        }
+
+        .about-hero-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 5 / 4;
+            object-fit: cover;
+            border-radius: 1.3rem;
+            box-shadow: 0 24px 44px -30px rgba(15, 23, 42, 0.35);
+        }
+
+        .about-visual-caption {
+            margin-top: 0.85rem;
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        .about-stat-grid,
+        .about-story-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .about-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 1rem;
+        }
+
+        .about-stat-card {
+            border-radius: 1.15rem;
+            padding: 1rem;
+        }
+
+        .about-stat-value {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -0.03em;
+        }
+
+        .about-stat-label {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: #475569;
+        }
+
+        .about-story-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .about-story-card {
+            border-radius: 1.5rem;
+            padding: 1.35rem;
+            min-height: 100%;
+        }
+
+        .about-story-card--blue {
+            background: linear-gradient(145deg, rgba(239,246,255,0.9), rgba(219,234,254,0.72));
+        }
+
+        .about-story-card--emerald {
+            background: linear-gradient(145deg, rgba(236,253,245,0.92), rgba(209,250,229,0.74));
+        }
+
+        .about-story-card--violet {
+            background: linear-gradient(145deg, rgba(245,243,255,0.92), rgba(233,213,255,0.74));
+        }
+
+        .about-story-card--amber {
+            background: linear-gradient(145deg, rgba(255,251,235,0.94), rgba(254,243,199,0.76));
+        }
+
+        .about-card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+            border-radius: 1rem;
+            background: rgba(255,255,255,0.82);
+            color: #2563eb;
+            box-shadow: 0 12px 26px -20px rgba(37, 99, 235, 0.34);
+        }
+
+        .about-story-card h3,
+        .about-section-title {
+            font-size: 1.45rem;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #0f172a;
+        }
+
+        .about-story-card p {
+            margin-top: 0.85rem;
+            color: #475569;
+            line-height: 1.75;
+        }
+
+        .about-focus-panel,
+        .about-cta-card {
+            border-radius: 1.8rem;
+            padding: clamp(1.2rem, 2.6vw, 2rem);
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .about-checklist {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .about-check-item {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.95rem 1rem;
+            border-radius: 1rem;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(191, 219, 254, 0.72);
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .about-check-item i {
+            color: #2563eb;
+        }
+
+        .about-cta-card {
+            background: linear-gradient(145deg, rgba(248,250,252,0.88), rgba(224,231,255,0.78), rgba(239,246,255,0.8));
+        }
+
+        .about-cta-button {
+            min-height: 3rem;
+            padding: 0.85rem 1.2rem;
+            border-radius: 1rem;
+            font-weight: 800;
+            transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+        }
+
+        .about-cta-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .about-cta-button--primary {
+            color: white;
+            background: linear-gradient(135deg, rgb(37, 99, 235), rgb(79, 70, 229));
+            box-shadow: 0 18px 34px -22px rgba(37, 99, 235, 0.5);
+        }
+
+        .about-cta-button--secondary {
+            color: #1e3a8a;
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(147, 197, 253, 0.7);
+            box-shadow: 0 14px 30px -24px rgba(37, 99, 235, 0.34);
+        }
+
+        body.dark-theme .about-hero-card,
+        body.dark-theme .about-focus-panel,
+        body.dark-theme .about-cta-card,
+        body.dark-theme .about-story-card,
+        body.dark-theme .about-visual-card,
+        body.dark-theme .about-stat-card {
+            border-color: rgba(96, 165, 250, 0.28);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.72));
+            box-shadow: 0 28px 60px -40px rgba(2, 6, 23, 0.6), inset 0 1px 0 rgba(148,163,184,0.12);
+        }
+
+        body.dark-theme .about-chip,
+        body.dark-theme .about-pill,
+        body.dark-theme .about-check-item,
+        body.dark-theme .about-cta-button--secondary {
+            background: rgba(15, 23, 42, 0.56);
+            border-color: rgba(96, 165, 250, 0.28);
+            color: #dbeafe;
+        }
+
+        body.dark-theme .about-chip--soft,
+        body.dark-theme .about-visual-caption,
+        body.dark-theme .about-body,
+        body.dark-theme .about-story-card p,
+        body.dark-theme .about-stat-label {
+            color: #cbd5e1;
+        }
+
+        body.dark-theme .about-title,
+        body.dark-theme .about-lead,
+        body.dark-theme .about-stat-value,
+        body.dark-theme .about-story-card h3,
+        body.dark-theme .about-section-title,
+        body.dark-theme .about-check-item {
+            color: #f8fafc;
+        }
+
+        body.dark-theme .about-orb-one {
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.28), rgba(59, 130, 246, 0));
+        }
+
+        body.dark-theme .about-orb-two {
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.22), rgba(59, 130, 246, 0));
+        }
+
         .admin-theme-preset {
             min-height: 2.5rem;
         }
@@ -4702,6 +5053,21 @@ will-change: transform;
         }
 
         @media (max-width: 768px) {
+            .about-hero-grid,
+            .about-focus-panel,
+            .about-cta-card,
+            .about-story-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .about-title {
+                max-width: none;
+            }
+
+            .about-stat-grid {
+                grid-template-columns: 1fr;
+            }
+
             .timer-setting-card,
             .timer-metric-card {
                 padding: 0.9rem;
