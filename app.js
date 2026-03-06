@@ -31,7 +31,9 @@ const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
     violet: '#7c3aed',
-    sunset: '#ea580c'
+    sunset: '#ea580c',
+    ocean: '#0891b2',
+    rose: '#e11d48'
 };
 const STUDY_RANDOMISER_TEMPLATES = [
     ({ subject, minutes }) => `Spend ${minutes} minutes on ${subject}: summarise one topic from memory, then check what you missed.`,
@@ -105,7 +107,7 @@ const FIRESTORE_FORCE_LONG_POLLING_KEY = '__gcsemate_force_long_polling';
 const BLOCKED_BY_CLIENT_PATTERN = /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i;
 const STRIPE_BLOCKED_PATTERN = /r\.stripe\.com|errors\.stripe\.com|pricing-table/i;
 const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write)\/channel/i;
-const EXTENSION_NOISE_PATTERN = /chrome-extension:\/\/|moz-extension:\/\/|safari-extension:\/\/|extension context invalidated|message channel closed|content script/i;
+const EXTENSION_NOISE_PATTERN = /chrome-extension:\/\/|moz-extension:\/\/|safari-extension:\/\/|extension context invalidated|message channel closed|content script|removelisteners/i;
 let hasShownBlockerWarning = false;
 let firestoreAssertionCount = 0;
 let hasShownFirestoreRecoveryWarning = false;
@@ -130,6 +132,48 @@ function isIgnorableExtensionNoise(errorLike) {
         ? errorLike
         : `${errorLike?.message || ''} ${errorLike?.reason?.message || ''} ${errorLike?.filename || ''} ${errorLike?.target?.src || ''}`;
     return EXTENSION_NOISE_PATTERN.test(text);
+}
+
+function getNextQuickThemeMode(currentMode = 'auto') {
+    if (currentMode === 'dark') return 'light';
+    if (currentMode === 'light') return 'dark';
+    return 'dark';
+}
+
+function toggleQuickThemeMode() {
+    const currentMode = getSavedUIPreferences().themeMode || 'auto';
+    saveUIPreferences({ themeMode: getNextQuickThemeMode(currentMode) });
+    applyUserInterfacePreferences();
+}
+
+function syncQuickThemeToggles(themeMode = 'auto') {
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    [document.getElementById('theme-quick-toggle'), document.getElementById('theme-quick-toggle-mobile')]
+        .filter(Boolean)
+        .forEach((button) => {
+            const icon = button.querySelector('i');
+            const label = button.querySelector('span');
+            if (icon) {
+                icon.className = `fas ${isDark ? 'fa-sun' : 'fa-moon'}${button.id === 'theme-quick-toggle' ? ' text-xs' : ''}`;
+            }
+            if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+            button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            button.dataset.themeMode = themeMode;
+        });
+}
+
+function applyFeedbackWidgetVisibility() {
+    const dismissed = (() => {
+        try { return localStorage.getItem('gcsemate_feedback_hidden') === '1'; } catch (_) { return false; }
+    })();
+    document.body.classList.toggle('feedback-widget-hidden', dismissed);
+    const dismissButton = document.getElementById('feedback-dismiss-button');
+    if (dismissButton) dismissButton.classList.toggle('hidden', dismissed);
+}
+
+function dismissFeedbackWidget() {
+    try { localStorage.setItem('gcsemate_feedback_hidden', '1'); } catch (_) {}
+    applyFeedbackWidgetVisibility();
 }
 
 function showBlockedByClientWarningOnce() {
@@ -392,6 +436,10 @@ class ErrorHandler {
     setupGlobalErrorHandlers() {
         // Handle uncaught JavaScript errors
         window.addEventListener('error', (event) => {
+            if (isIgnorableExtensionNoise(event)) {
+                event.preventDefault();
+                return;
+            }
             this.handleError({
                 type: 'JavaScript Error',
                 message: event.message,
@@ -407,6 +455,11 @@ class ErrorHandler {
             const reasonMessage = event.reason?.message || event.reason?.toString() || 'Unknown promise rejection';
             const isFirestoreAssertion = typeof reasonMessage === 'string' && reasonMessage.includes('INTERNAL ASSERTION FAILED');
             const isBlockedByClient = isLikelyBlockedByClient(reasonMessage);
+            const isExtensionNoise = isIgnorableExtensionNoise(reasonMessage);
+            if (isExtensionNoise) {
+                event.preventDefault();
+                return;
+            }
             if (isBlockedByClient) {
                 event.preventDefault();
                 showBlockedByClientWarningOnce();
@@ -433,6 +486,8 @@ class ErrorHandler {
         // Override Firebase error handling
         const originalConsoleError = console.error;
         console.error = (...args) => {
+            const combinedMessage = args.map(arg => typeof arg === 'string' ? arg : (arg?.message || '')).join(' ');
+            if (isIgnorableExtensionNoise(combinedMessage)) return;
             if (args[0] && typeof args[0] === 'string' && args[0].includes('Firebase')) {
                 this.handleError({
                     type: 'Firebase Error',
@@ -11889,14 +11944,17 @@ async function editPlaylist(id, currentTitle) {
     };
 }
 function deletePlaylist(id) {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     showConfirmationModal('Delete this playlist?', async () => {
         try {
             await db.collection('videoPlaylists').doc(id).delete();
             showToast('Playlist deleted', 'success');
         } catch (e) {
             console.error('Delete failed', e);
-            showToast('Could not delete playlist', 'error');
+            const friendly = e?.code === 'permission-denied'
+                ? 'Playlist delete is blocked by Firestore rules. Publish the updated rules, then try again.'
+                : 'Could not delete playlist just now.';
+            showToast(friendly, 'warning');
         }
     }, { okText: 'Delete' });
 }
@@ -15431,7 +15489,7 @@ function loadToolsState() {
             ? Math.min(30, Math.max(1, parsed.breakDurationMinutes))
             : 5;
         toolsTimerState.soundEnabled = parsed.soundEnabled !== false;
-        toolsTimerState.timerTheme = ['blue', 'sunset', 'forest', 'midnight'].includes(parsed.timerTheme) ? parsed.timerTheme : 'blue';
+        toolsTimerState.timerTheme = ['blue', 'sunset', 'forest', 'midnight', 'aurora', 'rose'].includes(parsed.timerTheme) ? parsed.timerTheme : 'blue';
         toolsTimerState.isBreakMode = !!parsed.isBreakMode;
     } catch (_) {}
 }
@@ -15917,6 +15975,19 @@ function updateScientificCalculatorResult() {
             secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-red-500';
         }
     }
+}
+
+function removeLastCalculatorToken(value = '') {
+    const source = String(value || '');
+    const tokenPatterns = [
+        'asin(', 'acos(', 'atan(', 'sqrt(', 'round(', 'floor(', 'log10(',
+        'sin(', 'cos(', 'tan(', 'log(', 'ln(', 'abs(', '1/(', '*10^', 'pi', 'e'
+    ];
+    const match = tokenPatterns.find(token => source.toLowerCase().endsWith(token));
+    if (match) {
+        return source.slice(0, -match.length);
+    }
+    return source.slice(0, -1);
 }
 
 function loadToolsPlannerItems() {
@@ -17209,6 +17280,15 @@ function initializeToolsPage() {
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     updateScientificCalculatorResult();
+                    return;
+                }
+                if (event.key === 'Backspace' && calcInput.selectionStart === calcInput.selectionEnd && calcInput.selectionStart === calcInput.value.length) {
+                    const nextValue = removeLastCalculatorToken(calcInput.value);
+                    if (nextValue !== calcInput.value.slice(0, -1)) {
+                        event.preventDefault();
+                        calcInput.value = nextValue;
+                        updateScientificCalculatorResult();
+                    }
                 }
             });
         }
@@ -17233,7 +17313,7 @@ function initializeToolsPage() {
         if (calcBackspaceBtn) {
             calcBackspaceBtn.addEventListener('click', () => {
                 if (!calcInput) return;
-                calcInput.value = calcInput.value.slice(0, -1);
+                calcInput.value = removeLastCalculatorToken(calcInput.value);
                 updateScientificCalculatorResult();
                 calcInput.focus();
             });
@@ -18109,6 +18189,9 @@ function applyUserInterfacePreferences() {
     const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
+    const quickThemeToggle = document.getElementById('theme-quick-toggle');
+    const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
+    const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
     if (densitySelect) densitySelect.value = prefs.density || 'comfortable';
     if (radiusSelect) radiusSelect.value = prefs.radius || 'soft';
     if (motionSelect) motionSelect.value = prefs.motion || 'smooth';
@@ -18118,6 +18201,7 @@ function applyUserInterfacePreferences() {
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
 
     syncThemePresetButtons(prefs.themePreset || 'classic');
+    syncQuickThemeToggles(themeMode);
 }
 
 function applyThemePreset(presetName = 'classic') {
@@ -18184,6 +18268,10 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ motion: adminMotionSelect.value });
         applyUserInterfacePreferences();
     });
+    quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
+    mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
+    feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
+    applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {
         const media = window.matchMedia('(prefers-color-scheme: dark)');

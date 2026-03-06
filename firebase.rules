@@ -126,7 +126,7 @@ service cloud.firestore {
     // Admins are expected to manage playlist metadata (title, playlistId, subject, tags, url).
     match /videoPlaylists/{id} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin() &&
+      allow create, update: if isAdmin() &&
         // Only allow a controlled set of fields so clients cannot inject arbitrary data.
         request.resource.data.keys().hasOnly(['title','playlistId','subject','tags','url','createdAt','createdBy','updatedAt','description']) &&
         // Basic type checks
@@ -138,6 +138,7 @@ service cloud.firestore {
         // tags must be a list (may be empty); limit size for safety
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;
+      allow delete: if isAdmin();
     }
 
     // Useful links: readable by signed-in; writable by admin
@@ -150,7 +151,7 @@ service cloud.firestore {
     match /blogPosts/{postId} {
       // Posts are authoritatively managed by admins. Clients may read.
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin() &&
+      allow create, update: if isAdmin() &&
         // Enforce a constrained set of fields for blog posts
         request.resource.data.keys().hasOnly(['title','content','image','tags','subject','createdAt','createdBy','updatedAt','authorId','authorName','imagePublicIds']) &&
         request.resource.data.title is string &&
@@ -164,6 +165,7 @@ service cloud.firestore {
         // tags optional but if present must be a list and limited in size
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;
+      allow delete: if isAdmin();
 
       match /comments/{commentId} {
         allow read: if isSignedIn();
@@ -183,9 +185,10 @@ service cloud.firestore {
     // Playlist tags: centralized tag management controlled by admins.
     match /playlistTags/{tagId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin() &&
+      allow create, update: if isAdmin() &&
         request.resource.data.keys().hasOnly(['name','createdAt','createdBy']) &&
         request.resource.data.name is string && request.resource.data.name.size() > 0;
+      allow delete: if isAdmin();
     }
 
     // Global events
