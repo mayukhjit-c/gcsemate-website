@@ -176,9 +176,37 @@ function dismissFeedbackWidget() {
     applyFeedbackWidgetVisibility();
 }
 
-function showBlockedByClientWarningOnce() {
+function applyStripeEmbedFallback() {
+    const pricingTable = document.querySelector('stripe-pricing-table');
+    if (!pricingTable) return;
+    const wrapper = pricingTable.parentElement;
+    if (!wrapper || wrapper.dataset.blockerFallbackApplied === '1') return;
+
+    wrapper.dataset.blockerFallbackApplied = '1';
+    pricingTable.classList.add('hidden');
+
+    const fallback = document.createElement('div');
+    fallback.className = 'rounded-2xl border border-amber-200 bg-amber-50/95 p-5 text-left text-amber-950 shadow-sm';
+    fallback.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-amber-600"><i class="fas fa-shield-alt"></i></div>
+            <div class="space-y-2">
+                <h4 class="text-base font-bold text-amber-900">Checkout embed blocked</h4>
+                <p class="text-sm leading-relaxed text-amber-900">A browser extension or privacy blocker stopped Stripe from loading fully. You can temporarily allow Stripe for this site, or email <a class="font-semibold underline hover:text-amber-700" href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> for manual setup.</p>
+            </div>
+        </div>`;
+    wrapper.appendChild(fallback);
+}
+
+function showBlockedByClientWarningOnce(errorLike = '') {
     if (hasShownBlockerWarning) return;
     hasShownBlockerWarning = true;
+    const messageText = typeof errorLike === 'string'
+        ? errorLike
+        : `${errorLike?.message || ''} ${errorLike?.reason?.message || ''} ${errorLike?.filename || ''} ${errorLike?.target?.src || ''}`;
+    if (STRIPE_BLOCKED_PATTERN.test(messageText)) {
+        applyStripeEmbedFallback();
+    }
     setTimeout(() => {
         try {
             showToast('Content blocker detected: Stripe/Firestore telemetry requests were blocked. Core app features may be limited.', 'warning', 7000);
@@ -215,7 +243,7 @@ window.addEventListener('error', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
         console.warn('[suppressed] blocked-by-client resource error');
-        showBlockedByClientWarningOnce();
+        showBlockedByClientWarningOnce(event);
         return;
     }
     if (event?.message && FIRESTORE_ASSERTION_PATTERN.test(event.message)) {
@@ -238,7 +266,7 @@ window.addEventListener('unhandledrejection', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
         console.warn('[suppressed] blocked-by-client rejection');
-        showBlockedByClientWarningOnce();
+        showBlockedByClientWarningOnce(reason || msg);
         return;
     }
     if (FIRESTORE_ASSERTION_PATTERN.test(msg)) {
@@ -440,6 +468,16 @@ class ErrorHandler {
                 event.preventDefault();
                 return;
             }
+            if (isLikelyBlockedByClient(event)) {
+                event.preventDefault();
+                showBlockedByClientWarningOnce(event);
+                return;
+            }
+            if (event?.message && FIRESTORE_ASSERTION_PATTERN.test(event.message)) {
+                event.preventDefault();
+                handleFirestoreAssertionEvent();
+                return;
+            }
             this.handleError({
                 type: 'JavaScript Error',
                 message: event.message,
@@ -462,15 +500,17 @@ class ErrorHandler {
             }
             if (isBlockedByClient) {
                 event.preventDefault();
-                showBlockedByClientWarningOnce();
+                showBlockedByClientWarningOnce(reasonMessage);
+                return;
             } else if (isFirestoreAssertion) {
                 // Prevent noisy console spam and immediately try recovery
                 event.preventDefault();
                 recoverFirestoreSession();
-            } else {
-                // Mark as handled so browsers don't double-log while we surface our own toast
-                event.preventDefault();
+                return;
             }
+
+            // Mark as handled so browsers don't double-log while we surface our own toast
+            event.preventDefault();
             this.handleError({
                 type: 'Unhandled Promise Rejection',
                 message: reasonMessage,
@@ -488,6 +528,14 @@ class ErrorHandler {
         console.error = (...args) => {
             const combinedMessage = args.map(arg => typeof arg === 'string' ? arg : (arg?.message || '')).join(' ');
             if (isIgnorableExtensionNoise(combinedMessage)) return;
+            if (isLikelyBlockedByClient(combinedMessage)) {
+                showBlockedByClientWarningOnce(combinedMessage);
+                return;
+            }
+            if (FIRESTORE_ASSERTION_PATTERN.test(combinedMessage)) {
+                handleFirestoreAssertionEvent();
+                return;
+            }
             if (args[0] && typeof args[0] === 'string' && args[0].includes('Firebase')) {
                 this.handleError({
                     type: 'Firebase Error',
@@ -18239,6 +18287,9 @@ function initializeUserExperienceControls() {
     const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
+    const quickThemeToggle = document.getElementById('theme-quick-toggle');
+    const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
+    const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
 
     densitySelect?.addEventListener('change', () => {
         saveUIPreferences({ density: densitySelect.value });
