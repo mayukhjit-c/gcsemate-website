@@ -24,7 +24,12 @@ service cloud.firestore {
           )
         );
     }
-    function isPaid() { return isSignedIn() && userDoc().tier == 'paid'; }
+    function isPremiumTier() {
+      return isSignedIn() &&
+        userDoc() != null &&
+        (userDoc().tier == 'paid' || userDoc().tier == 'friend_family');
+    }
+    function isPaid() { return isPremiumTier(); }
     function hasProtectedUserFieldChanges() {
       return request.resource.data.diff(resource.data).changedKeys().hasAny([
         'role','tier','allowedSubjects','temporaryAccess','forceLogoutAt',
