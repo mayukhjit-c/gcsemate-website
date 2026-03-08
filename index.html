@@ -22,6 +22,7 @@
     <link rel="preconnect" href="https://drive.google.com">
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <meta name="keywords" content="GCSE revision, GCSE past papers, GCSE study notes, GCSE exam preparation, AQA GCSE, Edexcel GCSE, OCR GCSE, GCSE Maths, GCSE Science, GCSE English, GCSE History, GCSE Geography, free GCSE resources, GCSE revision website, GCSE study guide, GCSE exam help, GCSE revision tips, GCSE online learning, GCSE student resources, UK GCSE exams, #GCSERevision, #PastPapers, #StudySmarter">
     <meta name="author" content="Mayukhjit Chakraborty - Creator of GCSEMate">
@@ -29,15 +30,16 @@
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="googlebot" content="index, follow">
     <meta name="bingbot" content="index, follow">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#2f6f8f">
     <script>
         (function () {
             try {
                 var prefs = JSON.parse(localStorage.getItem('gcsemate_ui_prefs') || '{}') || {};
-                var mode = prefs.themeMode || 'auto';
-                var dark = mode === 'dark' || (mode === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                document.documentElement.classList.toggle('dark-theme', !!dark);
+                prefs.themeMode = 'light';
+                localStorage.setItem('gcsemate_ui_prefs', JSON.stringify(prefs));
             } catch (_) {}
+            document.documentElement.classList.remove('dark-theme');
+            document.documentElement.style.colorScheme = 'light';
         })();
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -842,6 +844,9 @@
                     <img src="gcsemate%20new.png" alt="GCSEMate - GCSE Revision Platform" class="h-8 sm:h-10 w-auto transition-transform duration-200 hover:scale-105" loading="eager" decoding="async" width="120" height="40" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
                 </a>
             </div>
+            <div class="hidden xl:flex items-center rounded-full border border-stone-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-stone-600 shadow-sm backdrop-blur-md">
+                Hand-built revision workspace
+            </div>
             <nav class="hidden lg:flex flex-1 justify-center items-center flex-wrap gap-x-4 xl:gap-x-6 2xl:gap-x-8 gap-y-2 text-sm font-semibold px-4 min-w-0 overflow-x-auto whitespace-nowrap no-scrollbar" style="overflow-y: visible;">
                 <a href="/" class="nav-link py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0 group flex items-center" data-page="subject-dashboard-page" data-tooltip="View your subjects">
                     <i class="fas fa-folder-open w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
@@ -882,10 +887,6 @@
                 </a>
             </nav>
             <div class="hidden lg:flex items-center min-w-0 flex-shrink-0 gap-3">
-                <button id="theme-quick-toggle" class="inline-flex items-center gap-2 rounded-xl border border-blue-200/70 bg-gradient-to-r from-blue-50/95 to-indigo-50/95 px-3 py-2 text-sm font-semibold text-blue-700 backdrop-blur-md hover:border-blue-300 hover:from-blue-100 hover:to-indigo-100 transition-colors" aria-label="Toggle dark mode" data-tooltip="Toggle dark mode">
-                    <i class="fas fa-moon text-xs"></i>
-                    <span>Dark mode</span>
-                </button>
                 <button id="command-palette-button" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/85 px-3 py-2 text-sm font-semibold text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-colors" aria-label="Open quick navigation" data-tooltip="Quick navigation and actions (Ctrl+K)">
                     <i class="fas fa-magnifying-glass text-xs"></i>
                     <span>Quick actions</span>
@@ -901,9 +902,6 @@
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-all duration-200 flex-shrink-0 hover:shadow-md transform hover:scale-105" data-tooltip="End your session">Logout</button>
             </div>
             <div class="lg:hidden flex items-center ml-auto">
-                <button id="theme-quick-toggle-mobile" class="mr-2 p-3 rounded-lg text-blue-700 hover:text-blue-900 hover:bg-blue-50 transition-all duration-200 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Toggle dark mode" data-tooltip="Toggle dark mode">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <button id="hamburger-button" class="p-3 rounded-lg text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu" data-tooltip="Open navigation menu">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path>
@@ -1011,8 +1009,13 @@
             </button>
             <div id="page-container" class="relative">
                 <div id="subject-dashboard-page" class="page p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-                        <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
+                    <div class="dashboard-hero-panel mb-6">
+                        <div class="dashboard-hero-copy">
+                            <p class="dashboard-eyebrow">Revision Library</p>
+                            <h2 class="text-3xl sm:text-4xl font-bold text-gray-800">Your Subjects</h2>
+                            <p class="dashboard-subtitle mt-3 max-w-2xl">Browse every subject, move through folders quickly, and see at a glance where free previews are unlocked this fortnight.</p>
+                            <div id="subject-dashboard-status" class="dashboard-status-card mt-4">All subjects are organised by exam board and ready to browse.</div>
+                        </div>
                         <div id="dashboard-clock" class="dashboard-clock-shell bg-white/50 backdrop-blur-lg p-3 rounded-xl shadow-md border border-white/30 text-center">
                             <div class="dashboard-clock-analog" aria-hidden="true">
                                 <span class="dashboard-clock-hand hour" id="clock-hour-hand"></span>
@@ -1971,10 +1974,19 @@
                     </div>
                 </div>
                 <div id="file-browser-page" class="page hidden h-full flex flex-col">
+                    <div class="file-browser-shell">
+                    <div class="file-browser-hero">
+                        <div>
+                            <p class="file-browser-eyebrow">Subject Library</p>
+                            <h2 id="file-browser-title" class="text-3xl font-bold text-gray-800">File Library</h2>
+                            <p id="file-browser-subtitle" class="file-browser-subtitle">Browse folders and open revision files with a clearer, calmer layout.</p>
+                        </div>
+                        <div id="file-access-banner" class="file-access-banner" aria-live="polite"></div>
+                    </div>
                     <div id="breadcrumb" class="p-3 border-b border-gray-200/50 text-sm flex-shrink-0 text-gray-800 bg-gray-100/30"></div>
                     <div id="file-browser-controls" class="p-3 border-b border-gray-200/50 flex-shrink-0 bg-gray-50/20 flex flex-col sm:flex-row items-center gap-3">
                         <div class="relative flex-grow w-full sm:w-auto">
-                            <input type="search" id="file-search-input" placeholder="Search in folder..." class="pl-10 pr-4 py-3 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base">
+                            <input type="search" id="file-search-input" placeholder="Search this folder..." class="pl-10 pr-4 py-3 w-full rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -1993,6 +2005,7 @@
                         </div>
                     </div>
                     <div id="file-list" class="p-4 overflow-y-auto flex-grow" aria-live="polite" aria-busy="false"></div>
+                    </div>
                 </div>
                 <div id="account-settings-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Account Management</h2>
@@ -2473,7 +2486,7 @@
                             <p id="user-settings-message" class="text-sm text-center h-4"></p>
                         </form>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-3">
-                            <h4 class="text-lg font-semibold text-gray-800">Appearance</h4>
+                            <h4 class="text-lg font-semibold text-gray-800">Brand & Layout</h4>
                             <div class="flex items-center gap-3">
                                 <label for="accent-picker" class="text-sm text-gray-700">Accent colour</label>
                                 <input id="accent-picker" type="color" aria-label="Accent color" class="w-9 h-9 rounded cursor-pointer border border-gray-300/70 bg-white" />
@@ -2481,20 +2494,18 @@
                                 <button id="reset-accent" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-800 text-xs font-semibold hover:bg-gray-300" aria-label="Reset accent colour">Reset</button>
                             </div>
                             <div>
-                                <span class="block text-sm text-gray-700 mb-1">Theme mode</span>
-                                <select id="ui-theme-mode" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
-                                    <option value="auto">Auto</option>
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                </select>
+                                <span class="block text-sm text-gray-700 mb-1">Interface mode</span>
+                                <div class="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+                                    GCSEMate now uses a single light-mode interface for a calmer, more natural reading experience.
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-gray-500">Preview:</span>
-                                <span class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold">Button</span>
-                                <span class="px-3 py-1.5 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold">Highlight</span>
+                                <span class="px-3 py-1.5 rounded-md bg-teal-700 text-white text-xs font-semibold">Primary</span>
+                                <span class="px-3 py-1.5 rounded-md bg-orange-50 text-orange-800 text-xs font-semibold">Accent</span>
                             </div>
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2">Theme presets</p>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-2">Brand palettes</p>
                                 <div class="grid grid-cols-2 sm:grid-cols-6 gap-2">
                                     <button type="button" class="theme-preset-btn" data-theme-preset="classic">Classic</button>
                                     <button type="button" class="theme-preset-btn" data-theme-preset="forest">Forest</button>
