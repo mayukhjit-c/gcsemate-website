@@ -9023,8 +9023,22 @@ function populateUserSelector() {
     });
 }
 
+let bankHolidaysData = null;
+async function fetchBankHolidays() {
+    if (bankHolidaysData) return;
+    try {
+        const res = await fetch('https://www.gov.uk/bank-holidays.json');
+        const data = await res.json();
+        bankHolidaysData = data['england-and-wales'].events;
+    } catch (e) {
+        console.error('Error fetching bank holidays:', e);
+        bankHolidaysData = [];
+    }
+}
+
 // Load calendar for selected month
 async function loadCalendarMonth() {
+    await fetchBankHolidays();
     const calendarGrid = document.getElementById('calendar-grid');
     const monthYearEl = document.getElementById('calendar-month-year');
     
@@ -9063,11 +9077,22 @@ async function loadCalendarMonth() {
     // Add days of month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
-        dayCell.className = 'calendar-day p-2 h-16 bg-white border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors';
-        dayCell.textContent = day;
+        dayCell.className = 'calendar-day p-2 h-16 bg-white border border-gray-200 rounded cursor-pointer hover:bg-gray-50 transition-colors flex flex-col overflow-hidden';
         
-        // Add click handler
-        dayCell.onclick = () => showDailyDetails(day);
+        const dayNumberEl = document.createElement('span');
+        dayNumberEl.textContent = day;
+        dayCell.appendChild(dayNumberEl);
+
+        // Check for bank holidays
+        const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const holiday = bankHolidaysData?.find(h => h.date === dateStr);
+        if (holiday) {
+            const hEl = document.createElement('div');
+            hEl.className = 'text-[10px] sm:text-xs bg-blue-100 text-blue-800 rounded p-0.5 mt-1 truncate w-full text-left';
+            hEl.title = holiday.title;
+            hEl.textContent = holiday.title;
+            dayCell.appendChild(hEl);
+        }
         
         // Load activity data for this day
         await loadDayActivity(dayCell, day);
@@ -11196,19 +11221,6 @@ async function handleNavigation(folderId, targetSubfolderName = null) {
     await fetchAndRenderFiles(folderId, targetSubfolderName);
 }
 async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
-    if ((currentUser?.tier || 'free') === 'free') {
-        const freeTrialSubject = getCurrentFreeTrialSubject();
-        const freeTrialRootId = freeTrialSubject ? allSubjectFolders?.[freeTrialSubject.toLowerCase()] : null;
-        const rootPathSubjectId = path && path.length > 1 ? path[1].id : null;
-        const isInAllowedTrialSubject = freeTrialRootId && (rootPathSubjectId === freeTrialRootId || folderId === freeTrialRootId);
-
-        if (freeTrialRootId && !isInAllowedTrialSubject) {
-            showToast(`Free access is limited to ${freeTrialSubject} for this 2-week period.`, 'info');
-            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: freeTrialSubject, id: freeTrialRootId }];
-            folderId = freeTrialRootId;
-            targetSubfolderName = null;
-        }
-    }
     const fileListContainer = document.getElementById('file-list');
     fileListContainer.setAttribute('aria-busy','true');
     // Full-screen smooth overlay
@@ -15424,6 +15436,17 @@ function getPreviewEmbedUrl(file) {
 }
 
 function showPreview(file) {
+    if ((currentUser?.tier || 'free') === 'free') {
+        const freeTrialSubject = getCurrentFreeTrialSubject();
+        const freeTrialRootId = freeTrialSubject ? (allSubjectFolders?.[freeTrialSubject.toLowerCase()]) : null;
+        const rootPathSubjectId = path && path.length > 1 ? path[1].id : null;
+        
+        if (freeTrialRootId && rootPathSubjectId !== freeTrialRootId) {
+            openUpgradeModal(`Free access is limited to ${freeTrialSubject} files for this 2-week period. Upgrade to Pro for unlimited access.`);
+            return;
+        }
+    }
+
     const modal = document.getElementById('preview-modal');
         const embedUrl = getPreviewEmbedUrl(file);
     let content = '';
@@ -19203,20 +19226,20 @@ function applyUserInterfacePreferences() {
     const root = document.documentElement;
     if (!body || !root) return;
 
-    const themeMode = prefs.themeMode || 'auto';
-    const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    const resolvedDark = themeMode === 'dark' || (themeMode === 'auto' && prefersDark);
+    const themeMode = prefs.themeMode || 'light';
+    const prefersDark = false;
+    const resolvedDark = false;
 
     body.classList.toggle('compact-ui', prefs.density === 'compact');
     body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
     body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
     body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
-    body.classList.toggle('dark-theme', resolvedDark);
-    root.classList.toggle('dark-theme', resolvedDark);
-    root.style.colorScheme = resolvedDark ? 'dark' : 'light';
+    body.classList.toggle('dark-theme', false);
+    root.classList.toggle('dark-theme', false);
+    root.style.colorScheme = 'light';
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', resolvedDark ? '#020617' : '#2563eb');
+    if (themeMeta) themeMeta.setAttribute('content', '#2563eb');
 
     const densitySelect = document.getElementById('ui-density-select');
     const radiusSelect = document.getElementById('ui-radius-select');
