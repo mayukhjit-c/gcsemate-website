@@ -30,12 +30,12 @@ const TOOLS_NOTES_INDEX_STORAGE_KEY = 'gcsemate_tools_notes_index';
 const TOOLS_NOTES_DOC_ID = 'quick-notes';
 const FRIEND_FAMILY_TIER = 'friend_family';
 const THEME_PRESETS = {
-    classic: '#2f6f8f',
-    forest: '#4d7a46',
-    violet: '#7b6287',
-    sunset: '#c26d38',
-    ocean: '#2f7c90',
-    rose: '#b85f68'
+    classic: '#3b82f6',
+    forest: '#15803d',
+    violet: '#7c3aed',
+    sunset: '#ea580c',
+    ocean: '#0891b2',
+    rose: '#e11d48'
 };
 const STUDY_RANDOMISER_TEMPLATES = [
     ({ subject, minutes }) => `Spend ${minutes} minutes on ${subject}: summarise one topic from memory, then check what you missed.`,
@@ -155,21 +155,6 @@ function userHasPremiumAccess(user = currentUser) {
     return role === 'admin' || isPremiumTier(user?.tier);
 }
 
-function isFreeTierUser(user = currentUser) {
-    return !userHasPremiumAccess(user) && normalizeTierValue(user?.tier) === 'free';
-}
-
-function getCurrentBrowsedSubjectName() {
-    return path && path.length > 1 ? path[1].name : null;
-}
-
-function canAccessFilesForSubject(subjectName, user = currentUser) {
-    if (userHasPremiumAccess(user)) return true;
-    const normalizedSubject = normalizeFreeTrialSubject(subjectName || getCurrentBrowsedSubjectName());
-    const currentFreeTrialSubject = normalizeFreeTrialSubject(getCurrentFreeTrialSubject());
-    return !!normalizedSubject && !!currentFreeTrialSubject && normalizedSubject === currentFreeTrialSubject;
-}
-
 function getTierDisplayLabel(value) {
     const tier = normalizeTierValue(value);
     if (tier === 'paid') return 'Paid';
@@ -218,26 +203,30 @@ function isIgnorableExtensionNoise(errorLike) {
 }
 
 function getNextQuickThemeMode(currentMode = 'auto') {
-    return 'light';
+    if (currentMode === 'dark') return 'light';
+    if (currentMode === 'light') return 'dark';
+    return 'dark';
 }
 
 function toggleQuickThemeMode() {
-    saveUIPreferences({ themeMode: 'light' });
+    const currentMode = getSavedUIPreferences().themeMode || 'auto';
+    saveUIPreferences({ themeMode: getNextQuickThemeMode(currentMode) });
     applyUserInterfacePreferences();
 }
 
 function syncQuickThemeToggles(themeMode = 'auto') {
+    const isDark = document.documentElement.classList.contains('dark-theme');
     [document.getElementById('theme-quick-toggle'), document.getElementById('theme-quick-toggle-mobile')]
         .filter(Boolean)
         .forEach((button) => {
             const icon = button.querySelector('i');
             const label = button.querySelector('span');
             if (icon) {
-                icon.className = `fas fa-sun${button.id === 'theme-quick-toggle' ? ' text-xs' : ''}`;
+                icon.className = `fas ${isDark ? 'fa-sun' : 'fa-moon'}${button.id === 'theme-quick-toggle' ? ' text-xs' : ''}`;
             }
-            if (label) label.textContent = 'Light only';
-            button.setAttribute('aria-pressed', 'true');
-            button.dataset.themeMode = 'light';
+            if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+            button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            button.dataset.themeMode = themeMode;
         });
 }
 
@@ -11106,20 +11095,8 @@ async function renderDashboard() {
         
         subjectGrid.innerHTML = '';
         const userAllowedSubjects = currentUser.allowedSubjects;
-        const freeTierUser = isFreeTierUser();
+        const isFreeTierUser = (currentUser?.tier || 'free') === 'free';
         const currentFreeTrialSubject = getCurrentFreeTrialSubject();
-        const dashboardStatus = document.getElementById('subject-dashboard-status');
-
-        if (dashboardStatus) {
-            if (freeTierUser && currentFreeTrialSubject) {
-                const daysLeft = getFreeTrialRotationDaysLeft();
-                dashboardStatus.textContent = `Free account: browse every subject and folder. File previews are unlocked for ${currentFreeTrialSubject} for the next ${daysLeft} day${daysLeft === 1 ? '' : 's'}.`;
-            } else if (freeTierUser) {
-                dashboardStatus.textContent = 'Free account: browse every subject and folder. File previews unlock on the current rotating free subject.';
-            } else {
-                dashboardStatus.textContent = 'Your account can browse every subject and open files across the full library.';
-            }
-        }
         
         // Handle migration from old "english" to new "English Language (AQA)" and "English Literature (Edexcel)"
         // Check if user has old "english" access and grant access to both new English subjects
@@ -11136,11 +11113,11 @@ async function renderDashboard() {
         }
         
         let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
-        if (freeTierUser) {
-            subjectsToShow = SUBJECTS;
+        if (isFreeTierUser && currentFreeTrialSubject) {
+            subjectsToShow = [currentFreeTrialSubject];
         }
         if (subjectsToShow.length === 0) {
-            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">${freeTierUser ? 'Your free trial subject is temporarily unavailable. Please try again shortly.' : 'Your account does not have access to any subjects. Please contact an administrator.'}</p></div>`;
+            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">${isFreeTierUser ? 'Your free trial subject is temporarily unavailable. Please try again shortly.' : 'Your account does not have access to any subjects. Please contact an administrator.'}</p></div>`;
             return;
         }
         const openSubjectFolder = (subject, subjectId) => {
@@ -11202,21 +11179,16 @@ async function renderDashboard() {
             const isCurrentFreeSubject = !!currentFreeTrialSubject && subject === currentFreeTrialSubject;
             if (isCurrentFreeSubject) {
                 const freeTrialBadge = document.createElement('span');
-                freeTrialBadge.className = 'subject-access-chip subject-access-chip--featured';
-                freeTrialBadge.textContent = normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'Free previews now' : 'Free previews this fortnight';
+                freeTrialBadge.className = 'mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-yellow-50 border border-yellow-300 text-yellow-800';
+                freeTrialBadge.textContent = normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'Free Subject • Admin Pick' : 'Free Subject • 2-Week Rotation';
                 wrapper.appendChild(freeTrialBadge);
                 if (!normalizeFreeTrialSubject(freeTrialSubjectOverride)) {
                     const daysLeft = getFreeTrialRotationDaysLeft();
                     const countdown = document.createElement('p');
-                    countdown.className = 'text-[11px] font-semibold text-amber-800 mt-1';
+                    countdown.className = 'text-[11px] font-semibold text-yellow-800 mt-1';
                     countdown.textContent = `${daysLeft} day${daysLeft === 1 ? '' : 's'} left (rotates at UK midnight)`;
                     wrapper.appendChild(countdown);
                 }
-            } else if (freeTierUser) {
-                const browseBadge = document.createElement('span');
-                browseBadge.className = 'subject-access-chip subject-access-chip--browse';
-                browseBadge.textContent = 'Browse folders';
-                wrapper.appendChild(browseBadge);
             }
             // Add summary text with arrow
             const summaryContainer = document.createElement('div');
@@ -11268,12 +11240,17 @@ async function renderDashboard() {
             wrapper.appendChild(specContainer);
             card.appendChild(wrapper);
             if (subjectId) {
+                // Set consistent height constraints to maintain grid alignment
+                // Max height accommodates cards with up to 2 specification buttons
                 const isMaths = subject && subject.toLowerCase().includes('math');
-                const featuredClass = isCurrentFreeSubject ? ' subject-card-shell--featured' : '';
-                const browseOnlyClass = freeTierUser && !isCurrentFreeSubject ? ' subject-card-shell--browse' : '';
-                card.className = 'subject-card-shell p-4 sm:p-6 cursor-pointer transition-all transform flex flex-col items-center justify-center text-center overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]') + featuredClass + browseOnlyClass;
-                card.setAttribute('data-tooltip', `Browse ${subject}`);
+                const freeGlowClass = isCurrentFreeSubject ? ' ring-2 ring-yellow-300 shadow-2xl shadow-yellow-200/80 hover:ring-yellow-400' : '';
+                card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]') + freeGlowClass;
+                card.setAttribute('data-tooltip', `Open ${subject} folder`);
                 card.addEventListener('click', () => {
+                    if (isFreeTierUser && subject !== currentFreeTrialSubject) {
+                        openUpgradeModal('Free accounts can access one rotating trial subject every 2 weeks. Upgrade to Pro for unlimited access to all subjects and features for just £1 a month.');
+                        return;
+                    }
                     openSubjectFolder(subject, subjectId);
                 });
             } else {
@@ -11282,6 +11259,16 @@ async function renderDashboard() {
             }
             subjectGrid.appendChild(card);
         });
+        if (isFreeTierUser && currentFreeTrialSubject) {
+            const trialFolderId = allSubjectFolders[currentFreeTrialSubject.toLowerCase()];
+            const fileBrowserPage = document.getElementById('file-browser-page');
+            const fileBrowserVisible = !!fileBrowserPage && !fileBrowserPage.classList.contains('hidden');
+            const autoOpenKey = `${currentFreeTrialSubject}|${normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'manual' : 'auto'}`;
+            if (trialFolderId && !fileBrowserVisible && lastAutoOpenedFreeTrialSubjectKey !== autoOpenKey) {
+                lastAutoOpenedFreeTrialSubjectKey = autoOpenKey;
+                openSubjectFolder(currentFreeTrialSubject, trialFolderId);
+            }
+        }
     } catch (err) {
         renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
         showToast(`Subjects failed to load: ${err.message}`, 'error');
@@ -11291,6 +11278,19 @@ async function handleNavigation(folderId, targetSubfolderName = null) {
     await fetchAndRenderFiles(folderId, targetSubfolderName);
 }
 async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
+    if ((currentUser?.tier || 'free') === 'free') {
+        const freeTrialSubject = getCurrentFreeTrialSubject();
+        const freeTrialRootId = freeTrialSubject ? allSubjectFolders?.[freeTrialSubject.toLowerCase()] : null;
+        const rootPathSubjectId = path && path.length > 1 ? path[1].id : null;
+        const isInAllowedTrialSubject = freeTrialRootId && (rootPathSubjectId === freeTrialRootId || folderId === freeTrialRootId);
+
+        if (freeTrialRootId && !isInAllowedTrialSubject) {
+            showToast(`Free access is limited to ${freeTrialSubject} for this 2-week period.`, 'info');
+            path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: freeTrialSubject, id: freeTrialRootId }];
+            folderId = freeTrialRootId;
+            targetSubfolderName = null;
+        }
+    }
     const fileListContainer = document.getElementById('file-list');
     fileListContainer.setAttribute('aria-busy','true');
     // Full-screen smooth overlay
@@ -11351,55 +11351,12 @@ async function fetchAndRenderFiles(folderId, targetSubfolderName = null) {
         renderError(fileListContainer, err.message || 'Something went wrong while loading files.');
     } finally {
         renderBreadcrumbs();
-        updateFileAccessBanner();
         fileListContainer.setAttribute('aria-busy','false');
         if (overlay) {
             overlay.classList.remove('visible');
             setTimeout(() => overlay.classList.add('hidden'), 220);
         }
     }
-}
-
-function updateFileAccessBanner() {
-    const banner = document.getElementById('file-access-banner');
-    const title = document.getElementById('file-browser-title');
-    const subtitle = document.getElementById('file-browser-subtitle');
-    const subjectName = getCurrentBrowsedSubjectName();
-    const currentFolderName = path && path.length ? path[path.length - 1].name : 'Library';
-    const freeTrialSubject = getCurrentFreeTrialSubject();
-    const freeTierUser = isFreeTierUser();
-    const hasFileAccessHere = canAccessFilesForSubject(subjectName);
-
-    if (title) title.textContent = subjectName || 'File Library';
-    if (subtitle) {
-        subtitle.textContent = subjectName && currentFolderName !== subjectName
-            ? `Browsing ${currentFolderName} inside ${subjectName}.`
-            : 'Browse folders and open revision files with a clearer, calmer layout.';
-    }
-
-    if (!banner) return;
-
-    if (!subjectName) {
-        banner.className = 'file-access-banner file-access-banner--neutral';
-        banner.innerHTML = '<strong>Browse the library.</strong><span>Open any subject to explore its folders and files.</span>';
-        return;
-    }
-
-    if (!freeTierUser) {
-        banner.className = 'file-access-banner file-access-banner--unlocked';
-        banner.innerHTML = `<strong>Everything is unlocked in ${escapeHtml(subjectName)}.</strong><span>Your account can preview and download files across the full library.</span>`;
-        return;
-    }
-
-    if (hasFileAccessHere) {
-        const daysLeft = getFreeTrialRotationDaysLeft();
-        banner.className = 'file-access-banner file-access-banner--unlocked';
-        banner.innerHTML = `<strong>Free previews are live in ${escapeHtml(subjectName)}.</strong><span>You can browse every subject, but file previews are only open here for the next ${daysLeft} day${daysLeft === 1 ? '' : 's'}.</span>`;
-        return;
-    }
-
-    banner.className = 'file-access-banner file-access-banner--locked';
-    banner.innerHTML = `<strong>Browse-only in ${escapeHtml(subjectName)}.</strong><span>Folders stay open, but file previews are reserved for ${escapeHtml(freeTrialSubject || 'the current rotating free subject')} unless you upgrade.</span>`;
 }
 
 function escapeHtml(str) {
@@ -11545,16 +11502,13 @@ function renderItems() {
         const ds = searchIconHost.querySelector('.dots-spinner');
         if (ds) ds.remove();
     }
-
     const sortOrder = document.getElementById('file-sort-select').value;
-    const canFreeUserDownload = !isFreeTierUser();
-    const currentSubjectName = getCurrentBrowsedSubjectName();
-    const canOpenFilesInCurrentSubject = canAccessFilesForSubject(currentSubjectName);
-    const currentFreeTrialSubject = getCurrentFreeTrialSubject();
+    const canFreeUserDownload = (currentUser?.tier || 'free') !== 'free';
 
-    container.innerHTML = '';
+    container.innerHTML = ''; // Clear previous items
 
-    let filteredFiles = currentFolderFiles.filter(file =>
+    // 1. Filter
+    let filteredFiles = currentFolderFiles.filter(file => 
         file.name.toLowerCase().includes(searchInput)
     );
 
@@ -11563,156 +11517,129 @@ function renderItems() {
         return;
     }
 
+    // 2. Sort
     const starredFiles = currentUser.starredFiles || [];
     filteredFiles.sort((a, b) => {
-        const aIsStarred = starredFiles.includes(a.id);
-        const bIsStarred = starredFiles.includes(b.id);
-        const aIsFolder = a.mimeType === 'application/vnd.google-apps.folder';
-        const bIsFolder = b.mimeType === 'application/vnd.google-apps.folder';
+        const a_isStarred = starredFiles.includes(a.id);
+        const b_isStarred = starredFiles.includes(b.id);
+        const a_isFolder = a.mimeType === 'application/vnd.google-apps.folder';
+        const b_isFolder = b.mimeType === 'application/vnd.google-apps.folder';
 
-        if (aIsStarred !== bIsStarred) return aIsStarred ? -1 : 1;
-        if (aIsFolder !== bIsFolder) return aIsFolder ? -1 : 1;
+        if (a_isStarred !== b_isStarred) return a_isStarred ? -1 : 1;
+        if (a_isFolder !== b_isFolder) return a_isFolder ? -1 : 1;
 
         return sortOrder === 'az'
             ? a.name.localeCompare(b.name)
             : b.name.localeCompare(a.name);
     });
 
+    // 3. Render (based on view)
     if (fileBrowserView === 'grid') {
-        container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+        container.className = 'p-4 overflow-y-auto flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
         filteredFiles.forEach((file, index) => {
             const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
             const isStarred = starredFiles.includes(file.id);
-            const isLockedFile = !isFolder && !canOpenFilesInCurrentSubject;
-            const metaLabel = isFolder
-                ? 'Folder'
-                : isLockedFile
-                    ? `Browse only • Free previews in ${currentFreeTrialSubject || 'rotating subject'}`
-                    : 'Preview available';
-
             const itemElement = document.createElement('div');
-            itemElement.className = `file-browser-card relative p-4 sm:p-5 flex flex-col items-start justify-between cursor-pointer transition-all duration-200 ease-out transform ${isLockedFile ? 'file-browser-card--locked' : 'file-browser-card--open'} ${isStarred ? 'border-yellow-400' : ''} opacity-0 translate-y-2 min-h-[170px]`;
-            itemElement.setAttribute('aria-disabled', isLockedFile ? 'true' : 'false');
-
+            itemElement.className = `relative p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 hover:shadow-xl modern-card ${isStarred ? 'border-yellow-400' : ''} opacity-0 translate-y-2 min-h-[100px]`;
+            
             const mainInfo = document.createElement('div');
-            mainInfo.className = 'flex flex-col items-start justify-between flex-grow w-full text-left';
+            mainInfo.className = 'flex flex-col items-center justify-center flex-grow w-full';
             const highlightedName = highlightMatch(file.name, rawQuery.trim());
-
+            
+            // Use custom folder icon for folders, custom file icons for files
             let iconHtml;
             if (isFolder) {
-                iconHtml = '<div class="folder-icon mb-3"></div>';
+                iconHtml = '<div class="folder-icon mb-2"></div>';
             } else {
-                iconHtml = getFileIcon(file.name, file.mimeType, 'w-12 h-12 mb-3');
+                iconHtml = getFileIcon(file.name, file.mimeType, 'w-12 h-12 mb-2');
             }
-
-            mainInfo.innerHTML = `${iconHtml}<p class="text-base font-semibold text-gray-800 break-words w-full">${highlightedName}</p><p class="file-item-meta">${escapeHtml(metaLabel)}</p>`;
+            
+            mainInfo.innerHTML = `${iconHtml}<p class="text-sm font-medium text-gray-800 break-words w-full">${highlightedName}</p>`;
 
             if (isFolder) {
-                itemElement.addEventListener('click', () => {
-                    path.push({ name: file.name, id: file.id });
-                    fetchAndRenderFiles(file.id);
-                });
+                itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
             } else {
                 itemElement.addEventListener('click', () => showPreview(file));
             }
-
+            
+            // Add star button for both files and folders
             const actions = document.createElement('div');
-            actions.className = 'absolute top-3 right-3 flex flex-col items-end gap-2';
+            actions.className = 'absolute top-1 right-1 flex flex-col gap-1';
             if (isFolder) {
                 const safeFolderId = escapeJS(file.id);
-                actions.innerHTML = `<button onclick='handleToggleStar("${safeFolderId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/70 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                actions.innerHTML = `
+                    <button onclick='handleToggleStar("${safeFolderId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
             } else {
                 const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                 const safeFileName = escapeJS(file.name);
-                const safePathName = escapeJS(path[path.length - 1]?.name || 'Unknown');
+                const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 const safeFileId = escapeJS(file.id);
-                actions.innerHTML = `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/70 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
-                if (canFreeUserDownload) {
-                    actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/70 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
-                }
-                if (isLockedFile) {
-                    actions.innerHTML += `<span class="file-access-pill" aria-hidden="true"><i class="fas fa-lock"></i> Locked</span>`;
-                }
+                actions.innerHTML = `
+                        <button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-1 rounded-full bg-white/50 ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>
+                        ${canFreeUserDownload ? `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-1 rounded-full bg-white/50 hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>` : ''}`;
             }
-
             itemElement.appendChild(actions);
             itemElement.appendChild(mainInfo);
             container.appendChild(itemElement);
-
+            // animate in, staggered
             setTimeout(() => {
-                itemElement.classList.remove('opacity-0', 'translate-y-2');
-                itemElement.classList.add('opacity-100', 'translate-y-0');
+                itemElement.classList.remove('opacity-0','translate-y-2');
+                itemElement.classList.add('opacity-100','translate-y-0');
                 itemElement.style.transition = 'transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 380ms ease';
             }, Math.min(index, 20) * 22);
         });
-    } else {
-        container.className = 'p-4 overflow-y-auto flex-grow flex flex-col gap-3';
+    } else { // List view
+        container.className = 'p-4 overflow-y-auto flex-grow';
         filteredFiles.forEach((file, index) => {
             const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
             const isStarred = starredFiles.includes(file.id);
-            const isLockedFile = !isFolder && !canOpenFilesInCurrentSubject;
-            const metaLabel = isFolder
-                ? 'Folder'
-                : isLockedFile
-                    ? `Browse only • Free previews in ${currentFreeTrialSubject || 'rotating subject'}`
-                    : 'Preview available';
-
             const itemElement = document.createElement('div');
-            itemElement.className = `file-browser-list-item flex items-center p-4 transition-all duration-200 ease-out ${isLockedFile ? 'file-browser-list-item--locked' : ''} ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2 min-h-[74px]`;
-
+            itemElement.className = `flex items-center p-3 sm:p-4 rounded-lg glass-card transition-all duration-200 ease-out ${isStarred ? 'bg-yellow-100/50' : ''} opacity-0 translate-y-2 min-h-[60px]`;
             const mainInfo = document.createElement('div');
             mainInfo.className = 'flex items-center flex-grow cursor-pointer min-w-0';
             const highlightedName = highlightMatch(file.name, rawQuery.trim());
-
+            
+            // Use custom folder icon for folders, custom file icons for files
             let iconHtml;
             if (isFolder) {
                 iconHtml = '<div class="folder-icon-sm mr-3 flex-shrink-0"></div>';
             } else {
                 iconHtml = getFileIcon(file.name, file.mimeType, 'w-6 h-6 mr-3 flex-shrink-0');
             }
-
-            mainInfo.innerHTML = `${iconHtml}<div class="min-w-0 flex-grow"><span class="block truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span><span class="file-item-meta">${escapeHtml(metaLabel)}</span></div>`;
-
+            
+            mainInfo.innerHTML = `${iconHtml}<span class="truncate font-medium text-gray-800 text-sm sm:text-base">${highlightedName}</span>`;
+            
             if (isFolder) {
-                mainInfo.addEventListener('click', () => {
-                    path.push({ name: file.name, id: file.id });
-                    fetchAndRenderFiles(file.id);
-                });
+                mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
             } else {
                 mainInfo.addEventListener('click', () => showPreview(file));
             }
-
             const actions = document.createElement('div');
             actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
+            // Add star button for both files and folders
             if (isFolder) {
                 const safeFolderId = escapeJS(file.id);
                 actions.innerHTML += `<button onclick='handleToggleStar("${safeFolderId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star Folder"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
             } else {
                 const safeFileId = escapeJS(file.id);
                 const safeFileName = escapeJS(file.name);
-                const safePathName = escapeJS(path[path.length - 1]?.name || 'Unknown');
-                const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
+                const safePathName = escapeJS(path[path.length-1]?.name || 'Unknown');
                 actions.innerHTML += `<button onclick='handleToggleStar("${safeFileId}", event)' class="star-icon text-gray-400 hover:text-yellow-400 p-2 rounded-full ${isStarred ? 'starred' : ''}" data-tooltip="Star File"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></button>`;
+                const downloadLink = file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`;
                 if (canFreeUserDownload) {
                     actions.innerHTML += `<a href="${downloadLink}" onclick="event.preventDefault(); event.stopPropagation(); handleSecureDownload('${downloadLink}', '${safeFileName}', '${safePathName}');" data-tooltip="Download File" class="text-gray-600 hover:text-blue-700 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></a>`;
                 }
-                if (isLockedFile) {
-                    actions.innerHTML += `<span class="file-access-pill" aria-hidden="true"><i class="fas fa-lock"></i> Locked</span>`;
-                }
             }
-
             itemElement.appendChild(mainInfo);
             itemElement.appendChild(actions);
             container.appendChild(itemElement);
-
             setTimeout(() => {
-                itemElement.classList.remove('opacity-0', 'translate-y-2');
-                itemElement.classList.add('opacity-100', 'translate-y-0');
+                itemElement.classList.remove('opacity-0','translate-y-2');
+                itemElement.classList.add('opacity-100','translate-y-0');
             }, Math.min(index, 20) * 15);
         });
     }
-
-    initializeTooltips();
+    initializeTooltips(); // Re-initialize tooltips for new elements
 }
 async function handleToggleStar(fileId, event) {
     event.stopPropagation();
@@ -11759,24 +11686,14 @@ async function handleToggleStar(fileId, event) {
         showToast("Could not update star status.", 'error');
     }
 }
-
-function promptLockedFileAccess(subjectName = getCurrentBrowsedSubjectName()) {
-    const freeTrialSubject = getCurrentFreeTrialSubject();
-    const subjectLabel = subjectName || 'this subject';
-    const freeLabel = freeTrialSubject || 'the current rotating free subject';
-    openUpgradeModal(`Free accounts can browse every subject and folder, but file previews only open in ${freeLabel}. You're currently browsing ${subjectLabel}. Upgrade to Pro for unlimited file access across the full library.`);
-    showToast('Browse is open, but file previews here are locked on free accounts.', 'info');
-}
-
 function renderBreadcrumbs() {
     const breadcrumbContainer = document.getElementById('breadcrumb');
     breadcrumbContainer.innerHTML = '';
     path.forEach((crumb, index) => {
         const isLast = index === path.length - 1;
-        const crumbLabel = index === 0 ? 'Library' : crumb.name;
         const crumbElement = document.createElement(isLast ? 'span' : 'a');
-        crumbElement.textContent = crumbLabel;
-        crumbElement.className = isLast ? 'breadcrumb-pill is-current' : 'breadcrumb-pill';
+        crumbElement.textContent = crumb.name;
+        crumbElement.className = isLast ? "font-semibold text-gray-700" : 'cursor-pointer hover:underline text-blue-700';
         if (!isLast) {
             crumbElement.href = '#';
             crumbElement.addEventListener('click', (e) => {
@@ -11792,8 +11709,8 @@ function renderBreadcrumbs() {
         breadcrumbContainer.appendChild(crumbElement);
         if (!isLast) {
             const separator = document.createElement('span');
-            separator.innerHTML = '<i class="fas fa-angle-right" aria-hidden="true"></i>';
-            separator.className = 'breadcrumb-separator';
+            separator.textContent = ' / ';
+            separator.className = 'mx-2 text-gray-400';
             breadcrumbContainer.appendChild(separator);
         }
     });
@@ -15589,10 +15506,6 @@ function getPreviewEmbedUrl(file) {
 }
 
 function showPreview(file) {
-    if (!canAccessFilesForSubject(getCurrentBrowsedSubjectName())) {
-        promptLockedFileAccess(getCurrentBrowsedSubjectName());
-        return;
-    }
     const modal = document.getElementById('preview-modal');
         const embedUrl = getPreviewEmbedUrl(file);
     let content = '';
@@ -19621,30 +19534,36 @@ function applyUserInterfacePreferences() {
     const root = document.documentElement;
     if (!body || !root) return;
 
-    const themeMode = 'light';
+    const themeMode = prefs.themeMode || 'auto';
+    const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const resolvedDark = themeMode === 'dark' || (themeMode === 'auto' && prefersDark);
 
     body.classList.toggle('compact-ui', prefs.density === 'compact');
     body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
     body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
     body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
-    body.classList.remove('dark-theme');
-    root.classList.remove('dark-theme');
-    root.style.colorScheme = 'light';
+    body.classList.toggle('dark-theme', resolvedDark);
+    root.classList.toggle('dark-theme', resolvedDark);
+    root.style.colorScheme = resolvedDark ? 'dark' : 'light';
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', '#2f6f8f');
+    if (themeMeta) themeMeta.setAttribute('content', resolvedDark ? '#020617' : '#2563eb');
 
     const densitySelect = document.getElementById('ui-density-select');
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
+    const quickThemeToggle = document.getElementById('theme-quick-toggle');
+    const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
     const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
     if (densitySelect) densitySelect.value = prefs.density || 'comfortable';
     if (radiusSelect) radiusSelect.value = prefs.radius || 'soft';
     if (motionSelect) motionSelect.value = prefs.motion || 'smooth';
     if (compactBadgesToggle) compactBadgesToggle.checked = !!prefs.compactBadges;
+    if (themeModeSelect) themeModeSelect.value = themeMode;
     if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
 
@@ -19684,8 +19603,11 @@ function initializeUserExperienceControls() {
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
+    const quickThemeToggle = document.getElementById('theme-quick-toggle');
+    const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
     const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
 
     densitySelect?.addEventListener('change', () => {
@@ -19704,6 +19626,10 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ compactBadges: compactBadgesToggle.checked });
         applyUserInterfacePreferences();
     });
+    themeModeSelect?.addEventListener('change', () => {
+        saveUIPreferences({ themeMode: themeModeSelect.value });
+        applyUserInterfacePreferences();
+    });
     adminDensitySelect?.addEventListener('change', () => {
         saveUIPreferences({ density: adminDensitySelect.value });
         applyUserInterfacePreferences();
@@ -19712,8 +19638,21 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ motion: adminMotionSelect.value });
         applyUserInterfacePreferences();
     });
+    quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
+    mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
     applyFeedbackWidgetVisibility();
+
+    if (window.matchMedia) {
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = () => {
+            if ((getSavedUIPreferences().themeMode || 'auto') === 'auto') {
+                applyUserInterfacePreferences();
+            }
+        };
+        if (media.addEventListener) media.addEventListener('change', handler);
+        else if (media.addListener) media.addListener(handler);
+    }
 }
 // Accent helpers
 function hexToRgb(hex) {
