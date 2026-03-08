@@ -26,9 +26,7 @@ const BLOG_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519682337058-a94d
 const BLOG_COMMENT_COUNTS = new Map();
 const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
 const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
-const TOOLS_NOTES_INDEX_STORAGE_KEY = 'gcsemate_tools_notes_index';
 const TOOLS_NOTES_DOC_ID = 'quick-notes';
-const FRIEND_FAMILY_TIER = 'friend_family';
 const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
@@ -56,8 +54,6 @@ let toolsTimerInterval = null;
 let unsubscribeToolsNotes = null;
 let toolsNotesSaveTimeout = null;
 let toolsNotesSyncState = 'idle';
-let toolsNotesEntries = [];
-let selectedToolsNoteId = null;
 let hasResolvedInitialAuthState = false;
 let calcShiftEnabled = false;
 let calcLastResult = 0;
@@ -99,9 +95,6 @@ let unsubscribeFlashcardDecks = null;
 let flashcardDecks = [];
 let selectedFlashcardDeckId = null;
 let flashcardsInitialized = false;
-let flashcardSearchQuery = '';
-let flashcardSortMode = 'updated';
-let activeFlashcardEditorFieldId = null;
 let flashcardStudySession = {
     deckId: null,
     order: [],
@@ -135,39 +128,6 @@ function clearAccentCSSVars() {
 
 // Admin allowlist for elevated actions
 const ADMIN_EMAILS = ['admin@gcsemate.com', 'support@gcsemate.com'];
-
-function normalizeTierValue(value) {
-    return String(value || 'free').trim().toLowerCase().replace(/[\s/]+/g, '_');
-}
-
-function isFriendFamilyTier(value) {
-    const tier = normalizeTierValue(value);
-    return tier === FRIEND_FAMILY_TIER || tier === 'friend' || tier === 'family';
-}
-
-function isPremiumTier(value) {
-    const tier = normalizeTierValue(value);
-    return tier === 'paid' || isFriendFamilyTier(tier);
-}
-
-function userHasPremiumAccess(user = currentUser) {
-    const role = String(user?.role || '').toLowerCase();
-    return role === 'admin' || isPremiumTier(user?.tier);
-}
-
-function getTierDisplayLabel(value) {
-    const tier = normalizeTierValue(value);
-    if (tier === 'paid') return 'Paid';
-    if (isFriendFamilyTier(tier)) return 'Friend/Family';
-    return capitalizeFirstLetter(tier || 'free');
-}
-
-function getTierBadgeClasses(value) {
-    const tier = normalizeTierValue(value);
-    if (tier === 'paid') return 'bg-green-100 text-green-800';
-    if (isFriendFamilyTier(tier)) return 'bg-amber-100 text-amber-800';
-    return 'bg-gray-100 text-gray-800';
-}
 
 // Silence noisy Firestore internal assertions to avoid UI error loops
 const FIRESTORE_ASSERTION_PATTERN = /INTERNAL ASSERTION FAILED/i;
@@ -2713,15 +2673,9 @@ function updateConnectionStatus(status) {
     
     statusElements.forEach(element => {
         if (status === 'connected') {
-            element.className = 'online-status rounded-full bg-green-500 animate-pulse';
-            element.style.width = '0.65rem';
-            element.style.height = '0.65rem';
-            element.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.18)';
+            element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
         } else {
-            element.className = 'online-status rounded-full bg-red-500';
-            element.style.width = '0.65rem';
-            element.style.height = '0.65rem';
-            element.style.boxShadow = '0 0 0 4px rgba(244, 63, 94, 0.16)';
+            element.className = 'w-2 h-2 bg-red-500 rounded-full';
         }
     });
 
@@ -4694,7 +4648,7 @@ async function sendAIMessage(retryMessage = null) {
     if (!message) return;
     
     // Check if user is paid or admin
-    if (!currentUser || !userHasPremiumAccess(currentUser)) {
+    if (!currentUser || (currentUser.tier !== 'paid' && (currentUser.role || '').toLowerCase() !== 'admin')) {
         showToast('AI Tutor is available for Pro users only. Please upgrade to access this feature.', 'error');
         showPage('features-page');
         return;
@@ -5582,20 +5536,14 @@ function updateOnlineStatus(maintenanceEnabled) {
     
     onlineStatusElements.forEach(element => {
         if (maintenanceEnabled) {
-            element.className = 'online-status rounded-full bg-yellow-500 animate-pulse';
-            element.style.width = '0.65rem';
-            element.style.height = '0.65rem';
-            element.style.boxShadow = '0 0 0 4px rgba(245, 158, 11, 0.18)';
+            element.className = 'w-2 h-2 bg-red-400 rounded-full animate-pulse';
         } else {
-            element.className = 'online-status rounded-full bg-green-500 animate-pulse';
-            element.style.width = '0.65rem';
-            element.style.height = '0.65rem';
-            element.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.18)';
+            element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
         }
     });
     
     onlineTextElements.forEach(element => {
-        element.textContent = maintenanceEnabled ? 'Maintenance' : 'Online';
+        element.textContent = maintenanceEnabled ? 'Offline' : 'Online';
     });
 }
 
@@ -5660,42 +5608,23 @@ function showMaintenancePage(message) {
     // Create maintenance page
     const maintenancePage = document.createElement('div');
     maintenancePage.id = 'maintenance-page';
-    maintenancePage.className = 'maintenance-screen';
+    maintenancePage.className = 'fixed inset-0 bg-blue-50 flex items-center justify-center p-4 z-[20000]';
     maintenancePage.innerHTML = `
-        <div class="maintenance-card">
-            <div class="maintenance-card-grid">
-                <div>
-                    <span class="maintenance-pill"><i class="fas fa-screwdriver-wrench"></i> Planned work in progress</span>
-                    <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900">GCSEMate is temporarily in maintenance mode</h1>
-                    <p class="mt-3 text-base leading-relaxed text-slate-600">${message}</p>
-                </div>
-                <div class="maintenance-meta-grid">
-                    <div class="maintenance-meta-card">
-                        <span>Status</span>
-                        <span>Maintenance</span>
-                    </div>
-                    <div class="maintenance-meta-card">
-                        <span>Expected Back</span>
-                        <span>${maintenanceStateCache?.eta ? formatDateMaybe(maintenanceStateCache.eta) : 'We will post an update soon'}</span>
-                    </div>
-                    <div class="maintenance-meta-card">
-                        <span>What to expect</span>
-                        <span>Saved data remains intact</span>
-                    </div>
-                </div>
-                <div class="rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-4 text-sm leading-relaxed text-blue-950">
-                    You can refresh to check whether service has resumed. If maintenance runs longer than expected, contact admin@gcsemate.com for an update.
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto" onerror="this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
-                        <span class="text-sm font-semibold text-slate-500">Revision tools will resume automatically once maintenance is lifted.</span>
-                    </div>
-                    <button onclick="location.reload()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-                        Refresh Page
-                    </button>
+        <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl p-8 max-w-md text-center">
+            <div class="mb-6">
+                <svg class="h-16 w-16 mx-auto text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Under Maintenance</h1>
+                <p class="text-gray-600 mb-6">${message}</p>
+                ${maintenanceStateCache?.eta ? `<p class="text-sm text-blue-700 mb-4"><strong>Expected back:</strong> ${formatDateMaybe(maintenanceStateCache.eta)}</p>` : ''}
+                <div class="flex justify-center">
+                    <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 w-auto" onerror="this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
                 </div>
             </div>
+            <button onclick="location.reload()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                Refresh Page
+            </button>
         </div>
     `;
     
@@ -6337,8 +6266,8 @@ function renderUserManagementPanel(allUsers) {
     
     // Calculate statistics
     const totalUsers = Object.keys(allUsers).length;
-    const freeUsers = Object.values(allUsers).filter(user => normalizeTierValue(user.tier) === 'free').length;
-    const paidUsers = Object.values(allUsers).filter(user => isPremiumTier(user.tier)).length;
+    const freeUsers = Object.values(allUsers).filter(user => user.tier === 'free').length;
+    const paidUsers = Object.values(allUsers).filter(user => user.tier === 'paid').length;
     const adminUsers = Object.values(allUsers).filter(user => user.role === 'admin').length;
     
     // Calculate active today (users who accessed in last 24 hours)
@@ -6446,7 +6375,6 @@ function renderUserManagementPanel(allUsers) {
                     <button class="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-xs font-semibold" onclick="toggleQuickSetMenu(this)" aria-haspopup="menu">Quick Set</button>
                     <div class="hidden absolute mt-1 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 quick-set-menu">
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}','paid',null)">Set Tier: Paid</button>
-                        <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}','friend_family',null)">Set Tier: Friend/Family</button>
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}','free',null)">Set Tier: Free</button>
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}',null,'admin')">Set Role: Admin</button>
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}',null,'user')">Set Role: User</button>
@@ -6458,14 +6386,13 @@ function renderUserManagementPanel(allUsers) {
                     <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
                     <div class="flex gap-1 items-center flex-wrap justify-end">
                         ${hasSharingFlag ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Sharing Flagged</span>' : ''}
-                        ${normalizeTierValue(user.tier) === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
-                        ${isFriendFamilyTier(user.tier) ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Friend/Family</span>' : ''}
+                        ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
                         ${user.role === 'admin' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>' : ''}
                     </div>
                 </div>
                 <p class="text-sm text-gray-500 mb-3">${user.email}</p>
                 <div class="flex gap-2 mb-3">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${getTierBadgeClasses(user.tier)}">${getTierDisplayLabel(user.tier)}</span>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
                     <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
                 </div>
                 <div class="mt-3 text-xs text-gray-600 space-y-1">
@@ -7256,20 +7183,28 @@ window.closeProfilePictureCropModal = function() {
 };
 
 function updateProfilePictureInUI(imageURL) {
-    const fallback = generatePfpUrl(currentUser?.email, currentUser?.displayName);
     // Update profile picture in header
     const profilePic = document.getElementById('profile-picture');
     if (profilePic) {
-        profilePic.src = imageURL || fallback;
+        profilePic.src = imageURL;
         profilePic.onerror = function() {
-            this.src = fallback;
+            this.src = ''; // Fallback to default avatar
         };
         // Add click handler to change profile picture
         if (!profilePic.dataset.clickHandlerAdded) {
             profilePic.style.cursor = 'pointer';
             profilePic.addEventListener('click', () => {
                 if (currentUser) {
-                    showProfilePictureUploadModal();
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            uploadProfilePicture(file);
+                        }
+                    };
+                    input.click();
                 }
             });
             profilePic.dataset.clickHandlerAdded = 'true';
@@ -7279,9 +7214,9 @@ function updateProfilePictureInUI(imageURL) {
     // Update profile picture in account settings
     const accountProfilePic = document.getElementById('account-profile-picture');
     if (accountProfilePic) {
-        accountProfilePic.src = imageURL || fallback;
+        accountProfilePic.src = imageURL;
         accountProfilePic.onerror = function() {
-            this.src = fallback;
+            this.src = ''; // Fallback to default avatar
         };
     }
 }
@@ -7498,7 +7433,6 @@ async function openEditUserModal(userId) {
                              <select id="edit-tier" class="mt-1 w-full p-2 rounded-lg border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
                                  <option value="free" ${user.tier === 'free' ? 'selected' : ''}>Free</option>
                                  <option value="paid" ${user.tier === 'paid' ? 'selected' : ''}>Paid</option>
-                                 <option value="friend_family" ${isFriendFamilyTier(user.tier) ? 'selected' : ''}>Friend/Family</option>
                              </select>
                          </div>
                          <div>
@@ -9506,8 +9440,8 @@ async function updateAnalytics() {
         
         // Calculate user statistics
         const totalUsers = Object.keys(allUsers).length;
-        const freeUsers = Object.values(allUsers).filter(user => normalizeTierValue(user.tier) === 'free').length;
-        const paidUsers = Object.values(allUsers).filter(user => isPremiumTier(user.tier)).length;
+        const freeUsers = Object.values(allUsers).filter(user => user.tier === 'free').length;
+        const paidUsers = Object.values(allUsers).filter(user => user.tier === 'paid').length;
         const adminUsers = Object.values(allUsers).filter(user => user.role === 'admin').length;
         
         // Update basic counts
@@ -10512,25 +10446,9 @@ function capitalizeFirstLetter(string) {
     if (!string) return '';
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
-function generatePfpUrl(email, displayName = '') {
-    const source = String(displayName || email || '?').trim();
-    const parts = source.split(/\s+/).filter(Boolean);
-    const initials = (parts.length >= 2
-        ? `${parts[0][0] || ''}${parts[1][0] || ''}`
-        : `${source[0] || '?'}${source[1] || ''}`).toUpperCase();
-    const safeInitials = initials || '?';
-    const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Profile avatar">
-            <defs>
-                <linearGradient id="avatarGradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#2563eb" />
-                    <stop offset="100%" stop-color="#0ea5e9" />
-                </linearGradient>
-            </defs>
-            <rect width="160" height="160" rx="80" fill="url(#avatarGradient)" />
-            <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="58" font-weight="800" fill="#ffffff">${safeInitials}</text>
-        </svg>`;
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+function generatePfpUrl(email) {
+    const initial = (email ? email.charAt(0) : '?').toUpperCase();
+    return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
 }
 function updateWelcomeMessage() {
     if (!currentUser) return;
@@ -10550,7 +10468,7 @@ function updateWelcomeMessage() {
         if (accountProfilePic) accountProfilePic.src = currentUser.profilePictureURL;
     } else {
         // Use generated avatar
-        const avatarUrl = generatePfpUrl(currentUser.email, currentUser.displayName);
+        const avatarUrl = generatePfpUrl(currentUser.email);
         if (profilePic) profilePic.src = avatarUrl;
         if (accountProfilePic) accountProfilePic.src = avatarUrl;
     }
@@ -10559,7 +10477,7 @@ function updateWelcomeMessage() {
     [profilePic, accountProfilePic].forEach(img => {
         if (img) {
             img.onerror = function() {
-                this.src = generatePfpUrl(currentUser.email, currentUser.displayName);
+                this.src = generatePfpUrl(currentUser.email);
             };
         }
     });
@@ -14712,7 +14630,7 @@ function showBlogPostViewer(postId) {
                 <div class="px-8 pb-8">
                     <h4 class="text-xl font-bold text-gray-800 mb-3">Comments</h4>
                     <div id="comments-list" class="space-y-4"></div>
-                    ${ userHasPremiumAccess(currentUser) ? `
+                    ${ (currentUser?.tier === 'paid' || (currentUser?.role||'').toLowerCase() === 'admin') ? `
                     <form id="add-comment-form" class="mt-4 space-y-2">
                         <textarea id="comment-input" class="w-full p-3 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Write a comment..." rows="3" required></textarea>
                         <div class="flex justify-end">
@@ -14834,7 +14752,7 @@ function showBlogPostViewer(postId) {
             const text = (textarea.value || '').trim();
             messageEl.textContent = '';
             if (!text) return;
-            const allowed = userHasPremiumAccess(currentUser);
+            const allowed = (currentUser?.tier === 'paid') || ((currentUser?.role || '').toLowerCase() === 'admin');
             if (!allowed) {
                 messageEl.textContent = 'Only Pro users can comment.';
                 messageEl.className = 'text-red-600 text-sm h-4';
@@ -16407,74 +16325,6 @@ function saveToolsPlannerItems() {
     } catch (_) {}
 }
 
-function createToolsNoteId() {
-    return `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function normaliseToolsNoteEntry(note = {}) {
-    return {
-        id: note.id || createToolsNoteId(),
-        title: String(note.title || 'Untitled note').trim() || 'Untitled note',
-        subject: String(note.subject || '').trim(),
-        content: String(note.content || '').trimStart(),
-        createdAt: note.createdAt || null,
-        updatedAt: note.updatedAt || null
-    };
-}
-
-function getToolsNotesCollectionRef() {
-    if (!currentUser || !db) return null;
-    return db.collection('users').doc(currentUser.uid).collection('notes');
-}
-
-function getSelectedToolsNote() {
-    return toolsNotesEntries.find(note => note.id === selectedToolsNoteId) || null;
-}
-
-function ensureSelectedToolsNote() {
-    if (!selectedToolsNoteId || !toolsNotesEntries.some(note => note.id === selectedToolsNoteId)) {
-        selectedToolsNoteId = toolsNotesEntries[0]?.id || null;
-    }
-}
-
-function cacheToolsNotesEntries() {
-    try {
-        localStorage.setItem(TOOLS_NOTES_INDEX_STORAGE_KEY, JSON.stringify({
-            selectedToolsNoteId,
-            notes: toolsNotesEntries
-        }));
-        const fallbackContent = getSelectedToolsNote()?.content || '';
-        localStorage.setItem(TOOLS_NOTES_STORAGE_KEY, fallbackContent);
-    } catch (_) {}
-}
-
-function restoreCachedToolsNotesEntries() {
-    try {
-        const raw = JSON.parse(localStorage.getItem(TOOLS_NOTES_INDEX_STORAGE_KEY) || 'null');
-        if (raw && Array.isArray(raw.notes)) {
-            toolsNotesEntries = raw.notes.map(normaliseToolsNoteEntry);
-            selectedToolsNoteId = raw.selectedToolsNoteId || toolsNotesEntries[0]?.id || null;
-            ensureSelectedToolsNote();
-            renderToolsNotesWorkspace();
-            return;
-        }
-    } catch (_) {}
-
-    const legacyContent = (() => {
-        try { return localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) { return ''; }
-    })();
-    toolsNotesEntries = [normaliseToolsNoteEntry({
-        id: TOOLS_NOTES_DOC_ID,
-        title: 'Quick Notes',
-        subject: '',
-        content: legacyContent,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    })];
-    selectedToolsNoteId = toolsNotesEntries[0].id;
-    renderToolsNotesWorkspace();
-}
-
 function updateToolsNotesMeta(value = '') {
     const metaEl = document.getElementById('tools-notes-meta');
     if (!metaEl) return;
@@ -16482,130 +16332,74 @@ function updateToolsNotesMeta(value = '') {
     const stateLabel = toolsNotesSyncState === 'saving'
         ? 'syncing…'
         : (toolsNotesSyncState === 'error' ? 'saved locally' : 'synced');
-    const selected = getSelectedToolsNote();
-    const subjectLabel = selected?.subject ? ` • ${selected.subject}` : '';
-    metaEl.textContent = `${wordCount} word${wordCount === 1 ? '' : 's'}${subjectLabel} • ${stateLabel}`;
-}
-
-function populateToolsNotesSubjectOptions() {
-    const select = document.getElementById('tools-notes-subject');
-    if (!select) return;
-    const current = select.value;
-    const subjects = Array.from(new Set(getAccessibleSubjectsForGradeTracker().concat(SUBJECTS || []))).filter(Boolean).sort((a, b) => a.localeCompare(b));
-    select.innerHTML = `<option value="">General</option>${subjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('')}`;
-    if (current && Array.from(select.options).some(option => option.value === current)) {
-        select.value = current;
-    }
-}
-
-function renderToolsNotesList() {
-    const listEl = document.getElementById('tools-notes-list');
-    if (!listEl) return;
-    if (!toolsNotesEntries.length) {
-        listEl.innerHTML = '<div class="tools-note-empty">No notes yet. Create one to keep subject-specific revision notes organised.</div>';
-        return;
-    }
-    listEl.innerHTML = toolsNotesEntries.map(note => {
-        const preview = (note.content || '').replace(/\s+/g, ' ').trim() || 'No content yet';
-        return `
-            <button type="button" class="tools-note-item ${note.id === selectedToolsNoteId ? 'is-active' : ''}" data-tools-note-select="${escapeHTML(note.id)}">
-                <span class="tools-note-item-meta">${escapeHTML(note.subject || 'General')}</span>
-                <span class="tools-note-item-title">${escapeHTML(note.title)}</span>
-                <span class="tools-note-item-preview">${escapeHTML(preview.slice(0, 90))}${preview.length > 90 ? '…' : ''}</span>
-            </button>`;
-    }).join('');
-}
-
-function renderToolsNotesWorkspace() {
-    populateToolsNotesSubjectOptions();
-    ensureSelectedToolsNote();
-    renderToolsNotesList();
-    const note = getSelectedToolsNote();
-    const titleEl = document.getElementById('tools-notes-title');
-    const subjectEl = document.getElementById('tools-notes-subject');
-    const contentEl = document.getElementById('tools-notes-input');
-    if (titleEl) titleEl.value = note?.title || '';
-    if (subjectEl) subjectEl.value = note?.subject || '';
-    if (contentEl) contentEl.value = note?.content || '';
-    updateToolsNotesMeta(note?.content || '');
+    metaEl.textContent = `${wordCount} word${wordCount === 1 ? '' : 's'} • ${stateLabel}`;
 }
 
 function loadToolsNotes() {
-    restoreCachedToolsNotesEntries();
+    const notesInput = document.getElementById('tools-notes-input');
+    if (!notesInput) return;
+    let saved = '';
+    try { saved = localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) {}
+    notesInput.value = saved;
     toolsNotesSyncState = currentUser ? 'saving' : 'idle';
-    renderToolsNotesWorkspace();
+    updateToolsNotesMeta(saved);
+}
+
+function getToolsNotesDocRef() {
+    if (!currentUser || !db) return null;
+    return db.collection('users').doc(currentUser.uid).collection('notes').doc(TOOLS_NOTES_DOC_ID);
 }
 
 function subscribeToToolsNotes() {
     if (!currentUser || !db) return;
-    const collectionRef = getToolsNotesCollectionRef();
-    if (!collectionRef) return;
+    const docRef = getToolsNotesDocRef();
+    const notesInput = document.getElementById('tools-notes-input');
+    if (!docRef || !notesInput) return;
     if (unsubscribeToolsNotes) {
         try { unsubscribeToolsNotes(); } catch (_) {}
     }
-    unsubscribeToolsNotes = collectionRef.orderBy('updatedAt', 'desc').onSnapshot(async (snapshot) => {
-        const docs = snapshot.docs.map(doc => normaliseToolsNoteEntry({ id: doc.id, ...doc.data() }));
-        if (!docs.length) {
-            const legacyContent = (() => {
-                try { return localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) { return ''; }
-            })();
-            if (legacyContent) {
-                try {
-                    await collectionRef.doc(TOOLS_NOTES_DOC_ID).set({
-                        title: 'Quick Notes',
-                        subject: '',
-                        content: legacyContent,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                } catch (_) {}
-            }
+    unsubscribeToolsNotes = docRef.onSnapshot(async (doc) => {
+        const serverValue = String(doc.data()?.content || '');
+        const localValue = (() => {
+            try { return localStorage.getItem(TOOLS_NOTES_STORAGE_KEY) || ''; } catch (_) { return ''; }
+        })();
+        const nextValue = serverValue || localValue;
+        if (!doc.exists && localValue) {
+            try {
+                await docRef.set({
+                    content: localValue,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (_) {}
         }
-        toolsNotesEntries = docs.length ? docs : toolsNotesEntries;
-        ensureSelectedToolsNote();
+        if (document.activeElement !== notesInput || !notesInput.value.trim()) {
+            notesInput.value = nextValue;
+        }
         toolsNotesSyncState = 'idle';
-        cacheToolsNotesEntries();
-        renderToolsNotesWorkspace();
+        updateToolsNotesMeta(notesInput.value || nextValue);
     }, () => {
         toolsNotesSyncState = 'error';
-        renderToolsNotesWorkspace();
+        updateToolsNotesMeta(notesInput.value || '');
     });
 }
 
-function saveToolsNotes(_, { immediate = false } = {}) {
-    const note = getSelectedToolsNote();
-    if (!note) return;
-    const title = document.getElementById('tools-notes-title')?.value.trim() || 'Untitled note';
-    const subject = document.getElementById('tools-notes-subject')?.value || '';
-    const content = document.getElementById('tools-notes-input')?.value || '';
-    toolsNotesEntries = toolsNotesEntries.map(entry => entry.id === note.id ? {
-        ...entry,
-        title,
-        subject,
-        content,
-        updatedAt: new Date().toISOString()
-    } : entry);
+function saveToolsNotes(value = '', { immediate = false } = {}) {
+    try { localStorage.setItem(TOOLS_NOTES_STORAGE_KEY, value); } catch (_) {}
     toolsNotesSyncState = currentUser ? 'saving' : 'idle';
-    cacheToolsNotesEntries();
-    renderToolsNotesList();
-    updateToolsNotesMeta(content);
+    updateToolsNotesMeta(value);
     if (!currentUser || !db) return;
 
     const persist = async () => {
         try {
-            await getToolsNotesCollectionRef()?.doc(note.id).set({
-                title,
-                subject,
-                content,
-                createdAt: note.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+            await getToolsNotesDocRef()?.set({
+                content: value,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
             toolsNotesSyncState = 'idle';
         } catch (_) {
             toolsNotesSyncState = 'error';
         }
-        renderToolsNotesList();
-        updateToolsNotesMeta(content);
+        updateToolsNotesMeta(value);
     };
 
     if (toolsNotesSaveTimeout) clearTimeout(toolsNotesSaveTimeout);
@@ -16614,40 +16408,6 @@ function saveToolsNotes(_, { immediate = false } = {}) {
         return;
     }
     toolsNotesSaveTimeout = setTimeout(persist, 350);
-}
-
-function createToolsNote() {
-    const nextNote = normaliseToolsNoteEntry({
-        id: createToolsNoteId(),
-        title: 'New note',
-        subject: '',
-        content: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    });
-    toolsNotesEntries = [nextNote, ...toolsNotesEntries];
-    selectedToolsNoteId = nextNote.id;
-    cacheToolsNotesEntries();
-    renderToolsNotesWorkspace();
-    saveToolsNotes('', { immediate: true });
-}
-
-async function deleteSelectedToolsNote() {
-    const note = getSelectedToolsNote();
-    if (!note) return;
-    if (!confirm(`Delete "${note.title}"?`)) return;
-    toolsNotesEntries = toolsNotesEntries.filter(entry => entry.id !== note.id);
-    ensureSelectedToolsNote();
-    cacheToolsNotesEntries();
-    renderToolsNotesWorkspace();
-    if (!currentUser || !db) return;
-    try {
-        await getToolsNotesCollectionRef()?.doc(note.id).delete();
-        toolsNotesSyncState = 'idle';
-    } catch (_) {
-        toolsNotesSyncState = 'error';
-    }
-    renderToolsNotesWorkspace();
 }
 
 function populateStudyRandomiserSubjects() {
@@ -17759,26 +17519,6 @@ function normaliseFlashcardDeck(deck = {}) {
     };
 }
 
-function renderFlashcardMarkdown(value = '') {
-    const rendered = renderMarkdown(String(value || '').trim() || '');
-    return `<div class="flashcards-rendered-markdown">${rendered}</div>`;
-}
-
-function insertFlashcardMarkdownSnippet(snippet) {
-    const activeField = document.activeElement;
-    if (!activeField || !['TEXTAREA', 'INPUT'].includes(activeField.tagName)) return;
-    const start = activeField.selectionStart ?? activeField.value.length;
-    const end = activeField.selectionEnd ?? activeField.value.length;
-    const before = activeField.value.slice(0, start);
-    const selected = activeField.value.slice(start, end);
-    const after = activeField.value.slice(end);
-    const nextValue = `${before}${selected || snippet}${after}`;
-    activeField.value = nextValue;
-    const cursor = before.length + (selected || snippet).length;
-    activeField.focus();
-    activeField.setSelectionRange(cursor, cursor);
-}
-
 function getSelectedFlashcardDeck() {
     return flashcardDecks.find(deck => deck.id === selectedFlashcardDeckId) || null;
 }
@@ -17812,32 +17552,11 @@ function renderFlashcardDecksList() {
     const listEl = document.getElementById('tools-flashcards-decks');
     const countEl = document.getElementById('tools-flashcards-count');
     const filterEl = document.getElementById('tools-flashcards-filter');
-    const searchEl = document.getElementById('tools-flashcards-search');
-    const sortEl = document.getElementById('tools-flashcards-sort');
     if (!listEl) return;
 
     updateFlashcardFilterOptions();
     const filterValue = filterEl?.value || 'all';
-    flashcardSearchQuery = searchEl?.value.trim().toLowerCase() || '';
-    flashcardSortMode = sortEl?.value || 'updated';
-    const visibleDecks = flashcardDecks
-        .filter(deck => filterValue === 'all' || deck.subject === filterValue)
-        .filter(deck => {
-            if (!flashcardSearchQuery) return true;
-            const haystack = `${deck.name} ${deck.subject} ${deck.description}`.toLowerCase();
-            return haystack.includes(flashcardSearchQuery);
-        })
-        .sort((a, b) => {
-            if (flashcardSortMode === 'name') return a.name.localeCompare(b.name);
-            if (flashcardSortMode === 'subject') return a.subject.localeCompare(b.subject) || a.name.localeCompare(b.name);
-            if (flashcardSortMode === 'accuracy') {
-                const aAccuracy = Number(a.stats?.cardsReviewed || 0) > 0 ? Number(a.stats?.correct || 0) / Number(a.stats?.cardsReviewed || 1) : 0;
-                const bAccuracy = Number(b.stats?.cardsReviewed || 0) > 0 ? Number(b.stats?.correct || 0) / Number(b.stats?.cardsReviewed || 1) : 0;
-                return bAccuracy - aAccuracy;
-            }
-            if (flashcardSortMode === 'cards') return b.cards.length - a.cards.length;
-            return (toMillis(b.updatedAt) || toMillis(b.createdAt)) - (toMillis(a.updatedAt) || toMillis(a.createdAt));
-        });
+    const visibleDecks = flashcardDecks.filter(deck => filterValue === 'all' || deck.subject === filterValue);
     if (countEl) countEl.textContent = `${visibleDecks.length} deck${visibleDecks.length === 1 ? '' : 's'}`;
 
     if (!visibleDecks.length) {
@@ -17860,7 +17579,6 @@ function renderFlashcardDecksList() {
                 <div class="flashcards-deck-item-header text-xs text-slate-500">
                     <span>${accuracy}% accuracy</span>
                     <span>${Number(deck.stats?.sessionsCompleted || 0)} session${Number(deck.stats?.sessionsCompleted || 0) === 1 ? '' : 's'}</span>
-                    <span>${formatDateMaybe(deck.updatedAt || deck.createdAt)}</span>
                 </div>
             </button>`;
     }).join('');
@@ -17964,11 +17682,9 @@ function renderFlashcardStudySession() {
 
     document.getElementById('tools-flashcards-study-kicker').textContent = deck.subject;
     document.getElementById('tools-flashcards-study-title').textContent = deck.name;
-    document.getElementById('tools-flashcards-study-front').innerHTML = renderFlashcardMarkdown(currentCard.front);
-    document.getElementById('tools-flashcards-study-back').innerHTML = renderFlashcardMarkdown(currentCard.back);
-    document.getElementById('tools-flashcards-study-hint').innerHTML = currentCard.hint
-        ? renderFlashcardMarkdown(`Hint: ${currentCard.hint}`)
-        : 'Tap the card or use the flip button to reveal the answer.';
+    document.getElementById('tools-flashcards-study-front').textContent = currentCard.front;
+    document.getElementById('tools-flashcards-study-back').textContent = currentCard.back;
+    document.getElementById('tools-flashcards-study-hint').textContent = currentCard.hint ? `Hint: ${currentCard.hint}` : 'Tap the card or use the flip button to reveal the answer.';
     document.getElementById('tools-flashcards-study-count').textContent = `Card ${flashcardStudySession.index + 1} of ${deck.cards.length}`;
     document.getElementById('tools-flashcards-study-score').textContent = `Score ${flashcardStudySession.correct}/${flashcardStudySession.correct + flashcardStudySession.incorrect}`;
     document.getElementById('tools-flashcards-study-progress-fill').style.width = `${((flashcardStudySession.index) / Math.max(deck.cards.length, 1)) * 100}%`;
@@ -18385,14 +18101,9 @@ function initializeFlashcardsTool() {
     document.getElementById('tools-flashcards-mark-good')?.addEventListener('click', async () => {
         await markFlashcardStudyCard(true);
     });
-    document.getElementById('tools-flashcards-search')?.addEventListener('input', () => renderFlashcardDecksList());
     document.getElementById('tools-flashcards-filter')?.addEventListener('change', () => {
         recordUserInteraction('flashcards_filter', { target: document.getElementById('tools-flashcards-filter')?.value || 'all', important: true });
         renderFlashcardDecksList();
-    });
-    document.getElementById('tools-flashcards-sort')?.addEventListener('change', () => renderFlashcardDecksList());
-    document.querySelectorAll('[data-flashcard-markdown]').forEach((button) => {
-        button.addEventListener('click', () => insertFlashcardMarkdownSnippet(button.dataset.flashcardMarkdown || ''));
     });
     document.getElementById('tools-flashcards-decks')?.addEventListener('click', (event) => {
         const button = event.target.closest('[data-flashcards-select]');
@@ -18400,9 +18111,6 @@ function initializeFlashcardsTool() {
         selectedFlashcardDeckId = button.dataset.flashcardsSelect || null;
         recordUserInteraction('flashcards_select_deck', { target: selectedFlashcardDeckId, important: true });
         renderFlashcardsWorkspace();
-    });
-    document.getElementById('tools-flashcards-editor')?.addEventListener('focusin', (event) => {
-        if (event.target.matches('textarea, input')) activeFlashcardEditorFieldId = event.target.id || '';
     });
     document.getElementById('tools-flashcards-cards')?.addEventListener('click', async (event) => {
         const saveButton = event.target.closest('[data-flashcard-save-card]');
@@ -18446,13 +18154,8 @@ function initializeToolsPage() {
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
     const notesInput = document.getElementById('tools-notes-input');
-    const notesTitleInput = document.getElementById('tools-notes-title');
-    const notesSubjectSelect = document.getElementById('tools-notes-subject');
     const notesClearBtn = document.getElementById('tools-notes-clear');
     const notesCopyBtn = document.getElementById('tools-notes-copy');
-    const notesNewBtn = document.getElementById('tools-notes-new');
-    const notesDeleteBtn = document.getElementById('tools-notes-delete');
-    const notesList = document.getElementById('tools-notes-list');
     const randomiserBtn = document.getElementById('tools-randomiser-generate');
     const gradeSaveBtn = document.getElementById('tools-grade-save');
     const plannerForm = document.getElementById('tools-planner-form');
@@ -18627,50 +18330,17 @@ function initializeToolsPage() {
                 }
             });
         }
-        document.getElementById('tools-page')?.addEventListener('click', (event) => {
-            const navButton = event.target.closest('[data-tools-nav-target]');
-            if (!navButton) return;
-            const target = document.getElementById(navButton.dataset.toolsNavTarget || '');
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
         if (notesInput) {
             notesInput.addEventListener('input', () => {
                 saveToolsNotes(notesInput.value);
                 recordUserInteraction('tools_notes_input', { target: 'notes' });
             });
         }
-        if (notesTitleInput) {
-            notesTitleInput.addEventListener('input', () => saveToolsNotes(notesInput?.value || ''));
-        }
-        if (notesSubjectSelect) {
-            notesSubjectSelect.addEventListener('change', () => saveToolsNotes(notesInput?.value || '', { immediate: true }));
-        }
         if (notesClearBtn) {
             notesClearBtn.addEventListener('click', () => {
                 if (notesInput) notesInput.value = '';
                 saveToolsNotes('', { immediate: true });
                 recordUserInteraction('tools_notes_clear', { target: 'notes', important: true });
-            });
-        }
-        if (notesNewBtn) {
-            notesNewBtn.addEventListener('click', () => {
-                createToolsNote();
-                recordUserInteraction('tools_notes_new', { target: 'notes', important: true });
-            });
-        }
-        if (notesDeleteBtn) {
-            notesDeleteBtn.addEventListener('click', () => {
-                deleteSelectedToolsNote();
-                recordUserInteraction('tools_notes_delete', { target: 'notes', important: true });
-            });
-        }
-        if (notesList) {
-            notesList.addEventListener('click', (event) => {
-                const noteButton = event.target.closest('[data-tools-note-select]');
-                if (!noteButton) return;
-                selectedToolsNoteId = noteButton.dataset.toolsNoteSelect || null;
-                renderToolsNotesWorkspace();
-                recordUserInteraction('tools_notes_select', { target: selectedToolsNoteId || 'note' });
             });
         }
         if (notesCopyBtn) {
@@ -18763,7 +18433,6 @@ function initializeToolsPage() {
 
     updateGradeSubjectOptions();
     populateStudyRandomiserSubjects();
-    populateToolsNotesSubjectOptions();
     renderGradeTrackerTables();
     if (currentUser) subscribeToGradeEntries();
     if (currentUser) subscribeToToolsNotes();

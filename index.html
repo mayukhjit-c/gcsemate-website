@@ -430,20 +430,9 @@
     </div>
     <script>
     (function(){
-        function ensureVisibleFallback(){
-            var landing = document.getElementById('landing-page');
-            var login = document.getElementById('login-page');
-            var verify = document.getElementById('email-verify-page');
-            var main = document.getElementById('main-app');
-            function visible(el){ return !!(el && !el.classList.contains('hidden') && el.style.display !== 'none'); }
-            if (!visible(landing) && !visible(login) && !visible(verify) && !visible(main) && landing) {
-                landing.classList.remove('hidden');
-            }
-        }
         function hide(){
             var el = document.getElementById('app-loading');
             if(!el || (el.dataset && el.dataset.hidden === 'true')) return;
-            ensureVisibleFallback();
             if (el.dataset) el.dataset.hidden = 'true';
             el.style.transition = el.style.transition || 'opacity 200ms ease-out';
             el.style.opacity = '0';
@@ -1049,9 +1038,9 @@
                      </div>
                     <div class="flex items-center justify-between gap-3 mb-4">
                         <div class="flex items-center gap-2 w-full max-w-lg">
-                            <div class="relative flex-1 search-field">
-                                <input id="playlist-search" type="search" placeholder="Search playlists..." class="search-field-input search-field-input--with-icon w-full pl-11 pr-4 py-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search playlists" />
-                                <i class="fas fa-search search-field-icon absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true"></i>
+                            <div class="relative flex-1">
+                                <input id="playlist-search" type="search" placeholder="Search playlists..." class="w-full pl-10 pr-4 py-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Search playlists" />
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none leading-none"></i>
                             </div>
                             <input id="playlist-tag-filter" type="text" placeholder="Filter by tag (comma or space separated)" class="hidden sm:block p-2 rounded-lg border-gray-200/60 bg-white/50" />
                         </div>
@@ -1322,16 +1311,8 @@
                             <span class="tools-page-chip"><i class="fas fa-moon"></i> Dark mode tuned</span>
                         </div>
                     </div>
-                    <nav class="tools-quick-nav mb-6" aria-label="Tools sections">
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-focus-panel">Focus</button>
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-calculator-panel">Calculator</button>
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-planner-panel">Planner</button>
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-notes-panel">Notes</button>
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-flashcards-panel">Flashcards</button>
-                        <button type="button" class="tools-quick-nav-btn" data-tools-nav-target="tools-grade-panel">Grades</button>
-                    </nav>
                     <div class="tools-stage-grid">
-                        <div id="tools-focus-panel" class="tools-panel-card tools-hero-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                        <div class="tools-panel-card tools-hero-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                                 <h3 class="text-xl font-bold text-gray-800">Focus Timer</h3>
                                 <div class="flex items-center gap-3 flex-wrap justify-end">
@@ -1476,7 +1457,7 @@
                     </div>
 
                     <div class="tools-utility-grid mt-8">
-                            <div id="tools-calculator-panel" class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <h3 class="text-lg font-bold text-gray-800 mb-3">Scientific Calculator</h3>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 calculator-shell-top">
                                     <button id="tools-calc-shift" type="button" class="tools-calc-btn tools-calc-toggle">Shift Off</button>
@@ -1534,7 +1515,7 @@
                                     <button id="tools-calc-equals" class="tools-calc-btn bg-blue-600 text-white border-blue-600 hover:bg-blue-700">=</button>
                                 </div>
                             </div>
-                            <div id="tools-planner-panel" class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-start justify-between gap-3 mb-4">
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-800">Revision Sprint Planner</h3>
@@ -1561,34 +1542,18 @@
                                 <div id="tools-planner-empty" class="mt-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-5 text-sm text-gray-500">No tasks yet. Add your first study target to build a focused revision plan.</div>
                                 <div id="tools-planner-list" class="mt-4 space-y-3"></div>
                             </div>
-                            <div id="tools-notes-panel" class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                            <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                                 <div class="flex items-center justify-between gap-3 mb-3">
                                     <div>
                                         <h3 class="text-lg font-bold text-gray-800">Quick Notes</h3>
-                                        <p class="text-sm text-gray-600 mt-1">Create named notes by subject, switch between them quickly, and keep everything synced to your account.</p>
+                                        <p class="text-sm text-gray-600 mt-1">Capture ideas, mnemonics, or last-minute reminders. Notes sync to your account.</p>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <button id="tools-notes-new" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">New note</button>
-                                        <button id="tools-notes-delete" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">Delete</button>
-                                    </div>
+                                    <button id="tools-notes-clear" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">Clear</button>
                                 </div>
-                                <div class="tools-notes-shell">
-                                    <div class="tools-notes-list-panel">
-                                        <div class="grid grid-cols-1 gap-3">
-                                            <input id="tools-notes-title" type="text" maxlength="80" placeholder="Note title" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900">
-                                            <select id="tools-notes-subject" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
-                                                <option value="">General</option>
-                                            </select>
-                                        </div>
-                                        <div id="tools-notes-list" class="tools-notes-list mt-4" aria-label="Saved notes"></div>
-                                    </div>
-                                    <div class="tools-notes-editor-panel">
-                                        <textarea id="tools-notes-input" rows="9" placeholder="Write revision notes, summaries, or mnemonics here..." class="w-full px-4 py-3 rounded-xl border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 resize-y"></textarea>
-                                        <div class="mt-3 flex items-center justify-between gap-3 text-xs text-gray-500">
-                                            <span id="tools-notes-meta">0 words • synced</span>
-                                            <button id="tools-notes-copy" class="text-blue-700 hover:text-blue-800 font-semibold text-sm">Copy note</button>
-                                        </div>
-                                    </div>
+                                <textarea id="tools-notes-input" rows="7" placeholder="Write quick revision notes here..." class="w-full px-4 py-3 rounded-xl border border-gray-300/70 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 resize-y"></textarea>
+                                <div class="mt-3 flex items-center justify-between gap-3 text-xs text-gray-500">
+                                    <span id="tools-notes-meta">0 words • synced</span>
+                                    <button id="tools-notes-copy" class="text-blue-700 hover:text-blue-800 font-semibold text-sm">Copy notes</button>
                                 </div>
                             </div>
                             <div class="tools-panel-card tools-utility-card bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
@@ -1629,24 +1594,16 @@
                             </div>
                     </div>
 
-                    <div id="tools-flashcards-panel" class="mt-8 tools-panel-card tools-flashcards-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                    <div class="mt-8 tools-panel-card tools-flashcards-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
                             <div>
                                 <h3 class="text-xl font-bold text-gray-800">Flashcards</h3>
-                                <p class="text-sm text-gray-600 mt-1">Build deck sets by subject, sort them quickly, use markdown ribbons for richer content, and flip through them with saved progress tracking.</p>
+                                <p class="text-sm text-gray-600 mt-1">Build deck sets by subject, import cards in bulk, then flip through them with instant scoring and progress tracking.</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <span id="tools-flashcards-sync-status" class="tools-status-pill">Ready</span>
-                                <input id="tools-flashcards-search" type="search" placeholder="Search decks" class="w-full sm:w-auto px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900" aria-label="Search flashcard decks">
                                 <select id="tools-flashcards-filter" class="tools-select px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
                                     <option value="all">All subject groups</option>
-                                </select>
-                                <select id="tools-flashcards-sort" class="tools-select px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm" aria-label="Sort flashcard decks">
-                                    <option value="updated">Recently updated</option>
-                                    <option value="name">Deck name</option>
-                                    <option value="subject">Subject</option>
-                                    <option value="accuracy">Highest accuracy</option>
-                                    <option value="cards">Most cards</option>
                                 </select>
                             </div>
                         </div>
@@ -1710,15 +1667,7 @@
                                         <div class="flashcards-composer-card">
                                             <div class="flashcards-section-heading">
                                                 <h4>Add a card</h4>
-                                                <p>Use a question, keyword, or prompt on the front. The ribbon adds quick markdown patterns like headings, bullets, code, and emphasis.</p>
-                                            </div>
-                                            <div class="flashcards-markdown-ribbon" aria-label="Flashcard markdown shortcuts">
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="# ">H1</button>
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="## ">H2</button>
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="**bold**">Bold</button>
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="*italic*">Italic</button>
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="- ">List</button>
-                                                <button type="button" class="flashcards-ribbon-btn" data-flashcard-markdown="`code`">Code</button>
+                                                <p>Use a question, keyword, or prompt on the front.</p>
                                             </div>
                                             <textarea id="tools-flashcards-front" rows="3" placeholder="Front of card" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900 resize-y"></textarea>
                                             <textarea id="tools-flashcards-back" rows="3" placeholder="Back of card" class="w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm text-gray-900 resize-y mt-3"></textarea>
@@ -1795,7 +1744,7 @@
                         </div>
                     </div>
 
-                    <div id="tools-grade-panel" class="mt-8 tools-panel-card tools-grade-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
+                    <div class="mt-8 tools-panel-card tools-grade-panel bg-white/70 backdrop-blur-lg border border-white/40 rounded-2xl p-6 shadow-lg">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                             <div>
                                 <h3 class="text-xl font-bold text-gray-800">Grade Tracker</h3>
@@ -2449,7 +2398,7 @@
                                             Remove
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Square avatars work best. You can crop before uploading.</p>
+                                    <p class="text-xs text-gray-500 mt-1">Available for Pro users only</p>
                                 </div>
                             </div>
                         </div>
@@ -2770,33 +2719,33 @@
                                 <tbody id="pricing-compare-body" class="divide-y divide-gray-100">
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Subjects Dashboard</td>
-                                        <td class="px-4 py-3 text-gray-500"><span class="comparison-state comparison-state-muted"><i class="fas fa-minus"></i><span>Limited</span></span></td>
-                                        <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Unlimited</span></span></td>
+                                        <td class="px-4 py-3 text-gray-500">Limited</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Unlimited</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">File Browser & Previews</td>
-                                        <td class="px-4 py-3 text-gray-500"><span class="comparison-state comparison-state-muted"><i class="fas fa-minus"></i><span>Basic</span></span></td>
-                                        <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Full access with Google Docs/Slides/Sheets preview</span></span></td>
+                                        <td class="px-4 py-3 text-gray-500">Basic</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Full access with Google Docs/Slides/Sheets preview</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Videos & Playlists</td>
-                                        <td class="px-4 py-3 text-green-600"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Included</span></span></td>
-                                        <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Included</span></span></td>
+                                        <td class="px-4 py-3 text-green-600">Included</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Blog Comments</td>
-                                        <td class="px-4 py-3 text-gray-500"><span class="comparison-state comparison-state-muted"><i class="fas fa-minus"></i><span>Read-only</span></span></td>
-                                        <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Post and engage</span></span></td>
+                                        <td class="px-4 py-3 text-gray-500">Read-only</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Post and engage</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Calendar & Events</td>
-                                        <td class="px-4 py-3 text-gray-500"><span class="comparison-state comparison-state-muted"><i class="fas fa-minus"></i><span>Personal events</span></span></td>
-                                        <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Personal + Global events with countdowns</span></span></td>
+                                        <td class="px-4 py-3 text-gray-500">Personal events</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Personal + Global events with countdowns</td>
                                     </tr>
                                      <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                          <td class="px-4 py-3 font-medium text-gray-800">Accessibility</td>
-                                         <td class="px-4 py-3 text-green-600"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Semantic HTML, skip links, ARIA labels</span></span></td>
-                                         <td class="px-4 py-3 text-green-700 font-semibold"><span class="comparison-state comparison-state-positive"><i class="fas fa-check"></i><span>Everything in Free + higher contrast presets and keyboard flows</span></span></td>
+                                         <td class="px-4 py-3 text-green-600">Semantic HTML, skip links, ARIA labels</td>
+                                         <td class="px-4 py-3 text-green-700 font-semibold">Everything in Free + higher contrast presets and keyboard flows</td>
                                      </tr>
                                 </tbody>
                             </table>
