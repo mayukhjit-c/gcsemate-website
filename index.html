@@ -442,14 +442,14 @@
     
     <div id="landing-page" class="hidden gs-page">
         <div class="gs-shell gs-shell--single fade-in">
-        <header class="flex justify-between items-center py-4 sm:py-6 mb-8 sm:mb-12">
+        <header class="flex justify-between items-center py-4 sm:py-6">
              <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 sm:h-12 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
               <div class="flex items-center gap-3 sm:gap-4">
                   <button onclick="showAuthPage(true)" class="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-tooltip="Sign in to your account">Sign In</button>
                   <button onclick="showAuthPage(false)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105" data-tooltip="Create your account">Get Started</button>
               </div>
         </header>
-        <main id="landing-content" class="mt-8 sm:mt-12 lg:mt-16" role="main">
+        <main id="landing-content" class="mt-6 sm:mt-8" role="main">
             <section class="hero-shell" aria-labelledby="hero-heading">
                 <div class="hero-grid">
                     <div class="hero-copy">
@@ -461,7 +461,7 @@
                         </div>
                         <div class="animate-hero-subtitle">
                             <p class="hero-subtitle">
-                                Join 50+ students already revising smarter. GCSE revision notes, past papers, mark schemes, exam questions, flashcards, videos and playlists in one clean, mobile-first workspace.
+                                Join 200+ students already revising smarter. GCSE revision notes, past papers, mark schemes, exam questions, flashcards, videos and playlists in one clean, mobile-first workspace.
                             </p>
                             <p class="hero-subtitle mt-3">
                                 Ace GCSEs with confidence and consistency using resources aligned to AQA, Edexcel and OCR, built for UK students aiming for strong grades.
@@ -482,7 +482,7 @@
                                 <i class="fas fa-user-check mr-2"></i>Already have an account? Sign In
                             </button>
                         </div>
-                        <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4">
+                        <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                             <button onclick="signInWithGoogle()" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-lg bg-white text-gray-800 font-bold border border-gray-200 hover:bg-gray-50 transition-all min-h-[56px] flex items-center justify-center" data-tooltip="Sign in with Google">
                                 <i class="fab fa-google mr-2"></i>Sign in with Google
                             </button>
@@ -509,7 +509,7 @@
                                 <div class="hero-avatar-row" aria-hidden="true">
                                     <span class="avatar-dot"></span>
                                 </div>
-                                <p class="hero-panel-note">Trusted by 50+ students across the UK. Join in under a minute.</p>
+                                <p class="hero-panel-note">Trusted by 200+ students across the UK. Join in under a minute.</p>
                                 <div class="hero-cta-links">
                                     <a class="ghost-link" href="#benefits">Explore features</a>
                                     <a class="ghost-link" href="#testimonials">See student wins</a>
@@ -524,9 +524,9 @@
                 <button onclick="showAuthPage(true)" class="mobile-cta ghost"><i class="fas fa-user-check"></i><span>Sign in</span></button>
             </div>
             <div class="mt-16 sm:mt-20 lg:mt-24 px-4" id="benefits">
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight sr">Why 50+ Students Choose GCSEMate</h2>
-                <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg sr sr--d1">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
-                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight sr text-center">Why 200+ Students Choose GCSEMate</h2>
+                <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg sr sr--d1 text-center max-w-2xl mx-auto">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
+                <div class="mt-12 grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
                     <div class="p-8 modern-card rounded-2xl shadow-lg card-modern hover:shadow-xl transition-all duration-300 sr sr--d1" style="animation-delay: 0.1s;">
                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 hover:scale-110">
                             <i class="fas fa-folder-open text-2xl"></i>
@@ -561,7 +561,7 @@
                             <div class="flex items-center justify-center mb-3">
                                 <i class="fas fa-users text-3xl sm:text-4xl text-blue-600"></i>
                             </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">50+</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">200+</div>
                             <div class="text-sm text-gray-600">Active Students</div>
                         </div>
                         <div class="bg-white p-5 sm:p-6 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all sr sr--d2">
@@ -588,7 +588,7 @@
                     </div>
                 </div>
                 
-                <div class="mt-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="mt-12 max-w-5xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
                         <p class="text-sm font-semibold uppercase tracking-widest text-blue-100">Upgrade without losing progress</p>
                         <h3 class="text-2xl sm:text-3xl font-bold">Unlock the full library for £1/month</h3>

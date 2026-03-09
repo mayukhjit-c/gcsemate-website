@@ -336,10 +336,13 @@ scroll-behavior: inherit;
         }
 
         /* Landing spacing + responsiveness polish */
-        #landing-page header { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-        #landing-page main { margin-top: clamp(1.5rem, 4vw, 3.5rem); }
+        #landing-page header { padding-top: 0.25rem; padding-bottom: 0.25rem; margin-bottom: 0; }
+        #landing-page main { margin-top: 0; }
         #landing-page .hero-copy { gap: 1.25rem; }
         #landing-page .hero-grid { gap: clamp(1.75rem, 4vw, 2.75rem); }
+
+        /* Landing page: align content to top, not vertically centered; remove redundant outer padding */
+        #landing-page.gs-page { align-items: flex-start; padding-top: 0; padding-bottom: 0; }
 
         @media (max-width: 640px) {
             #landing-page { padding-bottom: 6.5rem; }

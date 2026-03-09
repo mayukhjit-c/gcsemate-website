@@ -17464,8 +17464,8 @@ function renderCommandPaletteResults(query = '') {
                     <button type="button" class="command-palette-item ${index === 0 ? 'active' : ''}" data-command-palette-id="${escapeHTML(item.id)}">
                         <span class="command-palette-icon"><i class="fas ${escapeHTML(item.icon)}"></i></span>
                         <span class="min-w-0">
-                            <span class="block text-sm font-bold text-white">${escapeHTML(item.title)}</span>
-                            <span class="block text-xs text-slate-400">${escapeHTML(item.description)}</span>
+                            <span class="block text-sm font-bold text-gray-900">${escapeHTML(item.title)}</span>
+                            <span class="block text-xs text-slate-500">${escapeHTML(item.description)}</span>
                         </span>
                         ${item.shortcut ? `<span class="command-palette-shortcut">${escapeHTML(item.shortcut)}</span>` : '<span></span>'}
                     </button>`).join('')}
