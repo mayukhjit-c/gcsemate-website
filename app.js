@@ -10407,11 +10407,13 @@ function createToastContainer() {
     return container;
 }
 
-function openUpgradeModal(message) {
+function openUpgradeModal(message, title) {
     const modal = document.getElementById('upgrade-modal');
     if (!modal) return;
     const msgEl = document.getElementById('upgrade-modal-message');
     if (msgEl && message) msgEl.textContent = message;
+    const titleEl = document.getElementById('upgrade-modal-title');
+    if (titleEl && title) titleEl.textContent = title;
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
@@ -11056,11 +11058,12 @@ async function renderDashboard() {
         }
         
         let subjectsToShow = userAllowedSubjects === null || userAllowedSubjects === undefined ? SUBJECTS : SUBJECTS.filter(s => normalizedAllowedSubjects.includes(s.toLowerCase()));
-        if (isFreeTierUser && currentFreeTrialSubject) {
-            subjectsToShow = [currentFreeTrialSubject];
+        // Free tier users can see AND browse ALL subjects; file access is gated at the file level
+        if (isFreeTierUser) {
+            subjectsToShow = SUBJECTS;
         }
         if (subjectsToShow.length === 0) {
-            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">${isFreeTierUser ? 'Your free trial subject is temporarily unavailable. Please try again shortly.' : 'Your account does not have access to any subjects. Please contact an administrator.'}</p></div>`;
+            subjectGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Subjects Available</h3><p class="mt-1 text-sm text-gray-500">Your account does not have access to any subjects. Please contact an administrator.</p></div>`;
             return;
         }
         const openSubjectFolder = (subject, subjectId) => {
@@ -11132,6 +11135,11 @@ async function renderDashboard() {
                     countdown.textContent = `${daysLeft} day${daysLeft === 1 ? '' : 's'} left (rotates at UK midnight)`;
                     wrapper.appendChild(countdown);
                 }
+            } else if (isFreeTierUser) {
+                const lockedBadge = document.createElement('span');
+                lockedBadge.className = 'mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700';
+                lockedBadge.innerHTML = '<i class="fas fa-lock text-[9px]"></i> Browse free • Pro to open files';
+                wrapper.appendChild(lockedBadge);
             }
             // Add summary text with arrow
             const summaryContainer = document.createElement('div');
@@ -11188,30 +11196,14 @@ async function renderDashboard() {
                 const isMaths = subject && subject.toLowerCase().includes('math');
                 const freeGlowClass = isCurrentFreeSubject ? ' ring-2 ring-yellow-300 shadow-2xl shadow-yellow-200/80 hover:ring-yellow-400' : '';
                 card.className = 'p-4 sm:p-6 rounded-2xl shadow-lg cursor-pointer transition-all transform hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm border border-gray-200/50 hover:border-blue-300/50 brand-gradient hover-raise overflow-visible ' + (isMaths ? 'min-h-[240px]' : 'min-h-[220px]') + freeGlowClass;
-                card.setAttribute('data-tooltip', `Open ${subject} folder`);
-                card.addEventListener('click', () => {
-                    if (isFreeTierUser && subject !== currentFreeTrialSubject) {
-                        openUpgradeModal('Free accounts can access one rotating trial subject every 2 weeks. Upgrade to Pro for unlimited access to all subjects and features for just £1 a month.');
-                        return;
-                    }
-                    openSubjectFolder(subject, subjectId);
-                });
+                card.setAttribute('data-tooltip', `Browse ${subject} — open any folder`);
+                card.addEventListener('click', () => openSubjectFolder(subject, subjectId));
             } else {
                 card.className = 'p-4 sm:p-6 rounded-2xl shadow-md flex flex-col items-center justify-center text-center bg-gray-200/50 border border-gray-300/30 backdrop-blur-lg opacity-60 cursor-not-allowed min-h-[180px] max-h-[220px]';
                 card.setAttribute('data-tooltip', `Folder for ${subject} is not yet available`);
             }
             subjectGrid.appendChild(card);
         });
-        if (isFreeTierUser && currentFreeTrialSubject) {
-            const trialFolderId = allSubjectFolders[currentFreeTrialSubject.toLowerCase()];
-            const fileBrowserPage = document.getElementById('file-browser-page');
-            const fileBrowserVisible = !!fileBrowserPage && !fileBrowserPage.classList.contains('hidden');
-            const autoOpenKey = `${currentFreeTrialSubject}|${normalizeFreeTrialSubject(freeTrialSubjectOverride) ? 'manual' : 'auto'}`;
-            if (trialFolderId && !fileBrowserVisible && lastAutoOpenedFreeTrialSubjectKey !== autoOpenKey) {
-                lastAutoOpenedFreeTrialSubjectKey = autoOpenKey;
-                openSubjectFolder(currentFreeTrialSubject, trialFolderId);
-            }
-        }
     } catch (err) {
         renderError(subjectGrid, `Could not load subjects. ${err.message || ''} Please try again later.`);
         showToast(`Subjects failed to load: ${err.message}`, 'error');
@@ -11489,7 +11481,20 @@ function renderItems() {
             if (isFolder) {
                 itemElement.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
             } else {
-                itemElement.addEventListener('click', () => showPreview(file));
+                if (!canFreeUserDownload) {
+                    // Show Pro lock badge on file items for free users
+                    const lockBadge = document.createElement('div');
+                    lockBadge.className = 'absolute bottom-1 left-1/2 -translate-x-1/2 pointer-events-none';
+                    lockBadge.innerHTML = '<span class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 py-0.5"><i class="fas fa-lock"></i> Pro</span>';
+                    itemElement.appendChild(lockBadge);
+                }
+                itemElement.addEventListener('click', () => {
+                    if (!canFreeUserDownload) {
+                        openUpgradeModal(`Open files, preview PDFs and download any resource with a Pro account.`);
+                        return;
+                    }
+                    showPreview(file);
+                });
             }
             
             // Add star button for both files and folders
@@ -11542,10 +11547,23 @@ function renderItems() {
             if (isFolder) {
                 mainInfo.addEventListener('click', () => { path.push({ name: file.name, id: file.id }); fetchAndRenderFiles(file.id); });
             } else {
-                mainInfo.addEventListener('click', () => showPreview(file));
+                mainInfo.addEventListener('click', () => {
+                    if (!canFreeUserDownload) {
+                        openUpgradeModal(`Open files, preview PDFs and download any resource with a Pro account.`);
+                        return;
+                    }
+                    showPreview(file);
+                });
             }
             const actions = document.createElement('div');
             actions.className = 'flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2 sm:ml-4';
+            // Add Pro lock badge for free users on file items
+            if (!isFolder && !canFreeUserDownload) {
+                const lockChip = document.createElement('span');
+                lockChip.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 flex-shrink-0';
+                lockChip.innerHTML = '<i class="fas fa-lock text-[9px]"></i> Pro';
+                actions.appendChild(lockChip);
+            }
             // Add star button for both files and folders
             if (isFolder) {
                 const safeFolderId = escapeJS(file.id);
