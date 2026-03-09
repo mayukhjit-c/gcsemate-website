@@ -5350,27 +5350,254 @@ function showWhatsNewBanner(message, onDismiss) {
 }
 
 // First-time tutorial logic
-function showFirstTimeTutorial() {
+async function showFirstTimeTutorial() {
     const overlay = document.getElementById('tutorial-overlay');
     if (!overlay) return;
+
+    const wait = (ms) => new Promise(r => setTimeout(r, ms));
+    const freeSubject = getCurrentFreeTrialSubject();
+
     const steps = [
-        'This is your dashboard. Quickly access your subjects and progress.',
-        'Use the top navigation to switch between Subjects, Videos, Blog and more.',
-        'Open Calendar to add deadlines and track key exam dates.',
-        'You can always find Help/FAQ and Account from the menu.'
+        {
+            icon: '👋',
+            title: 'Welcome to GCSEMate!',
+            content: "Let's take a 2-minute tour. We'll walk through subjects, file browsing, search, study tools and more. You can skip anytime.",
+            target: null,
+            action: async () => { showPage('subject-dashboard-page'); await wait(500); }
+        },
+        {
+            icon: '📚',
+            title: 'Your Subjects Dashboard',
+            content: 'Here are all your GCSE subjects. Each card opens the full folder of revision notes, past papers and resources for that subject. Click any card to dive in.',
+            target: '#subject-grid',
+            position: 'below'
+        },
+        {
+            icon: '🔓',
+            title: 'Free & Pro Access',
+            content: `One subject rotates free every two weeks — shown with a yellow badge${freeSubject ? ' (currently ' + freeSubject + ')' : ''}. Pro unlocks all subjects and files instantly.`,
+            target: '#subject-grid',
+            position: 'below'
+        },
+        {
+            icon: '📂',
+            title: 'File Browser',
+            content: "Inside each subject you'll find folders and files. Tap folders to go deeper, tap a file to open a preview. Everything is organised just like a school shared drive.",
+            target: null,
+            action: async () => {
+                const freeTrialSub = getCurrentFreeTrialSubject();
+                const subjectId = freeTrialSub ? allSubjectFolders[freeTrialSub.toLowerCase()] : null;
+                if (subjectId) {
+                    path = [{ name: 'GCSEMate', id: ROOT_FOLDER_ID }, { name: freeTrialSub, id: subjectId }];
+                    showPage('file-browser-page');
+                    try { await fetchAndRenderFiles(subjectId); } catch(_) {}
+                } else {
+                    showPage('subject-dashboard-page');
+                }
+                await wait(800);
+            },
+            position: 'center'
+        },
+        {
+            icon: '🔍',
+            title: 'Search Files',
+            content: 'Use the search bar to instantly filter files in the current folder. Start typing any keyword, topic or file name — results update in real time.',
+            target: '#file-search-input',
+            position: 'below'
+        },
+        {
+            icon: '⚙️',
+            title: 'Sort & View Options',
+            content: 'Sort files A-Z or Z-A. Switch between grid and list view using the toggle buttons on the right. Your preferences are saved automatically.',
+            target: '#file-browser-controls',
+            position: 'below'
+        },
+        {
+            icon: '🍞',
+            title: 'Breadcrumb Navigation',
+            content: 'The breadcrumb at the top shows your current location. Click any segment to jump back to a parent folder — no need to press back repeatedly.',
+            target: '#breadcrumb',
+            position: 'below'
+        },
+        {
+            icon: '🛠️',
+            title: 'Study Tools',
+            content: 'The Tools page has a Pomodoro focus timer, flashcard builder, subject formula sheets and more — all built for GCSE exam prep.',
+            target: 'header [data-page="tools-page"]',
+            action: async () => { showPage('subject-dashboard-page'); await wait(400); },
+            position: 'below'
+        },
+        {
+            icon: '🎬',
+            title: 'Revision Videos',
+            content: 'Find curated YouTube revision videos filtered by subject and topic — only the content relevant to your GCSE syllabus, no searching needed.',
+            target: 'header [data-page="videos-page"]',
+            position: 'below'
+        },
+        {
+            icon: '📅',
+            title: 'Exam Calendar',
+            content: 'Add your exam dates to the built-in calendar. GCSEMate shows countdowns and helps you plan your revision schedule week by week.',
+            target: 'header [data-page="calendar-page"]',
+            position: 'below'
+        },
+        {
+            icon: '🚀',
+            title: "You're all set!",
+            content: "Explore freely! When you're ready to unlock every subject and file, upgrade to Pro — less than a coffee a month, cancel anytime.",
+            target: null,
+            position: 'center'
+        }
     ];
-    let i = 0;
+
+    let currentStep = 0;
+    const totalSteps = steps.length;
+
+    const spotlightEl = document.getElementById('tutorial-spotlight');
+    const backdropEl = document.getElementById('tutorial-backdrop');
+    const cardEl = document.getElementById('tutorial-card');
+    const titleEl = document.getElementById('tutorial-title');
     const stepEl = document.getElementById('tutorial-step');
-    const next = document.getElementById('tutorial-next');
-    const prev = document.getElementById('tutorial-prev');
-    const skip = document.getElementById('tutorial-skip');
-    function render(){ stepEl.textContent = steps[i]; prev.disabled = i===0; next.textContent = i===steps.length-1 ? 'Finish' : 'Next'; }
+    const counterEl = document.getElementById('tutorial-counter');
+    const iconEl = document.getElementById('tutorial-icon');
+    const dotsEl = document.getElementById('tutorial-dots');
+    const nextBtn = document.getElementById('tutorial-next');
+    const prevBtn = document.getElementById('tutorial-prev');
+    const skipBtn = document.getElementById('tutorial-skip');
+
+    if (!spotlightEl || !cardEl || !titleEl || !stepEl) return;
+
+    function buildDots() {
+        if (!dotsEl) return;
+        dotsEl.innerHTML = '';
+        for (let d = 0; d < totalSteps; d++) {
+            const dot = document.createElement('div');
+            dot.className = 'rounded-full transition-all duration-300 ' + (d === currentStep ? 'w-4 h-2 bg-blue-600' : 'w-2 h-2 bg-gray-200');
+            dotsEl.appendChild(dot);
+        }
+    }
+
+    function resolveTarget(targetSelector) {
+        if (!targetSelector) return null;
+        const selectors = targetSelector.split(',').map(s => s.trim());
+        for (const sel of selectors) {
+            try {
+                const el = document.querySelector(sel);
+                if (el) return el;
+            } catch(_) {}
+        }
+        return null;
+    }
+
+    function positionSpotlight(targetSelector) {
+        const targetEl = resolveTarget(targetSelector);
+        if (!targetEl) {
+            spotlightEl.style.top = '-9999px';
+            spotlightEl.style.left = '-9999px';
+            spotlightEl.style.width = '0px';
+            spotlightEl.style.height = '0px';
+            spotlightEl.style.boxShadow = 'none';
+            backdropEl.style.background = 'rgba(0,0,0,0.55)';
+            return null;
+        }
+        const pad = 10;
+        const rect = targetEl.getBoundingClientRect();
+        spotlightEl.style.top = `${rect.top - pad}px`;
+        spotlightEl.style.left = `${rect.left - pad}px`;
+        spotlightEl.style.width = `${rect.width + pad * 2}px`;
+        spotlightEl.style.height = `${rect.height + pad * 2}px`;
+        spotlightEl.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.55)';
+        backdropEl.style.background = 'transparent';
+        return rect;
+    }
+
+    function positionCard(targetSelector, position) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const cardW = Math.min(300, vw - 32);
+        const cardH = cardEl.offsetHeight || 230;
+        const gap = 16;
+        const pad = 10;
+        const targetEl = resolveTarget(targetSelector);
+
+        if (!targetEl) {
+            cardEl.style.left = `${Math.max(16, (vw - cardW) / 2)}px`;
+            cardEl.style.top = `${Math.max(16, (vh - cardH) / 2)}px`;
+            return;
+        }
+
+        const rect = targetEl.getBoundingClientRect();
+        let left, top;
+        if (position === 'below') {
+            top = rect.bottom + pad + gap;
+            left = rect.left + rect.width / 2 - cardW / 2;
+        } else if (position === 'above') {
+            top = rect.top - pad - gap - cardH;
+            left = rect.left + rect.width / 2 - cardW / 2;
+        } else if (position === 'right') {
+            left = rect.right + pad + gap;
+            top = rect.top + rect.height / 2 - cardH / 2;
+        } else if (position === 'left') {
+            left = rect.left - pad - gap - cardW;
+            top = rect.top + rect.height / 2 - cardH / 2;
+        } else {
+            top = (vh - cardH) / 2;
+            left = (vw - cardW) / 2;
+        }
+        // If card would overflow below, flip above
+        if (top + cardH > vh - 16) top = rect.top - pad - gap - cardH;
+        // Clamp to viewport
+        left = Math.max(16, Math.min(left, vw - cardW - 16));
+        top = Math.max(16, Math.min(top, vh - cardH - 16));
+        cardEl.style.left = `${left}px`;
+        cardEl.style.top = `${top}px`;
+    }
+
+    async function renderStep() {
+        const step = steps[currentStep];
+        if (step.action) {
+            await step.action();
+        }
+        iconEl.textContent = step.icon || '📌';
+        titleEl.textContent = step.title;
+        stepEl.textContent = step.content;
+        counterEl.textContent = `Step ${currentStep + 1} of ${totalSteps}`;
+        nextBtn.textContent = currentStep === totalSteps - 1 ? 'Finish ✓' : 'Next →';
+        prevBtn.disabled = currentStep === 0;
+        buildDots();
+        // Small pause for DOM layout after navigation
+        await wait(100);
+        positionSpotlight(step.target || null);
+        positionCard(step.target || null, step.position || 'center');
+    }
+
+    function closeTutorial() {
+        overlay.style.display = 'none';
+        overlay.classList.add('hidden');
+        spotlightEl.style.boxShadow = 'none';
+        backdropEl.style.background = '';
+        localStorage.setItem('gcsemate_tutorial_shown', '1');
+    }
+
     overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
-    render();
-    next.onclick = () => { if (i < steps.length-1) { i++; render(); } else { overlay.style.display='none'; overlay.classList.add('hidden'); localStorage.setItem('gcsemate_tutorial_shown','1'); } };
-    prev.onclick = () => { if (i>0) { i--; render(); } };
-    skip.onclick = () => { overlay.style.display='none'; overlay.classList.add('hidden'); localStorage.setItem('gcsemate_tutorial_shown','1'); };
+    overlay.style.display = 'block';
+    await renderStep();
+
+    nextBtn.onclick = async () => {
+        if (currentStep < totalSteps - 1) {
+            currentStep++;
+            await renderStep();
+        } else {
+            closeTutorial();
+        }
+    };
+    prevBtn.onclick = async () => {
+        if (currentStep > 0) {
+            currentStep--;
+            await renderStep();
+        }
+    };
+    skipBtn.onclick = closeTutorial;
 }
 function setupRealtimeListeners() {
     if (!isFirestoreAvailable()) {
@@ -11425,7 +11652,9 @@ function renderItems() {
         if (ds) ds.remove();
     }
     const sortOrder = document.getElementById('file-sort-select').value;
-    const canFreeUserDownload = (currentUser?.tier || 'free') !== 'free';
+    const currentSubjectName = path[1]?.name || '';
+    const isFreeTrialSubjectActive = !!currentSubjectName && currentSubjectName.toLowerCase() === (getCurrentFreeTrialSubject() || '').toLowerCase();
+    const canFreeUserDownload = (currentUser?.tier || 'free') !== 'free' || isFreeTrialSubjectActive;
 
     container.innerHTML = ''; // Clear previous items
 
