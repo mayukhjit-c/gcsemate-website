@@ -1,20 +1,7 @@
-// Stripe Billing Portal session creator
-// Env vars required:
-// - STRIPE_SECRET_KEY
-// Optional:
-// - STRIPE_PORTAL_RETURN_URL (default: https://gcsemate.com/account)
+// Hosted Stripe Billing Portal login link for all customers.
+// Customers authenticate with their email address and a one-time passcode.
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-const stripe = stripeSecret ? require('stripe')(stripeSecret) : null;
-
-async function readJsonBody(req) {
-  let body = '';
-  await new Promise((resolve) => {
-    req.on('data', (chunk) => { body += chunk; });
-    req.on('end', resolve);
-  });
-  try { return JSON.parse(body || '{}'); } catch (_) { return {}; }
-}
+const STRIPE_BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00';
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -30,48 +17,22 @@ async function findCustomerByEmail(email) {
 
 async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
     return res.end();
   }
 
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST, OPTIONS');
+  if (!['GET', 'POST'].includes(req.method)) {
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
     return send(res, 405, { error: 'Method not allowed' });
   }
 
-  if (!stripe) {
-    return send(res, 500, { error: 'Stripe secret key not configured' });
-  }
-
-  try {
-    const body = await readJsonBody(req);
-    const customerId = body.customerId;
-    const customerEmail = body.customerEmail;
-
-    let customer = null;
-    if (customerId) {
-      customer = await stripe.customers.retrieve(customerId);
-    } else {
-      customer = await findCustomerByEmail(customerEmail);
-    }
-
-    if (!customer || customer.deleted) {
-      return send(res, 404, { error: 'Customer not found. Complete a checkout first.' });
-    }
-
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customer.id,
-      return_url: process.env.STRIPE_PORTAL_RETURN_URL || 'https://gcsemate.com/account'
-    });
-
-    return send(res, 200, { url: session.url });
-  } catch (error) {
-    console.error('stripe-portal error', error);
-    return send(res, 500, { error: 'Unable to create billing portal session' });
-  }
+  return send(res, 200, {
+    url: STRIPE_BILLING_PORTAL_URL,
+    message: 'Open the hosted Stripe billing portal and sign in with email plus one-time passcode.'
+  });
 }
 
 export default handler;

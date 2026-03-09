@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSRF8YLS2N"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-NSRF8YLS2N');
   </script>
   <meta charset="UTF-8" />
@@ -18,98 +16,631 @@
   <link rel="icon" type="image/png" href="/gcsemate%20favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="/styles.css"></noscript>
+  <style>
+    :root {
+      --legal-bg: #f5f8fd;
+      --legal-ink: #0f1d2b;
+      --legal-muted: #536172;
+      --legal-card: rgba(255, 255, 255, 0.8);
+      --legal-line: rgba(148, 163, 184, 0.28);
+      --legal-shadow: 0 30px 80px -36px rgba(15, 23, 42, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Manrope', sans-serif;
+      color: var(--legal-ink);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.16), transparent 30%),
+        radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.16), transparent 24%),
+        linear-gradient(180deg, #f9fbff 0%, var(--legal-bg) 50%, #eef5fb 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      width: 22rem;
+      height: 22rem;
+      border-radius: 999px;
+      filter: blur(26px);
+      opacity: 0.34;
+      pointer-events: none;
+      z-index: 0;
+      animation: floatAura 18s ease-in-out infinite;
+    }
+
+    body::before {
+      top: -6rem;
+      left: -7rem;
+      background: rgba(14, 165, 233, 0.24);
+    }
+
+    body::after {
+      right: -6rem;
+      bottom: -9rem;
+      background: rgba(16, 185, 129, 0.18);
+      animation-delay: -8s;
+    }
+
+    .legal-progress {
+      position: fixed;
+      inset: 0 0 auto;
+      height: 4px;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(8px);
+    }
+
+    .legal-progress__bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #0ea5e9, #10b981, #2563eb);
+      transition: width 120ms linear;
+    }
+
+    .legal-shell {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+
+    .legal-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .legal-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.9rem;
+      text-decoration: none;
+      color: var(--legal-ink);
+      font-weight: 800;
+    }
+
+    .legal-brand img {
+      height: 2.75rem;
+      width: auto;
+    }
+
+    .legal-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.8rem 1rem;
+      border-radius: 999px;
+      text-decoration: none;
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      box-shadow: 0 18px 36px -30px rgba(15, 23, 42, 0.5);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .legal-home:hover { transform: translateY(-2px); box-shadow: 0 24px 40px -28px rgba(14, 165, 233, 0.42); }
+
+    .legal-hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.95fr);
+      gap: 1.5rem;
+      padding: clamp(1.5rem, 2vw + 1rem, 2.5rem);
+      border-radius: 2rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72));
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--legal-shadow);
+    }
+
+    .legal-hero::before {
+      content: '';
+      position: absolute;
+      inset: auto -6rem -8rem auto;
+      width: 18rem;
+      height: 18rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.18), transparent 70%);
+    }
+
+    .legal-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #0f766e;
+      background: rgba(204, 251, 241, 0.88);
+      border: 1px solid rgba(153, 246, 228, 0.75);
+    }
+
+    .legal-title {
+      margin: 1rem 0 0;
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2.4rem, 4vw, 4.2rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .legal-lead {
+      margin: 1rem 0 0;
+      max-width: 42rem;
+      color: var(--legal-muted);
+      font-size: 1.04rem;
+      line-height: 1.7;
+    }
+
+    .legal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-top: 1.35rem;
+    }
+
+    .legal-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      color: #334155;
+      font-size: 0.94rem;
+    }
+
+    .legal-hero-card {
+      position: relative;
+      padding: 1.25rem;
+      border-radius: 1.5rem;
+      background: linear-gradient(160deg, rgba(15, 23, 42, 0.94), rgba(8, 47, 73, 0.9));
+      color: #e2e8f0;
+      box-shadow: 0 20px 50px -28px rgba(15, 23, 42, 0.75);
+      align-self: end;
+    }
+
+    .legal-hero-card h2 {
+      margin: 0 0 0.8rem;
+      font-size: 1.15rem;
+    }
+
+    .legal-hero-card p,
+    .legal-hero-card li {
+      color: rgba(226, 232, 240, 0.86);
+      line-height: 1.65;
+    }
+
+    .legal-hero-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .legal-hero-list li {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .legal-hero-badge {
+      width: 1.9rem;
+      height: 1.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #a7f3d0;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .legal-layout {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.68fr) minmax(0, 1.32fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      align-items: start;
+    }
+
+    .legal-sidebar,
+    .legal-section,
+    .legal-footer {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--legal-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--legal-shadow);
+    }
+
+    .legal-sidebar {
+      position: sticky;
+      top: 1.5rem;
+      border-radius: 1.6rem;
+      padding: 1.2rem;
+    }
+
+    .legal-sidebar h2,
+    .legal-sidebar h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #475569;
+    }
+
+    .legal-toc {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 1rem;
+    }
+
+    .legal-toc a {
+      display: block;
+      padding: 0.75rem 0.85rem;
+      border-radius: 0.95rem;
+      text-decoration: none;
+      color: #334155;
+      border: 1px solid transparent;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+    }
+
+    .legal-toc a:hover,
+    .legal-toc a.is-active {
+      transform: translateX(4px);
+      background: rgba(14, 165, 233, 0.1);
+      border-color: rgba(14, 165, 233, 0.18);
+      color: #0f766e;
+    }
+
+    .legal-sidebar-note {
+      margin-top: 1.15rem;
+      padding: 0.95rem;
+      border-radius: 1.1rem;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(16, 185, 129, 0.08));
+      color: #334155;
+      line-height: 1.65;
+      font-size: 0.95rem;
+    }
+
+    .legal-content {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .legal-section {
+      border-radius: 1.6rem;
+      padding: 1.45rem;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 550ms ease, transform 550ms ease;
+    }
+
+    .legal-section.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .legal-section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.72rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #0f766e;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .legal-section h2 {
+      margin: 0.95rem 0 0.5rem;
+      font-size: clamp(1.35rem, 2.5vw, 1.9rem);
+      line-height: 1.15;
+    }
+
+    .legal-section p,
+    .legal-section li {
+      color: var(--legal-muted);
+      line-height: 1.8;
+      font-size: 0.98rem;
+    }
+
+    .legal-section ul {
+      margin: 0.75rem 0 0;
+      padding-left: 1.15rem;
+    }
+
+    .legal-highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.25rem;
+    }
+
+    .legal-highlight {
+      padding: 1rem;
+      border-radius: 1.2rem;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .legal-highlight strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 0.35rem;
+      color: #0f172a;
+    }
+
+    .legal-footer {
+      margin-top: 1.5rem;
+      border-radius: 1.6rem;
+      padding: 1.15rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      color: #475569;
+    }
+
+    .legal-footer a {
+      color: #0f766e;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .legal-footer a:hover { text-decoration: underline; }
+
+    @keyframes floatAura {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, 18px, 0) scale(1.08); }
+    }
+
+    @media (max-width: 980px) {
+      .legal-hero,
+      .legal-layout,
+      .legal-highlight-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .legal-sidebar {
+        position: relative;
+        top: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .legal-shell {
+        width: min(100% - 1rem, 1180px);
+        padding-top: 1rem;
+      }
+
+      .legal-topbar,
+      .legal-footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .legal-hero,
+      .legal-sidebar,
+      .legal-section,
+      .legal-footer {
+        border-radius: 1.3rem;
+      }
+    }
+  </style>
 </head>
-<body class="gs-page">
-  <div class="gs-shell gs-shell--single">
-    <div>
-      <a href="/" class="inline-flex items-center gap-3" aria-label="Back to GCSEMate">
-        <img src="/gcsemate%20new.png" alt="GCSEMate" class="h-10 w-auto" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
-        <span class="gs-brand">GCSEMate</span>
+<body>
+  <div class="legal-progress" aria-hidden="true"><div class="legal-progress__bar" id="legal-progress-bar"></div></div>
+  <main class="legal-shell">
+    <div class="legal-topbar">
+      <a href="/" class="legal-brand" aria-label="Back to GCSEMate home">
+        <img src="/gcsemate%20new.png" alt="GCSEMate" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
+        <span>GCSEMate</span>
       </a>
-      <div class="mt-4">
-        <span class="gs-tag">Privacy · your data</span>
-      </div>
-      <h1 class="gs-title mt-3">Privacy Policy</h1>
-      <p class="gs-muted mt-2"><em>Last updated: August 2025</em></p>
-      <p class="gs-muted mt-4">This policy explains how GCSEMate (a GCSE revision site with notes, past papers and study tools) handles account and usage information.</p>
-      <div class="gs-actions">
-        <a class="gs-btn gs-btn-primary" href="/">Back to home</a>
-      </div>
+      <a href="/" class="legal-home">Return to home</a>
     </div>
 
-    <div class="gs-panel">
-      <div class="prose max-w-none">
-            <p>This Privacy Policy explains how GCSEMate ("we", "us") collects, uses, and shares your information when you use our website and services.</p>
-
-            <h2>1. Data Controller</h2>
-            <p>The data controller is GCSEMate. Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
-
-            <h2>2. Information We Collect</h2>
-            <ul>
-              <li><strong>Account Information</strong>: display name, email address, subscription tier, role, allowed subjects.</li>
-              <li><strong>Usage Data</strong>: actions within the app (e.g., starred files, calendar events), pages viewed, timestamps.</li>
-              <li><strong>Device/Technical Data</strong>: IP address, browser type, and device information automatically provided by your browser.</li>
-              <li><strong>Cookies and Similar Technologies</strong>: used to maintain sessions and preferences.</li>
-            </ul>
-
-            <h2>3. Sources of Information</h2>
-            <p>Information is provided directly by you or generated when you use the service (e.g., saving preferences). We may also receive limited technical data from service providers.</p>
-
-            <h2>4. How We Use Information</h2>
-            <ul>
-              <li>Provide and operate the service (authentication, rendering content, saving preferences).</li>
-              <li>Maintain security, prevent abuse, and troubleshoot issues.</li>
-              <li>Communicate with you about updates or important service notices.</li>
-              <li>Comply with legal obligations.</li>
-            </ul>
-
-            <h2>5. Legal Bases</h2>
-            <p>Under UK/EU GDPR, our processing bases include performance of a contract, legitimate interests (e.g., service improvement, security), and consent where applicable.</p>
-
-            <h2>6. Sharing and Processors</h2>
-            <p>We use third‑party processors to provide the service, including Firebase (authentication and database) and Google services (e.g., Drive and YouTube embeds). These providers process data on our behalf per their terms.</p>
-
-            <h2>7. Data Retention</h2>
-            <p>We retain personal data for as long as necessary to provide the service and comply with legal obligations. You may request deletion at any time via Account settings or by contacting us.</p>
-
-            <h2>8. Security</h2>
-            <p>We take reasonable measures to protect your information; however, no method of transmission or storage is 100% secure.</p>
-
-            <h2>9. International Transfers</h2>
-            <p>Your data may be processed outside your country. Where required, we implement appropriate safeguards.</p>
-
-            <h2>10. Your Rights</h2>
-            <ul>
-              <li>Access, correction, deletion, and portability of your data.</li>
-              <li>Restriction or objection to processing in certain circumstances.</li>
-              <li>Withdraw consent where processing is based on consent.</li>
-              <li>Lodge a complaint with the UK ICO or your local authority.</li>
-            </ul>
-
-            <h2>11. Children's Privacy</h2>
-            <p>GCSEMate is designed for students. If you are under 13, use only with parent/guardian consent as required by local laws.</p>
-
-            <h2>12. Cookies</h2>
-            <p>We use cookies essential to the operation of the service. Your browser may allow you to block cookies, but the service may not work properly if you do.</p>
-
-            <h2>13. Changes</h2>
-            <p>We may update this policy to reflect legal or operational changes. We will post updates in the app and update the date below.</p>
-
-            <h2>14. Contact</h2>
-            <p>Questions about privacy? Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
+    <section class="legal-hero">
+      <div>
+        <div class="legal-eyebrow">Privacy Policy</div>
+        <h1 class="legal-title">How GCSEMate handles your data, clearly.</h1>
+        <p class="legal-lead">This policy explains what information GCSEMate collects, why it is used, how long it is kept, and what rights you have over it. The goal is transparency, not legal fog.</p>
+        <div class="legal-meta">
+          <div class="legal-meta-chip"><strong>Last updated:</strong> August 2025</div>
+          <div class="legal-meta-chip"><strong>Region:</strong> UK-focused service</div>
+          <div class="legal-meta-chip"><strong>Contact:</strong> admin@gcsemate.com</div>
+        </div>
       </div>
-    </div>
+      <aside class="legal-hero-card">
+        <h2>Privacy summary</h2>
+        <p>We collect the information needed to run accounts, deliver the service, maintain security, and support features like subscriptions and saved preferences.</p>
+        <ul class="legal-hero-list">
+          <li><span class="legal-hero-badge">1</span><span>Account data supports sign-in, settings, and plan access.</span></li>
+          <li><span class="legal-hero-badge">2</span><span>Usage and technical data help keep the service stable and secure.</span></li>
+          <li><span class="legal-hero-badge">3</span><span>You can request access, correction, or deletion by contacting us.</span></li>
+        </ul>
+      </aside>
+    </section>
 
-    <div style="text-align: center; color: #64748b; font-size: 0.875rem;">
-      <p>© <span id="y"></span> GCSEMate. All Rights Reserved.</p>
-    </div>
-  </div>
+    <section class="legal-layout">
+      <aside class="legal-sidebar">
+        <h2>On this page</h2>
+        <nav class="legal-toc" aria-label="Privacy policy sections">
+          <a href="#controller">Data controller</a>
+          <a href="#collect">What we collect</a>
+          <a href="#use">How we use it</a>
+          <a href="#bases">Legal bases</a>
+          <a href="#sharing">Sharing and processors</a>
+          <a href="#retention">Retention</a>
+          <a href="#security">Security and transfers</a>
+          <a href="#rights">Your rights</a>
+          <a href="#children">Children and cookies</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div class="legal-sidebar-note">
+          If you want the short answer: GCSEMate uses data to run the service, not to play guessing games with your identity.
+        </div>
+      </aside>
+
+      <div class="legal-content">
+        <section class="legal-section" id="controller" data-section>
+          <span class="legal-section-kicker">Section 1</span>
+          <h2>Data controller</h2>
+          <p>GCSEMate is the controller of the personal data described in this policy. For privacy questions, rights requests, or concerns about how your information is handled, contact <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
+          <div class="legal-highlight-grid">
+            <div class="legal-highlight"><strong>Main contact</strong><span>admin@gcsemate.com</span></div>
+            <div class="legal-highlight"><strong>Primary purpose</strong><span>Delivering GCSEMate's revision platform and account services.</span></div>
+            <div class="legal-highlight"><strong>Policy scope</strong><span>Account, subscription, usage, and service-operation data.</span></div>
+          </div>
+        </section>
+
+        <section class="legal-section" id="collect" data-section>
+          <span class="legal-section-kicker">Section 2</span>
+          <h2>What information we collect</h2>
+          <ul>
+            <li><strong>Account information:</strong> display name, email address, role, settings, allowed subjects, subscription tier, and related account metadata.</li>
+            <li><strong>Usage data:</strong> app actions such as starred resources, calendar events, settings changes, and timestamps used to operate features.</li>
+            <li><strong>Technical data:</strong> IP address, browser type, device information, and service diagnostics that your browser or platform provides automatically.</li>
+            <li><strong>Cookies and local storage:</strong> essential session handling, preferences, and limited client-side caching needed to make the app work properly.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section" id="use" data-section>
+          <span class="legal-section-kicker">Section 3</span>
+          <h2>How we use your information</h2>
+          <p>We use personal data to provide and improve the service, authenticate users, save preferences, keep accounts secure, support subscriptions, and communicate important notices.</p>
+          <ul>
+            <li>Operate account features and personalize the app experience.</li>
+            <li>Maintain security, detect abuse, and troubleshoot technical issues.</li>
+            <li>Support billing-related account state where subscriptions are involved.</li>
+            <li>Comply with legal obligations and respond to legitimate requests.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section" id="bases" data-section>
+          <span class="legal-section-kicker">Section 4</span>
+          <h2>Legal bases</h2>
+          <p>Where UK GDPR or EU GDPR applies, our processing is based on one or more of the following: performance of a contract, legitimate interests such as service security and improvement, compliance with legal obligations, and consent where consent is required.</p>
+        </section>
+
+        <section class="legal-section" id="sharing" data-section>
+          <span class="legal-section-kicker">Section 5</span>
+          <h2>Sharing and processors</h2>
+          <p>We use trusted service providers to operate GCSEMate. These providers process data on our behalf under their own terms and security controls.</p>
+          <ul>
+            <li><strong>Firebase:</strong> authentication, database, and related application infrastructure.</li>
+            <li><strong>Stripe:</strong> secure payment processing, billing portal access, and subscription-related events.</li>
+            <li><strong>Google services:</strong> integrations or embedded content such as Drive and YouTube where used in the platform.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section" id="retention" data-section>
+          <span class="legal-section-kicker">Section 6</span>
+          <h2>Retention</h2>
+          <p>We keep personal data only for as long as necessary to provide the service, maintain legitimate business records, support account continuity, and comply with legal obligations. You may request deletion through account controls or by contacting us.</p>
+        </section>
+
+        <section class="legal-section" id="security" data-section>
+          <span class="legal-section-kicker">Section 7</span>
+          <h2>Security and international transfers</h2>
+          <p>We take reasonable technical and organizational measures to protect your information. No system can guarantee absolute security, but protecting account and service data is treated seriously.</p>
+          <p>Your information may be processed outside your country when required by the service providers we use. Where applicable, we rely on appropriate safeguards for those transfers.</p>
+        </section>
+
+        <section class="legal-section" id="rights" data-section>
+          <span class="legal-section-kicker">Section 8</span>
+          <h2>Your rights</h2>
+          <ul>
+            <li>Request access to the personal data we hold about you.</li>
+            <li>Request correction of inaccurate or incomplete information.</li>
+            <li>Request deletion, portability, restriction, or objection where applicable.</li>
+            <li>Withdraw consent where processing depends on consent.</li>
+            <li>Lodge a complaint with the UK ICO or your local supervisory authority.</li>
+          </ul>
+        </section>
+
+        <section class="legal-section" id="children" data-section>
+          <span class="legal-section-kicker">Section 9</span>
+          <h2>Children and cookies</h2>
+          <p>GCSEMate is built for students. If local law requires parental or guardian consent for younger users, that consent must be obtained before using the service.</p>
+          <p>We use cookies and similar storage mechanisms that are necessary for session handling, preferences, and service reliability. Blocking them may affect functionality.</p>
+        </section>
+
+        <section class="legal-section" id="contact" data-section>
+          <span class="legal-section-kicker">Section 10</span>
+          <h2>Contact</h2>
+          <p>If you have privacy questions, want to exercise your data rights, or need clarification on any part of this policy, contact <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
+        </section>
+      </div>
+    </section>
+
+    <footer class="legal-footer">
+      <p>© <span id="y"></span> GCSEMate. All rights reserved.</p>
+      <a href="/termsofservice">Read the Terms of Service</a>
+    </footer>
+  </main>
 
   <script>
+    const progressBar = document.getElementById('legal-progress-bar');
+    const tocLinks = Array.from(document.querySelectorAll('.legal-toc a'));
+    const sections = Array.from(document.querySelectorAll('[data-section]'));
+
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    function updateProgress() {
+      const scrollTop = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const width = maxScroll > 0 ? Math.min(100, Math.max(0, (scrollTop / maxScroll) * 100)) : 0;
+      progressBar.style.width = width + '%';
+    }
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.16 });
+
+    sections.forEach((section) => revealObserver.observe(section));
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      const id = '#' + visible.target.id;
+      tocLinks.forEach((link) => link.classList.toggle('is-active', link.getAttribute('href') === id));
+    }, {
+      rootMargin: '-25% 0px -55% 0px',
+      threshold: [0.2, 0.45, 0.7]
+    });
+
+    sections.forEach((section) => sectionObserver.observe(section));
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
   </script>
 </body>
 </html>

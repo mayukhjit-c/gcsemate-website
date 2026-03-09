@@ -136,10 +136,14 @@ const BLOCKED_BY_CLIENT_PATTERN = /ERR_BLOCKED_BY_CLIENT|blocked by client|Faile
 const STRIPE_BLOCKED_PATTERN = /r\.stripe\.com|errors\.stripe\.com|pricing-table/i;
 const FIRESTORE_CHANNEL_PATTERN = /firestore\.googleapis\.com\/.+\/(Listen|Write)\/channel/i;
 const EXTENSION_NOISE_PATTERN = /chrome-extension:\/\/|moz-extension:\/\/|safari-extension:\/\/|extension context invalidated|message channel closed|content script|removelisteners/i;
+const CHECKOUT_PENDING_SUCCESS_KEY = 'gcsemate_checkout_pending_success';
+const CHECKOUT_SUCCESS_TIMEOUT_MS = 10 * 60 * 1000;
+const STRIPE_BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00';
 let hasShownBlockerWarning = false;
 let firestoreAssertionCount = 0;
 let hasShownFirestoreRecoveryWarning = false;
 let firestoreTransportUnstableUntil = 0;
+let lastHandledCheckoutSuccessAt = 0;
 
 function isFirestoreTransportUnstable() {
     return Date.now() < firestoreTransportUnstableUntil;
@@ -4230,6 +4234,9 @@ auth.onAuthStateChanged(async (user) => {
                                 openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                         } catch(_){}
                     }
+                    if (tierChanged && after.tier === 'paid') {
+                        try { maybeCompletePendingCheckoutSuccess('realtime'); } catch (_) {}
+                    }
                     if (roleChanged) {
                         // Re-render admin/user panels accordingly
                         try { initializeAppState(); } catch(_){}
@@ -4292,6 +4299,9 @@ auth.onAuthStateChanged(async (user) => {
                                 gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
                                 openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                             } catch(_){ }
+                        }
+                        if (tierChanged && after.tier === 'paid') {
+                            try { maybeCompletePendingCheckoutSuccess('realtime'); } catch (_) {}
                         }
                         if (roleChanged) {
                             try { initializeAppState(); } catch(_){ }
@@ -4455,6 +4465,7 @@ function initializeAppState() {
 
     // Refresh upsell ribbon based on current access
     updateInlineUpsellBanner();
+    maybeCompletePendingCheckoutSuccess('init');
 }
 
 // Inline upsell banner logic
@@ -4491,7 +4502,8 @@ let loadingTips = [
     "Checking exam board specifications...",
     "Preparing a detailed response...",
     "Reviewing relevant topics...",
-    "Crafting a clear answer..."
+    "Crafting a clear answer...",
+    "Convincing the electrons to revise too..."
 ];
 let currentTipIndex = 0;
 
@@ -6857,23 +6869,10 @@ async function handleSubscriptionRenewal() {
     if (!currentUser) return;
     
     try {
-        // For now, just show the checkout page
-        // In production, this would integrate with payment processing
         showToast('Redirecting to checkout...', 'info');
         document.getElementById('subscription-renewal-modal').classList.add('hidden');
-        showPage('checkout-page');
-        
-        // Update user to extend subscription by 1 month
-        const newExpiryDate = new Date();
-        newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
-        
-        await db.collection('users').doc(currentUser.uid).update({
-            subscriptionExpiresAt: firebase.firestore.Timestamp.fromDate(newExpiryDate),
-            lastSubscriptionWarningShown: null,
-            subscriptionRenewedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        showToast('Subscription renewed successfully!', 'success');
+        setCheckoutAlertState('info', 'Complete payment in Stripe to renew Pro for another month. If anything goes wrong, email admin@gcsemate.com.');
+        navigateToPageId('checkout-page');
     } catch (error) {
         logError(error, 'Handle Subscription Renewal');
         showToast('Failed to process renewal. Please try again.', 'error');
@@ -10982,34 +10981,148 @@ async function waitForProActivation(timeoutMs = 45000) {
     return false;
 }
 
+function getStoredPendingCheckoutSuccess() {
+    try {
+        const raw = localStorage.getItem(CHECKOUT_PENDING_SUCCESS_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed?.createdAt || Date.now() - parsed.createdAt > CHECKOUT_SUCCESS_TIMEOUT_MS) {
+            localStorage.removeItem(CHECKOUT_PENDING_SUCCESS_KEY);
+            return null;
+        }
+        return parsed;
+    } catch (_) {
+        return null;
+    }
+}
+
+function storePendingCheckoutSuccess(context = {}) {
+    try {
+        localStorage.setItem(CHECKOUT_PENDING_SUCCESS_KEY, JSON.stringify({
+            createdAt: Date.now(),
+            source: context.source || 'checkout',
+            route: window.location.pathname || '/checkout'
+        }));
+    } catch (_) {}
+}
+
+function clearPendingCheckoutSuccess() {
+    try { localStorage.removeItem(CHECKOUT_PENDING_SUCCESS_KEY); } catch (_) {}
+}
+
+function setCheckoutAlertState(tone, message) {
+    const alert = document.getElementById('checkout-alert');
+    if (!alert) return;
+    const states = {
+        info: 'rounded-lg border p-4 text-left text-sm border-blue-200 bg-blue-50 text-blue-900',
+        success: 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900',
+        warning: 'rounded-lg border p-4 text-left text-sm border-amber-200 bg-amber-50 text-amber-900',
+        error: 'rounded-lg border p-4 text-left text-sm border-red-200 bg-red-50 text-red-900'
+    };
+    alert.classList.remove('hidden');
+    alert.className = states[tone] || states.info;
+    alert.textContent = message;
+}
+
+function getCurrentVisiblePageId() {
+    const page = document.querySelector('.page:not(.hidden)');
+    return page?.id || null;
+}
+
+function refreshPaidAccessExperience() {
+    try { updateInlineUpsellBanner(); } catch (_) {}
+    try { updateAITutorNavVisibility(); } catch (_) {}
+    try { configureStripePricingTableIdentity(); } catch (_) {}
+    try {
+        if (currentUser) renderDashboard();
+    } catch (_) {}
+}
+
+function getCheckoutSuccessExpiryMessage(user = currentUser) {
+    const expiry = user?.subscriptionExpiresAt;
+    if (!expiry) return 'Your expiry date is syncing now and should appear within a few seconds.';
+    const expiryDate = expiry.toDate ? expiry.toDate() : new Date(expiry);
+    if (Number.isNaN(expiryDate.getTime())) return 'Your expiry date is syncing now and should appear within a few seconds.';
+    return `Access is active until ${formatDateUK(expiryDate)}.`;
+}
+
+function openCheckoutSuccessModal() {
+    const modal = document.getElementById('checkout-success-modal');
+    if (!modal) return;
+    const expiry = document.getElementById('checkout-success-expiry');
+    if (expiry) {
+        expiry.textContent = getCheckoutSuccessExpiryMessage(currentUser);
+    }
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+    if (!modal.dataset.handlersBound) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeCheckoutSuccessModal();
+            }
+        });
+        modal.dataset.handlersBound = 'true';
+    }
+}
+
+function closeCheckoutSuccessModal() {
+    const modal = document.getElementById('checkout-success-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    if (document.getElementById('upgrade-modal')?.classList.contains('hidden')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+window.closeCheckoutSuccessModal = closeCheckoutSuccessModal;
+
+function completeCheckoutSuccessExperience(source = 'checkout') {
+    if (!currentUser || currentUser.tier !== 'paid') return false;
+    const now = Date.now();
+    if (now - lastHandledCheckoutSuccessAt < 2500) return true;
+    lastHandledCheckoutSuccessAt = now;
+
+    clearPendingCheckoutSuccess();
+    refreshPaidAccessExperience();
+    setCheckoutAlertState('success', `Payment received. Pro access is active. ${getCheckoutSuccessExpiryMessage(currentUser)} If anything looks wrong, email admin@gcsemate.com.`);
+    try { showToast('Pro activated. Thank you for upgrading!', 'success', 5000); } catch (_) {}
+    openCheckoutSuccessModal();
+
+    if (source === 'query' && getCurrentVisiblePageId() !== 'checkout-page') {
+        try { navigateToPageId('checkout-page', { replace: true }); } catch (_) {}
+    }
+
+    return true;
+}
+
+function maybeCompletePendingCheckoutSuccess(source = 'stored') {
+    if (!getStoredPendingCheckoutSuccess()) return false;
+    if (!currentUser || currentUser.tier !== 'paid') return false;
+    return completeCheckoutSuccessExperience(source);
+}
+
 function handleCheckoutQueryParamsIfPresent() {
     try {
         const params = new URLSearchParams(window.location.search || '');
         const flag = (params.get('checkout') || '').toLowerCase();
         if (!flag) return;
 
-        const alert = document.getElementById('checkout-alert');
-        if (!alert) return;
-        alert.classList.remove('hidden');
-
         if (flag === 'cancel') {
-            alert.className = 'rounded-lg border p-4 text-left text-sm border-amber-200 bg-amber-50 text-amber-900';
-            alert.textContent = 'Checkout was cancelled. No payment was taken.';
+            setCheckoutAlertState('warning', 'Checkout was cancelled. No payment was taken. If this was unexpected, email admin@gcsemate.com.');
+            try { showToast('Checkout cancelled. No payment was taken.', 'info'); } catch (_) {}
         } else if (flag === 'success') {
+            storePendingCheckoutSuccess({ source: 'query' });
             if (currentUser?.tier === 'paid') {
-                alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
-                alert.textContent = 'Payment received. Your Pro access is active.';
+                completeCheckoutSuccessExperience('query');
             } else {
-                alert.className = 'rounded-lg border p-4 text-left text-sm border-blue-200 bg-blue-50 text-blue-900';
-                alert.textContent = 'Payment received. Activating Pro access now. This can take a few seconds.';
+                setCheckoutAlertState('info', 'Payment received. Activating Pro access now. This can take a few seconds. If it still has not updated shortly, refresh once or email admin@gcsemate.com.');
                 waitForProActivation(45000).then((ok) => {
                     if (ok) {
-                        alert.className = 'rounded-lg border p-4 text-left text-sm border-green-200 bg-green-50 text-green-900';
-                        alert.textContent = 'Pro access activated. Thank you!';
-                        try { showToast('Pro activated!', 'success'); } catch (_) {}
+                        completeCheckoutSuccessExperience('query');
                     } else {
-                        alert.className = 'rounded-lg border p-4 text-left text-sm border-amber-200 bg-amber-50 text-amber-900';
-                        alert.textContent = 'We are still activating your Pro access. If it does not update soon, email admin@gcsemate.com.';
+                        setCheckoutAlertState('warning', 'We are still activating your Pro access. Refresh once, and if it still does not update, email admin@gcsemate.com.');
                     }
                 });
             }
@@ -11046,9 +11159,7 @@ function applyRouteFromLocation() {
     if (!pageId) pageId = 'subject-dashboard-page';
 
     try { showPage(pageId); } catch (_) {}
-    if (pageId === 'checkout-page') {
-        handleCheckoutQueryParamsIfPresent();
-    }
+    handleCheckoutQueryParamsIfPresent();
 }
 
 function navigateToPath(pathname, { replace = false } = {}) {
@@ -13554,7 +13665,7 @@ async function handleSaveBlogPost() {
     const postId = document.getElementById('blog-post-id').value;
     const title = document.getElementById('blog-post-title').value.trim();
     const contentEl = document.getElementById('blog-post-content');
-    const content = contentEl ? contentEl.innerHTML.trim() : '';
+    const content = contentEl ? sanitizeHTML(contentEl.innerHTML.trim()) : '';
     const image = document.getElementById('blog-post-image').value.trim();
     const subject = document.getElementById('blog-post-subject').value.trim();
     const tags = parseBlogTags(document.getElementById('blog-post-tags').value.trim());
@@ -13674,6 +13785,16 @@ function insertBlogTemplate(type) {
 }
 // WYSIWYG Rich Text Editor Functions
 let blogEditorSavedRange = null;
+const BLOG_EDITOR_DEFAULT_TEXT_COLOR = '#1f2937';
+const BLOG_EDITOR_DEFAULT_HIGHLIGHT_COLOR = '#fff3a3';
+const BLOG_EDITOR_ALLOWED_FONTS = ['Arial', 'Georgia', 'Trebuchet MS', 'Verdana', 'Courier New', 'Times New Roman'];
+const BLOG_EDITOR_ALLOWED_FONT_NAMES = new Set([
+    ...BLOG_EDITOR_ALLOWED_FONTS.map(font => font.toLowerCase()),
+    'sans-serif',
+    'serif',
+    'monospace',
+    'system-ui'
+]);
 
 function isSelectionInBlogEditor(selection, editor) {
     if (!selection || !editor || selection.rangeCount === 0) return false;
@@ -13710,10 +13831,9 @@ function placeCaretAtEnd(element) {
     selection.addRange(range);
 }
 
-// Make functions globally accessible for inline onclick handlers
-window.formatText = function(command, value = null) {
+function prepareBlogEditorCommand() {
     const editor = document.getElementById('blog-post-content');
-    if (!editor) return;
+    if (!editor) return null;
 
     const selection = window.getSelection();
     const hasLiveEditorSelection = isSelectionInBlogEditor(selection, editor);
@@ -13725,17 +13845,110 @@ window.formatText = function(command, value = null) {
         }
     }
 
+    return editor;
+}
+
+function enableBlogStyleWithCss() {
+    try {
+        document.execCommand('styleWithCSS', false, true);
+    } catch (_) {}
+}
+
+function queryBlogCommandValue(command) {
+    try {
+        return document.queryCommandValue(command) || '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function normalizeColorValue(value) {
+    if (!value) return '';
+    const raw = String(value).trim().toLowerCase();
+    if (!raw) return '';
+    if (/^#[0-9a-f]{6}$/i.test(raw)) return raw;
+    if (/^#[0-9a-f]{3}$/i.test(raw)) {
+        return `#${raw.slice(1).split('').map(char => `${char}${char}`).join('')}`;
+    }
+    const rgbMatch = raw.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/i);
+    if (rgbMatch) {
+        const [, red, green, blue] = rgbMatch;
+        return `#${[red, green, blue].map(part => Number(part).toString(16).padStart(2, '0')).join('')}`;
+    }
+    return '';
+}
+
+function normalizeFontName(value) {
+    return String(value || '')
+        .split(',')[0]
+        .trim()
+        .replace(/^['"]|['"]$/g, '')
+        .toLowerCase();
+}
+
+function getActiveBlogFontValue() {
+    const activeFont = normalizeFontName(queryBlogCommandValue('fontName'));
+    if (!activeFont) return '';
+    const match = BLOG_EDITOR_ALLOWED_FONTS.find(font => font.toLowerCase() === activeFont);
+    return match || '';
+}
+
+function executeBlogEditorCommand(command, value = null) {
+    const editor = prepareBlogEditorCommand();
+    if (!editor) return;
+
+    let commandName = command;
+    let commandValue = value;
+
     if (command === 'formatBlock' && typeof value === 'string' && value && !value.startsWith('<')) {
-        value = `<${value}>`;
+        commandValue = `<${value}>`;
     }
 
-    try {
-        document.execCommand(command, false, value);
-    } catch (err) {
-        console.warn('Editor command failed', command, err);
+    if (['foreColor', 'fontName', 'hiliteColor', 'backColor'].includes(commandName)) {
+        enableBlogStyleWithCss();
     }
+
+    if (commandName === 'highlightColor') {
+        commandName = 'hiliteColor';
+    }
+
+    let applied = false;
+    try {
+        applied = document.execCommand(commandName, false, commandValue);
+    } catch (err) {
+        console.warn('Editor command failed', commandName, err);
+    }
+
+    if (!applied && commandName === 'hiliteColor') {
+        try {
+            document.execCommand('backColor', false, commandValue);
+        } catch (err) {
+            console.warn('Editor highlight fallback failed', err);
+        }
+    }
+
     saveBlogEditorSelection();
     updateToolbarState();
+}
+
+window.applyBlogTextColor = function(color) {
+    if (!color) return;
+    executeBlogEditorCommand('foreColor', color);
+};
+
+window.applyBlogHighlightColor = function(color) {
+    if (!color) return;
+    executeBlogEditorCommand('highlightColor', color);
+};
+
+window.applyBlogFont = function(fontName) {
+    if (!fontName || !BLOG_EDITOR_ALLOWED_FONTS.includes(fontName)) return;
+    executeBlogEditorCommand('fontName', fontName);
+};
+
+// Make functions globally accessible for inline onclick handlers
+window.formatText = function(command, value = null) {
+    executeBlogEditorCommand(command, value);
 };
 
 window.insertLink = function() {
@@ -13762,6 +13975,22 @@ function updateToolbarState() {
         btn.classList.toggle('bg-blue-100', isActive);
         btn.classList.toggle('border-blue-500', isActive);
     });
+
+    const fontSelect = document.getElementById('blog-font-family');
+    if (fontSelect) {
+        fontSelect.value = getActiveBlogFontValue();
+    }
+
+    const textColorInput = document.getElementById('blog-text-color');
+    if (textColorInput) {
+        textColorInput.value = normalizeColorValue(queryBlogCommandValue('foreColor')) || BLOG_EDITOR_DEFAULT_TEXT_COLOR;
+    }
+
+    const highlightColorInput = document.getElementById('blog-highlight-color');
+    if (highlightColorInput) {
+        const activeHighlight = normalizeColorValue(queryBlogCommandValue('hiliteColor')) || normalizeColorValue(queryBlogCommandValue('backColor'));
+        highlightColorInput.value = activeHighlight || BLOG_EDITOR_DEFAULT_HIGHLIGHT_COLOR;
+    }
 }
 
 // Initialize toolbar state updates
@@ -14799,12 +15028,14 @@ function resetBlogPostForm() {
     document.getElementById('add-blog-post-form').reset();
     document.getElementById('blog-post-id').value = '';
     document.getElementById('blog-form-title').textContent = 'Create New Blog Post';
+    blogEditorSavedRange = null;
     const contentEl = document.getElementById('blog-post-content');
     if (contentEl) {
         contentEl.innerHTML = '';
     }
     const previewWrap = document.getElementById('blog-image-preview');
     if (previewWrap) previewWrap.classList.add('hidden');
+    updateToolbarState();
 }
 function editBlogPost(postId) {
     const post = allBlogPosts.find(p => p.id === postId);
@@ -14815,11 +15046,12 @@ function editBlogPost(postId) {
     document.getElementById('blog-post-title').value = post.title;
     const contentEl = document.getElementById('blog-post-content');
     if (contentEl) {
-        contentEl.innerHTML = post.content || '';
+        contentEl.innerHTML = sanitizeHTML(post.content || '');
     }
     document.getElementById('blog-post-image').value = post.image || '';
     document.getElementById('blog-post-subject').value = post.subject || '';
     document.getElementById('blog-post-tags').value = parseBlogTags(post.tags).join(', ');
+    updateToolbarState();
     document.getElementById('add-blog-post-form-container').scrollIntoView({ behavior: 'smooth' });
 }
 async function deleteBlogPost(postId) {
@@ -15186,7 +15418,7 @@ const pageTitles = {
 function setupStripeCheckoutUI() {
     const alertBox = document.getElementById('checkout-alert');
     const checkoutBtns = document.querySelectorAll('[data-checkout-button]');
-    const portalBtn = document.getElementById('billing-portal-btn');
+    const portalBtns = document.querySelectorAll('[data-billing-portal-button]');
 
     function showAlert(kind, message) {
         if (!alertBox) return;
@@ -15260,33 +15492,27 @@ function setupStripeCheckoutUI() {
         });
     }
 
-    if (portalBtn) {
-        portalBtn.addEventListener('click', async () => {
-            portalBtn.disabled = true;
-            portalBtn.textContent = 'Opening…';
-            try {
-                const res = await fetch('/api/stripe-portal', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        customerEmail: currentUser && currentUser.email ? currentUser.email : undefined
-                    })
-                });
-                const data = await res.json();
-                if (data && data.url) {
-                    window.location.href = data.url;
-                } else {
-                    const msg = (data && data.error) || 'Unable to open billing portal.';
-                    showAlert('error', msg);
+    if (portalBtns && portalBtns.length) {
+        portalBtns.forEach((portalBtn) => {
+            portalBtn.addEventListener('click', async () => {
+                const defaultLabel = portalBtn.dataset.billingDefaultLabel || portalBtn.textContent.trim() || 'Manage billing';
+                portalBtn.disabled = true;
+                portalBtn.textContent = 'Opening…';
+                try {
+                    const billingWindow = window.open(STRIPE_BILLING_PORTAL_URL, '_blank', 'noopener,noreferrer');
+                    if (!billingWindow) {
+                        window.location.href = STRIPE_BILLING_PORTAL_URL;
+                    }
+                    showToast('Opening Stripe billing portal...', 'info');
+                } catch (error) {
+                    logError(error, 'Stripe portal launch');
+                    if (alertBox) showAlert('error', 'Unable to open the Stripe billing portal. Please try again or email admin@gcsemate.com.');
+                    showToast('Unable to open the Stripe billing portal. Email admin@gcsemate.com if it keeps failing.', 'error');
+                } finally {
                     portalBtn.disabled = false;
-                    portalBtn.textContent = 'Manage billing';
+                    portalBtn.textContent = defaultLabel;
                 }
-            } catch (error) {
-                logError(error, 'Stripe portal launch');
-                showAlert('error', 'Network error. Please try again.');
-                portalBtn.disabled = false;
-                portalBtn.textContent = 'Manage billing';
-            }
+            });
         });
     }
 }
@@ -19725,6 +19951,14 @@ function sanitizeHTML(html) {
                         attrsToRemove.push(attr.name);
                     }
                 }
+                if (attr.name === 'style') {
+                    const safeStyle = sanitizeInlineStyle(attr.value);
+                    if (safeStyle) {
+                        el.setAttribute('style', safeStyle);
+                    } else {
+                        attrsToRemove.push('style');
+                    }
+                }
             });
             attrsToRemove.forEach(attrName => el.removeAttribute(attrName));
         });
@@ -19737,6 +19971,64 @@ function sanitizeHTML(html) {
         div.textContent = html;
         return div.innerHTML;
     }
+}
+
+function sanitizeInlineStyle(styleText) {
+    if (!styleText) return '';
+
+    const safeDeclarations = [];
+    const declarations = String(styleText).split(';');
+
+    declarations.forEach(declaration => {
+        const separatorIndex = declaration.indexOf(':');
+        if (separatorIndex === -1) return;
+
+        const property = declaration.slice(0, separatorIndex).trim().toLowerCase();
+        const value = declaration.slice(separatorIndex + 1).trim();
+        if (!property || !value) return;
+
+        let safeValue = '';
+
+        if ((property === 'color' || property === 'background-color') && isSafeCssColor(value)) {
+            safeValue = value;
+        } else if (property === 'font-family' && isSafeFontFamily(value)) {
+            safeValue = value;
+        } else if (property === 'text-align' && ['left', 'right', 'center', 'justify'].includes(value.toLowerCase())) {
+            safeValue = value.toLowerCase();
+        } else if ((property === 'width' || property === 'height' || property === 'max-width') && isSafeCssLength(value)) {
+            safeValue = value;
+        } else if (property === 'cursor' && ['pointer', 'default', 'auto'].includes(value.toLowerCase())) {
+            safeValue = value.toLowerCase();
+        }
+
+        if (safeValue) {
+            safeDeclarations.push(`${property}: ${safeValue}`);
+        }
+    });
+
+    return safeDeclarations.join('; ');
+}
+
+function isSafeCssColor(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized) ||
+        /^rgba?\((\d+\s*,\s*){2}\d+(\s*,\s*(0|1|0?\.\d+))?\)$/i.test(normalized) ||
+        /^hsla?\((\d+\s*,\s*){2}\d+%?(\s*,\s*(0|1|0?\.\d+))?\)$/i.test(normalized) ||
+        /^[a-z]{3,20}$/i.test(normalized);
+}
+
+function isSafeCssLength(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'auto' || /^\d+(\.\d+)?(px|%|rem|em|vh|vw)$/.test(normalized);
+}
+
+function isSafeFontFamily(value) {
+    const families = String(value || '').split(',');
+    if (!families.length) return false;
+    return families.every(family => {
+        const normalized = family.trim().replace(/^['"]|['"]$/g, '').toLowerCase();
+        return BLOG_EDITOR_ALLOWED_FONT_NAMES.has(normalized);
+    });
 }
 
 // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---

@@ -75,6 +75,12 @@ function toDocId(email) {
   return email.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
+function addOneMonthIso(fromDate = new Date()) {
+  const next = new Date(fromDate);
+  next.setMonth(next.getMonth() + 1);
+  return next.toISOString();
+}
+
 async function writeFirestoreStatus({ email, customerId, subscriptionId, priceId, status, currentPeriodEnd }) {
   if (!projectId || !clientEmail || !privateKey) return { skipped: true, reason: 'missing service account env' };
   const token = await getAccessToken();
@@ -119,7 +125,9 @@ async function writeUserTier({ uid, tier, email, customerId, subscriptionId, pri
   if (!token) return { skipped: true, reason: 'oauth token missing' };
 
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${encodeURIComponent(uid)}?updateMask.fieldPaths=tier&updateMask.fieldPaths=stripeStatus&updateMask.fieldPaths=stripeCustomerId&updateMask.fieldPaths=stripeSubscriptionId&updateMask.fieldPaths=stripePriceId&updateMask.fieldPaths=stripeUpdatedAt&updateMask.fieldPaths=subscriptionExpiresAt`;
-  const expiresIso = Number.isFinite(currentPeriodEnd) ? new Date(currentPeriodEnd * 1000).toISOString() : null;
+  const expiresIso = Number.isFinite(currentPeriodEnd)
+    ? new Date(currentPeriodEnd * 1000).toISOString()
+    : addOneMonthIso();
 
   const body = {
     fields: {
@@ -147,6 +155,35 @@ async function writeUserTier({ uid, tier, email, customerId, subscriptionId, pri
     return { skipped: true, reason: `users write failed ${res.status} ${txt}` };
   }
   return { ok: true };
+}
+
+async function enrichStripeEventData(event, data) {
+  if (!stripe) return data;
+  const enriched = { ...(data || {}) };
+  const obj = event?.data?.object || {};
+
+  if (event.type === 'checkout.session.completed' && obj.subscription) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(obj.subscription);
+      if (subscription) {
+        enriched.subscriptionId = subscription.id || enriched.subscriptionId;
+        enriched.customerId = subscription.customer || enriched.customerId;
+        enriched.status = subscription.status || enriched.status || 'active';
+        enriched.currentPeriodEnd = subscription.current_period_end || enriched.currentPeriodEnd;
+        enriched.priceId = Array.isArray(subscription.items?.data)
+          ? (subscription.items.data[0]?.price?.id || enriched.priceId)
+          : enriched.priceId;
+      }
+    } catch (error) {
+      console.warn('Could not enrich checkout subscription', error?.message || error);
+    }
+  }
+
+  if (!enriched.currentPeriodEnd && event.type === 'checkout.session.completed') {
+    enriched.currentPeriodEnd = Math.floor((Date.now() + 31 * 24 * 60 * 60 * 1000) / 1000);
+  }
+
+  return enriched;
 }
 
 function extractEventData(event) {
@@ -213,7 +250,7 @@ async function handler(req, res) {
     return send(res, 400, { error: 'Invalid signature' });
   }
 
-  const data = extractEventData(event) || {};
+  const data = await enrichStripeEventData(event, extractEventData(event) || {});
   console.log('stripe-webhook event', { type: event.type, data });
 
   if (projectId && clientEmail && privateKey) {

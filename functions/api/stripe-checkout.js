@@ -2,8 +2,8 @@
 // Env vars required:
 // - STRIPE_SECRET_KEY
 // Optional:
-// - STRIPE_SUCCESS_URL (default: https://gcsemate.com/?checkout=success)
-// - STRIPE_CANCEL_URL (default: https://gcsemate.com/?checkout=cancel)
+// - STRIPE_SUCCESS_URL (default: https://gcsemate.com/checkout?checkout=success)
+// - STRIPE_CANCEL_URL (default: https://gcsemate.com/checkout?checkout=cancel)
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecret ? require('stripe')(stripeSecret) : null;
@@ -46,6 +46,7 @@ async function handler(req, res) {
     const body = await readJsonBody(req);
     const priceId = body.priceId;
     const customerEmail = body.customerEmail;
+    const uid = body.uid;
     const mode = body.mode === 'payment' ? 'payment' : 'subscription';
 
     if (!priceId) {
@@ -56,16 +57,34 @@ async function handler(req, res) {
       mode,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
+      client_reference_id: uid || undefined,
       customer_email: customerEmail || undefined,
       billing_address_collection: 'auto',
+      subscription_data: mode === 'subscription' ? {
+        metadata: {
+          uid: uid || '',
+          email: customerEmail || 'unknown',
+          priceId,
+          createdFrom: 'gcsemate-web'
+        }
+      } : undefined,
+      payment_intent_data: mode === 'payment' ? {
+        metadata: {
+          uid: uid || '',
+          email: customerEmail || 'unknown',
+          priceId,
+          createdFrom: 'gcsemate-web'
+        }
+      } : undefined,
       metadata: {
+        uid: uid || '',
         priceId,
         mode,
         email: customerEmail || 'unknown',
         createdFrom: 'gcsemate-web'
       },
-      success_url: process.env.STRIPE_SUCCESS_URL || 'https://gcsemate.com/?checkout=success',
-      cancel_url: process.env.STRIPE_CANCEL_URL || 'https://gcsemate.com/?checkout=cancel'
+      success_url: process.env.STRIPE_SUCCESS_URL || 'https://gcsemate.com/checkout?checkout=success',
+      cancel_url: process.env.STRIPE_CANCEL_URL || 'https://gcsemate.com/checkout?checkout=cancel'
     });
 
     return send(res, 200, { url: session.url });
