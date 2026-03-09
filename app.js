@@ -144,6 +144,8 @@ let firestoreAssertionCount = 0;
 let hasShownFirestoreRecoveryWarning = false;
 let firestoreTransportUnstableUntil = 0;
 let lastHandledCheckoutSuccessAt = 0;
+let recaptchaScriptPromise = null;
+let stripePricingTableScriptPromise = null;
 
 function isFirestoreTransportUnstable() {
     return Date.now() < firestoreTransportUnstableUntil;
@@ -469,11 +471,13 @@ setTimeout(() => {
 function applyLowSpecMode() {
     try {
         const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const coarsePointer = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
         const saveData = navigator.connection && navigator.connection.saveData;
         const effectiveType = navigator.connection && navigator.connection.effectiveType;
         const slowConnection = typeof effectiveType === 'string' && (effectiveType.includes('2g') || effectiveType.includes('slow-2g'));
+        const smallViewport = window.innerWidth > 0 && window.innerWidth <= 768;
 
-        if (prefersReducedMotion || saveData || slowConnection) {
+        if (prefersReducedMotion || coarsePointer || saveData || slowConnection || smallViewport) {
             document.documentElement.classList.add('low-spec');
         }
     } catch (_) {
@@ -482,6 +486,93 @@ function applyLowSpecMode() {
 }
 
 applyLowSpecMode();
+
+function loadDeferredScript(src, attributes = {}) {
+    return new Promise((resolve, reject) => {
+        const existing = Array.from(document.scripts).find((node) => node.src === src);
+        if (existing) {
+            if (existing.dataset.loaded === 'true') {
+                resolve(existing);
+                return;
+            }
+            existing.addEventListener('load', () => resolve(existing), { once: true });
+            existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = src;
+        Object.entries(attributes).forEach(([key, value]) => {
+            if (key in script && typeof value === 'boolean') {
+                script[key] = value;
+                return;
+            }
+            if (value === true) {
+                script.setAttribute(key, '');
+                return;
+            }
+            script.setAttribute(key, String(value));
+        });
+        script.addEventListener('load', () => {
+            script.dataset.loaded = 'true';
+            resolve(script);
+        }, { once: true });
+        script.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+        document.head.appendChild(script);
+    });
+}
+
+async function ensureRecaptchaScriptLoaded() {
+    if (!RECAPTCHA_SITE_KEY) return null;
+    if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
+        await new Promise((resolve) => window.grecaptcha.ready(resolve));
+        return window.grecaptcha;
+    }
+    if (!recaptchaScriptPromise) {
+        const src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`;
+        recaptchaScriptPromise = loadDeferredScript(src, { async: true, defer: true })
+            .then(() => new Promise((resolve) => {
+                if (window.grecaptcha && typeof window.grecaptcha.ready === 'function') {
+                    window.grecaptcha.ready(() => resolve(window.grecaptcha));
+                    return;
+                }
+                resolve(null);
+            }))
+            .catch((error) => {
+                recaptchaScriptPromise = null;
+                console.warn('reCAPTCHA script load failed:', error);
+                return null;
+            });
+    }
+    return recaptchaScriptPromise;
+}
+
+async function ensureStripePricingTableLoaded() {
+    if (!document.querySelector('stripe-pricing-table')) return true;
+    if (window.customElements && window.customElements.get('stripe-pricing-table')) {
+        try { configureStripePricingTableIdentity(); } catch (_) {}
+        return true;
+    }
+    if (!stripePricingTableScriptPromise) {
+        stripePricingTableScriptPromise = loadDeferredScript('https://js.stripe.com/v3/pricing-table.js', { async: true })
+            .then(() => {
+                try { configureStripePricingTableIdentity(); } catch (_) {}
+                return true;
+            })
+            .catch((error) => {
+                stripePricingTableScriptPromise = null;
+                console.warn('Stripe pricing table script load failed:', error);
+                return false;
+            });
+    }
+    return stripePricingTableScriptPromise;
+}
+
+function ensureDeferredAssetsForPage(pageId) {
+    if (pageId === 'features-page' || pageId === 'checkout-page') {
+        void ensureStripePricingTableLoaded();
+    }
+}
 
 // Comprehensive Error Handling System
 class ErrorHandler {
@@ -6228,9 +6319,10 @@ async function handleLogin() {
         
         // Enterprise reCAPTCHA token acquisition
         try {
-            if (window.grecaptcha && typeof window.grecaptcha.ready === 'function' && RECAPTCHA_SITE_KEY) {
-                await new Promise((resolve) => window.grecaptcha.ready(resolve));
-                const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
+            const grecaptcha = await ensureRecaptchaScriptLoaded();
+            if (grecaptcha && typeof grecaptcha.ready === 'function' && RECAPTCHA_SITE_KEY) {
+                await new Promise((resolve) => grecaptcha.ready(resolve));
+                const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'LOGIN' });
                 try {
                     const onHostedProd = /(^|\.)gcsemate\.com$/i.test(window.location.hostname || '');
                     const recaptchaPaths = onHostedProd
@@ -10761,6 +10853,7 @@ function showAuthPage(showLogin = true) {
     setSkipLinkTarget('landing-content');
     const loginPage = document.getElementById('login-page');
     loginPage.classList.remove('hidden');
+    void ensureRecaptchaScriptLoaded();
     
     // Add click handler to close on backdrop click
     const backdropClickHandler = (e) => {
@@ -10817,6 +10910,8 @@ function showPage(pageId) {
         showSectionMaintenanceNotice(pageId);
         return;
     }
+
+    ensureDeferredAssetsForPage(pageId);
 
     // Setup paste handler when blog page is shown
     if (pageId === 'blog-page') {
@@ -11201,14 +11296,16 @@ function showAnnouncement(message) {
     const announcementBanner = document.getElementById('site-announcement-banner');
     if (message && message.trim() !== '') {
         lastAnnouncementMessage = message;
-        announcementBanner.innerHTML = `<div class="bg-blue-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-between relative">
-            <div class="flex items-center gap-3">
-                <span class="truncate">${message}</span>
-                ${typeof progressText !== 'undefined' && progressText ? `<span class="text-blue-100 text-xs whitespace-nowrap">${progressText}</span>` : ''}
+        const safeMessage = escapeHTML(message);
+        const safeProgress = typeof progressText !== 'undefined' && progressText ? escapeHTML(progressText) : '';
+        announcementBanner.innerHTML = `<div class="site-announcement-shell" role="status" aria-live="polite">
+            <div class="site-announcement-copy">
+                <span class="site-announcement-message">${safeMessage}</span>
+                ${safeProgress ? `<span class="site-announcement-progress">${safeProgress}</span>` : ''}
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="restoreLastAnnouncement()" class="text-xs underline decoration-white/50 hover:decoration-white/80">Restore</button>
-                <button onclick="dismissAnnouncement()" class="font-bold text-xl px-2" data-tooltip="Dismiss" aria-label="Dismiss">×</button>
+            <div class="site-announcement-actions">
+                <button onclick="restoreLastAnnouncement()" class="site-announcement-restore" type="button">Restore</button>
+                <button onclick="dismissAnnouncement()" class="site-announcement-dismiss" type="button" data-tooltip="Dismiss announcement" aria-label="Dismiss announcement">×</button>
             </div>
         </div>`;
         announcementBanner.classList.remove('hidden');
@@ -15365,62 +15462,157 @@ function showToast(message, type = 'success', options = {}) {
 }
 
 function initializeTooltips() {
-    // Delegate tooltip handling to the document to cover dynamically added elements
+    if (window.__gcsemateTooltipController) {
+        window.__gcsemateTooltipController.refresh();
+        return window.__gcsemateTooltipController;
+    }
+
     let tooltipElement = null;
     let hideTimeout = null;
+    let touchHideTimeout = null;
+    let activeTarget = null;
+    const coarsePointerQuery = window.matchMedia ? window.matchMedia('(hover: none), (pointer: coarse)') : null;
 
-    function showTooltip(target) {
-        const text = target.getAttribute('data-tooltip');
-        if (!text) return;
-        if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
-        if (!tooltipElement) {
-            tooltipElement = document.createElement('div');
-            tooltipElement.className = 'custom-tooltip';
-            document.body.appendChild(tooltipElement);
+    function isTouchLikeEvent(event) {
+        if (event?.pointerType === 'touch' || event?.pointerType === 'pen') return true;
+        if (event?.type === 'touchstart' || event?.type === 'touchend') return true;
+        return Boolean(coarsePointerQuery && coarsePointerQuery.matches);
+    }
+
+    function ensureTooltipElement() {
+        if (tooltipElement) return tooltipElement;
+        tooltipElement = document.createElement('div');
+        tooltipElement.className = 'custom-tooltip';
+        tooltipElement.setAttribute('role', 'tooltip');
+        tooltipElement.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tooltipElement);
+        return tooltipElement;
+    }
+
+    function clearTooltipTimers() {
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+            hideTimeout = null;
         }
-        tooltipElement.textContent = text;
-        tooltipElement.classList.remove('show');
-        tooltipElement.style.opacity = '0';
+        if (touchHideTimeout) {
+            clearTimeout(touchHideTimeout);
+            touchHideTimeout = null;
+        }
+    }
+
+    function positionTooltip(target) {
+        const node = ensureTooltipElement();
         const targetRect = target.getBoundingClientRect();
-        // Pre-measure
-        tooltipElement.style.top = '-9999px';
-        tooltipElement.style.left = '-9999px';
-        const tooltipRect = tooltipElement.getBoundingClientRect();
-        let top = targetRect.top - tooltipRect.height - 8 + window.scrollY;
-        let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + window.scrollX;
-        if (top < window.scrollY) top = targetRect.bottom + 8 + window.scrollY;
-        if (left < window.scrollX) left = window.scrollX + 5;
-        const maxLeft = window.scrollX + window.innerWidth - tooltipRect.width - 5;
-        if (left > maxLeft) left = maxLeft;
-        tooltipElement.style.top = `${top}px`;
-        tooltipElement.style.left = `${left}px`;
-        // Animate in
-        requestAnimationFrame(() => tooltipElement.classList.add('show'));
+        node.style.top = '-9999px';
+        node.style.left = '-9999px';
+        node.style.position = 'fixed';
+        const tooltipRect = node.getBoundingClientRect();
+        const viewportPadding = 8;
+        const desiredTop = targetRect.top - tooltipRect.height - 10;
+        const fallbackTop = targetRect.bottom + 10;
+        const top = desiredTop >= viewportPadding
+            ? desiredTop
+            : Math.min(fallbackTop, window.innerHeight - tooltipRect.height - viewportPadding);
+        const centeredLeft = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+        const left = Math.min(
+            Math.max(centeredLeft, viewportPadding),
+            window.innerWidth - tooltipRect.width - viewportPadding
+        );
+        node.style.top = `${Math.max(viewportPadding, top)}px`;
+        node.style.left = `${left}px`;
     }
 
-    function hideTooltip() {
+    function showTooltip(target, { autoHide = false } = {}) {
+        const text = target?.getAttribute('data-tooltip');
+        if (!text) return;
+        clearTooltipTimers();
+        activeTarget = target;
+        const node = ensureTooltipElement();
+        node.textContent = text;
+        node.setAttribute('aria-hidden', 'false');
+        node.classList.remove('show');
+        positionTooltip(target);
+        requestAnimationFrame(() => node.classList.add('show'));
+        if (autoHide) {
+            touchHideTimeout = setTimeout(() => {
+                if (activeTarget === target) hideTooltip(true);
+            }, 1600);
+        }
+    }
+
+    function hideTooltip(immediate = false) {
         if (!tooltipElement) return;
-        tooltipElement.classList.remove('show');
-        hideTimeout = setTimeout(() => {
-            if (tooltipElement) {
-                tooltipElement.remove();
-                tooltipElement = null;
-            }
-        }, 180);
+        clearTooltipTimers();
+        const commitHide = () => {
+            tooltipElement.classList.remove('show');
+            tooltipElement.setAttribute('aria-hidden', 'true');
+            activeTarget = null;
+        };
+        if (immediate) {
+            commitHide();
+            return;
+        }
+        hideTimeout = setTimeout(commitHide, 120);
     }
 
-    document.addEventListener('mouseover', (e) => {
-        const target = e.target.closest('[data-tooltip]');
+    function handleHoverStart(event) {
+        if (isTouchLikeEvent(event)) return;
+        const target = event.target.closest('[data-tooltip]');
+        if (target) showTooltip(target);
+    }
+
+    function handleHoverEnd(event) {
+        if (isTouchLikeEvent(event)) return;
+        const from = event.target.closest('[data-tooltip]');
+        const to = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('[data-tooltip]') : null;
+        if (from && from !== to) hideTooltip();
+    }
+
+    function handleTouchTooltip(event) {
+        const target = event.target.closest('[data-tooltip]');
+        if (!target || !isTouchLikeEvent(event)) {
+            if (!target) hideTooltip(true);
+            return;
+        }
+        showTooltip(target, { autoHide: true });
+    }
+
+    function refreshTooltipMetadata() {
+        document.querySelectorAll('[data-tooltip]').forEach((element) => {
+            const text = element.getAttribute('data-tooltip');
+            if (text && !element.getAttribute('aria-label') && element.matches('button, a, [role="button"]')) {
+                element.setAttribute('aria-label', text);
+            }
+        });
+    }
+
+    document.addEventListener('mouseover', handleHoverStart, { passive: true });
+    document.addEventListener('mouseout', handleHoverEnd, { passive: true });
+    document.addEventListener('focusin', (event) => {
+        const target = event.target.closest('[data-tooltip]');
         if (target) showTooltip(target);
     });
-    document.addEventListener('mouseout', (e) => {
-        const from = e.target.closest('[data-tooltip]');
-        const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('[data-tooltip]') : null;
-        if (from && from !== to) hideTooltip();
+    document.addEventListener('focusout', (event) => {
+        const from = event.target.closest('[data-tooltip]');
+        const to = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('[data-tooltip]') : null;
+        if (from && from !== to) hideTooltip(true);
     });
-    window.addEventListener('scroll', () => hideTooltip(), { passive: true });
-    window.addEventListener('resize', () => hideTooltip());
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
+    document.addEventListener('pointerdown', handleTouchTooltip, { passive: true });
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('[data-tooltip]')) hideTooltip(true);
+    }, { passive: true });
+    window.addEventListener('scroll', () => hideTooltip(true), { passive: true });
+    window.addEventListener('resize', () => hideTooltip(true), { passive: true });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') hideTooltip(true);
+    });
+
+    window.__gcsemateTooltipController = {
+        refresh: refreshTooltipMetadata,
+        hide: () => hideTooltip(true)
+    };
+    refreshTooltipMetadata();
+    return window.__gcsemateTooltipController;
 }
 
 // Dynamic document title per page
@@ -19547,6 +19739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 // Toggle behavior: tap again to close.
                 if (!mobileMenu.classList.contains('hidden') || mobileMenuState.isOpen) {
                     closeMobileMenu(false);
@@ -19556,7 +19749,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        closeMenuButton.addEventListener('click', () => {
+        mobileMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        closeMenuButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             closeMobileMenu();
         });
         
@@ -19571,7 +19770,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Handle mobile logout button
         if (mobileLogoutButton) {
-            mobileLogoutButton.addEventListener('click', () => {
+            mobileLogoutButton.addEventListener('click', (e) => {
+                e.stopPropagation();
                 closeMobileMenu(false);
                 handleLogout();
             });
