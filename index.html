@@ -450,227 +450,198 @@
               </div>
         </header>
         <main id="landing-content" class="mt-6 sm:mt-8" role="main">
-            <section class="hero-shell" aria-labelledby="hero-heading">
-                <div class="hero-grid">
-                    <div class="hero-copy">
-                        <div class="hero-pill">Updated for the 2025 specs</div>
-                        <div class="animate-hero-title">
-                            <h1 id="hero-heading" class="hero-title">
-                                Ace GCSEs with <span class="brand-text">Confidence + Consistency</span>
-                            </h1>
-                        </div>
-                        <div class="animate-hero-subtitle">
-                            <p class="hero-subtitle">
-                                Join 200+ students already revising smarter. GCSE revision notes, past papers, mark schemes, exam questions, flashcards, videos and playlists in one clean, mobile-first workspace.
-                            </p>
-                            <p class="hero-subtitle mt-3">
-                                Ace GCSEs with confidence and consistency using resources aligned to AQA, Edexcel and OCR, built for UK students aiming for strong grades.
-                            </p>
-                        </div>
-                        <div class="text-sm text-blue-700 font-semibold mt-3">Pro is £1/month. Create an account in under a minute, with no card required. Any issues? Email <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a>.</div>
-                        <div class="hero-meta" role="list">
-                            <span class="hero-meta-item" role="listitem"><i class="fas fa-award"></i>Aligned to AQA, Edexcel, and OCR</span>
-                            <span class="hero-meta-item" role="listitem"><i class="fas fa-mobile-alt"></i>Optimised for phones and tablets</span>
-                            <span class="hero-meta-item" role="listitem"><i class="fas fa-shield-alt"></i>Secure login, private workspace</span>
-                        </div>
-                        <div class="hero-hashtags" aria-label="Popular GCSE search terms">#GCSERevision #PastPapers #Edexcel #AQA #OCR #StudySmarter #UKSchools</div>
-                        <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 animate-hero-buttons">
-                            <button onclick="showAuthPage(false)" class="btn-primary w-full sm:w-auto px-8 sm:px-10 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300" data-tooltip="Start your GCSE success journey today">
-                                <i class="fas fa-rocket mr-2"></i>Start Free Today
-                            </button>
-                            <button onclick="showAuthPage(true)" class="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-4 text-base min-h-[60px] flex items-center justify-center">
-                                <i class="fas fa-user-check mr-2"></i>Already have an account? Sign In
-                            </button>
-                        </div>
-                        <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                            <button onclick="signInWithGoogle()" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-lg bg-white text-gray-800 font-bold border border-gray-200 hover:bg-gray-50 transition-all min-h-[56px] flex items-center justify-center" data-tooltip="Sign in with Google">
-                                <i class="fab fa-google mr-2"></i>Sign in with Google
-                            </button>
-                        </div>
-                        <div class="hero-trust" aria-label="GCSEMate highlights">
-                            <div class="hero-trust-pill"><i class="fas fa-bolt"></i>Fast previews & smooth downloads</div>
-                            <div class="hero-trust-pill"><i class="fas fa-check-circle"></i>No credit card required</div>
-                            <div class="hero-trust-pill"><i class="fas fa-heart"></i>Built with students, for students</div>
-                        </div>
-                    </div>
-                    <div class="hero-panel" aria-label="What you get inside GCSEMate">
-                        <div class="hero-panel-card">
-                            <div class="hero-panel-header">
-                                <p class="hero-panel-eyebrow">Everything organised for you</p>
-                                <span class="hero-panel-chip">New</span>
+            <section class="about-shell" aria-labelledby="hero-heading">
+                <div class="about-orb about-orb-one" aria-hidden="true"></div>
+                <div class="about-orb about-orb-two" aria-hidden="true"></div>
+
+                <!-- Hero card -->
+                <div class="about-hero-card">
+                    <div class="about-hero-grid">
+                        <div class="relative z-10">
+                            <div class="about-chip">Updated for the 2025 specs</div>
+                            <h1 id="hero-heading" class="about-title mt-5">Ace GCSEs with <span class="brand-text">Confidence + Consistency</span></h1>
+                            <p class="about-lead mt-5">Join 200+ students already revising smarter. GCSE notes, past papers, mark schemes, videos and study tools in one clean, mobile-first workspace aligned to AQA, Edexcel and OCR.</p>
+                            <div class="text-sm font-semibold text-blue-700 mt-4">Pro is &pound;1/month &mdash; create an account in under a minute, no card required. Questions? <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a></div>
+                            <div class="about-pill-row mt-6">
+                                <span class="about-pill"><i class="fas fa-award"></i>AQA, Edexcel &amp; OCR</span>
+                                <span class="about-pill"><i class="fas fa-mobile-alt"></i>Mobile-first</span>
+                                <span class="about-pill"><i class="fas fa-shield-alt"></i>Secure &amp; private</span>
                             </div>
-                            <ul class="hero-panel-list" aria-label="Included features">
-                                <li><i class="fas fa-check"></i>Structured notes & past papers by subject</li>
-                                <li><i class="fas fa-cloud-download-alt"></i>Instant file previews plus smart downloads</li>
-                                <li><i class="fas fa-calendar-alt"></i>Calendar, reminders, and study streak tracking</li>
-                                <li><i class="fas fa-star"></i>Guided playlists to keep revision on rails</li>
+                            <div class="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary flex items-center justify-center gap-2 px-8 py-4 text-base" data-tooltip="Start your GCSE journey today">
+                                    <i class="fas fa-rocket"></i>Start Free Today
+                                </button>
+                                <button onclick="showAuthPage(true)" class="about-cta-button about-cta-button--secondary flex items-center justify-center gap-2 px-8 py-4 text-base">
+                                    <i class="fas fa-user-check"></i>Sign In
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <button onclick="signInWithGoogle()" class="about-cta-button about-cta-button--secondary flex items-center justify-center gap-2 px-6 py-3 text-sm" style="border-color:#e5e7eb;background:rgba(255,255,255,0.95);color:#374151;">
+                                    <i class="fab fa-google" style="color:#ea4335;"></i>Continue with Google
+                                </button>
+                            </div>
+                            <div class="about-pill-row mt-5">
+                                <span class="about-pill" style="font-size:0.8rem;"><i class="fas fa-bolt"></i>Fast previews &amp; downloads</span>
+                                <span class="about-pill" style="font-size:0.8rem;"><i class="fas fa-check-circle"></i>No card required</span>
+                                <span class="about-pill" style="font-size:0.8rem;"><i class="fas fa-heart"></i>Built for students</span>
+                            </div>
+                        </div>
+
+                        <div class="about-visual-card relative z-10">
+                            <div class="about-chip about-chip--soft mb-4">Everything organised for you</div>
+                            <ul class="space-y-3 mt-2">
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-check-circle text-blue-500 flex-shrink-0"></i>Structured notes &amp; past papers by subject</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-cloud-download-alt text-blue-500 flex-shrink-0"></i>Instant file previews plus smart downloads</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-calendar-alt text-blue-500 flex-shrink-0"></i>Calendar, reminders &amp; study streak tracking</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-star text-blue-500 flex-shrink-0"></i>Guided playlists to keep revision on rails</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-tools text-blue-500 flex-shrink-0"></i>Focus timer, flashcards &amp; study tools</li>
                             </ul>
-                            <div class="hero-panel-footer">
-                                <div class="hero-avatar-row" aria-hidden="true">
-                                    <span class="avatar-dot"></span>
+                            <div class="about-stat-grid mt-6">
+                                <div class="about-stat-card">
+                                    <span class="about-stat-value">200+</span>
+                                    <span class="about-stat-label">UK students already revising with GCSEMate</span>
                                 </div>
-                                <p class="hero-panel-note">Trusted by 200+ students across the UK. Join in under a minute.</p>
-                                <div class="hero-cta-links">
-                                    <a class="ghost-link" href="#benefits">Explore features</a>
-                                    <a class="ghost-link" href="#testimonials">See student wins</a>
+                                <div class="about-stat-card">
+                                    <span class="about-stat-value">&pound;1/mo</span>
+                                    <span class="about-stat-label">Pro plan &mdash; less than a coffee, cancel anytime</span>
                                 </div>
                             </div>
+                            <div class="about-visual-caption mt-3">Trusted by students across the UK. Join in under a minute.</div>
+                            <div class="hero-cta-links mt-4">
+                                <a class="ghost-link" href="#benefits">Explore features</a>
+                                <a class="ghost-link" href="#testimonials">Student wins</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
-            <div class="mobile-cta-bar">
-                <button onclick="showAuthPage(false)" class="mobile-cta primary"><i class="fas fa-rocket"></i><span>Start free</span></button>
-                <button onclick="showAuthPage(true)" class="mobile-cta ghost"><i class="fas fa-user-check"></i><span>Sign in</span></button>
-            </div>
-            <div class="mt-16 sm:mt-20 lg:mt-24 px-4" id="benefits">
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight sr text-center">Why 200+ Students Choose GCSEMate</h2>
-                <p class="mt-4 sm:mt-6 text-gray-500 text-base sm:text-lg sr sr--d1 text-center max-w-2xl mx-auto">Stop wasting time searching for resources. Start achieving the grades you deserve.</p>
-                <div class="mt-12 grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern hover:shadow-xl transition-all duration-300 sr sr--d1" style="animation-delay: 0.1s;">
-                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 transition-transform duration-300 hover:scale-110">
-                            <i class="fas fa-folder-open text-2xl"></i>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">One-Stop Revision Hub</h3>
-                        <p class="mt-2 text-gray-600">No more hunting through folders or losing important files. Everything you need for every subject is organized and instantly accessible from one dashboard.</p>
+
+                <!-- Mobile CTA bar -->
+                <div class="mobile-cta-bar">
+                    <button onclick="showAuthPage(false)" class="mobile-cta primary"><i class="fas fa-rocket"></i><span>Start free</span></button>
+                    <button onclick="showAuthPage(true)" class="mobile-cta ghost"><i class="fas fa-user-check"></i><span>Sign in</span></button>
+                </div>
+
+                <!-- Benefits -->
+                <div class="mt-8" id="benefits">
+                    <div class="text-center mb-6">
+                        <div class="about-chip about-chip--soft inline-flex">Why 200+ students choose GCSEMate</div>
+                        <h2 class="mt-4 text-center" style="font-size:clamp(1.6rem,3vw,2.4rem);font-weight:900;letter-spacing:-0.04em;color:#0f172a;line-height:1.1;">Stop searching for resources. Start revising.</h2>
                     </div>
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern hover:shadow-xl transition-all duration-300 sr sr--d2" style="animation-delay: 0.2s;">
-                         <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-500 transition-transform duration-300 hover:scale-110">
-                             <i class="fas fa-eye text-2xl"></i>
-                         </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Instant File Previews</h3>
-                        <p class="mt-2 text-gray-600">Preview PDFs, documents, and images instantly without downloading. Save time and storage space while studying more efficiently.</p>
-                    </div>
-                    <div class="p-8 modern-card rounded-2xl shadow-lg card-modern hover:shadow-xl transition-all duration-300 sr sr--d3" style="animation-delay: 0.3s;">
-                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 transition-transform duration-300 hover:scale-110">
-                           <i class="fas fa-calendar-alt text-2xl"></i>
-                        </div>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Smart Calendar System</h3>
-                        <p class="mt-2 text-gray-600">Never miss another deadline. Track homework, exam dates, and revision schedules with our intelligent calendar that keeps you organized and on track.</p>
+                    <div class="about-story-grid">
+                        <article class="about-story-card about-story-card--blue sr sr--d1">
+                            <div class="about-card-icon"><i class="fas fa-folder-open"></i></div>
+                            <h3>One-stop revision hub</h3>
+                            <p>Notes, past papers, mark schemes and resources for every subject, organised in one dashboard. No more hunting through folders or losing files before exam day.</p>
+                        </article>
+                        <article class="about-story-card about-story-card--emerald sr sr--d2">
+                            <div class="about-card-icon"><i class="fas fa-eye"></i></div>
+                            <h3>Instant file previews</h3>
+                            <p>Preview PDFs and documents directly inside the app with no downloading needed. Save time and storage space while studying more efficiently.</p>
+                        </article>
+                        <article class="about-story-card about-story-card--violet sr sr--d3">
+                            <div class="about-card-icon"><i class="fas fa-calendar-alt"></i></div>
+                            <h3>Smart calendar system</h3>
+                            <p>Never miss a deadline. Track exam dates, revision milestones and study streaks with an intelligent calendar that keeps you organised and on track.</p>
+                        </article>
+                        <article class="about-story-card about-story-card--amber sr sr--d4">
+                            <div class="about-card-icon"><i class="fas fa-tools"></i></div>
+                            <h3>Built-in study tools</h3>
+                            <p>A Pomodoro focus timer, flashcard builder, formula sheets and more &mdash; everything for focused, session-based revision without ever leaving this tab.</p>
+                        </article>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Real Statistics Section -->
-            <div class="mt-16 sm:mt-20 lg:mt-24 px-4" id="statistics">
-                <div class="text-center mb-10 sm:mb-12">
-                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-6 sr">Trusted by Students Across the UK</h2>
-                    <p class="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg sr sr--d1">Real numbers from real students achieving real results</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all sr sr--d1">
-                            <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-users text-3xl sm:text-4xl text-blue-600"></i>
-                            </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">200+</div>
-                            <div class="text-sm text-gray-600">Active Students</div>
-                        </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all sr sr--d2">
-                            <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-star text-3xl sm:text-4xl text-blue-400"></i>
-                            </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-500 mb-2">4.9/5</div>
-                            <div class="text-sm text-gray-600">Average Rating</div>
-                        </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all sr sr--d3">
-                            <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-chart-line text-3xl sm:text-4xl text-blue-500"></i>
-                            </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">95%</div>
-                            <div class="text-sm text-gray-600">Grade Improvement</div>
-                        </div>
-                        <div class="bg-white p-5 sm:p-6 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all sr sr--d4">
-                            <div class="flex items-center justify-center mb-3">
-                                <i class="fas fa-file-alt text-3xl sm:text-4xl text-blue-700"></i>
-                            </div>
-                            <div class="text-2xl sm:text-3xl font-bold text-blue-700 mb-2">1,000+</div>
-                            <div class="text-sm text-gray-600">Resources Available</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-12 max-w-5xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+                <!-- Stats + upgrade -->
+                <div class="about-focus-panel mt-8" id="statistics">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-widest text-blue-100">Upgrade without losing progress</p>
-                        <h3 class="text-2xl sm:text-3xl font-bold">Unlock the full library for £1/month</h3>
-                        <p class="text-blue-100 mt-2">Keep your starred files, calendar events, and study streaks. Pro adds unlimited subjects, one-click downloads, and premium support.</p>
+                        <div class="about-chip about-chip--soft">Trusted across the UK</div>
+                        <h3 class="about-section-title mt-4">Real students. Real results.</h3>
+                        <p class="about-body mt-4">Used daily by students revising for AQA, Edexcel and OCR. Every resource is organised, searchable and accessible from any device &mdash; including your phone on the bus.</p>
+                        <div class="about-stat-grid mt-6">
+                            <div class="about-stat-card">
+                                <span class="about-stat-value">200+</span>
+                                <span class="about-stat-label">Active students</span>
+                            </div>
+                            <div class="about-stat-card">
+                                <span class="about-stat-value">4.9 / 5</span>
+                                <span class="about-stat-label">Average rating</span>
+                            </div>
+                            <div class="about-stat-card">
+                                <span class="about-stat-value">1,000+</span>
+                                <span class="about-stat-label">Resources available</span>
+                            </div>
+                            <div class="about-stat-card">
+                                <span class="about-stat-value">95%</span>
+                                <span class="about-stat-label">Report grade improvement</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button class="px-6 py-3 rounded-lg bg-white text-blue-700 font-bold hover:bg-blue-50 transition-all" onclick="document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">See everything in Pro</button>
-                        <button class="px-6 py-3 rounded-lg bg-blue-900/70 text-white font-bold hover:bg-blue-900 transition-all" onclick="showAuthPage(false)">Upgrade in 1 minute</button>
+                    <div class="about-checklist">
+                        <div class="about-chip about-chip--soft mb-2">Upgrade to Pro for &pound;1/month</div>
+                        <div class="about-check-item"><i class="fas fa-check-circle"></i><span>Unlimited subjects &amp; one-click downloads</span></div>
+                        <div class="about-check-item"><i class="fas fa-check-circle"></i><span>Full file browser with starred files</span></div>
+                        <div class="about-check-item"><i class="fas fa-check-circle"></i><span>Priority support &amp; new features first</span></div>
+                        <div class="about-check-item"><i class="fas fa-check-circle"></i><span>Keep your progress, calendar &amp; streaks</span></div>
+                        <div class="mt-5 flex flex-col gap-3">
+                            <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary flex items-center justify-center gap-2">
+                                <i class="fas fa-rocket"></i>Get started free
+                            </button>
+                            <p class="text-xs text-slate-500 text-center">Cancel anytime &bull; No card required to sign up</p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Testimonials -->
-                <div class="mt-12 sm:mt-14 lg:mt-16 grid md:grid-cols-3 gap-8 max-w-6xl mx-auto" id="testimonials">
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-blue-100/60 sr sr--d1">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-blue-400">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                        <p class="text-gray-700 mb-4">&quot;GCSEMate saved me hours every week. Everything I need is organized and easy to find. My grades improved by 2 levels!&quot;</p>
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span class="text-blue-600 font-bold">S</span>
-                            </div>
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">Sarah M.</p>
-                                <p class="text-sm text-gray-500">Year 11 Student</p>
-                            </div>
-                        </div>
+                <div class="mt-8" id="testimonials">
+                    <div class="text-center mb-6">
+                        <div class="about-chip about-chip--soft inline-flex">Student wins</div>
+                        <h2 class="about-section-title mt-4 text-center">What students are saying</h2>
                     </div>
-                    
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-blue-100/60 sr sr--d2">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-blue-400">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    <div class="about-story-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+                        <article class="about-story-card about-story-card--blue sr sr--d1">
+                            <div class="flex gap-0.5 text-blue-400 mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                            <p class="about-body">&ldquo;GCSEMate saved me hours every week. Everything I need is organised and easy to find. My grades improved by 2 levels!&rdquo;</p>
+                            <div class="flex items-center gap-3 mt-5">
+                                <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 flex-shrink-0 text-sm">S</div>
+                                <div><p class="font-bold text-sm text-slate-800">Sarah M.</p><p class="text-xs text-slate-500">Year 11 Student</p></div>
                             </div>
-                        </div>
-                        <p class="text-gray-700 mb-4">&quot;GCSEMate has transformed how I organize my revision. Everything I need is in one place, and the file browser makes finding past papers so easy!&quot;</p>
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center">
-                                <span class="text-sky-600 font-bold">J</span>
+                        </article>
+                        <article class="about-story-card about-story-card--emerald sr sr--d2">
+                            <div class="flex gap-0.5 mb-3" style="color:#059669;"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                            <p class="about-body">&ldquo;Everything in one place. The file browser makes finding past papers so easy &mdash; I wish I had this tool in Year 10.&rdquo;</p>
+                            <div class="flex items-center gap-3 mt-5">
+                                <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-sm flex-shrink-0" style="color:#059669;">J</div>
+                                <div><p class="font-bold text-sm text-slate-800">James K.</p><p class="text-xs text-slate-500">Year 10 Student</p></div>
                             </div>
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">James K.</p>
-                                <p class="text-sm text-gray-500">Year 10 Student</p>
+                        </article>
+                        <article class="about-story-card about-story-card--violet sr sr--d3">
+                            <div class="flex gap-0.5 mb-3" style="color:#7c3aed;"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                            <p class="about-body">&ldquo;Finally a platform that gets how students actually study. The calendar keeps me organised and the tools are genuinely useful.&rdquo;</p>
+                            <div class="flex items-center gap-3 mt-5">
+                                <div class="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center font-bold text-sm flex-shrink-0" style="color:#7c3aed;">E</div>
+                                <div><p class="font-bold text-sm text-slate-800">Emma L.</p><p class="text-xs text-slate-500">Year 11 Student</p></div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-blue-100/60 sr sr--d3">
-                        <div class="flex items-center mb-4">
-                            <div class="flex text-blue-400">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                        <p class="text-gray-700 mb-4">&quot;Finally, a platform that gets how students actually study. The calendar feature keeps me organized and stress-free.&quot;</p>
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                <span class="text-indigo-600 font-bold">E</span>
-                            </div>
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">Emma L.</p>
-                                <p class="text-sm text-gray-500">Year 11 Student</p>
-                            </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Call to Action Section -->
-            <div class="mt-20 sm:mt-24 brand-cta rounded-2xl p-8 sm:p-12 text-center text-white sr">
-                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Ready to Transform Your GCSE Journey?</h2>
-                <p class="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                    Join students who've already discovered the secret to stress-free revision and better grades.
-                </p>
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <button onclick="showAuthPage(false)" class="btn-inverse w-full sm:w-auto px-8 py-4 text-lg min-h-[60px] flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-white/30">
-                        <span class="w-full text-center">Get Started</span>
-                    </button>
-                    <p class="text-sm text-blue-200">Pro is £1/month • No card required to sign up</p>
+
+                <!-- Final CTA -->
+                <div class="about-cta-card mt-8">
+                    <div>
+                        <div class="about-chip about-chip--soft mb-4">Start today</div>
+                        <h3 class="about-section-title">Ready to make revision feel more under control?</h3>
+                        <p class="about-body mt-3 text-slate-600">Create your account, save your tools and resources, and keep everything in one polished workspace from day one.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary flex items-center justify-center gap-2">
+                            <i class="fas fa-rocket"></i>Start free
+                        </button>
+                        <button onclick="showAuthPage(true)" class="about-cta-button about-cta-button--secondary flex items-center justify-center gap-2">
+                            <i class="fas fa-user-check"></i>Sign in
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </section>
         </main>
            <footer class="mt-24 py-12 bg-gray-50 border-t border-gray-200">
                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
