@@ -14005,10 +14005,33 @@ function setupBlogToolbarSelectionSupport() {
     const toolbar = document.getElementById('blog-editor-toolbar');
     if (!toolbar || toolbar.dataset.selectionGuardSetup) return;
     toolbar.dataset.selectionGuardSetup = 'true';
+
+    const rememberSelection = () => {
+        saveBlogEditorSelection();
+    };
+
+    toolbar.addEventListener('pointerdown', (event) => {
+        const interactiveControl = event.target.closest('button, select, input, label');
+        if (!interactiveControl) return;
+        rememberSelection();
+    });
+
     toolbar.addEventListener('mousedown', (event) => {
         const button = event.target.closest('button');
         if (!button) return;
         event.preventDefault();
+        restoreBlogEditorSelection();
+    });
+
+    toolbar.addEventListener('focusin', (event) => {
+        const interactiveControl = event.target.closest('select, input');
+        if (!interactiveControl) return;
+        rememberSelection();
+    });
+
+    toolbar.addEventListener('change', (event) => {
+        const interactiveControl = event.target.closest('select, input');
+        if (!interactiveControl) return;
         restoreBlogEditorSelection();
     });
 }
@@ -14061,6 +14084,8 @@ const BLOG_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB limit for pasted/dropped ima
 function setupBlogEditorEnhancements() {
     const editor = document.getElementById('blog-post-content');
     if (!editor) return;
+
+    setupBlogToolbarSelectionSupport();
 
     if (!editor.dataset.shortcutsSetup) {
         editor.dataset.shortcutsSetup = 'true';
