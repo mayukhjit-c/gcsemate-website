@@ -387,7 +387,7 @@
     
     </head>
     <!-- External JavaScript will be loaded after body for better performance -->
-    <body class="bg-gray-100 min-h-screen relative">
+    <body class="bg-slate-50 min-h-screen relative text-slate-900">
     <!-- Hide content until Tailwind loads to prevent FOUC -->
     <style>
         html:not(.tailwind-loaded) body > *:not(#app-loading):not(script) {
@@ -433,8 +433,8 @@
         setTimeout(hide, 12000);
     })();
     </script>
-    <div class="absolute top-0 left-0 w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
-    <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
+    <div class="absolute top-0 left-0 w-full h-full bg-slate-50/50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] -z-10"></div>
+    <div class="absolute inset-0 -z-20 h-full w-full bg-gradient-to-br from-blue-50/60 via-slate-50/50 to-indigo-50/60"></div>
     <!-- Subtle site-wide watermark -->
     <div id="site-watermark" aria-hidden="true" class="fixed bottom-4 right-4 z-[60] select-none pointer-events-none">
         <img src="gcsemate%20new.png" alt="GCSEMate watermark" class="h-8 w-auto opacity-10 grayscale" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
@@ -721,7 +721,7 @@
              <p id="resend-message" class="text-sm text-green-600 mt-4 h-4"></p>
         </div>
     </div>
-    <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-gradient-to-br from-blue-900/60 via-blue-800/35 to-indigo-900/60 backdrop-blur-sm">
+    <div id="login-page" class="hidden fixed inset-0 z-[15000] flex items-center justify-center p-4 fade-in bg-white/70 backdrop-blur-md">
         <div class="w-full max-w-md modern-card login-card rounded-2xl shadow-2xl p-8 sm:p-10 bg-white border border-gray-200">
             <div class="flex justify-center items-center mb-4">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="w-40" data-tooltip="Welcome to GCSEMate" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
