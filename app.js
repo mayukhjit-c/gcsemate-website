@@ -55,6 +55,7 @@ let unsubscribeToolsNotes = null;
 let toolsNotesSaveTimeout = null;
 let toolsNotesSyncState = 'idle';
 let hasResolvedInitialAuthState = false;
+let isResolvingAuthenticatedSession = false;
 let calcShiftEnabled = false;
 let calcLastResult = 0;
 let calcLastExpression = '';
@@ -3565,6 +3566,20 @@ function stopServerTimeUpdates() {
 const ROOT_FOLDER_ID = '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc';
 const RECAPTCHA_SITE_KEY = '6LcU7aQrAAAAANXnNxEwnLlMI26R5AkUOdnDg7Wk'; // standard v3 site key
 const SUBJECTS = ['Biology', 'Chemistry', 'Computing', 'English Language (AQA)', 'English Literature (Edexcel)', 'Geography', 'German', 'History', 'Maths', 'Music', 'Philosophy and Ethics', 'Physics'];
+const SUBJECT_EXAM_BOARD_MAP = {
+    biology: 'AQA',
+    chemistry: 'AQA',
+    physics: 'AQA',
+    'english language (aqa)': 'AQA',
+    music: 'Edexcel',
+    german: 'Edexcel',
+    maths: 'Edexcel',
+    history: 'Edexcel',
+    'english literature (edexcel)': 'Edexcel',
+    computing: 'OCR',
+    geography: 'OCR',
+    'philosophy and ethics': 'Eduqas'
+};
 const FREE_TRIAL_ROTATION_DAYS = 14;
 const FREE_TRIAL_ROTATION_MS = FREE_TRIAL_ROTATION_DAYS * 24 * 60 * 60 * 1000;
 const FREE_TRIAL_SUBJECT_POOL = ['Maths', 'English Language (AQA)', 'English Literature (Edexcel)', 'Biology', 'Chemistry', 'Physics'];
@@ -3793,6 +3808,59 @@ const subjectIconMap = {
     // Philosophy and Ethics: balance scale icon
     "philosophy and ethics": `<i class="fas fa-balance-scale text-4xl text-amber-600 mb-3"></i>`
 };
+
+function renderLandingSubjectExplorer() {
+    const grid = document.getElementById('landing-subject-menu');
+    const filters = document.getElementById('landing-subject-board-filters');
+    if (!grid || !filters) return;
+
+    const subjects = SUBJECTS
+        .map((subject) => {
+            const board = SUBJECT_EXAM_BOARD_MAP[(subject || '').toLowerCase()] || 'General';
+            return { subject, board };
+        })
+        .sort((a, b) => a.subject.localeCompare(b.subject));
+
+    const boardOrder = ['All', 'AQA', 'Edexcel', 'OCR', 'Eduqas', 'General'];
+    const availableBoards = Array.from(new Set(subjects.map((entry) => entry.board)));
+    const filterBoards = boardOrder.filter((board) => board === 'All' || availableBoards.includes(board));
+    let activeBoard = 'All';
+
+    const renderCards = () => {
+        const visible = subjects.filter((entry) => activeBoard === 'All' || entry.board === activeBoard);
+        if (visible.length === 0) {
+            grid.innerHTML = '<p class="text-sm text-slate-600">No subjects match this board.</p>';
+            return;
+        }
+        grid.innerHTML = visible.map((entry) => {
+            const safeSubject = escapeHTML(entry.subject);
+            const safeBoard = escapeHTML(entry.board);
+            return `
+                <button type="button" class="landing-subject-item" data-board="${safeBoard}" onclick="showAuthPage(false)">
+                    <span class="landing-subject-name">${safeSubject}</span>
+                    <span class="landing-subject-board">${safeBoard}</span>
+                </button>`;
+        }).join('');
+    };
+
+    filters.innerHTML = filterBoards.map((board) => {
+        const isActive = board === activeBoard ? ' is-active' : '';
+        const safeBoard = escapeHTML(board);
+        return `<button type="button" class="landing-board-filter${isActive}" data-board="${safeBoard}">${safeBoard}</button>`;
+    }).join('');
+
+    filters.querySelectorAll('.landing-board-filter').forEach((button) => {
+        button.addEventListener('click', () => {
+            activeBoard = button.dataset.board || 'All';
+            filters.querySelectorAll('.landing-board-filter').forEach((el) => {
+                el.classList.toggle('is-active', el === button);
+            });
+            renderCards();
+        });
+    });
+
+    renderCards();
+}
 // =================================================================================
 // CORE INITIALIZATION & AUTHENTICATION
 // =================================================================================
@@ -3801,6 +3869,7 @@ let appLoadingFailsafeSecondary;
 
 function ensureInitialView() {
     try {
+        if (isResolvingAuthenticatedSession) return;
         const landing = document.getElementById('landing-page');
         const app = document.getElementById('main-app');
         const login = document.getElementById('login-page');
@@ -3956,6 +4025,7 @@ function initializeSecurityFeatures() {
 // Early slide-in on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     scheduleAppLoadingFailsafe();
+    renderLandingSubjectExplorer();
 
     // Initialize security features
     initializeSecurityFeatures();
@@ -4214,9 +4284,9 @@ window.addEventListener('load', () => {
     const overlay = document.getElementById('app-loading');
     const logo = overlay?.querySelector?.('.animate-logo');
     if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
-    // Only fall back to the landing view if auth has still not resolved.
+    // Hide overlay quickly once auth state has resolved.
     setTimeout(() => {
-        if (hasResolvedInitialAuthState) return;
+        if (!hasResolvedInitialAuthState) return;
         ensureInitialView();
         hideAppLoading();
     }, 2600);
@@ -4251,7 +4321,9 @@ if (!isAuthAvailable()) {
 
 auth.onAuthStateChanged(async (user) => {
     hasResolvedInitialAuthState = true;
+    isResolvingAuthenticatedSession = !!(user && user.emailVerified);
     if (!isFirestoreAvailable()) {
+        isResolvingAuthenticatedSession = false;
         handleFirebaseBootstrapFailure(getFirebaseBootstrapError() || new Error('Firestore is unavailable'));
         return;
     }
@@ -4291,15 +4363,14 @@ auth.onAuthStateChanged(async (user) => {
                         console.warn('Failed to sync admin role for allowlisted email', e);
                     }
                 }
-                try {
-                    await initializeUserTracking();
-                } catch (e) {
-                    console.warn('User tracking init failed:', e);
-                }
                 initializeAppState();
                 try { configureStripePricingTableIdentity(); } catch (_) {}
                 try { applyRouteFromLocation(); } catch (_) {}
                 hideAppLoading();
+                isResolvingAuthenticatedSession = false;
+                Promise.resolve(initializeUserTracking()).catch((e) => {
+                    console.warn('User tracking init failed:', e);
+                });
                 // Realtime listen to own profile for instant revoke/role changes
                 unsubscribeCurrentUserDoc = db.collection('users').doc(user.uid).onSnapshot(doc => {
                     if (!doc.exists) { return; }
@@ -4356,16 +4427,14 @@ auth.onAuthStateChanged(async (user) => {
                     const createdProfile = await db.collection('users').doc(user.uid).get();
                     currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...(createdProfile.data() || {}) };
 
-                    try {
-                        await initializeUserTracking();
-                    } catch (e) {
-                        console.warn('User tracking init failed:', e);
-                    }
-
                     initializeAppState();
                     try { configureStripePricingTableIdentity(); } catch (_) {}
                     try { applyRouteFromLocation(); } catch (_) {}
                     hideAppLoading();
+                    isResolvingAuthenticatedSession = false;
+                    Promise.resolve(initializeUserTracking()).catch((e) => {
+                        console.warn('User tracking init failed:', e);
+                    });
 
                     // Realtime listen to own profile for instant revoke/role changes
                     unsubscribeCurrentUserDoc = db.collection('users').doc(user.uid).onSnapshot(doc => {
@@ -4403,6 +4472,7 @@ auth.onAuthStateChanged(async (user) => {
                 } catch (e) {
                     logError(e, "Auth");
                     await handleLogout();
+                    isResolvingAuthenticatedSession = false;
                     hideAppLoading();
                 }
             }
@@ -4410,15 +4480,18 @@ auth.onAuthStateChanged(async (user) => {
             logError(error, "User Profile Fetch");
             showErrorPage("Login Error", "Could not fetch your user profile. Please try again later.");
             await handleLogout();
+            isResolvingAuthenticatedSession = false;
             hideAppLoading();
         }
     } else if (user && !user.emailVerified) {
         // User is signed in but NOT verified.
         logError("User is not verified.", "Auth");
         showVerificationMessagePage(user.email);
+        isResolvingAuthenticatedSession = false;
         hideAppLoading();
     } else {
         // User is signed out.
+        isResolvingAuthenticatedSession = false;
         currentUser = null;
         lastAutoOpenedFreeTrialSubjectKey = null;
         freeTrialSubjectOverride = null;
@@ -11516,18 +11589,7 @@ async function renderDashboard() {
             }
             showPage('file-browser-page');
         };
-        const examBoardBySubject = {
-            // AQA
-            biology: 'AQA', chemistry: 'AQA', physics: 'AQA',
-            'english language (aqa)': 'AQA',
-            // Edexcel
-            music: 'Edexcel', german: 'Edexcel', maths: 'Edexcel', history: 'Edexcel',
-            'english literature (edexcel)': 'Edexcel',
-            // OCR
-            computing: 'OCR', geography: 'OCR',
-            // Eduqas
-            'philosophy and ethics': 'Eduqas'
-        };
+        const examBoardBySubject = SUBJECT_EXAM_BOARD_MAP;
         subjectsToShow.forEach(subject => {
             const subjectId = allSubjectFolders[subject.toLowerCase()];
             const card = document.createElement('div');
