@@ -80,11 +80,13 @@ service cloud.firestore {
 
       // Per-user lesson progress
       match /lessonProgress/{lessonId} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid &&
+        allow read: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
+        allow create, update: if isSignedIn() && request.auth.uid == uid &&
           request.resource.data.keys().hasOnly([
             'lessonId','title','viewedAt','lastOpenedAt','openCount','completedAt','completedBy','updatedAt'
           ]) &&
           request.resource.data.lessonId == lessonId;
+        allow delete: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
       }
 
       // Per-user grade tracker entries
