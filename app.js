@@ -197,6 +197,15 @@ let calcShiftEnabled = false;
 let calcLastResult = 0;
 let calcLastExpression = '';
 const TOOLS_PLANNER_STORAGE_KEY = 'gcsemate_tools_planner';
+const TOOLS_WHEEL_STORAGE_KEY = 'gcsemate_tools_wheel_options';
+const TOOLS_WHEEL_DEFAULT_OPTIONS = [
+    'Past paper questions',
+    'Flashcards recall',
+    'Write summary notes',
+    'Teach the topic aloud',
+    'Timed calculator drills',
+    'Mark scheme review'
+];
 const TOOLS_TIMER_MODES = {
     pomodoro: { label: 'Pomodoro', durationSeconds: 25 * 60 },
     exam: { label: 'Exam Sprint', durationSeconds: 50 * 60 },
@@ -227,6 +236,9 @@ let toolsTimerState = {
 };
 let toolsPageInitialized = false;
 let toolsPlannerItems = [];
+let toolsWheelRotation = 0;
+let toolsWheelSpinning = false;
+let toolsWheelRafId = null;
 let unsubscribeGradeEntries = null;
 let userGradeEntries = [];
 let unsubscribeFlashcardDecks = null;
@@ -19718,6 +19730,192 @@ function generateStudyRandomiserTask() {
     outputEl.textContent = `${energyPrefix[energy] || ''}${pool[Math.floor(Math.random() * pool.length)]}`;
 }
 
+function sanitizeWheelOption(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function parseWheelOptions(value) {
+    const lines = String(value || '')
+        .split(/\r?\n/)
+        .map(item => sanitizeWheelOption(item))
+        .filter(Boolean);
+    const deduped = [...new Set(lines)];
+    return deduped.slice(0, 24);
+}
+
+function getToolsWheelOptionsInput() {
+    return document.getElementById('tools-wheel-options');
+}
+
+function getToolsWheelOptions() {
+    const input = getToolsWheelOptionsInput();
+    return parseWheelOptions(input?.value || '');
+}
+
+function saveToolsWheelOptions() {
+    const options = getToolsWheelOptions();
+    try {
+        localStorage.setItem(TOOLS_WHEEL_STORAGE_KEY, JSON.stringify(options));
+    } catch (_) {}
+}
+
+function loadToolsWheelOptions() {
+    const input = getToolsWheelOptionsInput();
+    if (!input) return;
+
+    let options = [];
+    try {
+        const raw = localStorage.getItem(TOOLS_WHEEL_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        options = Array.isArray(parsed) ? parsed.map(sanitizeWheelOption).filter(Boolean) : [];
+    } catch (_) {
+        options = [];
+    }
+
+    if (!options.length) options = TOOLS_WHEEL_DEFAULT_OPTIONS.slice();
+    input.value = options.join('\n');
+}
+
+function setToolsWheelResult(text) {
+    const resultEl = document.getElementById('tools-wheel-result');
+    if (!resultEl) return;
+    resultEl.textContent = text || 'Winner: Ready to spin';
+}
+
+function drawToolsSpinWheel(rotation = toolsWheelRotation) {
+    const canvas = document.getElementById('tools-wheel-canvas');
+    if (!canvas) return;
+    const options = getToolsWheelOptions();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const size = 360;
+    canvas.width = Math.floor(size * dpr);
+    canvas.height = Math.floor(size * dpr);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, size, size);
+
+    const radius = size / 2 - 10;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const palette = ['#1d4ed8', '#0f766e', '#7c3aed', '#d97706', '#be123c', '#0891b2', '#15803d', '#8b5cf6'];
+
+    if (!options.length) {
+        ctx.fillStyle = '#475569';
+        ctx.font = '700 15px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Add options to spin', centerX, centerY);
+        return;
+    }
+
+    const segment = (Math.PI * 2) / options.length;
+    options.forEach((option, index) => {
+        const start = -Math.PI / 2 + rotation + index * segment;
+        const end = start + segment;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = palette[index % palette.length];
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(start + segment / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
+        const safeText = option.length > 24 ? `${option.slice(0, 22)}..` : option;
+        ctx.fillText(safeText, radius - 14, 4);
+        ctx.restore();
+    });
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fill();
+}
+
+function stopToolsWheelAnimation() {
+    if (!toolsWheelRafId) return;
+    cancelAnimationFrame(toolsWheelRafId);
+    toolsWheelRafId = null;
+}
+
+function spinToolsWheel() {
+    if (toolsWheelSpinning) return;
+    const options = getToolsWheelOptions();
+    if (options.length < 2) {
+        showToast('Add at least 2 wheel options first.', 'warning');
+        return;
+    }
+
+    const spinBtn = document.getElementById('tools-wheel-spin');
+    if (spinBtn) setButtonBusy(spinBtn, true, 'Spinning...');
+    toolsWheelSpinning = true;
+    const winningIndex = Math.floor(Math.random() * options.length);
+    const segment = (Math.PI * 2) / options.length;
+    const currentMod = ((toolsWheelRotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const targetMod = ((-(winningIndex + 0.5) * segment) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    let delta = targetMod - currentMod;
+    if (delta < 0) delta += Math.PI * 2;
+    const targetRotation = toolsWheelRotation + (Math.PI * 2 * 6) + delta;
+    const startRotation = toolsWheelRotation;
+    const startTime = performance.now();
+    const duration = 3600;
+
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+    stopToolsWheelAnimation();
+
+    const animate = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        const eased = easeOut(progress);
+        toolsWheelRotation = startRotation + ((targetRotation - startRotation) * eased);
+        drawToolsSpinWheel(toolsWheelRotation);
+        if (progress < 1) {
+            toolsWheelRafId = requestAnimationFrame(animate);
+            return;
+        }
+
+        toolsWheelRotation = ((targetRotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        drawToolsSpinWheel(toolsWheelRotation);
+        setToolsWheelResult(`Winner: ${options[winningIndex]}`);
+        recordUserInteraction('tools_spin_wheel', { target: options[winningIndex], important: true });
+        toolsWheelSpinning = false;
+        if (spinBtn) setButtonBusy(spinBtn, false);
+        toolsWheelRafId = null;
+    };
+
+    toolsWheelRafId = requestAnimationFrame(animate);
+}
+
+function applyToolsWheelPreset() {
+    const input = getToolsWheelOptionsInput();
+    if (!input) return;
+    const presetPool = [
+        'Past paper questions',
+        'Flashcards recall',
+        'Mindmap summary',
+        'Exam mark scheme review',
+        'Timed calculator practice',
+        'Teach it in 3 minutes',
+        'Create quick quiz',
+        'Write model answer'
+    ];
+    const selected = [...presetPool].sort(() => Math.random() - 0.5).slice(0, 6);
+    input.value = selected.join('\n');
+    saveToolsWheelOptions();
+    drawToolsSpinWheel();
+    setToolsWheelResult('Winner: Ready to spin');
+}
+
 function getToolsPlannerPriorityLabel(priority) {
     if (priority === 'high') return 'High';
     if (priority === 'low') return 'Low';
@@ -21519,6 +21717,9 @@ function initializeToolsPage() {
     const notesClearBtn = document.getElementById('tools-notes-clear');
     const notesCopyBtn = document.getElementById('tools-notes-copy');
     const randomiserBtn = document.getElementById('tools-randomiser-generate');
+    const wheelOptionsInput = document.getElementById('tools-wheel-options');
+    const wheelSpinBtn = document.getElementById('tools-wheel-spin');
+    const wheelPresetBtn = document.getElementById('tools-wheel-randomize');
     const gradeSaveBtn = document.getElementById('tools-grade-save');
     const plannerForm = document.getElementById('tools-planner-form');
     const plannerList = document.getElementById('tools-planner-list');
@@ -21750,6 +21951,21 @@ function initializeToolsPage() {
                 recordUserInteraction('tools_randomiser', { target: document.getElementById('tools-randomiser-subject')?.value || 'any', important: true });
             });
         }
+        if (wheelOptionsInput) {
+            wheelOptionsInput.addEventListener('input', () => {
+                saveToolsWheelOptions();
+                drawToolsSpinWheel();
+            });
+        }
+        if (wheelSpinBtn) {
+            wheelSpinBtn.addEventListener('click', spinToolsWheel);
+        }
+        if (wheelPresetBtn) {
+            wheelPresetBtn.addEventListener('click', () => {
+                applyToolsWheelPreset();
+                recordUserInteraction('tools_wheel_preset', { target: 'preset', important: true });
+            });
+        }
         if (gradeSaveBtn) gradeSaveBtn.addEventListener('click', async () => {
             setButtonBusy(gradeSaveBtn, true, 'Saving...');
             try {
@@ -21804,6 +22020,7 @@ function initializeToolsPage() {
             const page = document.getElementById('tools-page');
             if (page && !page.classList.contains('hidden')) {
                 renderGradeTrendChart();
+                drawToolsSpinWheel();
             }
         });
 
@@ -21831,10 +22048,13 @@ function initializeToolsPage() {
     fetchAndRenderDailyQuote(false);
     fetchAndRenderToolsJoke(false);
     loadToolsNotes();
+    loadToolsWheelOptions();
     updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
     updateCalculatorShiftButtons();
     renderToolsPlanner();
     generateStudyRandomiserTask();
+    drawToolsSpinWheel();
+    setToolsWheelResult('Winner: Ready to spin');
     updateGradeSelectPreview();
     updateScientificCalculatorResult();
     renderFlashcardsWorkspace();
@@ -22946,6 +23166,73 @@ function isSafeFontFamily(value) {
 }
 
 // --- CALENDAR MODAL FUNCTIONS (CONTINUED) ---
+function parseDateKey(dateKey) {
+    const value = String(dateKey || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDateKey(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function updateEventFormModeUI() {
+    const eventType = document.getElementById('event-type')?.value || 'single';
+    const endDateWrap = document.getElementById('event-end-date-wrap');
+    const recurringWrap = document.getElementById('event-recurring-wrap');
+    if (endDateWrap) endDateWrap.classList.toggle('hidden', eventType !== 'long-term');
+    if (recurringWrap) recurringWrap.classList.toggle('hidden', eventType !== 'recurring');
+    updateRecurringEndModeUI();
+}
+
+function updateRecurringEndModeUI() {
+    const recurringEndMode = document.getElementById('event-recurring-end-mode')?.value || 'count';
+    const countWrap = document.getElementById('event-recurring-count-wrap');
+    const untilWrap = document.getElementById('event-recurring-until-wrap');
+    if (countWrap) countWrap.classList.toggle('hidden', recurringEndMode !== 'count');
+    if (untilWrap) untilWrap.classList.toggle('hidden', recurringEndMode !== 'until');
+}
+
+function getRecurringDates(startDateKey) {
+    const startDate = parseDateKey(startDateKey);
+    if (!startDate) return [];
+
+    const recurrenceType = String(document.getElementById('event-recurring-type')?.value || 'weekly').toLowerCase();
+    const recurrenceEvery = Math.max(1, Number(document.getElementById('event-recurring-every')?.value || 1));
+    const endMode = String(document.getElementById('event-recurring-end-mode')?.value || 'count').toLowerCase();
+    const countLimit = Math.max(1, Number(document.getElementById('event-recurring-count')?.value || 6));
+    const untilDate = parseDateKey(document.getElementById('event-recurring-until')?.value || '');
+
+    const dates = [];
+    const maxGuard = 240;
+    let cursor = new Date(startDate);
+    let guard = 0;
+    while (guard < maxGuard) {
+        if (endMode === 'until' && untilDate && cursor > untilDate) break;
+        dates.push(formatDateKey(cursor));
+        if (endMode === 'count' && dates.length >= countLimit) break;
+
+        if (recurrenceType === 'daily') {
+            cursor.setDate(cursor.getDate() + recurrenceEvery);
+        } else if (recurrenceType === 'weekly') {
+            cursor.setDate(cursor.getDate() + (7 * recurrenceEvery));
+        } else if (recurrenceType === 'monthly') {
+            cursor.setMonth(cursor.getMonth() + recurrenceEvery);
+        } else if (recurrenceType === 'yearly') {
+            cursor.setFullYear(cursor.getFullYear() + recurrenceEvery);
+        } else {
+            cursor.setDate(cursor.getDate() + recurrenceEvery);
+        }
+        guard += 1;
+    }
+
+    return dates;
+}
+
 function openEventModal(date) {
     const modal = document.getElementById('event-modal');
     const userIsAdmin = currentUser.role === 'admin';
@@ -23007,14 +23294,57 @@ function openEventModal(date) {
                      <input type="hidden" id="event-id">
                      <input id="event-title" type="text" placeholder="Event Title" required class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
                      <textarea id="event-description" placeholder="Description (optional)" class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 h-24"></textarea>
-                     <div class="grid grid-cols-2 gap-3">
+                     <div>
+                         <label class="block text-sm font-semibold text-gray-700 mb-1">Event Type</label>
+                         <select id="event-type" onchange="updateEventFormModeUI()" class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             <option value="single">Single Event</option>
+                             <option value="long-term">Long-term Event</option>
+                             <option value="recurring">Recurring Event</option>
+                         </select>
+                     </div>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                          <div>
                              <label class="block text-sm font-semibold text-gray-700 mb-1">Start Date</label>
                              <input id="event-start-date" type="date" value="${date}" required class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
                          </div>
-                         <div>
-                             <label class="block text-sm font-semibold text-gray-700 mb-1">End Date (optional)</label>
+                         <div id="event-end-date-wrap" class="hidden">
+                             <label class="block text-sm font-semibold text-gray-700 mb-1">End Date</label>
                              <input id="event-end-date" type="date" class="w-full p-2 rounded-lg border-2 border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                         </div>
+                     </div>
+                     <div id="event-recurring-wrap" class="hidden space-y-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             <div>
+                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Repeat</label>
+                                 <select id="event-recurring-type" class="w-full p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                     <option value="daily">Daily</option>
+                                     <option value="weekly" selected>Weekly</option>
+                                     <option value="monthly">Monthly</option>
+                                     <option value="yearly">Yearly</option>
+                                     <option value="custom">Custom (days)</option>
+                                 </select>
+                             </div>
+                             <div>
+                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Every</label>
+                                 <input id="event-recurring-every" type="number" min="1" value="1" class="w-full p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             </div>
+                         </div>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             <div>
+                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Ends</label>
+                                 <select id="event-recurring-end-mode" onchange="updateRecurringEndModeUI()" class="w-full p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                     <option value="count" selected>After number of repeats</option>
+                                     <option value="until">On a date</option>
+                                 </select>
+                             </div>
+                             <div id="event-recurring-count-wrap">
+                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Occurrences</label>
+                                 <input id="event-recurring-count" type="number" min="1" max="120" value="6" class="w-full p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             </div>
+                             <div id="event-recurring-until-wrap" class="hidden">
+                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Until Date</label>
+                                 <input id="event-recurring-until" type="date" class="w-full p-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                             </div>
                          </div>
                      </div>
                      <div class="flex items-center gap-3">
@@ -23048,14 +23378,30 @@ function openEventModal(date) {
         </div>
     `;
     modal.style.display = 'flex';
+    updateEventFormModeUI();
 }
 async function handleSaveEvent(date) {
     const title = document.getElementById('event-title').value.trim();
     if (!title) return;
-    const eventId = document.getElementById('event-id').value || db.collection('dummy').doc().id;
+    const existingEventId = document.getElementById('event-id').value || '';
     const isGlobal = document.getElementById('event-sync')?.checked || false;
-    const startDate = document.getElementById('event-start-date').value;
-    const endDate = document.getElementById('event-end-date').value || startDate;
+    const eventType = String(document.getElementById('event-type')?.value || 'single').toLowerCase();
+    const startDate = document.getElementById('event-start-date').value || date;
+    const endDateInput = document.getElementById('event-end-date')?.value || '';
+    const endDate = eventType === 'long-term' ? (endDateInput || startDate) : startDate;
+    if (eventType === 'long-term') {
+        const startDateObj = parseDateKey(startDate);
+        const endDateObj = parseDateKey(endDate);
+        if (startDateObj && endDateObj && endDateObj < startDateObj) {
+            showToast('End date must be on or after the start date.', 'warning');
+            return;
+        }
+    }
+    const occurrenceDates = eventType === 'recurring' ? getRecurringDates(startDate) : [startDate];
+    if (!occurrenceDates.length) {
+        showToast('Could not build recurring dates. Check your recurring settings.', 'error');
+        return;
+    }
     
     const eventData = {
         title,
@@ -23071,11 +23417,44 @@ async function handleSaveEvent(date) {
         const collectionRef = isGlobal 
             ? db.collection('globalEvents')
             : db.collection('users').doc(currentUser.uid).collection('events');
-        
-        await collectionRef.doc(eventId).set(eventData);
+
+        if (existingEventId && occurrenceDates.length === 1) {
+            await collectionRef.doc(existingEventId).set(eventData, { merge: true });
+        } else if (occurrenceDates.length === 1) {
+            await collectionRef.doc().set(eventData);
+        } else {
+            const recurrenceType = String(document.getElementById('event-recurring-type')?.value || 'weekly').toLowerCase();
+            const recurrenceEvery = Math.max(1, Number(document.getElementById('event-recurring-every')?.value || 1));
+            const recurrenceCount = Math.max(1, Number(document.getElementById('event-recurring-count')?.value || occurrenceDates.length));
+            const recurrenceUntil = document.getElementById('event-recurring-until')?.value || null;
+            const recurrenceEndMode = String(document.getElementById('event-recurring-end-mode')?.value || 'count').toLowerCase();
+            const seriesId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            const batch = db.batch();
+            occurrenceDates.forEach((occurrenceDate, index) => {
+                const docRef = collectionRef.doc();
+                batch.set(docRef, {
+                    ...eventData,
+                    date: occurrenceDate,
+                    endDate: occurrenceDate,
+                    isMultiDay: false,
+                    recurrence: {
+                        enabled: true,
+                        seriesId,
+                        index,
+                        type: recurrenceType,
+                        every: recurrenceEvery,
+                        count: recurrenceCount,
+                        endMode: recurrenceEndMode,
+                        until: recurrenceUntil
+                    }
+                });
+            });
+            await batch.commit();
+        }
+
         document.getElementById('event-modal').style.display = 'none';
         resetEventForm();
-        showToast('Event saved!', 'success');
+        showToast(eventType === 'recurring' ? `Recurring events saved (${occurrenceDates.length}).` : 'Event saved!', 'success');
     } catch (error) {
         console.error("Error saving event:", error);
         showToast("Could not save the event.", 'error');
@@ -23095,15 +23474,31 @@ function editEvent(date, eventId, isGlobal) {
     document.getElementById('event-title').value = event.title;
     document.getElementById('event-description').value = event.description || '';
     document.getElementById('event-countdown').checked = event.enableCountdown || false;
+    const eventTypeInput = document.getElementById('event-type');
+    if (eventTypeInput) {
+        const eventType = event.recurrence?.enabled ? 'recurring' : (event.isMultiDay ? 'long-term' : 'single');
+        eventTypeInput.value = eventType;
+    }
     const startDateInput = document.getElementById('event-start-date');
     if (startDateInput) startDateInput.value = event.date || date;
     const endDateInput = document.getElementById('event-end-date');
     if (endDateInput) endDateInput.value = event.endDate || event.date || date;
+    const recurringTypeInput = document.getElementById('event-recurring-type');
+    if (recurringTypeInput) recurringTypeInput.value = event.recurrence?.type || 'weekly';
+    const recurringEveryInput = document.getElementById('event-recurring-every');
+    if (recurringEveryInput) recurringEveryInput.value = String(event.recurrence?.every || 1);
+    const recurringEndModeInput = document.getElementById('event-recurring-end-mode');
+    if (recurringEndModeInput) recurringEndModeInput.value = event.recurrence?.endMode || 'count';
+    const recurringCountInput = document.getElementById('event-recurring-count');
+    if (recurringCountInput) recurringCountInput.value = String(event.recurrence?.count || 6);
+    const recurringUntilInput = document.getElementById('event-recurring-until');
+    if (recurringUntilInput) recurringUntilInput.value = event.recurrence?.until || '';
     const colorInput = document.getElementById('event-color'); if (colorInput) colorInput.value = event.color || '#2563eb';
     const catInput = document.getElementById('event-category'); if (catInput) catInput.value = event.category || '';
     if (document.getElementById('event-sync')) {
         document.getElementById('event-sync').checked = isGlobal;
     }
+    updateEventFormModeUI();
 }
 async function deleteEvent(date, eventId, isGlobal) {
     showConfirmationModal("Are you sure you want to delete this event?", async () => {
@@ -23124,6 +23519,9 @@ function resetEventForm() {
     document.getElementById('event-form-title').textContent = 'Add New Event';
     document.getElementById('event-form').reset();
     document.getElementById('event-id').value = '';
+    const typeInput = document.getElementById('event-type');
+    if (typeInput) typeInput.value = 'single';
+    updateEventFormModeUI();
 }
 function updateCountdownBanner() {
     // This function combines both global and user events to find active countdowns
