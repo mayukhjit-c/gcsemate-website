@@ -7,7 +7,19 @@ export async function onRequest(context) {
   try {
     const url = new URL(request.url);
     const folderId = url.searchParams.get('folderId');
-    if (!folderId) return json({ error: "Missing 'folderId' query param" }, 400);
+    if (!folderId) {
+      const fileId = url.searchParams.get('fileId');
+      if (fileId) {
+        const driveUrl = new URL('https://www.googleapis.com/drive/v3/files/' + fileId);
+        driveUrl.searchParams.set('fields', "id,name,mimeType,iconLink,webViewLink,webContentLink,hasThumbnail,thumbnailLink");
+        driveUrl.searchParams.set('key', env.GDRIVE_API_KEY);
+        const res = await fetch(driveUrl.toString());
+        const data = await res.json();
+        if (!res.ok) return json({ error: data.error?.message || 'Drive error' }, res.status);
+        return json({ file: data });
+      }
+      return json({ error: "Missing 'folderId' or 'fileId' query param" }, 400);
+    }
 
     const driveUrl = new URL('https://www.googleapis.com/drive/v3/files');
     driveUrl.searchParams.set('q', `'${folderId}' in parents and trashed=false`);
@@ -38,3 +50,4 @@ function corsHeaders() {
     'Access-Control-Allow-Headers': 'content-type',
   };
 }
+

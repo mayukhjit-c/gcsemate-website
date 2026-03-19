@@ -509,17 +509,17 @@ function getTimeUntilNextDownload() {
 }
 
 function formatFilenameWithWatermark(originalName) {
-    if (!originalName) return 'download - Downloaded from GCSEMate.com';
+    if (!originalName) return 'download- Downloaded from GCSEMate';
     
     // Extract file extension
     const lastDot = originalName.lastIndexOf('.');
     if (lastDot === -1) {
-        return `${originalName} - Downloaded from GCSEMate.com`;
+        return `${originalName}- Downloaded from GCSEMate`;
     }
     
     const nameWithoutExt = originalName.substring(0, lastDot);
     const extension = originalName.substring(lastDot);
-    return `${nameWithoutExt} - Downloaded from GCSEMate.com${extension}`;
+    return `${nameWithoutExt}- Downloaded from GCSEMate${extension}`;
 }
 // Admin list filters
 let userFilterTier = 'all'; // all|free|paid
@@ -11545,6 +11545,38 @@ function maybeCompletePendingCheckoutSuccess(source = 'stored') {
     return completeCheckoutSuccessExperience(source);
 }
 
+async function handleViewFileQueryParamsIfPresent() {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const viewFileId = params.get('viewFile');
+        if (!viewFileId) return;
+
+        showAppLoading('Loading shared file...', 'Getting things ready');
+        const res = await fetch('/api/drive-files?fileId=' + encodeURIComponent(viewFileId));
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.file) {
+                 hideAppLoadingOverlay();
+                 showPreview(data.file);
+                 // Clean up URL
+                 params.delete('viewFile');
+                 const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                 window.history.replaceState({}, '', newUrl);
+            } else {
+                 hideAppLoadingOverlay();
+                 showToast('Shared file not found.', 'error');
+            }
+        } else {
+            hideAppLoadingOverlay();
+            showToast('Failed to load shared file.', 'error');
+        }
+    } catch(e) {
+        hideAppLoadingOverlay();
+        console.error('Error handling viewFile:', e);
+    }
+}
+
+
 function handleCheckoutQueryParamsIfPresent() {
     try {
         const params = new URLSearchParams(window.location.search || '');
@@ -11613,6 +11645,7 @@ function applyRouteFromLocation() {
 
     try { showPage(pageId); } catch (_) {}
     handleCheckoutQueryParamsIfPresent();
+    handleViewFileQueryParamsIfPresent();
 }
 
 function navigateToPath(pathname, { replace = false } = {}) {
@@ -18681,176 +18714,268 @@ function showPreview(file) {
     if ((currentUser?.tier || 'free') === 'free') {
         const freeTrialSubject = getCurrentFreeTrialSubject();
         const freeTrialRootId = freeTrialSubject ? (allSubjectFolders?.[freeTrialSubject.toLowerCase()]) : null;
-        const rootPathSubjectId = path && path.length > 1 ? path[1].id : null;
-        
+        let rootPathSubjectId = null;
+        if (typeof path !== 'undefined' && path && path.length > 1) {
+             rootPathSubjectId = path[1].id;
+        }
+
         if (freeTrialRootId && rootPathSubjectId !== freeTrialRootId) {
-            openUpgradeModal(`Free access is limited to ${freeTrialSubject} files for this 2-week period. Upgrade to Pro for unlimited access.`);
+            openUpgradeModal('Free access is limited to ' + freeTrialSubject + ' files for this 2-week period. Upgrade to Pro for unlimited access.');
             return;
         }
     }
 
     const modal = document.getElementById('preview-modal');
-        const embedUrl = getPreviewEmbedUrl(file);
+    if (!modal) return;
+    
+    // Check if we are opening in split screen (pane 2)
+    const isSplit = window.isSplitScreenMode === true;
+    window.isSplitScreenMode = false; // Reset
+
+    const embedUrl = getPreviewEmbedUrl(file);
     let content = '';
+    const shareUrl = window.location.origin + '?viewFile=' + file.id;
+
     if (embedUrl) {
-        const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
         content = `
-            <div class="w-full h-full relative">
-                <div id="preview-loading" class="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div class="w-full h-full relative preview-main-content">
+                <div class="preview-loading absolute inset-0 flex items-center justify-center bg-gray-900 z-[1000] text-white">
                     <div class="dots-spinner"><i></i><i></i><i></i></div>
-                    <span class="ml-2 text-white font-semibold">Loading preview…</span>
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="ml-3 h-6 w-auto opacity-90">
+                    <span class="ml-2 font-semibold">Loading...</span>
                 </div>
-                <iframe id="file-preview-frame" src="${embedUrl}" class="w-full h-full border-0 bg-black" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <div id="preview-fallback" class="absolute inset-0 hidden items-center justify-center text-center p-6">
-                    <div class="bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl max-w-md border border-gray-200">
-                        <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
-                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <h4 class="text-lg font-bold text-gray-800 mb-2">Preview Unavailable</h4>
-                        <p class="text-sm text-gray-600 mb-4">This file cannot be previewed directly. This might be due to browser security settings, file format limitations, or temporary connectivity issues.</p>
-                        <div class="flex flex-col gap-3">
-                            <button id="reload-preview-btn" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                                Try Again
-                            </button>
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                    </svg>
-                                    View Online
-                                </a>
-                                <button onclick="downloadFile('${file.id}', '${file.name}', '${file.webContentLink || `https://drive.google.com/uc?export=download&id=${file.id}`}')" class="px-4 py-2 rounded-md bg-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Download
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <iframe src="${embedUrl}" class="file-preview-frame w-full h-full border-0 bg-gray-900" allow="autoplay; clipboard-write; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>`;
     } else {
         content = `
-            <div class="text-center bg-gray-100 p-8 rounded-lg">
-                <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4" alt="${file.name}">
+            <div class="text-center bg-gray-100 h-full flex flex-col items-center justify-center p-8">
                 <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
-                <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
-                <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-5 w-5">
-                    Open in Google Drive
-                </a>
+                <div class="flex gap-4 mt-6 preview-fallback">
+                    <a href="${file.webViewLink || ('https://drive.google.com/file/d/'+file.id+'/view')}" target="_blank" class="px-6 py-3 rounded-lg bg-gray-600 hover:bg-gray-700 transition-colors text-white font-bold inline-flex items-center gap-2 shadow-md"><i class="fas fa-external-link-alt"></i> Open Drive Link</a>
+                </div>
             </div>
         `;
     }
-    const externalUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
-    modal.innerHTML = `
-        <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col fade-in">
-            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center flex-shrink-0">
-                <div class="flex items-center min-w-0 gap-2">
-                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-6 w-auto hidden sm:block">
-                    <h3 class="text-lg font-semibold text-gray-800 truncate pr-4">${file.name}</h3>
+
+    if (isSplit) {
+        // Inject into pane 2
+        const pane2 = document.getElementById('preview-pane-2');
+        if (pane2) {
+            pane2.innerHTML = `
+                <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm">
+                    <h3 class="text-sm font-bold text-gray-900 truncate pr-4 text-brand-gradient">${file.name}</h3>
+                    <div class="flex gap-2">
+                        <button onclick="navigator.clipboard.writeText('${shareUrl}').then(()=>showToast('Link copied!','success'))" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded p-1"><i class="fas fa-link"></i></button>
+                        <button onclick="document.getElementById('preview-pane-2').classList.add('hidden'); document.getElementById('preview-resizer').classList.add('hidden');" class="text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded p-1"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <a href="${externalUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" data-tooltip="Open in Google Drive">Open</a>
-                    <button onclick="document.getElementById('preview-modal').style.display='none'" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none flex-shrink-0" data-tooltip="Close">×</button>
+                <div class="flex-grow relative bg-gray-900">
+                    ${content}
                 </div>
-            </div>
-            <div class="flex-grow bg-gray-800">${content}</div>
-        </div>
-    `;
-    modal.style.display = 'flex';
-    // Setup enhanced preview load/fallback logic
-    try {
-        const frame = document.getElementById('file-preview-frame');
-        const loading = document.getElementById('preview-loading');
-        const fallback = document.getElementById('preview-fallback');
-        const reloadBtn = document.getElementById('reload-preview-btn');
-        
-        if (frame && loading && fallback) {
-            let loaded = false;
-            let retryCount = 0;
-            const maxRetries = 2;
+            `;
             
-            const hideLoading = () => {
-                loading.classList.add('hidden');
-                loading.classList.remove('flex');
-            };
-            
-            const showFallback = () => {
-                hideLoading();
-                fallback.classList.remove('hidden');
-                fallback.classList.add('flex');
-            };
-            
-            const showLoading = () => {
-                fallback.classList.add('hidden');
-                fallback.classList.remove('flex');
-                loading.classList.remove('hidden');
-                loading.classList.add('flex');
-            };
-            
-            // Enhanced timeout with progressive delays
-            const timeoutId = setTimeout(() => {
-                if (!loaded) {
-                    console.warn('Preview load timeout after 6 seconds');
-                    showFallback();
-                }
-            }, 6000); // Increased timeout for better reliability
-            
-            // Handle successful load
-            frame.addEventListener('load', () => {
-                // For cross-origin iframes (like Google Drive), we can't access contentDocument
-                // but the load event still fires when the iframe loads successfully
-                loaded = true;
-                clearTimeout(timeoutId);
-                hideLoading();
-                console.log('Preview loaded successfully');
-                
-                // Double-check after a short delay to ensure content is visible
-                setTimeout(() => {
-                    if (frame.style.display !== 'none' && frame.offsetHeight > 0) {
-                        // Frame is visible and has content
-                        console.log('Preview confirmed visible');
-                    }
-                }, 500);
-            }, { once: true });
-            
-            // Handle load errors
-            frame.addEventListener('error', (e) => {
-                loaded = false;
-                clearTimeout(timeoutId);
-                console.error('Preview load error:', e);
-                showFallback();
-            }, { once: true });
-            
-            // Reload button functionality
-            if (reloadBtn) {
-                reloadBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    loaded = false;
-                    retryCount = 0;
-                    showLoading();
-                    
-                    // Add cache-busting parameter
-                    const originalSrc = frame.src.split('?')[0].split('&')[0];
-                    frame.src = originalSrc + '?reload=' + Date.now();
-                    
-                    console.log('Manual preview reload triggered');
-                });
+            // handle loading hide
+            const frame = pane2.querySelector('.file-preview-frame');
+            const loader = pane2.querySelector('.preview-loading');
+            if(frame && loader) {
+                frame.addEventListener('load', () => { loader.style.display = 'none'; });
+                setTimeout(() => { loader.style.display = 'none'; }, 8000);
             }
         }
-    } catch (error) {
-        console.error('Preview setup error:', error);
+        return;
+    }
+
+    // Main modal layout
+    modal.innerHTML = `
+        <div class="bg-gray-100 shadow-2xl w-full h-[100vh] lg:h-[95vh] lg:max-w-[95vw] lg:rounded-2xl overflow-hidden flex flex-col fade-in border border-gray-300">
+            <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm z-10 w-full overflow-x-auto" style="scrollbar-width: none;">
+                <div class="flex items-center min-w-0 gap-3 mr-4">
+                    <img src="gcsemate%20new.png" alt="Icon" class="h-6 w-auto hidden sm:block">
+                    <h3 class="text-lg font-bold text-gray-900 truncate pr-4 text-brand-gradient flex-shrink-0" style="max-width: 400px;">${file.name}</h3>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
+                    <button onclick="openSplitScreenpicker()" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center gap-2 shadow-sm"><i class="fas fa-columns"></i><span class="hidden sm:inline">Split Screen</span></button>
+                    <button onclick="toggleFileNotes('${file.id}')" class="px-3 py-1.5 rounded-lg bg-yellow-50 text-yellow-700 text-sm font-semibold hover:bg-yellow-100 border border-yellow-200 transition-colors flex items-center gap-2 shadow-sm"><i class="fas fa-sticky-note"></i><span class="hidden sm:inline">Notes</span></button>
+                    <button onclick="navigator.clipboard.writeText('${shareUrl}').then(()=>showToast('Link copied!','success'))" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-2 shadow-sm"><i class="fas fa-link"></i><span class="hidden sm:inline">Share Link</span></button>
+                    <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                    <button onclick="document.getElementById('preview-modal').style.display='none'" class="h-8 w-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-sm"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex-grow flex overflow-hidden relative" id="preview-workspace">
+                <div class="flex-grow bg-gray-900 relative transition-all duration-300" id="preview-pane-1" style="min-width: 300px;">
+                    ${content}
+                </div>
+
+                <div id="preview-resizer" class="w-2 cursor-col-resize bg-gray-200 hover:bg-blue-400 hidden items-center justify-center flex-shrink-0 z-20 transition-colors group">
+                    <div class="h-12 w-1 bg-gray-400 group-hover:bg-white rounded-full"></div>
+                </div>
+
+                <div id="preview-pane-2" class="w-[400px] bg-white hidden flex-col shadow-[-4px_0_15px_rgba(0,0,0,0.05)] border-l border-gray-200" style="min-width: 300px; max-width: 70vw;">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+
+    // Hide loader
+    const frame = modal.querySelector('#preview-pane-1 .file-preview-frame');
+    const loader = modal.querySelector('#preview-pane-1 .preview-loading');
+    if(frame && loader) {
+        frame.addEventListener('load', () => { loader.style.display = 'none'; });
+        setTimeout(() => { loader.style.display = 'none'; }, 8000);
+    }
+
+    // Setup Resizer
+    const resizer = document.getElementById('preview-resizer');
+    const pane1 = document.getElementById('preview-pane-1');
+    const pane2 = document.getElementById('preview-pane-2');
+    
+    if(resizer) {
+        let isResizing = false;
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = 'none');
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const container = document.getElementById('preview-workspace');
+            const containerWidth = container.clientWidth;
+            const newWidth = containerWidth - e.clientX + container.getBoundingClientRect().left;
+            
+            if (newWidth > 300 && newWidth < containerWidth - 300) {
+                pane2.style.width = newWidth + 'px';
+                pane2.style.flex = 'none';
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = '');
+            }
+        });
     }
 }
+
+window.toggleFileNotes = function(fileId) {
+    const pane2 = document.getElementById('preview-pane-2');
+    const resizer = document.getElementById('preview-resizer');
+    
+    if (pane2.classList.contains('flex') && pane2.dataset.mode === 'notes') {
+        pane2.classList.add('hidden'); pane2.classList.remove('flex');
+        resizer.classList.add('hidden'); resizer.classList.remove('flex');
+        return;
+    }
+
+    pane2.classList.remove('hidden'); pane2.classList.add('flex');
+    resizer.classList.remove('hidden'); resizer.classList.add('flex');
+    pane2.dataset.mode = 'notes';
+
+    pane2.innerHTML = `
+        <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50 flex justify-between items-center z-10 shadow-sm">
+            <h4 class="font-bold text-yellow-800 flex items-center gap-2"><i class="fas fa-sticky-note"></i> Revision Notes</h4>
+            <div id="notes-save-status" class="text-xs text-yellow-600 font-medium px-2 py-1 bg-yellow-100/50 rounded-md">Notes Ready</div>
+        </div>
+        <textarea id="file-notes-textarea" class="flex-grow p-5 w-full h-full resize-none focus:outline-none focus:ring-inset focus:ring-2 focus:ring-yellow-400 bg-[#fffdf4] text-gray-800 placeholder-gray-400 leading-relaxed font-medium" placeholder="Jot down notes, formulas, or questions for this specific file. They will save automatically..."></textarea>
+    `;
+
+    const textarea = document.getElementById('file-notes-textarea');
+    let saveTimeout;
+    
+    // Load notes
+    if (window.db && window.currentUser) {
+        db.collection('users').doc(currentUser.uid).collection('notes').doc(fileId).get()
+            .then(doc => { 
+                if (doc.exists) {
+                    textarea.value = doc.data().content || ''; 
+                }
+            })
+            .catch(err => console.error("Error loading notes", err));
+    }
+
+    textarea.addEventListener('input', () => {
+        const status = document.getElementById('notes-save-status');
+        status.innerText = 'Saving...';
+        status.className = 'text-xs text-blue-600 font-medium px-2 py-1 bg-blue-100/50 rounded-md';
+        
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            if (window.db && window.currentUser) {
+                db.collection('users').doc(currentUser.uid).collection('notes').doc(fileId).set({
+                    content: textarea.value,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(() => {
+                    status.innerText = 'Saved.';
+                    status.className = 'text-xs text-green-600 font-medium px-2 py-1 bg-green-100/50 rounded-md';
+                    setTimeout(() => {
+                        if(status.innerText === 'Saved.') {
+                            status.innerText = 'Notes Ready';
+                            status.className = 'text-xs text-yellow-600 font-medium px-2 py-1 bg-yellow-100/50 rounded-md';
+                        }
+                    }, 2000);
+                }).catch(e => {
+                    status.innerText = 'Error saving';
+                    status.className = 'text-xs text-red-600 font-medium px-2 py-1 bg-red-100/50 rounded-md';
+                });
+            }
+        }, 1000);
+    });
+};
+
+window.openSplitScreenpicker = function() {
+    const pane2 = document.getElementById('preview-pane-2');
+    const resizer = document.getElementById('preview-resizer');
+    
+    if (pane2.classList.contains('flex') && pane2.dataset.mode === 'split') {
+        pane2.classList.add('hidden'); pane2.classList.remove('flex');
+        resizer.classList.add('hidden'); resizer.classList.remove('flex');
+        return;
+    }
+
+    pane2.classList.remove('hidden'); pane2.classList.add('flex');
+    resizer.classList.remove('hidden'); resizer.classList.add('flex');
+    pane2.dataset.mode = 'split';
+
+    let html = '<div class="space-y-2">';
+    const list = document.getElementById('file-list'); // Get currently viewed folder files
+    if (list) {
+        list.querySelectorAll('.file-card').forEach(f => {
+            const titleEl = f.querySelector('h4');
+            const mainInfo = f.querySelector('.cursor-pointer');
+            if (titleEl && mainInfo) {
+                let onclickRaw = mainInfo.getAttribute('onclick');
+                if (onclickRaw) {
+                    // Prepend the global flag for split screen opening
+                    onclickRaw = "window.isSplitScreenMode = true; " + onclickRaw;
+                }
+                html += `
+                    <div class="p-3 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 cursor-pointer bg-white transition-all flex items-center justify-between shadow-sm group" onclick="${onclickRaw.replace(/"/g, '&quot;')}">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="h-8 w-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 group-hover:text-indigo-500 group-hover:bg-indigo-100 transition-colors flex-shrink-0">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-700 truncate pr-2">${titleEl.innerText}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-indigo-400 text-xs flex-shrink-0"></i>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    pane2.innerHTML = `
+        <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex justify-between items-center shadow-sm">
+            <h4 class="font-bold text-indigo-800 flex items-center gap-2"><i class="fas fa-columns"></i> Side-by-Side File</h4>
+        </div>
+        <div class="flex-grow p-4 overflow-y-auto bg-gray-50/50">
+            <div class="text-sm text-gray-600 mb-4 font-semibold text-center bg-indigo-100/50 p-3 rounded-lg shadow-sm border border-indigo-100/50">Select another file from the current folder below</div>
+            ${html === '<div class="space-y-2">' ? '<div class="flex flex-col items-center justify-center h-32 text-gray-400 gap-2"><i class="fas fa-info-circle text-2xl"></i><p class="text-sm">Navigate to a folder first to see files here.</p></div>' : html + '</div>'}
+        </div>
+    `;
+};
 
 // Controlled download function with rate limiting and security
 function downloadFile(fileId, fileName, downloadUrl, subject = null) {
@@ -23718,4 +23843,6 @@ window.addEventListener('beforeunload', () => {
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
+
+
 
