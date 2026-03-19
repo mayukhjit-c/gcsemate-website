@@ -1070,6 +1070,16 @@ transition: box-shadow 0.2s ease;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
         }
 
+        .lesson-eraser-mode {
+            cursor: crosshair;
+            outline: 2px dashed rgba(244, 63, 94, 0.45);
+            outline-offset: 4px;
+        }
+
+        .lesson-eraser-mode * {
+            cursor: crosshair !important;
+        }
+
         .lesson-analytics-card {
             border-radius: 1rem;
             border: 1px solid rgba(199, 210, 254, 0.9);
@@ -5075,11 +5085,18 @@ will-change: transform;
         .scientific-calc-shell .tools-calc-btn {
             border-radius: 0.65rem;
             min-height: 2.35rem;
+            padding: 0.42rem 0.18rem;
             border-color: rgba(148, 163, 184, 0.28);
             background: linear-gradient(180deg, rgba(241, 245, 249, 0.95), rgba(203, 213, 225, 0.88));
             color: #0f172a;
             font-size: 0.78rem;
+            line-height: 1.12;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 8px -6px rgba(15, 23, 42, 0.7);
+        }
+
+        .scientific-calc-topbar .tools-select {
+            min-width: 0;
+            width: 100%;
         }
 
         .scientific-calc-shell .tools-calc-btn:hover {
@@ -5123,6 +5140,7 @@ will-change: transform;
             .scientific-calc-shell .tools-calc-btn {
                 min-height: 2.15rem;
                 font-size: 0.72rem;
+                padding: 0.38rem 0.14rem;
             }
         }
 

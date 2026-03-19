@@ -135,10 +135,21 @@ service cloud.firestore {
           'title','summary','subject','topic','subtopic','category',
           'lessonNumber','sortOrder','publishDate','coverImage','tags','content',
           'interactiveHtml','widgetHtml','links','videoUrls','iframeUrls','imageUrls','attachments','questions',
-          'buttonLabel','buttonUrl','updatedAt','createdBy','authorName','createdAt'
+          'buttonLabel','buttonUrl','updatedAt','createdBy','authorName','createdAt',
+          'status','draftSavedAt','publishedAt','publishedBy','scrapedFromUrl','scrapedAt'
         ]) &&
-        request.resource.data.title is string && request.resource.data.title.size() > 0 &&
-        request.resource.data.content is string && request.resource.data.content.size() > 0 &&
+        (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['draft','published']) &&
+        (
+          request.resource.data.status == 'draft'
+            ? (
+              (!request.resource.data.keys().hasAny(['title']) || request.resource.data.title == null || request.resource.data.title is string) &&
+              (!request.resource.data.keys().hasAny(['content']) || request.resource.data.content == null || request.resource.data.content is string)
+            )
+            : (
+              request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+              request.resource.data.content is string && request.resource.data.content.size() > 0
+            )
+        ) &&
         (!request.resource.data.keys().hasAny(['summary']) || request.resource.data.summary == null || request.resource.data.summary is string) &&
         (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
         (!request.resource.data.keys().hasAny(['topic']) || request.resource.data.topic == null || request.resource.data.topic is string) &&
@@ -160,7 +171,9 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['buttonLabel']) || request.resource.data.buttonLabel == null || request.resource.data.buttonLabel is string) &&
         (!request.resource.data.keys().hasAny(['buttonUrl']) || request.resource.data.buttonUrl == null || request.resource.data.buttonUrl is string) &&
         (!request.resource.data.keys().hasAny(['authorName']) || request.resource.data.authorName == null || request.resource.data.authorName is string) &&
-        (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == null || request.resource.data.createdBy is string);
+        (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == null || request.resource.data.createdBy is string) &&
+        (!request.resource.data.keys().hasAny(['publishedBy']) || request.resource.data.publishedBy == null || request.resource.data.publishedBy is string) &&
+        (!request.resource.data.keys().hasAny(['scrapedFromUrl']) || request.resource.data.scrapedFromUrl == null || request.resource.data.scrapedFromUrl is string);
       allow delete: if isAdmin();
 
       match /comments/{commentId} {

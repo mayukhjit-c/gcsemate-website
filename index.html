@@ -1002,6 +1002,8 @@
                                                     <option value="Times New Roman">Times</option>
                                                 </select>
                                             </label>
+                                            <input id="blog-font-search" list="blog-font-list" type="search" placeholder="Search font..." class="px-3 py-1.5 text-sm border-2 border-gray-300 rounded bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-400" onchange="applyBlogFont(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyBlogFont(this.value);}">
+                                            <datalist id="blog-font-list"></datalist>
                                             <label class="blog-editor-color-control" title="Text color">
                                                 <span class="sr-only">Text color</span>
                                                 <i class="fas fa-font text-sm" aria-hidden="true"></i>
@@ -1169,8 +1171,9 @@
                                 Reset
                             </button>
                         </div>
-                        <form id="add-lesson-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveLesson();">
+                        <form id="add-lesson-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveLesson('published');">
                             <input type="hidden" id="lesson-id">
+                            <input type="hidden" id="lesson-status" value="published">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <input id="lesson-title" type="text" placeholder="Lesson title" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <input id="lesson-summary" type="text" placeholder="Lesson summary" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1215,6 +1218,8 @@
                                                 <option value="Times New Roman">Times</option>
                                             </select>
                                         </label>
+                                        <input id="lesson-font-search" list="lesson-font-list" type="search" placeholder="Search font..." class="px-3 py-1.5 text-sm border-2 border-gray-300 rounded bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-400" onchange="applyLessonFont(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault(); applyLessonFont(this.value);}">
+                                        <datalist id="lesson-font-list"></datalist>
                                         <label class="blog-editor-color-control" title="Text color">
                                             <span class="sr-only">Text color</span>
                                             <i class="fas fa-font text-sm" aria-hidden="true"></i>
@@ -1229,6 +1234,9 @@
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonFormatText('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-colors" onclick="openLessonImagePicker()" title="Insert Cropped Image">
                                             <i class="fas fa-image"></i>
+                                        </button>
+                                        <button type="button" id="lesson-eraser-toggle" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-rose-50 hover:border-rose-400 transition-colors" onclick="toggleLessonElementEraser()" title="Element Eraser Mode">
+                                            <i class="fas fa-eraser"></i>
                                         </button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonInsertLink()"><i class="fas fa-link"></i></button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonFormatText('removeFormat')"><i class="fas fa-remove-format"></i></button>
@@ -1272,10 +1280,24 @@
                                 Paste or drag and drop images here. You can also drop/embed image URLs and iframe URLs directly into the lesson.
                             </div>
 
+                            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+                                <div>
+                                    <label for="lesson-source-url" class="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600 mb-1">Import from URL</label>
+                                    <input id="lesson-source-url" type="url" placeholder="https://example.com/article" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <button type="button" id="lesson-scrape-button" onclick="scrapeLessonFromUrl()" class="px-4 py-3 rounded-lg bg-cyan-600 text-white font-semibold hover:bg-cyan-700 transition-colors inline-flex items-center justify-center gap-2">
+                                    <i class="fas fa-globe"></i>
+                                    Scrape URL
+                                </button>
+                            </div>
+
+                            <p id="lesson-editor-mode-hint" class="hidden text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">Eraser mode is on. Click any block in the lesson editor to remove it.</p>
+
                             <div class="flex justify-end gap-3">
                                 <button type="button" onclick="autoArrangeLessonDraft()" class="px-4 py-2 bg-emerald-100 text-emerald-700 font-semibold rounded-md hover:bg-emerald-200">Auto arrange</button>
                                 <button type="button" onclick="resetLessonForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Lesson</button>
+                                <button type="button" onclick="handleSaveLessonDraft()" class="px-4 py-2 bg-amber-500 text-white font-semibold rounded-md hover:bg-amber-600">Save Draft</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Publish Lesson</button>
                             </div>
                         </form>
                         <p id="add-lesson-message" class="text-sm mt-2 h-4"></p>

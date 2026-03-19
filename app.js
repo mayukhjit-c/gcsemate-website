@@ -133,6 +133,7 @@ const LESSON_TEMPLATES = {
 };
 const LESSON_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
 let lessonsFiltersBound = false;
+let lessonEraserMode = false;
 let lessonViewerSession = {
     lessonId: null,
     openedAt: 0,
@@ -146,6 +147,43 @@ let lessonImageSpotlightState = {
     zoom: 1
 };
 let lessonQuestionBuilderState = [];
+const EDITOR_FONT_OPTIONS = [
+    'Arial',
+    'Verdana',
+    'Tahoma',
+    'Trebuchet MS',
+    'Times New Roman',
+    'Georgia',
+    'Garamond',
+    'Courier New',
+    'Lucida Console',
+    'Palatino',
+    'Bookman',
+    'Helvetica',
+    'Calibri',
+    'Cambria',
+    'Candara',
+    'Segoe UI',
+    'Open Sans',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Nunito',
+    'Merriweather',
+    'Roboto Slab',
+    'Playfair Display',
+    'Source Sans Pro',
+    'Source Serif Pro',
+    'Fira Sans',
+    'Fira Code',
+    'Ubuntu',
+    'Work Sans',
+    'Raleway',
+    'PT Sans',
+    'Rubik',
+    'Oswald',
+    'Manrope'
+];
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
@@ -5931,7 +5969,8 @@ function setupRealtimeListeners() {
         });
     } catch(_){ }
     // Admin listeners
-    if (currentUser.role === 'admin') {
+    const hasAdminAccess = isAdminUser(currentUser);
+    if (hasAdminAccess) {
         document.getElementById('admin-panel').classList.remove('hidden');
         document.getElementById('user-settings-panel').classList.add('hidden');
         document.getElementById('add-link-form-container').classList.remove('hidden');
@@ -11167,7 +11206,7 @@ function showPage(pageId) {
     const newPage = document.getElementById(pageId);
     if (!newPage) return;
 
-    if ((currentUser?.role || '').toLowerCase() !== 'admin' && isSectionUnderMaintenance(pageId)) {
+    if (!isAdminUser() && isSectionUnderMaintenance(pageId)) {
         showSectionMaintenanceNotice(pageId);
         return;
     }
@@ -11185,6 +11224,7 @@ function showPage(pageId) {
     if (pageId === 'lessons-page') {
         setTimeout(() => {
             setupLessonsImagePasteHandler();
+            setupLessonFontControls();
             populateLessonSubjectOptions();
             syncLessonSubjectCustomVisibility();
             renderLessonQuestionBuilder(parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''));
@@ -14204,15 +14244,28 @@ function normalizeLessonNumber(value) {
 }
 
 function getLessonPublishDate(lesson) {
-    const candidate = lesson?.publishDate?.toDate
-        ? lesson.publishDate.toDate()
-        : new Date(lesson?.publishDate || lesson?.updatedAt || lesson?.createdAt || Date.now());
+    const candidate = lesson?.publishedAt?.toDate
+        ? lesson.publishedAt.toDate()
+        : (lesson?.publishDate?.toDate
+            ? lesson.publishDate.toDate()
+            : new Date(lesson?.publishDate || lesson?.publishedAt || lesson?.updatedAt || lesson?.createdAt || Date.now()));
     return Number.isNaN(candidate.getTime()) ? new Date() : candidate;
+}
+
+function getLessonStatus(lesson = {}) {
+    const status = String(lesson.status || '').trim().toLowerCase();
+    return status === 'draft' ? 'draft' : 'published';
+}
+
+function canUserReadLesson(lesson = {}) {
+    if (isAdminUser()) return true;
+    return getLessonStatus(lesson) === 'published';
 }
 
 function normalizeLesson(lesson = {}) {
     return {
         ...lesson,
+        status: getLessonStatus(lesson),
         subject: String(lesson.subject || '').trim(),
         topic: String(lesson.topic || '').trim(),
         subtopic: String(lesson.subtopic || '').trim(),
@@ -14774,13 +14827,14 @@ function syncLessonFilterSelect(selectId, values, currentValue, allLabel) {
 
 function getFilteredLessons(lessons = []) {
     const processed = lessons.map(normalizeLesson);
+    const readableLessons = isAdminUser() ? processed : processed.filter(canUserReadLesson);
     const query = normalizeBlogToken(LESSON_VIEW_STATE.search);
     const subjectFilter = normalizeBlogToken(LESSON_VIEW_STATE.subject);
     const topicFilter = normalizeBlogToken(LESSON_VIEW_STATE.topic);
     const subtopicFilter = normalizeBlogToken(LESSON_VIEW_STATE.subtopic);
     const categoryFilter = normalizeBlogToken(LESSON_VIEW_STATE.category);
 
-    const filtered = processed.filter(lesson => {
+    const filtered = readableLessons.filter(lesson => {
         const blob = getLessonSearchBlob(lesson);
         const subject = normalizeBlogToken(lesson.subject);
         const topic = normalizeBlogToken(lesson.topic);
@@ -14816,7 +14870,7 @@ function getFilteredLessons(lessons = []) {
         return b.safeDate - a.safeDate;
     });
 
-    return { processed, filtered };
+    return { processed: readableLessons, filtered };
 }
 
 function renderLessonsHierarchyTree(lessons = []) {
@@ -15008,10 +15062,15 @@ function renderLessonsPage(lessons = []) {
         const lessonPath = [lesson.subject, lesson.topic, lesson.subtopic].filter(Boolean).join(' • ') || 'General';
         const publishText = lesson.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         const lessonNumberText = Number.isFinite(lesson.lessonNumber) ? `Lesson ${lesson.lessonNumber}` : 'Lesson';
+        const lessonStatus = getLessonStatus(lesson);
+        const statusChip = lessonStatus === 'draft'
+            ? '<span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Draft</span>'
+            : '<span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Published</span>';
         const isAdmin = isAdminUser();
         const adminButtons = isAdmin
             ? `<div class="absolute top-3 right-3 flex items-center gap-1.5">
                 <button onclick="event.stopPropagation(); editLesson('${escapeJS(lesson.id)}')" class="p-2 bg-blue-500/85 text-white rounded-full hover:bg-blue-600 transition-colors" title="Edit lesson"><i class="fas fa-pen"></i></button>
+                <button onclick="event.stopPropagation(); toggleLessonPublishStatus('${escapeJS(lesson.id)}', ${lessonStatus !== 'published'})" class="p-2 ${lessonStatus === 'published' ? 'bg-amber-500/85 hover:bg-amber-600' : 'bg-emerald-500/85 hover:bg-emerald-600'} text-white rounded-full transition-colors" title="${lessonStatus === 'published' ? 'Move to draft' : 'Publish lesson'}"><i class="fas ${lessonStatus === 'published' ? 'fa-box-archive' : 'fa-bullhorn'}"></i></button>
                 <button onclick="event.stopPropagation(); deleteLesson('${escapeJS(lesson.id)}')" class="p-2 bg-red-500/85 text-white rounded-full hover:bg-red-600 transition-colors" title="Delete lesson"><i class="fas fa-trash"></i></button>
             </div>`
             : '';
@@ -15027,12 +15086,13 @@ function renderLessonsPage(lessons = []) {
             <p class="mt-2 text-sm text-slate-600">${contentPreview || 'Open this lesson to view the complete interactive content.'}${contentPreview ? '…' : ''}</p>
             <p class="mt-3 text-xs font-semibold text-blue-700">${escapeHTML(lessonPath)}</p>
             <div class="mt-2 flex flex-wrap items-center gap-2">
+                ${statusChip}
                 ${viewed ? '<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">Viewed</span>' : ''}
                 ${completed ? '<span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Completed</span>' : ''}
             </div>
             <div class="mt-2 flex flex-wrap gap-2">${tagChips}</div>
             <div class="mt-4 flex items-center justify-between gap-2">
-                <span class="text-xs text-slate-500">Published ${publishText}</span>
+                <span class="text-xs text-slate-500">${lessonStatus === 'published' ? 'Published' : 'Saved'} ${publishText}</span>
                 <button class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors" ${accessBadge.locked ? 'disabled' : ''} onclick="openLessonViewer('${escapeJS(lesson.id)}')">
                     ${accessBadge.locked ? 'Locked' : 'Open lesson'}
                 </button>
@@ -15139,13 +15199,17 @@ function setLessonTreeFilter(level = 'all', subject = '', topic = '', subtopic =
     renderLessonsPage(allLessons);
 }
 
-function serializeLessonForm() {
+function serializeLessonForm(status = 'published') {
     const publishDateValue = document.getElementById('lesson-publish-date')?.value || '';
     const publishDate = publishDateValue ? new Date(publishDateValue) : null;
     const isValidPublishDate = publishDate && !Number.isNaN(publishDate.getTime());
+    const normalizedStatus = String(status || 'published').toLowerCase() === 'draft' ? 'draft' : 'published';
+    const sourceUrlValue = String(document.getElementById('lesson-source-url')?.value || '').trim();
+    const sourceUrlValid = /^https?:\/\//i.test(sourceUrlValue);
 
     const builderQuestions = collectLessonQuestionsFromBuilder();
     return {
+        status: normalizedStatus,
         title: document.getElementById('lesson-title')?.value?.trim() || '',
         summary: document.getElementById('lesson-summary')?.value?.trim() || '',
         subject: getSelectedLessonSubjectValue(),
@@ -15155,6 +15219,11 @@ function serializeLessonForm() {
         lessonNumber: normalizeLessonNumber(document.getElementById('lesson-number')?.value),
         sortOrder: normalizeLessonNumber(document.getElementById('lesson-sort-order')?.value),
         publishDate: isValidPublishDate ? firebase.firestore.Timestamp.fromDate(publishDate) : firebase.firestore.FieldValue.serverTimestamp(),
+        publishedAt: normalizedStatus === 'published'
+            ? (isValidPublishDate ? firebase.firestore.Timestamp.fromDate(publishDate) : firebase.firestore.FieldValue.serverTimestamp())
+            : null,
+        publishedBy: normalizedStatus === 'published' ? (currentUser?.uid || null) : null,
+        draftSavedAt: normalizedStatus === 'draft' ? firebase.firestore.FieldValue.serverTimestamp() : null,
         coverImage: document.getElementById('lesson-cover-image')?.value?.trim() || null,
         tags: parseBlogTags(document.getElementById('lesson-tags')?.value || ''),
         content: sanitizeHTML(document.getElementById('lesson-content')?.innerHTML?.trim() || ''),
@@ -15170,13 +15239,15 @@ function serializeLessonForm() {
             : parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''),
         buttonLabel: document.getElementById('lesson-button-label')?.value?.trim() || '',
         buttonUrl: document.getElementById('lesson-button-url')?.value?.trim() || '',
+        scrapedFromUrl: sourceUrlValid ? sourceUrlValue : null,
+        scrapedAt: sourceUrlValid ? firebase.firestore.FieldValue.serverTimestamp() : null,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: currentUser?.uid || null,
         authorName: currentUser?.displayName || currentUser?.email || 'GCSEMate'
     };
 }
 
-async function handleSaveLesson() {
+async function handleSaveLesson(status = 'published') {
     if (!isAdminUser()) return;
     autoArrangeLessonDraft();
     const messageEl = document.getElementById('add-lesson-message');
@@ -15191,8 +15262,11 @@ async function handleSaveLesson() {
     }
 
     const lessonId = document.getElementById('lesson-id')?.value || '';
-    const lessonData = serializeLessonForm();
-    if (!lessonData.title || !lessonData.content) {
+    const lessonStatus = String(status || 'published').toLowerCase() === 'draft' ? 'draft' : 'published';
+    const lessonData = serializeLessonForm(lessonStatus);
+    const statusField = document.getElementById('lesson-status');
+    if (statusField) statusField.value = lessonStatus;
+    if (lessonStatus === 'published' && (!lessonData.title || !lessonData.content)) {
         if (messageEl) {
             messageEl.textContent = 'Lesson title and main content are required.';
             messageEl.className = 'text-red-600 text-sm mt-2 h-4';
@@ -15213,7 +15287,7 @@ async function handleSaveLesson() {
         }
         resetLessonForm();
         if (messageEl) {
-            messageEl.textContent = 'Lesson saved successfully!';
+            messageEl.textContent = lessonStatus === 'draft' ? 'Lesson draft saved successfully!' : 'Lesson published successfully!';
             messageEl.className = 'text-green-600 text-sm mt-2 h-4';
             setTimeout(() => { messageEl.textContent = ''; }, 3000);
         }
@@ -15228,6 +15302,30 @@ async function handleSaveLesson() {
     }
 }
 
+async function handleSaveLessonDraft() {
+    await handleSaveLesson('draft');
+}
+
+async function toggleLessonPublishStatus(lessonId, shouldPublish = true) {
+    if (!isAdminUser() || !lessonId || !isFirestoreAvailable()) return;
+    const nextStatus = shouldPublish ? 'published' : 'draft';
+    const payload = {
+        status: nextStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        publishedAt: shouldPublish ? firebase.firestore.FieldValue.serverTimestamp() : null,
+        publishedBy: shouldPublish ? (currentUser?.uid || null) : null,
+        draftSavedAt: shouldPublish ? null : firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await db.collection('lessons').doc(lessonId).update(payload);
+        showToast(shouldPublish ? 'Lesson published.' : 'Lesson moved to draft.', 'success');
+    } catch (error) {
+        logError(error, 'Lesson Publish Toggle');
+        showToast(getFirebaseFriendlyMessage(error, 'Could not update lesson status.'), 'error');
+    }
+}
+
 function resetLessonForm() {
     const form = document.getElementById('add-lesson-form');
     if (form) form.reset();
@@ -15239,8 +15337,15 @@ function resetLessonForm() {
     if (content) content.innerHTML = '';
     const lessonPublishDate = document.getElementById('lesson-publish-date');
     if (lessonPublishDate) lessonPublishDate.value = '';
+    const lessonStatus = document.getElementById('lesson-status');
+    if (lessonStatus) lessonStatus.value = 'published';
+    const lessonSourceUrl = document.getElementById('lesson-source-url');
+    if (lessonSourceUrl) lessonSourceUrl.value = '';
     const templateSelect = document.getElementById('lesson-template-select');
     if (templateSelect) templateSelect.value = '';
+    if (lessonEraserMode) {
+        toggleLessonElementEraser(false);
+    }
     populateLessonSubjectOptions();
     syncLessonSubjectCustomVisibility();
     renderLessonQuestionBuilder([]);
@@ -15269,6 +15374,7 @@ function editLesson(lessonId) {
     setValue('lesson-category', normalized.category || '');
     setValue('lesson-number', Number.isFinite(normalized.lessonNumber) ? normalized.lessonNumber : '');
     setValue('lesson-sort-order', Number.isFinite(normalized.sortOrder) ? normalized.sortOrder : '');
+    setValue('lesson-status', normalized.status || 'published');
     setValue('lesson-cover-image', normalized.coverImage || '');
     setValue('lesson-tags', (normalized.tags || []).join(', '));
     setValue('lesson-interactive-html', normalized.interactiveHtml || '');
@@ -15282,6 +15388,7 @@ function editLesson(lessonId) {
     renderLessonQuestionBuilder(normalized.questions || []);
     setValue('lesson-button-label', normalized.buttonLabel || '');
     setValue('lesson-button-url', normalized.buttonUrl || '');
+    setValue('lesson-source-url', normalized.scrapedFromUrl || '');
 
     const publishDateField = document.getElementById('lesson-publish-date');
     if (publishDateField && normalized.safeDate) {
@@ -15692,6 +15799,10 @@ function renderLessonComments(lessonId) {
 function openLessonViewer(lessonId) {
     const lesson = allLessons.find(item => item.id === lessonId);
     if (!lesson) return;
+    if (!canUserReadLesson(lesson)) {
+        showToast('This lesson is currently saved as draft and only visible to admins.', 'info');
+        return;
+    }
 
     if (!currentUser) {
         showAuthPage(true);
@@ -15978,8 +16089,13 @@ function lessonFormatText(command, value = null) {
 }
 
 function applyLessonFont(value) {
-    if (!value) return;
-    lessonFormatText('fontName', value);
+    const normalized = normalizeEditorFontValue(value);
+    if (!normalized) return;
+    lessonFormatText('fontName', normalized);
+    const lessonFontSelect = document.getElementById('lesson-font-family');
+    if (lessonFontSelect) lessonFontSelect.value = normalized;
+    const lessonFontSearch = document.getElementById('lesson-font-search');
+    if (lessonFontSearch) lessonFontSearch.value = normalized;
 }
 
 function applyLessonTextColor(value) {
@@ -16002,15 +16118,155 @@ function lessonInsertLink() {
     lessonFormatText('createLink', url);
 }
 
+function normalizeEditorFontValue(value) {
+    const selected = String(value || '').trim();
+    if (!selected) return '';
+    const matched = EDITOR_FONT_OPTIONS.find(font => font.toLowerCase() === selected.toLowerCase());
+    return matched || selected;
+}
+
+function populateFontSelect(selectId, datalistId) {
+    const select = document.getElementById(selectId);
+    if (select) {
+        const current = String(select.value || '').trim();
+        select.innerHTML = `<option value="">Font</option>${EDITOR_FONT_OPTIONS.map(font => `<option value="${escapeHTML(font)}">${escapeHTML(font)}</option>`).join('')}`;
+        if (current) {
+            const normalized = normalizeEditorFontValue(current);
+            if (normalized) select.value = normalized;
+        }
+    }
+
+    const datalist = document.getElementById(datalistId);
+    if (datalist) {
+        datalist.innerHTML = EDITOR_FONT_OPTIONS.map(font => `<option value="${escapeHTML(font)}"></option>`).join('');
+    }
+}
+
+function setupLessonFontControls() {
+    populateFontSelect('lesson-font-family', 'lesson-font-list');
+    populateFontSelect('blog-font-family', 'blog-font-list');
+}
+
+function setLessonEraserUiState() {
+    const toggleButton = document.getElementById('lesson-eraser-toggle');
+    const hint = document.getElementById('lesson-editor-mode-hint');
+    const editor = document.getElementById('lesson-content');
+    if (toggleButton) {
+        toggleButton.classList.toggle('bg-rose-600', lessonEraserMode);
+        toggleButton.classList.toggle('text-white', lessonEraserMode);
+        toggleButton.classList.toggle('border-rose-700', lessonEraserMode);
+    }
+    if (hint) {
+        hint.classList.toggle('hidden', !lessonEraserMode);
+    }
+    if (editor) {
+        editor.classList.toggle('lesson-eraser-mode', lessonEraserMode);
+    }
+}
+
+function toggleLessonElementEraser(forceMode = null) {
+    lessonEraserMode = typeof forceMode === 'boolean' ? forceMode : !lessonEraserMode;
+    setLessonEraserUiState();
+    if (lessonEraserMode) {
+        showToast('Element eraser enabled. Click a block in the editor to remove it.', 'info');
+    }
+}
+
+async function scrapeLessonFromUrl() {
+    if (!isAdminUser()) return;
+    const sourceInput = document.getElementById('lesson-source-url');
+    const scrapeButton = document.getElementById('lesson-scrape-button');
+    const url = String(sourceInput?.value || '').trim();
+    if (!/^https?:\/\//i.test(url)) {
+        showToast('Enter a valid http(s) URL to scrape.', 'error');
+        return;
+    }
+
+    if (scrapeButton) {
+        scrapeButton.disabled = true;
+        scrapeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scraping...';
+    }
+
+    try {
+        const response = await fetch(`/api/scrape-url?url=${encodeURIComponent(url)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload?.error || `Scrape request failed (${response.status})`);
+        }
+
+        const titleInput = document.getElementById('lesson-title');
+        const summaryInput = document.getElementById('lesson-summary');
+        const contentEditor = document.getElementById('lesson-content');
+        const imageUrlsInput = document.getElementById('lesson-image-urls');
+        const coverInput = document.getElementById('lesson-cover-image');
+
+        if (titleInput && !String(titleInput.value || '').trim() && payload.title) {
+            titleInput.value = String(payload.title).trim();
+        }
+        if (summaryInput && !String(summaryInput.value || '').trim() && payload.summary) {
+            summaryInput.value = String(payload.summary).trim();
+        }
+        if (contentEditor && payload.contentHtml) {
+            const existing = String(contentEditor.innerHTML || '').trim();
+            const incoming = sanitizeHTML(String(payload.contentHtml || '').trim());
+            contentEditor.innerHTML = existing ? `${existing}<hr><h3>Imported from URL</h3>${incoming}` : incoming;
+        }
+
+        if (imageUrlsInput && Array.isArray(payload.imageUrls) && payload.imageUrls.length) {
+            const existing = parseMultilineValues(imageUrlsInput.value || '');
+            const merged = [...new Set([...existing, ...payload.imageUrls.map(item => String(item || '').trim()).filter(item => /^https?:\/\//i.test(item))])];
+            imageUrlsInput.value = merged.join('\n');
+            if (coverInput && !String(coverInput.value || '').trim() && merged.length) {
+                coverInput.value = merged[0];
+                updateLessonCoverPreview();
+            }
+        }
+
+        showToast('URL content imported into the lesson draft.', 'success');
+    } catch (error) {
+        logError(error, 'Lesson URL Scrape');
+        showToast(getFirebaseFriendlyMessage(error, 'Could not scrape that URL.'), 'error');
+    } finally {
+        if (scrapeButton) {
+            scrapeButton.disabled = false;
+            scrapeButton.innerHTML = '<i class="fas fa-globe"></i> Scrape URL';
+        }
+    }
+}
+
+function bindLessonEraserHandler() {
+    if (document.body.dataset.lessonEraserBound === 'true') return;
+    document.body.dataset.lessonEraserBound = 'true';
+    document.addEventListener('click', (event) => {
+        if (!lessonEraserMode) return;
+        const editor = document.getElementById('lesson-content');
+        if (!editor) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (!editor.contains(target) || target === editor) return;
+        const removable = target.closest('figure, table, blockquote, img, iframe, h1, h2, h3, h4, h5, h6, p, ul, ol, li, div');
+        if (!removable || removable === editor) return;
+        event.preventDefault();
+        event.stopPropagation();
+        removable.remove();
+    }, true);
+}
+
+bindLessonEraserHandler();
+
 window.handleSaveLesson = handleSaveLesson;
+window.handleSaveLessonDraft = handleSaveLessonDraft;
 window.resetLessonForm = resetLessonForm;
 window.editLesson = editLesson;
 window.deleteLesson = deleteLesson;
+window.toggleLessonPublishStatus = toggleLessonPublishStatus;
 window.openLessonViewer = openLessonViewer;
 window.closeLessonViewer = closeLessonViewer;
 window.markLessonComplete = markLessonComplete;
 window.autoArrangeLessonDraft = autoArrangeLessonDraft;
 window.applyLessonTemplate = applyLessonTemplate;
+window.scrapeLessonFromUrl = scrapeLessonFromUrl;
+window.toggleLessonElementEraser = toggleLessonElementEraser;
 window.lessonFormatText = lessonFormatText;
 window.applyLessonFont = applyLessonFont;
 window.applyLessonTextColor = applyLessonTextColor;
@@ -16024,7 +16280,7 @@ window.handleLessonImageFileSelect = window.handleLessonImageFileSelect || funct
 let blogEditorSavedRange = null;
 const BLOG_EDITOR_DEFAULT_TEXT_COLOR = '#1f2937';
 const BLOG_EDITOR_DEFAULT_HIGHLIGHT_COLOR = '#fff3a3';
-const BLOG_EDITOR_ALLOWED_FONTS = ['Arial', 'Georgia', 'Trebuchet MS', 'Verdana', 'Courier New', 'Times New Roman'];
+const BLOG_EDITOR_ALLOWED_FONTS = EDITOR_FONT_OPTIONS.slice();
 const BLOG_EDITOR_ALLOWED_FONT_NAMES = new Set([
     ...BLOG_EDITOR_ALLOWED_FONTS.map(font => font.toLowerCase()),
     'sans-serif',
@@ -16179,8 +16435,13 @@ window.applyBlogHighlightColor = function(color) {
 };
 
 window.applyBlogFont = function(fontName) {
-    if (!fontName || !BLOG_EDITOR_ALLOWED_FONTS.includes(fontName)) return;
-    executeBlogEditorCommand('fontName', fontName);
+    const normalized = normalizeEditorFontValue(fontName);
+    if (!normalized) return;
+    executeBlogEditorCommand('fontName', normalized);
+    const blogFontSelect = document.getElementById('blog-font-family');
+    if (blogFontSelect) blogFontSelect.value = normalized;
+    const blogFontSearch = document.getElementById('blog-font-search');
+    if (blogFontSearch) blogFontSearch.value = normalized;
 };
 
 // Make functions globally accessible for inline onclick handlers
@@ -17346,6 +17607,7 @@ function handleBlogEditorKeydown(event) {
 // Setup paste handler when DOM is ready and when blog page is shown
 document.addEventListener('DOMContentLoaded', setupBlogPasteHandler);
 document.addEventListener('DOMContentLoaded', setupBlogEditorEnhancements);
+document.addEventListener('DOMContentLoaded', setupLessonFontControls);
 document.addEventListener('DOMContentLoaded', setupBlogToolbarSelectionSupport);
 document.addEventListener('DOMContentLoaded', setupStripeCheckoutUI);
 document.addEventListener('DOMContentLoaded', ensureAccessibleLabels);
