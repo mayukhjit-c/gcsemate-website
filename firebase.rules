@@ -116,10 +116,39 @@ service cloud.firestore {
         request.resource.data.canvasData is map;
     }
 
-    // Lessons: admins write; paid users (and admins) read
+    // Lessons: signed-in users can read, admins manage with validated schema
     match /lessons/{lessonId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'title','summary','subject','topic','subtopic','category',
+          'lessonNumber','sortOrder','publishDate','coverImage','tags','content',
+          'interactiveHtml','widgetHtml','links','videoUrls','imageUrls','attachments',
+          'buttonLabel','buttonUrl','updatedAt','createdBy','authorName','createdAt'
+        ]) &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+        request.resource.data.content is string && request.resource.data.content.size() > 0 &&
+        (!request.resource.data.keys().hasAny(['summary']) || request.resource.data.summary == null || request.resource.data.summary is string) &&
+        (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
+        (!request.resource.data.keys().hasAny(['topic']) || request.resource.data.topic == null || request.resource.data.topic is string) &&
+        (!request.resource.data.keys().hasAny(['subtopic']) || request.resource.data.subtopic == null || request.resource.data.subtopic is string) &&
+        (!request.resource.data.keys().hasAny(['category']) || request.resource.data.category == null || request.resource.data.category is string) &&
+        (!request.resource.data.keys().hasAny(['lessonNumber']) || request.resource.data.lessonNumber == null || request.resource.data.lessonNumber is number) &&
+        (!request.resource.data.keys().hasAny(['sortOrder']) || request.resource.data.sortOrder == null || request.resource.data.sortOrder is number) &&
+        (!request.resource.data.keys().hasAny(['coverImage']) || request.resource.data.coverImage == null || request.resource.data.coverImage is string) &&
+        (!request.resource.data.keys().hasAny(['publishDate']) || request.resource.data.publishDate != null) &&
+        (!request.resource.data.keys().hasAny(['tags']) || (request.resource.data.tags is list && request.resource.data.tags.size() <= 60)) &&
+        (!request.resource.data.keys().hasAny(['links']) || (request.resource.data.links is list && request.resource.data.links.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['videoUrls']) || (request.resource.data.videoUrls is list && request.resource.data.videoUrls.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['imageUrls']) || (request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 200)) &&
+        (!request.resource.data.keys().hasAny(['attachments']) || (request.resource.data.attachments is list && request.resource.data.attachments.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['interactiveHtml']) || request.resource.data.interactiveHtml == null || request.resource.data.interactiveHtml is string) &&
+        (!request.resource.data.keys().hasAny(['widgetHtml']) || request.resource.data.widgetHtml == null || request.resource.data.widgetHtml is string) &&
+        (!request.resource.data.keys().hasAny(['buttonLabel']) || request.resource.data.buttonLabel == null || request.resource.data.buttonLabel is string) &&
+        (!request.resource.data.keys().hasAny(['buttonUrl']) || request.resource.data.buttonUrl == null || request.resource.data.buttonUrl is string) &&
+        (!request.resource.data.keys().hasAny(['authorName']) || request.resource.data.authorName == null || request.resource.data.authorName is string) &&
+        (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == null || request.resource.data.createdBy is string);
+      allow delete: if isAdmin();
     }
 
     // Video playlists: readable by signed-in; writable only by admin.
