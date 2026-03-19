@@ -28,6 +28,7 @@ const BLOG_COMMENT_COUNTS = new Map();
 const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
 const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
 const TOOLS_NOTES_DOC_ID = 'quick-notes';
+const TOOLS_DAILY_JOKE_CACHE_KEY = 'gcsemate_daily_joke';
 const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
@@ -19768,6 +19769,108 @@ function getQuoteElements() {
     };
 }
 
+function getJokeElements() {
+    return {
+        loadingJokeEl: document.getElementById('loading-joke'),
+        toolsStatusEl: document.getElementById('tools-joke-status'),
+        toolsTypeEl: document.getElementById('tools-joke-type'),
+        toolsTypePillEl: document.getElementById('tools-joke-type-pill'),
+        toolsSetupEl: document.getElementById('tools-joke-setup'),
+        toolsPunchlineEl: document.getElementById('tools-joke-punchline'),
+        toolsRevealBtnEl: document.getElementById('tools-joke-reveal')
+    };
+}
+
+function normalizeJokePayload(payload, fallbackType = 'general') {
+    const data = Array.isArray(payload) ? payload[0] : payload;
+    if (!data || typeof data !== 'object') return null;
+    const setup = String(data.setup || '').trim();
+    const punchline = String(data.punchline || '').trim();
+    const type = String(data.type || fallbackType || 'general').trim().toLowerCase();
+    if (!setup || !punchline) return null;
+    return {
+        id: Number(data.id || 0) || 0,
+        type,
+        setup,
+        punchline
+    };
+}
+
+async function fetchJokeFromApi(type = 'any') {
+    const normalizedType = String(type || 'any').trim().toLowerCase();
+    const url = normalizedType === 'any'
+        ? 'https://official-joke-api.appspot.com/random_joke'
+        : `https://official-joke-api.appspot.com/jokes/${encodeURIComponent(normalizedType)}/random`;
+
+    const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const normalized = normalizeJokePayload(payload, normalizedType === 'any' ? 'general' : normalizedType);
+    if (!normalized) throw new Error('Invalid joke payload');
+    return normalized;
+}
+
+function applyJokeToUI(joke, statusText = 'Joke loaded') {
+    const elements = getJokeElements();
+    const typeLabel = joke?.type ? String(joke.type).replace(/-/g, ' ') : 'any';
+    if (elements.loadingJokeEl) {
+        if (joke?.setup && joke?.punchline) {
+            elements.loadingJokeEl.textContent = `${joke.setup} - ${joke.punchline}`;
+        } else {
+            elements.loadingJokeEl.textContent = 'Joke break unavailable right now.';
+        }
+    }
+    if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
+    if (elements.toolsSetupEl) elements.toolsSetupEl.textContent = joke?.setup || '';
+    if (elements.toolsPunchlineEl) {
+        elements.toolsPunchlineEl.textContent = joke?.punchline || '';
+        elements.toolsPunchlineEl.classList.add('hidden');
+    }
+    if (elements.toolsTypePillEl) elements.toolsTypePillEl.textContent = typeLabel || 'any';
+    if (elements.toolsRevealBtnEl) {
+        const disabled = !joke?.punchline;
+        elements.toolsRevealBtnEl.disabled = disabled;
+        elements.toolsRevealBtnEl.classList.toggle('opacity-50', disabled);
+        elements.toolsRevealBtnEl.classList.toggle('cursor-not-allowed', disabled);
+    }
+}
+
+async function fetchAndRenderToolsJoke(forceRefresh = false) {
+    const { toolsTypeEl } = getJokeElements();
+    const selectedType = String(toolsTypeEl?.value || 'any').trim().toLowerCase();
+    const dayKey = getTodayKeyForTools();
+
+    if (!forceRefresh) {
+        try {
+            const cachedRaw = localStorage.getItem(TOOLS_DAILY_JOKE_CACHE_KEY);
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw);
+                if (cached?.dayKey === dayKey && cached?.type === selectedType && cached?.joke?.setup) {
+                    applyJokeToUI(cached.joke, 'Daily joke loaded');
+                    return;
+                }
+            }
+        } catch (_) {}
+    }
+
+    applyJokeToUI(null, 'Loading joke...');
+
+    try {
+        const joke = await fetchJokeFromApi(selectedType);
+        applyJokeToUI(joke, 'Fresh joke loaded');
+        try {
+            localStorage.setItem(TOOLS_DAILY_JOKE_CACHE_KEY, JSON.stringify({
+                dayKey,
+                type: selectedType,
+                joke
+            }));
+        } catch (_) {}
+    } catch (error) {
+        applyJokeToUI(null, 'Could not load joke right now.');
+        try { logError(error, 'Fetch Joke'); } catch (_) {}
+    }
+}
+
 function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
     const elements = getQuoteElements();
     if (elements.loadingTextEl) elements.loadingTextEl.textContent = quoteText || 'No quote available right now.';
@@ -19919,6 +20022,7 @@ function getCommandPaletteActions() {
         { id: 'focus-blog-search', group: 'Actions', icon: 'fa-magnifying-glass', title: 'Focus blog search', description: 'Search through the latest blog posts', shortcut: '', action: () => { navigateToPageId('blog-page'); setTimeout(() => document.getElementById('blog-search')?.focus(), 120); } },
         { id: 'focus-lesson-search', group: 'Actions', icon: 'fa-book-open', title: 'Focus lesson search', description: 'Search the lessons library', shortcut: '', action: () => { navigateToPageId('lessons-page'); setTimeout(() => document.getElementById('lesson-search')?.focus(), 120); } },
         { id: 'focus-planner', group: 'Actions', icon: 'fa-list-check', title: 'Add planner task', description: 'Jump to the revision sprint planner input', shortcut: '', action: () => { navigateToPageId('tools-page'); setTimeout(() => document.getElementById('tools-planner-input')?.focus(), 120); } },
+        { id: 'refresh-joke', group: 'Actions', icon: 'fa-face-laugh', title: 'Get a random joke', description: 'Fetch a fresh joke in Tools', shortcut: '', action: () => { navigateToPageId('tools-page'); setTimeout(() => fetchAndRenderToolsJoke(true), 140); } },
         { id: 'checkout', group: 'Actions', icon: 'fa-bolt', title: 'Open upgrade checkout', description: 'View the GCSEMate Pro checkout page', shortcut: '', action: () => navigateToPageId('checkout-page') }
     ];
 
@@ -20673,6 +20777,9 @@ function initializeToolsPage() {
     const calcFormatSelect = document.getElementById('tools-calc-format');
     const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
+    const jokeRefreshBtn = document.getElementById('tools-joke-refresh');
+    const jokeTypeSelect = document.getElementById('tools-joke-type');
+    const jokeRevealBtn = document.getElementById('tools-joke-reveal');
     const notesInput = document.getElementById('tools-notes-input');
     const notesClearBtn = document.getElementById('tools-notes-clear');
     const notesCopyBtn = document.getElementById('tools-notes-copy');
@@ -20850,6 +20957,31 @@ function initializeToolsPage() {
                 }
             });
         }
+        if (jokeRefreshBtn) {
+            jokeRefreshBtn.addEventListener('click', async () => {
+                setButtonBusy(jokeRefreshBtn, true, 'Loading...');
+                try {
+                    await fetchAndRenderToolsJoke(true);
+                    recordUserInteraction('tools_joke_refresh', { target: jokeTypeSelect?.value || 'any', important: true });
+                } finally {
+                    setButtonBusy(jokeRefreshBtn, false);
+                }
+            });
+        }
+        if (jokeTypeSelect) {
+            jokeTypeSelect.addEventListener('change', () => {
+                fetchAndRenderToolsJoke(false);
+            });
+        }
+        if (jokeRevealBtn) {
+            jokeRevealBtn.addEventListener('click', () => {
+                const jokePunchline = document.getElementById('tools-joke-punchline');
+                const jokeStatus = document.getElementById('tools-joke-status');
+                if (!jokePunchline || !jokePunchline.textContent) return;
+                jokePunchline.classList.remove('hidden');
+                if (jokeStatus) jokeStatus.textContent = 'Punchline revealed';
+            });
+        }
         if (notesInput) {
             notesInput.addEventListener('input', () => {
                 saveToolsNotes(notesInput.value);
@@ -20962,6 +21094,7 @@ function initializeToolsPage() {
     updateToolsTimerUI();
     fetchAndRenderDailyMeme(false);
     fetchAndRenderDailyQuote(false);
+    fetchAndRenderToolsJoke(false);
     loadToolsNotes();
     updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
     updateCalculatorShiftButtons();
