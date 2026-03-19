@@ -22,6 +22,7 @@ try {
 }
 let allSubjectFolders = {};
 let allBlogPosts = [];
+let allLessons = [];
 const BLOG_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1600&auto=format&fit=crop';
 const BLOG_COMMENT_COUNTS = new Map();
 const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
@@ -47,6 +48,16 @@ const BLOG_VIEW_STATE = {
     subject: 'all',
     sort: 'newest'
 };
+const LESSON_VIEW_STATE = {
+    search: '',
+    subject: 'all',
+    topic: 'all',
+    subtopic: 'all',
+    category: 'all',
+    sort: 'path'
+};
+const LESSON_FREE_DAILY_KEY = 'gcsemate_free_lesson_daily_access';
+let lessonsFiltersBound = false;
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
@@ -402,6 +413,7 @@ const SECTION_MAINTENANCE_OPTIONS = [
     { id: 'subject-dashboard-page', label: 'Subjects Dashboard' },
     { id: 'videos-page', label: 'Videos' },
     { id: 'blog-page', label: 'Blog' },
+    { id: 'lessons-page', label: 'Lessons' },
     { id: 'calendar-page', label: 'Calendar' },
     { id: 'tools-page', label: 'Tools' },
     { id: 'useful-links-page', label: 'Useful Links' },
@@ -425,6 +437,7 @@ function formatDateUK(value, withTime = true) {
 }
 let unsubscribeVideoPlaylists;
 let unsubscribeBlogPosts;
+let unsubscribeLessons;
 let unsubscribeUserEvents;
 let unsubscribeGlobalEvents;
 let unsubscribeAnnouncement;
@@ -4081,6 +4094,7 @@ function setupGlobalModalCloseHandlers() {
     const dynamicModalIdsToClear = new Set([
         'preview-modal',
         'blog-viewer-modal',
+        'lesson-viewer-modal',
         'legal-modal',
         'dmca-modal',
         'edit-user-modal',
@@ -4332,6 +4346,7 @@ auth.onAuthStateChanged(async (user) => {
     if (unsubscribeUsefulLinks) unsubscribeUsefulLinks();
     if (unsubscribeVideoPlaylists) unsubscribeVideoPlaylists();
     if (unsubscribeBlogPosts) unsubscribeBlogPosts();
+    if (unsubscribeLessons) unsubscribeLessons();
     if (unsubscribeUserEvents) unsubscribeUserEvents();
     if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
     if (unsubscribeAnnouncement) unsubscribeAnnouncement();
@@ -4391,7 +4406,7 @@ auth.onAuthStateChanged(async (user) => {
                     // If downgraded from paid->free or role lost, close gated views and prompt upgrade
                     if (tierChanged && after.tier === 'free') {
                         try {
-                            const gatedPages = ['subject-dashboard-page','videos-page','blog-page'];
+                            const gatedPages = ['subject-dashboard-page','videos-page','blog-page','lessons-page'];
                             gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
                                 openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                         } catch(_){}
@@ -4455,7 +4470,7 @@ auth.onAuthStateChanged(async (user) => {
                         } catch(_){ }
                         if (tierChanged && after.tier === 'free') {
                             try {
-                                const gatedPages = ['subject-dashboard-page','videos-page','blog-page'];
+                                const gatedPages = ['subject-dashboard-page','videos-page','blog-page','lessons-page'];
                                 gatedPages.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
                                 openUpgradeModal('Your access was changed. Upgrade to continue accessing premium content.');
                             } catch(_){ }
@@ -4507,7 +4522,7 @@ auth.onAuthStateChanged(async (user) => {
         if (loginPage) loginPage.classList.add('hidden');
         if (verifyPage) verifyPage.classList.add('hidden');
         // Close any open modals and mobile menu
-        ['mobile-menu','preview-modal','blog-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+        ['mobile-menu','preview-modal','blog-viewer-modal','lesson-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
             .forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -4515,6 +4530,7 @@ auth.onAuthStateChanged(async (user) => {
                 if (!el.classList.contains('hidden')) el.classList.add('hidden');
             });
         if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
+        if (typeof unsubscribeLessons === 'function') { try { unsubscribeLessons(); } catch (_) {} unsubscribeLessons = null; }
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
             landingPage.classList.remove('hidden');
@@ -5818,6 +5834,8 @@ function setupRealtimeListeners() {
         document.getElementById('user-settings-panel').classList.add('hidden');
         document.getElementById('add-link-form-container').classList.remove('hidden');
         document.getElementById('add-blog-post-form-container').classList.remove('hidden');
+        const lessonForm = document.getElementById('add-lesson-form-container');
+        if (lessonForm) lessonForm.classList.remove('hidden');
         
         // Initialize maintenance mode status
         initializeMaintenanceStatus();
@@ -5847,6 +5865,8 @@ function setupRealtimeListeners() {
         document.getElementById('user-settings-panel').classList.remove('hidden');
         document.getElementById('add-link-form-container').classList.add('hidden');
         document.getElementById('add-blog-post-form-container').classList.add('hidden');
+        const lessonForm = document.getElementById('add-lesson-form-container');
+        if (lessonForm) lessonForm.classList.add('hidden');
     }
     // Listen for useful links
     unsubscribeUsefulLinks = db.collection('usefulLinks').orderBy('createdAt', 'desc')
@@ -5882,6 +5902,23 @@ function setupRealtimeListeners() {
             try {
                 const friendly = getFirebaseFriendlyMessage(err, 'Could not load blog posts. Please refresh and try again.');
                 setBlogStatusMessage(friendly);
+                showToast(friendly, 'error');
+            } catch (_) {}
+        });
+    // Listen for lessons
+    unsubscribeLessons = db.collection('lessons')
+        .onSnapshot(snapshot => {
+            const lessons = [];
+            snapshot.forEach(doc => {
+                lessons.push({ id: doc.id, ...doc.data() });
+            });
+            allLessons = lessons;
+            renderLessonsPage(lessons);
+        }, err => {
+            logError(err, 'Lessons');
+            try {
+                const friendly = getFirebaseFriendlyMessage(err, 'Could not load lessons. Please refresh and try again.');
+                setLessonsStatusMessage(friendly);
                 showToast(friendly, 'error');
             } catch (_) {}
         });
@@ -10993,6 +11030,14 @@ function showPage(pageId) {
             setupBlogEditorEnhancements();
         }, 100);
     }
+
+    if (pageId === 'lessons-page') {
+        setTimeout(() => {
+            setupLessonsImagePasteHandler();
+            setupLessonsFilters();
+            renderLessonsPage(allLessons);
+        }, 100);
+    }
     
     // Re-render useful links when page is shown (to ensure search/filter work)
     if (pageId === 'useful-links-page' && Object.keys(allUsefulLinks).length > 0) {
@@ -11075,6 +11120,7 @@ const ROUTE_BY_PAGE_ID = {
     'subject-dashboard-page': '/',
     'videos-page': '/videos',
     'blog-page': '/blog',
+    'lessons-page': '/lessons',
     'calendar-page': '/calendar',
     'tools-page': '/tools',
     'useful-links-page': '/useful-links',
@@ -11113,6 +11159,7 @@ function resolvePageIdFromPath(pathname) {
 
 function showLandingOnly() {
     try {
+        document.body.classList.remove('public-about-mode');
         const landing = document.getElementById('landing-page');
         const login = document.getElementById('login-page');
         const verify = document.getElementById('email-verify-page');
@@ -11125,6 +11172,27 @@ function showLandingOnly() {
         }
         if (landing) landing.classList.remove('hidden');
         setSkipLinkTarget('landing-content');
+    } catch (_) {}
+}
+
+const PUBLIC_PAGE_IDS = new Set(['about-page']);
+
+function showPublicPageOnly(pageId = 'about-page') {
+    try {
+        const landing = document.getElementById('landing-page');
+        const login = document.getElementById('login-page');
+        const verify = document.getElementById('email-verify-page');
+        const main = document.getElementById('main-app');
+        if (landing) landing.classList.add('hidden');
+        if (login) login.classList.add('hidden');
+        if (verify) verify.classList.add('hidden');
+        if (main) {
+            main.classList.remove('hidden');
+            main.style.display = 'flex';
+        }
+        document.body.classList.add('public-about-mode');
+        setSkipLinkTarget('page-content');
+        showPage(pageId);
     } catch (_) {}
 }
 
@@ -11306,11 +11374,18 @@ function handleCheckoutQueryParamsIfPresent() {
 
 function applyRouteFromLocation() {
     const path = normalizePathname(window.location.pathname);
+    const requestedPageId = resolvePageIdFromPath(path) || 'subject-dashboard-page';
 
     if (!currentUser) {
+        if (PUBLIC_PAGE_IDS.has(requestedPageId)) {
+            showPublicPageOnly(requestedPageId);
+            return;
+        }
         showLandingOnly();
         return;
     }
+
+    document.body.classList.remove('public-about-mode');
 
     setSkipLinkTarget('page-content');
 
@@ -13942,6 +14017,730 @@ function insertBlogTemplate(type) {
         if (titleEl) titleEl.value = tpl.title;
         if (contentEl) contentEl.innerHTML = tpl.content;
 }
+
+// =================================================================================
+// LESSONS LOGIC
+// =================================================================================
+function setLessonsStatusMessage(message) {
+    const el = document.getElementById('lessons-status-message');
+    if (!el) return;
+    if (!message) {
+        el.textContent = '';
+        el.classList.add('hidden');
+        return;
+    }
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
+function parseMultilineValues(value) {
+    return [...new Set(String(value || '')
+        .split(/\r?\n/)
+        .map(item => item.trim())
+        .filter(Boolean))];
+}
+
+function normalizeLessonNumber(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
+function getLessonPublishDate(lesson) {
+    const candidate = lesson?.publishDate?.toDate
+        ? lesson.publishDate.toDate()
+        : new Date(lesson?.publishDate || lesson?.updatedAt || lesson?.createdAt || Date.now());
+    return Number.isNaN(candidate.getTime()) ? new Date() : candidate;
+}
+
+function normalizeLesson(lesson = {}) {
+    return {
+        ...lesson,
+        subject: String(lesson.subject || '').trim(),
+        topic: String(lesson.topic || '').trim(),
+        subtopic: String(lesson.subtopic || '').trim(),
+        category: String(lesson.category || '').trim(),
+        title: String(lesson.title || '').trim(),
+        summary: String(lesson.summary || '').trim(),
+        tags: parseBlogTags(lesson.tags),
+        links: Array.isArray(lesson.links) ? lesson.links.filter(Boolean) : parseMultilineValues(lesson.links),
+        videoUrls: Array.isArray(lesson.videoUrls) ? lesson.videoUrls.filter(Boolean) : parseMultilineValues(lesson.videoUrls),
+        imageUrls: Array.isArray(lesson.imageUrls) ? lesson.imageUrls.filter(Boolean) : parseMultilineValues(lesson.imageUrls),
+        attachments: Array.isArray(lesson.attachments) ? lesson.attachments.filter(Boolean) : parseMultilineValues(lesson.attachments),
+        lessonNumber: normalizeLessonNumber(lesson.lessonNumber),
+        sortOrder: normalizeLessonNumber(lesson.sortOrder),
+        safeDate: getLessonPublishDate(lesson)
+    };
+}
+
+function getLessonSearchBlob(lesson) {
+    return [
+        lesson.title,
+        lesson.summary,
+        lesson.subject,
+        lesson.topic,
+        lesson.subtopic,
+        lesson.category,
+        ...(lesson.tags || []),
+        String(lesson.content || '').replace(/<[^>]+>/g, ' ')
+    ].join(' ').toLowerCase();
+}
+
+function getLessonTodayKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getFreeLessonAccessRecord() {
+    try {
+        const raw = localStorage.getItem(LESSON_FREE_DAILY_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (parsed.date !== getLessonTodayKey()) return null;
+        return parsed;
+    } catch (_) {
+        return null;
+    }
+}
+
+function setFreeLessonAccessRecord(lessonId) {
+    try {
+        localStorage.setItem(LESSON_FREE_DAILY_KEY, JSON.stringify({
+            date: getLessonTodayKey(),
+            lessonId
+        }));
+    } catch (_) {}
+}
+
+function getLessonAccessState(lessonId) {
+    if (!currentUser) return { allowed: false, reason: 'Please sign in to access lessons.' };
+    if (isAdminUser() || currentUser.tier === 'paid') return { allowed: true, reason: '' };
+
+    const record = getFreeLessonAccessRecord();
+    if (!record) return { allowed: true, reason: '' };
+    if (record.lessonId === lessonId) return { allowed: true, reason: '' };
+
+    return {
+        allowed: false,
+        reason: 'Free accounts can open one lesson per day. This resets at midnight.'
+    };
+}
+
+function syncLessonFilterSelect(selectId, values, currentValue, allLabel) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const options = [...new Set(values.map(v => String(v || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    select.innerHTML = `<option value="all">${allLabel}</option>${options.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('')}`;
+    select.value = options.some(v => normalizeBlogToken(v) === normalizeBlogToken(currentValue)) ? currentValue : 'all';
+}
+
+function getFilteredLessons(lessons = []) {
+    const processed = lessons.map(normalizeLesson);
+    const query = normalizeBlogToken(LESSON_VIEW_STATE.search);
+    const subjectFilter = normalizeBlogToken(LESSON_VIEW_STATE.subject);
+    const topicFilter = normalizeBlogToken(LESSON_VIEW_STATE.topic);
+    const subtopicFilter = normalizeBlogToken(LESSON_VIEW_STATE.subtopic);
+    const categoryFilter = normalizeBlogToken(LESSON_VIEW_STATE.category);
+
+    const filtered = processed.filter(lesson => {
+        const blob = getLessonSearchBlob(lesson);
+        const subject = normalizeBlogToken(lesson.subject);
+        const topic = normalizeBlogToken(lesson.topic);
+        const subtopic = normalizeBlogToken(lesson.subtopic);
+        const category = normalizeBlogToken(lesson.category);
+        const matchesSearch = !query || blob.includes(query);
+        const matchesSubject = !subjectFilter || subjectFilter === 'all' || subject === subjectFilter;
+        const matchesTopic = !topicFilter || topicFilter === 'all' || topic === topicFilter;
+        const matchesSubtopic = !subtopicFilter || subtopicFilter === 'all' || subtopic === subtopicFilter;
+        const matchesCategory = !categoryFilter || categoryFilter === 'all' || category === categoryFilter;
+        return matchesSearch && matchesSubject && matchesTopic && matchesSubtopic && matchesCategory;
+    });
+
+    const sortBy = LESSON_VIEW_STATE.sort;
+    filtered.sort((a, b) => {
+        if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
+        if (sortBy === 'newest') return b.safeDate - a.safeDate;
+        if (sortBy === 'oldest') return a.safeDate - b.safeDate;
+
+        const pathCompare = (a.subject || '').localeCompare(b.subject || '')
+            || (a.topic || '').localeCompare(b.topic || '')
+            || (a.subtopic || '').localeCompare(b.subtopic || '');
+        if (pathCompare !== 0) return pathCompare;
+
+        const lessonNumberA = a.lessonNumber ?? Number.MAX_SAFE_INTEGER;
+        const lessonNumberB = b.lessonNumber ?? Number.MAX_SAFE_INTEGER;
+        if (lessonNumberA !== lessonNumberB) return lessonNumberA - lessonNumberB;
+
+        const sortOrderA = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const sortOrderB = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        if (sortOrderA !== sortOrderB) return sortOrderA - sortOrderB;
+
+        return b.safeDate - a.safeDate;
+    });
+
+    return { processed, filtered };
+}
+
+function renderLessonsHierarchyTree(lessons = []) {
+    const host = document.getElementById('lessons-tree');
+    if (!host) return;
+
+    const tree = {};
+    lessons.forEach(lesson => {
+        const subject = lesson.subject || 'Unassigned subject';
+        const topic = lesson.topic || 'General topic';
+        const subtopic = lesson.subtopic || 'General subtopic';
+
+        if (!tree[subject]) tree[subject] = {};
+        if (!tree[subject][topic]) tree[subject][topic] = {};
+        if (!tree[subject][topic][subtopic]) tree[subject][topic][subtopic] = 0;
+        tree[subject][topic][subtopic] += 1;
+    });
+
+    const subjects = Object.keys(tree).sort((a, b) => a.localeCompare(b));
+    if (!subjects.length) {
+        host.innerHTML = '<p class="text-sm text-slate-500">No lessons available yet.</p>';
+        return;
+    }
+
+    const rows = [];
+    rows.push('<button class="lessons-tree-node" type="button" onclick="setLessonTreeFilter(\'all\')">All lessons</button>');
+
+    subjects.forEach(subject => {
+        rows.push(`<button class="lessons-tree-node" type="button" onclick="setLessonTreeFilter('subject', '${escapeJS(subject)}')">${escapeHTML(subject)}</button>`);
+        Object.keys(tree[subject]).sort((a, b) => a.localeCompare(b)).forEach(topic => {
+            rows.push(`<button class="lessons-tree-node lessons-tree-node-level-1" type="button" onclick="setLessonTreeFilter('topic', '${escapeJS(subject)}', '${escapeJS(topic)}')">${escapeHTML(topic)}</button>`);
+            Object.keys(tree[subject][topic]).sort((a, b) => a.localeCompare(b)).forEach(subtopic => {
+                const count = tree[subject][topic][subtopic];
+                rows.push(`<button class="lessons-tree-node lessons-tree-node-level-2" type="button" onclick="setLessonTreeFilter('subtopic', '${escapeJS(subject)}', '${escapeJS(topic)}', '${escapeJS(subtopic)}')">${escapeHTML(subtopic)} <span class="lessons-tree-count">${count}</span></button>`);
+            });
+        });
+    });
+
+    host.innerHTML = rows.join('');
+}
+
+function updateLessonInsightCards(lessons = []) {
+    const totalEl = document.getElementById('lesson-total-count');
+    const subjectEl = document.getElementById('lesson-subject-count');
+    const latestEl = document.getElementById('lesson-latest-date');
+    if (totalEl) totalEl.textContent = String(lessons.length);
+    if (subjectEl) {
+        const subjectCount = new Set(lessons.map(lesson => normalizeBlogToken(lesson.subject)).filter(Boolean)).size;
+        subjectEl.textContent = String(subjectCount);
+    }
+    if (latestEl) {
+        const latest = [...lessons].sort((a, b) => b.safeDate - a.safeDate)[0];
+        latestEl.textContent = latest ? latest.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not yet';
+    }
+}
+
+function renderLessonResultsSummary(visible, total) {
+    const summary = document.getElementById('lessons-results-summary');
+    if (!summary) return;
+    const filtersActive = !!(LESSON_VIEW_STATE.search || LESSON_VIEW_STATE.subject !== 'all' || LESSON_VIEW_STATE.topic !== 'all' || LESSON_VIEW_STATE.subtopic !== 'all' || LESSON_VIEW_STATE.category !== 'all');
+    if (!total) {
+        summary.textContent = 'No lessons yet';
+        return;
+    }
+    summary.textContent = filtersActive
+        ? `${visible} of ${total} lessons match your filters`
+        : `${visible} lesson${visible === 1 ? '' : 's'} available`;
+}
+
+function getLessonAccessBadge(lessonId) {
+    if (!currentUser) return { label: 'Sign in required', classes: 'bg-gray-100 text-gray-700 border-gray-200', locked: true };
+    if (isAdminUser()) return { label: 'Admin access', classes: 'bg-emerald-100 text-emerald-700 border-emerald-200', locked: false };
+    if (currentUser.tier === 'paid') return { label: 'Pro access', classes: 'bg-blue-100 text-blue-700 border-blue-200', locked: false };
+    const state = getLessonAccessState(lessonId);
+    if (state.allowed) return { label: 'Free daily lesson', classes: 'bg-amber-100 text-amber-700 border-amber-200', locked: false };
+    return { label: 'Locked for today', classes: 'bg-rose-100 text-rose-700 border-rose-200', locked: true };
+}
+
+function renderLessonsPage(lessons = []) {
+    const list = document.getElementById('lesson-list');
+    if (!list) return;
+
+    setupLessonsFilters();
+    setLessonsStatusMessage('');
+
+    const { processed, filtered } = getFilteredLessons(lessons);
+
+    syncLessonFilterSelect('lesson-subject-filter', processed.map(item => item.subject), LESSON_VIEW_STATE.subject, 'All subjects');
+    syncLessonFilterSelect('lesson-topic-filter', processed.map(item => item.topic), LESSON_VIEW_STATE.topic, 'All topics');
+    syncLessonFilterSelect('lesson-subtopic-filter', processed.map(item => item.subtopic), LESSON_VIEW_STATE.subtopic, 'All subtopics');
+    syncLessonFilterSelect('lesson-category-filter', processed.map(item => item.category), LESSON_VIEW_STATE.category, 'All categories');
+
+    renderLessonsHierarchyTree(processed);
+    updateLessonInsightCards(processed);
+    renderLessonResultsSummary(filtered.length, processed.length);
+
+    list.innerHTML = '';
+    if (!processed.length) {
+        list.innerHTML = '<div class="col-span-full blog-empty-state"><div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><i class="fas fa-book-open text-xl"></i></div><h3 class="mt-4 text-lg font-bold text-gray-800">No lessons yet</h3><p class="mt-2 text-sm text-gray-500">Admins can create the first lesson using the editor above.</p></div>';
+        return;
+    }
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="col-span-full blog-empty-state"><div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><i class="fas fa-filter-circle-xmark text-xl"></i></div><h3 class="mt-4 text-lg font-bold text-gray-800">No lessons match those filters</h3><p class="mt-2 text-sm text-gray-500">Try changing the hierarchy filters or reset to all lessons.</p></div>';
+        return;
+    }
+
+    filtered.forEach(lesson => {
+        const card = document.createElement('article');
+        const accessBadge = getLessonAccessBadge(lesson.id);
+        const contentPreview = escapeHTML(String(lesson.summary || lesson.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150));
+        const tagChips = (lesson.tags || []).slice(0, 3).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
+        const lessonPath = [lesson.subject, lesson.topic, lesson.subtopic].filter(Boolean).join(' • ') || 'General';
+        const publishText = lesson.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const lessonNumberText = Number.isFinite(lesson.lessonNumber) ? `Lesson ${lesson.lessonNumber}` : 'Lesson';
+        const isAdmin = isAdminUser();
+        const adminButtons = isAdmin
+            ? `<div class="absolute top-3 right-3 flex items-center gap-1.5">
+                <button onclick="event.stopPropagation(); editLesson('${escapeJS(lesson.id)}')" class="p-2 bg-blue-500/85 text-white rounded-full hover:bg-blue-600 transition-colors" title="Edit lesson"><i class="fas fa-pen"></i></button>
+                <button onclick="event.stopPropagation(); deleteLesson('${escapeJS(lesson.id)}')" class="p-2 bg-red-500/85 text-white rounded-full hover:bg-red-600 transition-colors" title="Delete lesson"><i class="fas fa-trash"></i></button>
+            </div>`
+            : '';
+
+        card.className = 'lesson-card relative rounded-2xl border border-blue-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow';
+        card.innerHTML = `
+            ${adminButtons}
+            <div class="flex items-center justify-between gap-2">
+                <span class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${accessBadge.classes}">${accessBadge.label}</span>
+                <span class="text-xs font-semibold text-slate-500">${escapeHTML(lessonNumberText)}</span>
+            </div>
+            <h3 class="mt-3 text-xl font-black text-slate-900 leading-tight">${escapeHTML(lesson.title || 'Untitled lesson')}</h3>
+            <p class="mt-2 text-sm text-slate-600">${contentPreview || 'Open this lesson to view the complete interactive content.'}${contentPreview ? '…' : ''}</p>
+            <p class="mt-3 text-xs font-semibold text-blue-700">${escapeHTML(lessonPath)}</p>
+            <div class="mt-2 flex flex-wrap gap-2">${tagChips}</div>
+            <div class="mt-4 flex items-center justify-between gap-2">
+                <span class="text-xs text-slate-500">Published ${publishText}</span>
+                <button class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors" ${accessBadge.locked ? 'disabled' : ''} onclick="openLessonViewer('${escapeJS(lesson.id)}')">
+                    ${accessBadge.locked ? 'Locked' : 'Open lesson'}
+                </button>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function setupLessonsFilters() {
+    if (lessonsFiltersBound) return;
+    lessonsFiltersBound = true;
+
+    const search = document.getElementById('lesson-search');
+    const subject = document.getElementById('lesson-subject-filter');
+    const topic = document.getElementById('lesson-topic-filter');
+    const subtopic = document.getElementById('lesson-subtopic-filter');
+    const category = document.getElementById('lesson-category-filter');
+    const sort = document.getElementById('lesson-sort');
+    const clear = document.getElementById('lesson-clear-filters');
+
+    if (search) {
+        search.addEventListener('input', () => {
+            LESSON_VIEW_STATE.search = search.value.trim();
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (subject) {
+        subject.addEventListener('change', () => {
+            LESSON_VIEW_STATE.subject = subject.value;
+            if (LESSON_VIEW_STATE.subject === 'all') {
+                LESSON_VIEW_STATE.topic = 'all';
+                LESSON_VIEW_STATE.subtopic = 'all';
+            }
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (topic) {
+        topic.addEventListener('change', () => {
+            LESSON_VIEW_STATE.topic = topic.value;
+            if (LESSON_VIEW_STATE.topic === 'all') {
+                LESSON_VIEW_STATE.subtopic = 'all';
+            }
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (subtopic) {
+        subtopic.addEventListener('change', () => {
+            LESSON_VIEW_STATE.subtopic = subtopic.value;
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (category) {
+        category.addEventListener('change', () => {
+            LESSON_VIEW_STATE.category = category.value;
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (sort) {
+        sort.addEventListener('change', () => {
+            LESSON_VIEW_STATE.sort = sort.value;
+            renderLessonsPage(allLessons);
+        });
+    }
+    if (clear) {
+        clear.addEventListener('click', () => {
+            LESSON_VIEW_STATE.search = '';
+            LESSON_VIEW_STATE.subject = 'all';
+            LESSON_VIEW_STATE.topic = 'all';
+            LESSON_VIEW_STATE.subtopic = 'all';
+            LESSON_VIEW_STATE.category = 'all';
+            LESSON_VIEW_STATE.sort = 'path';
+            if (search) search.value = '';
+            if (subject) subject.value = 'all';
+            if (topic) topic.value = 'all';
+            if (subtopic) subtopic.value = 'all';
+            if (category) category.value = 'all';
+            if (sort) sort.value = 'path';
+            renderLessonsPage(allLessons);
+        });
+    }
+}
+
+function setLessonTreeFilter(level = 'all', subject = '', topic = '', subtopic = '') {
+    LESSON_VIEW_STATE.subject = 'all';
+    LESSON_VIEW_STATE.topic = 'all';
+    LESSON_VIEW_STATE.subtopic = 'all';
+
+    if (level === 'subject') {
+        LESSON_VIEW_STATE.subject = subject || 'all';
+    } else if (level === 'topic') {
+        LESSON_VIEW_STATE.subject = subject || 'all';
+        LESSON_VIEW_STATE.topic = topic || 'all';
+    } else if (level === 'subtopic') {
+        LESSON_VIEW_STATE.subject = subject || 'all';
+        LESSON_VIEW_STATE.topic = topic || 'all';
+        LESSON_VIEW_STATE.subtopic = subtopic || 'all';
+    }
+
+    renderLessonsPage(allLessons);
+}
+
+function serializeLessonForm() {
+    const publishDateValue = document.getElementById('lesson-publish-date')?.value || '';
+    const publishDate = publishDateValue ? new Date(publishDateValue) : null;
+    const isValidPublishDate = publishDate && !Number.isNaN(publishDate.getTime());
+
+    return {
+        title: document.getElementById('lesson-title')?.value?.trim() || '',
+        summary: document.getElementById('lesson-summary')?.value?.trim() || '',
+        subject: document.getElementById('lesson-subject')?.value?.trim() || '',
+        topic: document.getElementById('lesson-topic')?.value?.trim() || '',
+        subtopic: document.getElementById('lesson-subtopic')?.value?.trim() || '',
+        category: document.getElementById('lesson-category')?.value?.trim() || '',
+        lessonNumber: normalizeLessonNumber(document.getElementById('lesson-number')?.value),
+        sortOrder: normalizeLessonNumber(document.getElementById('lesson-sort-order')?.value),
+        publishDate: isValidPublishDate ? firebase.firestore.Timestamp.fromDate(publishDate) : firebase.firestore.FieldValue.serverTimestamp(),
+        coverImage: document.getElementById('lesson-cover-image')?.value?.trim() || null,
+        tags: parseBlogTags(document.getElementById('lesson-tags')?.value || ''),
+        content: sanitizeHTML(document.getElementById('lesson-content')?.innerHTML?.trim() || ''),
+        interactiveHtml: sanitizeHTML(document.getElementById('lesson-interactive-html')?.value || ''),
+        widgetHtml: sanitizeHTML(document.getElementById('lesson-widget-html')?.value || ''),
+        links: parseMultilineValues(document.getElementById('lesson-links')?.value || ''),
+        videoUrls: parseMultilineValues(document.getElementById('lesson-video-urls')?.value || ''),
+        imageUrls: parseMultilineValues(document.getElementById('lesson-image-urls')?.value || ''),
+        attachments: parseMultilineValues(document.getElementById('lesson-attachments')?.value || ''),
+        buttonLabel: document.getElementById('lesson-button-label')?.value?.trim() || '',
+        buttonUrl: document.getElementById('lesson-button-url')?.value?.trim() || '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser?.uid || null,
+        authorName: currentUser?.displayName || currentUser?.email || 'GCSEMate'
+    };
+}
+
+async function handleSaveLesson() {
+    if (!isAdminUser()) return;
+    const messageEl = document.getElementById('add-lesson-message');
+    if (!isFirestoreAvailable()) {
+        const friendly = getFirebaseFriendlyMessage(getFirebaseBootstrapError(), 'Lessons are temporarily unavailable. Please try again shortly.');
+        if (messageEl) {
+            messageEl.textContent = friendly;
+            messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        }
+        showToast(friendly, 'error');
+        return;
+    }
+
+    const lessonId = document.getElementById('lesson-id')?.value || '';
+    const lessonData = serializeLessonForm();
+    if (!lessonData.title || !lessonData.content) {
+        if (messageEl) {
+            messageEl.textContent = 'Lesson title and main content are required.';
+            messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        }
+        showToast('Lesson title and main content are required.', 'error');
+        return;
+    }
+
+    try {
+        if (lessonId) {
+            await db.collection('lessons').doc(lessonId).update(lessonData);
+        } else {
+            lessonData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('lessons').add(lessonData);
+        }
+        resetLessonForm();
+        if (messageEl) {
+            messageEl.textContent = 'Lesson saved successfully!';
+            messageEl.className = 'text-green-600 text-sm mt-2 h-4';
+            setTimeout(() => { messageEl.textContent = ''; }, 3000);
+        }
+    } catch (error) {
+        console.error('Error saving lesson:', error);
+        const friendly = getFirebaseFriendlyMessage(error, 'Could not save lesson. Please try again.');
+        if (messageEl) {
+            messageEl.textContent = friendly;
+            messageEl.className = 'text-red-600 text-sm mt-2 h-4';
+        }
+        showToast(friendly, 'error');
+    }
+}
+
+function resetLessonForm() {
+    const form = document.getElementById('add-lesson-form');
+    if (form) form.reset();
+    const idField = document.getElementById('lesson-id');
+    if (idField) idField.value = '';
+    const title = document.getElementById('lesson-form-title');
+    if (title) title.textContent = 'Create New Lesson';
+    const content = document.getElementById('lesson-content');
+    if (content) content.innerHTML = '';
+    const lessonPublishDate = document.getElementById('lesson-publish-date');
+    if (lessonPublishDate) lessonPublishDate.value = '';
+}
+
+function editLesson(lessonId) {
+    const lesson = allLessons.find(item => item.id === lessonId);
+    if (!lesson) return;
+    const normalized = normalizeLesson(lesson);
+
+    const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    };
+
+    const formTitle = document.getElementById('lesson-form-title');
+    if (formTitle) formTitle.textContent = 'Edit Lesson';
+    setValue('lesson-id', normalized.id || '');
+    setValue('lesson-title', normalized.title || '');
+    setValue('lesson-summary', normalized.summary || '');
+    setValue('lesson-subject', normalized.subject || '');
+    setValue('lesson-topic', normalized.topic || '');
+    setValue('lesson-subtopic', normalized.subtopic || '');
+    setValue('lesson-category', normalized.category || '');
+    setValue('lesson-number', Number.isFinite(normalized.lessonNumber) ? normalized.lessonNumber : '');
+    setValue('lesson-sort-order', Number.isFinite(normalized.sortOrder) ? normalized.sortOrder : '');
+    setValue('lesson-cover-image', normalized.coverImage || '');
+    setValue('lesson-tags', (normalized.tags || []).join(', '));
+    setValue('lesson-interactive-html', normalized.interactiveHtml || '');
+    setValue('lesson-widget-html', normalized.widgetHtml || '');
+    setValue('lesson-links', (normalized.links || []).join('\n'));
+    setValue('lesson-video-urls', (normalized.videoUrls || []).join('\n'));
+    setValue('lesson-image-urls', (normalized.imageUrls || []).join('\n'));
+    setValue('lesson-attachments', (normalized.attachments || []).join('\n'));
+    setValue('lesson-button-label', normalized.buttonLabel || '');
+    setValue('lesson-button-url', normalized.buttonUrl || '');
+
+    const publishDateField = document.getElementById('lesson-publish-date');
+    if (publishDateField && normalized.safeDate) {
+        const localDate = new Date(normalized.safeDate.getTime() - normalized.safeDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        publishDateField.value = localDate;
+    }
+
+    const content = document.getElementById('lesson-content');
+    if (content) content.innerHTML = sanitizeHTML(normalized.content || '');
+
+    const formWrap = document.getElementById('add-lesson-form-container');
+    if (formWrap) formWrap.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function deleteLesson(lessonId) {
+    if (!isAdminUser()) return;
+    showConfirmationModal('Are you sure you want to delete this lesson? This cannot be undone.', async () => {
+        try {
+            await db.collection('lessons').doc(lessonId).delete();
+            showToast('Lesson deleted.', 'success');
+        } catch (error) {
+            console.error('Error deleting lesson:', error);
+            showToast('Could not delete lesson.', 'error');
+        }
+    });
+}
+
+function renderLessonMediaBlocks(lesson) {
+    const links = (lesson.links || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
+    const videos = (lesson.videoUrls || []).map(url => `<div class="rounded-xl border border-gray-200 bg-white p-3"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></div>`).join('');
+    const images = (lesson.imageUrls || []).map(url => `<img src="${escapeHTML(url)}" alt="Lesson image" class="w-full rounded-xl border border-gray-200" loading="lazy" decoding="async">`).join('');
+    const attachments = (lesson.attachments || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
+
+    return `
+        ${lesson.buttonLabel && lesson.buttonUrl ? `<div class="mt-6"><a href="${escapeHTML(lesson.buttonUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors">${escapeHTML(lesson.buttonLabel)} <i class="fas fa-arrow-up-right-from-square"></i></a></div>` : ''}
+        ${links ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Lesson links</h4><ul class="list-disc pl-5 space-y-1 text-sm">${links}</ul></section>` : ''}
+        ${videos ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Video resources</h4><div class="grid grid-cols-1 gap-2">${videos}</div></section>` : ''}
+        ${images ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Images</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${images}</div></section>` : ''}
+        ${attachments ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Attachments</h4><ul class="list-disc pl-5 space-y-1 text-sm">${attachments}</ul></section>` : ''}
+        ${lesson.interactiveHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Interactive HTML</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.interactiveHtml)}</div></section>` : ''}
+        ${lesson.widgetHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Widget</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.widgetHtml)}</div></section>` : ''}
+    `;
+}
+
+function closeLessonViewer() {
+    const modal = document.getElementById('lesson-viewer-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    modal.innerHTML = '';
+}
+
+function openLessonViewer(lessonId) {
+    const lesson = allLessons.find(item => item.id === lessonId);
+    if (!lesson) return;
+
+    if (!currentUser) {
+        showAuthPage(true);
+        return;
+    }
+
+    const access = getLessonAccessState(lessonId);
+    if (!access.allowed) {
+        openUpgradeModal(access.reason || 'Upgrade to Pro to unlock the full lessons library.');
+        return;
+    }
+
+    if (!isAdminUser() && currentUser.tier !== 'paid') {
+        setFreeLessonAccessRecord(lessonId);
+        renderLessonsPage(allLessons);
+    }
+
+    const normalized = normalizeLesson(lesson);
+    const modal = document.getElementById('lesson-viewer-modal');
+    if (!modal) return;
+
+    const tagChips = (normalized.tags || []).slice(0, 8).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
+    const pathLabel = [normalized.subject, normalized.topic, normalized.subtopic].filter(Boolean).join(' • ') || 'General lesson';
+    const publishText = normalized.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    modal.innerHTML = `
+        <div class="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl w-full max-w-5xl flex flex-col fade-in max-h-[90vh]">
+            <div class="p-4 border-b border-gray-200/50 flex justify-between items-center gap-3">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">${escapeHTML(pathLabel)}</p>
+                    <h3 class="text-xl font-black text-slate-900 truncate">${escapeHTML(normalized.title || 'Lesson')}</h3>
+                    <p class="text-xs text-slate-500">Published ${publishText}</p>
+                </div>
+                <button onclick="closeLessonViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" title="Close">×</button>
+            </div>
+            <div class="overflow-y-auto p-6 md:p-8">
+                ${normalized.coverImage ? `<img src="${escapeHTML(normalized.coverImage)}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200 mb-6" loading="lazy" decoding="async">` : ''}
+                ${normalized.summary ? `<p class="text-sm text-slate-600 mb-5">${escapeHTML(normalized.summary)}</p>` : ''}
+                <div class="prose prose-sm md:prose-base max-w-none lesson-rich-content">${formatBlogLinks(sanitizeHTML(normalized.content || ''))}</div>
+                <div class="mt-5 flex flex-wrap gap-2">${tagChips}</div>
+                ${renderLessonMediaBlocks(normalized)}
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+}
+
+function setupLessonsImagePasteHandler() {
+    const zone = document.getElementById('lesson-image-paste-zone');
+    const imageUrls = document.getElementById('lesson-image-urls');
+    if (!zone || !imageUrls || zone.dataset.bound === 'true') return;
+    zone.dataset.bound = 'true';
+
+    zone.addEventListener('paste', (event) => {
+        const items = event.clipboardData?.items || [];
+        for (const item of items) {
+            if (!item.type || !item.type.startsWith('image/')) continue;
+            const file = item.getAsFile();
+            if (!file) continue;
+            event.preventDefault();
+            const reader = new FileReader();
+            reader.onload = () => {
+                const value = String(reader.result || '').trim();
+                if (!value) return;
+                imageUrls.value = imageUrls.value
+                    ? `${imageUrls.value.trim()}\n${value}`
+                    : value;
+                showToast('Pasted image added to lesson image list.', 'success');
+            };
+            reader.readAsDataURL(file);
+            break;
+        }
+    });
+}
+
+function prepareLessonEditorCommand() {
+    const editor = document.getElementById('lesson-content');
+    if (!editor) return null;
+    editor.focus();
+    return editor;
+}
+
+function lessonFormatText(command, value = null) {
+    const editor = prepareLessonEditorCommand();
+    if (!editor) return;
+
+    let commandName = command;
+    let commandValue = value;
+    if (command === 'formatBlock' && typeof value === 'string' && value && !value.startsWith('<')) {
+        commandValue = `<${value}>`;
+    }
+    if (commandName === 'highlightColor') {
+        commandName = 'hiliteColor';
+    }
+    if (['foreColor', 'hiliteColor', 'backColor', 'fontName'].includes(commandName)) {
+        try { document.execCommand('styleWithCSS', false, true); } catch (_) {}
+    }
+    try {
+        document.execCommand(commandName, false, commandValue);
+    } catch (_) {}
+}
+
+function applyLessonFont(value) {
+    if (!value) return;
+    lessonFormatText('fontName', value);
+}
+
+function applyLessonTextColor(value) {
+    const normalized = normalizeColorValue(value);
+    if (!normalized) return;
+    lessonFormatText('foreColor', normalized);
+}
+
+function applyLessonHighlightColor(value) {
+    const normalized = normalizeColorValue(value);
+    if (!normalized) return;
+    lessonFormatText('highlightColor', normalized);
+}
+
+function lessonInsertLink() {
+    const editor = prepareLessonEditorCommand();
+    if (!editor) return;
+    const url = prompt('Enter link URL:', 'https://');
+    if (!url) return;
+    lessonFormatText('createLink', url);
+}
+
+window.handleSaveLesson = handleSaveLesson;
+window.resetLessonForm = resetLessonForm;
+window.editLesson = editLesson;
+window.deleteLesson = deleteLesson;
+window.openLessonViewer = openLessonViewer;
+window.closeLessonViewer = closeLessonViewer;
+window.lessonFormatText = lessonFormatText;
+window.applyLessonFont = applyLessonFont;
+window.applyLessonTextColor = applyLessonTextColor;
+window.applyLessonHighlightColor = applyLessonHighlightColor;
+window.lessonInsertLink = lessonInsertLink;
+window.setLessonTreeFilter = setLessonTreeFilter;
+
 // WYSIWYG Rich Text Editor Functions
 let blogEditorSavedRange = null;
 const BLOG_EDITOR_DEFAULT_TEXT_COLOR = '#1f2937';
@@ -15682,6 +16481,7 @@ const pageTitles = {
     'subject-dashboard-page': 'Subjects - GCSEMate',
     'videos-page': 'Videos - GCSEMate',
     'blog-page': 'Blog - GCSEMate',
+    'lessons-page': 'Lessons - GCSEMate',
     'calendar-page': 'Calendar - GCSEMate',
     'tools-page': 'Tools - GCSEMate',
     'useful-links-page': 'Useful Links - GCSEMate',
@@ -18167,12 +18967,14 @@ function getCommandPaletteActions() {
         { id: 'subjects', group: 'Navigate', icon: 'fa-folder-open', title: 'Open Subjects', description: 'Go to your subject dashboard', shortcut: 'G D', action: () => navigateToPageId('subject-dashboard-page') },
         { id: 'videos', group: 'Navigate', icon: 'fa-play-circle', title: 'Open Videos', description: 'Browse revision playlists', shortcut: 'G V', action: () => navigateToPageId('videos-page') },
         { id: 'blog', group: 'Navigate', icon: 'fa-blog', title: 'Open Blog', description: 'Jump to revision tips and updates', shortcut: 'G B', action: () => navigateToPageId('blog-page') },
+        { id: 'lessons', group: 'Navigate', icon: 'fa-book-open', title: 'Open Lessons', description: 'Browse structured lesson content', shortcut: 'G L', action: () => navigateToPageId('lessons-page') },
         { id: 'calendar', group: 'Navigate', icon: 'fa-calendar-alt', title: 'Open Calendar', description: 'Check deadlines and events', shortcut: 'G C', action: () => navigateToPageId('calendar-page') },
         { id: 'tools', group: 'Navigate', icon: 'fa-toolbox', title: 'Open Tools', description: 'Use timers, planner, calculator, and trackers', shortcut: 'G T', action: () => navigateToPageId('tools-page') },
         { id: 'links', group: 'Navigate', icon: 'fa-link', title: 'Open Useful Links', description: 'Browse quick external resources', shortcut: 'G U', action: () => navigateToPageId('useful-links-page') },
         { id: 'account', group: 'Navigate', icon: 'fa-user-cog', title: 'Open Account', description: 'Manage your profile and preferences', shortcut: '', action: () => navigateToPageId('account-settings-page') },
         { id: 'help', group: 'Navigate', icon: 'fa-question-circle', title: 'Open Help & FAQ', description: 'Find answers and keyboard shortcuts', shortcut: '?', action: () => navigateToPageId('help-page') },
         { id: 'focus-blog-search', group: 'Actions', icon: 'fa-magnifying-glass', title: 'Focus blog search', description: 'Search through the latest blog posts', shortcut: '', action: () => { navigateToPageId('blog-page'); setTimeout(() => document.getElementById('blog-search')?.focus(), 120); } },
+        { id: 'focus-lesson-search', group: 'Actions', icon: 'fa-book-open', title: 'Focus lesson search', description: 'Search the lessons library', shortcut: '', action: () => { navigateToPageId('lessons-page'); setTimeout(() => document.getElementById('lesson-search')?.focus(), 120); } },
         { id: 'focus-planner', group: 'Actions', icon: 'fa-list-check', title: 'Add planner task', description: 'Jump to the revision sprint planner input', shortcut: '', action: () => { navigateToPageId('tools-page'); setTimeout(() => document.getElementById('tools-planner-input')?.focus(), 120); } },
         { id: 'checkout', group: 'Actions', icon: 'fa-bolt', title: 'Open upgrade checkout', description: 'View the GCSEMate Pro checkout page', shortcut: '', action: () => navigateToPageId('checkout-page') }
     ];
@@ -19459,11 +20261,15 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const href = (link.getAttribute('href') || '').trim();
+            const targetPage = link.dataset.page;
+            if (!currentUser && targetPage && !PUBLIC_PAGE_IDS.has(targetPage)) {
+                showAuthPage(true);
+                return;
+            }
             if (href && href.startsWith('/')) {
                 navigateToPath(href);
                 return;
             }
-            const targetPage = link.dataset.page;
             if (!targetPage) return;
             navigateToPageId(targetPage);
         });
@@ -19583,6 +20389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 d: 'subject-dashboard-page', 
                 v: 'videos-page', 
                 b: 'blog-page', 
+                l: 'lessons-page',
                 c: 'calendar-page', 
                 t: 'tools-page',
                 u: 'useful-links-page', 
@@ -19669,14 +20476,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // Setup modals
-    ['preview-modal', 'blog-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'grades-admin-modal'].forEach(id => {
+    ['preview-modal', 'blog-viewer-modal', 'lesson-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'grades-admin-modal'].forEach(id => {
         const modal = document.getElementById(id);
         if(modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target.id === id) {
                     modal.style.display = 'none';
                     // Special case for viewers to stop media playback
-                    if (id === 'blog-viewer-modal' || id === 'preview-modal') {
+                    if (id === 'blog-viewer-modal' || id === 'lesson-viewer-modal' || id === 'preview-modal') {
                         modal.innerHTML = '';
                     }
                 }
@@ -19685,7 +20492,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && modal.style.display === 'flex') {
                     modal.style.display = 'none';
-                    if (id === 'blog-viewer-modal' || id === 'preview-modal') {
+                    if (id === 'blog-viewer-modal' || id === 'lesson-viewer-modal' || id === 'preview-modal') {
                         modal.innerHTML = '';
                     }
                 }

@@ -978,6 +978,76 @@ transition: box-shadow 0.2s ease;
             padding: 1.5rem;
             margin: 1rem;
         }
+
+        /* Lessons UI */
+        .lessons-tree {
+            max-height: 18rem;
+            overflow: auto;
+            display: grid;
+            gap: 0.35rem;
+            padding-right: 0.25rem;
+        }
+
+        .lessons-tree-node {
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(191, 219, 254, 0.9);
+            background: rgba(255, 255, 255, 0.92);
+            color: #1e293b;
+            padding: 0.42rem 0.58rem;
+            border-radius: 0.6rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            transition: all 150ms ease;
+        }
+
+        .lessons-tree-node:hover {
+            border-color: rgba(96, 165, 250, 0.85);
+            background: rgba(239, 246, 255, 0.95);
+        }
+
+        .lessons-tree-node-level-1 {
+            margin-left: 0.65rem;
+            width: calc(100% - 0.65rem);
+        }
+
+        .lessons-tree-node-level-2 {
+            margin-left: 1.3rem;
+            width: calc(100% - 1.3rem);
+        }
+
+        .lessons-tree-count {
+            display: inline-flex;
+            margin-left: 0.35rem;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.4rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(59, 130, 246, 0.28);
+            background: rgba(219, 234, 254, 0.9);
+            color: #1d4ed8;
+            font-size: 0.67rem;
+            padding: 0 0.35rem;
+        }
+
+        .lesson-card .blog-tag-chip {
+            font-size: 0.65rem;
+        }
+
+        .lesson-rich-content iframe,
+        .lesson-rich-content video {
+            max-width: 100%;
+            border-radius: 0.75rem;
+        }
+
+        /* Public about mode */
+        body.public-about-mode #welcome-message,
+        body.public-about-mode #profile-picture,
+        body.public-about-mode #logout-button,
+        body.public-about-mode #mobile-logout-button,
+        body.public-about-mode a[data-page="account-settings-page"] {
+            display: none !important;
+        }
         
         @media (min-width: 640px) {
             .fixed.inset-0 > div {

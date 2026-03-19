@@ -118,7 +118,7 @@ service cloud.firestore {
 
     // Lessons: admins write; paid users (and admins) read
     match /lessons/{lessonId} {
-      allow read: if isPaid() || isAdmin();
+      allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
