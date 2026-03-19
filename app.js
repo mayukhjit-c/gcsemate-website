@@ -18939,42 +18939,39 @@ window.openSplitScreenpicker = function() {
     resizer.classList.remove('hidden'); resizer.classList.add('flex');
     pane2.dataset.mode = 'split';
 
-    let html = '<div class="space-y-2">';
-    const list = document.getElementById('file-list'); // Get currently viewed folder files
-    if (list) {
-        list.querySelectorAll('.file-card').forEach(f => {
-            const titleEl = f.querySelector('h4');
-            const mainInfo = f.querySelector('.cursor-pointer');
-            if (titleEl && mainInfo) {
-                let onclickRaw = mainInfo.getAttribute('onclick');
-                if (onclickRaw) {
-                    // Prepend the global flag for split screen opening
-                    onclickRaw = "window.isSplitScreenMode = true; " + onclickRaw;
-                }
-                html += `
-                    <div class="p-3 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 cursor-pointer bg-white transition-all flex items-center justify-between shadow-sm group" onclick="${onclickRaw.replace(/"/g, '&quot;')}">
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <div class="h-8 w-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 group-hover:text-indigo-500 group-hover:bg-indigo-100 transition-colors flex-shrink-0">
-                                <i class="fas fa-file-alt"></i>
+    let html = '<div class=\"space-y-2\">';
+    if (typeof currentFolderFiles !== 'undefined' && currentFolderFiles.length > 0) {
+        currentFolderFiles.forEach(file => {
+            const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+            if (!isFolder) {
+                const safeFile = JSON.stringify({
+                    id: file.id, name: file.name, mimeType: file.mimeType, 
+                    webViewLink: file.webViewLink, webContentLink: file.webContentLink
+                }).replace(/\"/g, '&quot;');
+                html += \
+                    <div class=\"p-3 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 cursor-pointer bg-white transition-all flex items-center justify-between shadow-sm group\" onclick=\"window.isSplitScreenMode = true; showPreview(\)\">
+                        <div class=\"flex items-center gap-3 overflow-hidden\">
+                            <div class=\"h-8 w-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 group-hover:text-indigo-500 group-hover:bg-indigo-100 transition-colors flex-shrink-0\">
+                                <i class=\"fas fa-file-alt\"></i>
                             </div>
-                            <span class="text-sm font-semibold text-gray-700 truncate pr-2">${titleEl.innerText}</span>
+                            <span class=\"text-sm font-semibold text-gray-700 truncate pr-2\">\</span>
                         </div>
-                        <i class="fas fa-chevron-right text-indigo-400 text-xs flex-shrink-0"></i>
+                        <i class=\"fas fa-chevron-right text-indigo-400 text-xs flex-shrink-0\"></i>
                     </div>
-                `;
+                \;
             }
         });
     }
 
-    pane2.innerHTML = `
-        <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex justify-between items-center shadow-sm">
-            <h4 class="font-bold text-indigo-800 flex items-center gap-2"><i class="fas fa-columns"></i> Side-by-Side File</h4>
+    pane2.innerHTML = \
+        <div class=\"p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex justify-between items-center shadow-sm\">
+            <h4 class=\"font-bold text-indigo-800 flex items-center gap-2\"><i class=\"fas fa-columns\"></i> Side-by-Side File</h4>
         </div>
-        <div class="flex-grow p-4 overflow-y-auto bg-gray-50/50">
-            <div class="text-sm text-gray-600 mb-4 font-semibold text-center bg-indigo-100/50 p-3 rounded-lg shadow-sm border border-indigo-100/50">Select another file from the current folder below</div>
-            ${html === '<div class="space-y-2">' ? '<div class="flex flex-col items-center justify-center h-32 text-gray-400 gap-2"><i class="fas fa-info-circle text-2xl"></i><p class="text-sm">Navigate to a folder first to see files here.</p></div>' : html + '</div>'}
+        <div class=\"flex-grow p-4 overflow-y-auto bg-gray-50/50\">
+            <div class=\"text-sm text-gray-600 mb-4 font-semibold text-center bg-indigo-100/50 p-3 rounded-lg shadow-sm border border-indigo-100/50\">Select another file from the current folder below</div>
+            \
         </div>
-    `;
+    \;
 };
 
 // Controlled download function with rate limiting and security
