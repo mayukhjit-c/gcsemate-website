@@ -16172,6 +16172,49 @@ function toggleLessonElementEraser(forceMode = null) {
     }
 }
 
+function appendScrapedTextToLessonEditor(editor, payload = {}) {
+    if (!editor) return;
+    const explicitBlocks = Array.isArray(payload.textBlocks)
+        ? payload.textBlocks.map(item => String(item || '').trim()).filter(Boolean)
+        : [];
+    const fallbackText = String(payload.contentText || '').trim();
+    const fallbackBlocks = fallbackText
+        ? fallbackText.split(/\n{2,}/).map(item => item.trim()).filter(Boolean)
+        : [];
+    const blocks = explicitBlocks.length ? explicitBlocks : fallbackBlocks;
+    if (!blocks.length) return;
+
+    const hasExistingContent = String(editor.textContent || '').trim().length > 0;
+    if (hasExistingContent) {
+        editor.appendChild(document.createElement('hr'));
+    }
+
+    const heading = document.createElement('h3');
+    heading.textContent = 'Imported from URL';
+    editor.appendChild(heading);
+
+    blocks.forEach(block => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = block;
+        editor.appendChild(paragraph);
+    });
+
+    const sourceUrl = String(payload.sourceUrl || '').trim();
+    if (/^https?:\/\//i.test(sourceUrl)) {
+        const sourceLine = document.createElement('p');
+        const sourceLabel = document.createElement('strong');
+        sourceLabel.textContent = 'Source: ';
+        sourceLine.appendChild(sourceLabel);
+        const sourceLink = document.createElement('a');
+        sourceLink.href = sourceUrl;
+        sourceLink.target = '_blank';
+        sourceLink.rel = 'noopener noreferrer';
+        sourceLink.textContent = sourceUrl;
+        sourceLine.appendChild(sourceLink);
+        editor.appendChild(sourceLine);
+    }
+}
+
 async function scrapeLessonFromUrl() {
     if (!isAdminUser()) return;
     const sourceInput = document.getElementById('lesson-source-url');
@@ -16206,11 +16249,7 @@ async function scrapeLessonFromUrl() {
         if (summaryInput && !String(summaryInput.value || '').trim() && payload.summary) {
             summaryInput.value = String(payload.summary).trim();
         }
-        if (contentEditor && payload.contentHtml) {
-            const existing = String(contentEditor.innerHTML || '').trim();
-            const incoming = sanitizeHTML(String(payload.contentHtml || '').trim());
-            contentEditor.innerHTML = existing ? `${existing}<hr><h3>Imported from URL</h3>${incoming}` : incoming;
-        }
+        appendScrapedTextToLessonEditor(contentEditor, payload);
 
         if (imageUrlsInput && Array.isArray(payload.imageUrls) && payload.imageUrls.length) {
             const existing = parseMultilineValues(imageUrlsInput.value || '');

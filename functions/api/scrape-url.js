@@ -60,13 +60,18 @@ export async function onRequest(context) {
     const imageUrls = [...new Set([...imageCandidates, ...extractImageSources(html)].map((src) => toAbsoluteUrl(src, parsed)).filter(Boolean))]
       .slice(0, 20);
 
-    const contentHtml = buildContentHtml(title, summary, bodyTextBlocks, parsed.toString());
+    const textBlocks = bodyTextBlocks
+      .map((block) => decodeHtmlEntity(cleanInlineText(block)))
+      .filter(Boolean);
+    const contentText = textBlocks.join('\n\n');
 
     return json({
       title,
       summary,
       imageUrls,
-      contentHtml
+      contentText,
+      textBlocks,
+      sourceUrl: parsed.toString()
     });
   } catch (error) {
     return json({ error: error?.message || 'Failed to scrape URL' }, 500);
@@ -119,25 +124,6 @@ function extractImageSources(html) {
     .filter(Boolean);
 }
 
-function buildContentHtml(title, summary, blocks, sourceUrl) {
-  const safeBlocks = (blocks || []).map((block) => sanitizeHtml(block)).filter(Boolean);
-  const safeTitle = sanitizeHtml(title || 'Imported content');
-  const safeSummary = sanitizeHtml(summary || '');
-  const safeSource = sanitizeHtml(sourceUrl || '');
-
-  let html = `<h2>${safeTitle}</h2>`;
-  if (safeSummary) {
-    html += `<p>${safeSummary}</p>`;
-  }
-
-  safeBlocks.forEach((block) => {
-    html += `<p>${block}</p>`;
-  });
-
-  html += `<p><strong>Source:</strong> <a href="${safeSource}" target="_blank" rel="noopener noreferrer">${safeSource}</a></p>`;
-  return html;
-}
-
 function toAbsoluteUrl(value, baseUrl) {
   const raw = String(value || '').trim();
   if (!raw || raw.startsWith('data:') || raw.startsWith('javascript:')) return '';
@@ -161,15 +147,6 @@ function decodeHtmlEntity(value) {
     .replace(/&#39;/gi, "'")
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>');
-}
-
-function sanitizeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function escapeRegex(value) {
