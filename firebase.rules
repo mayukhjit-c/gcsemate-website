@@ -20,7 +20,7 @@ service cloud.firestore {
           isAdminEmail() ||
           (
             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-            (userDoc().role == 'admin' || userDoc().role == 'Admin')
+            (userDoc().role is string && userDoc().role.matches('^[Aa][Dd][Mm][Ii][Nn]$'))
           )
         );
     }
@@ -130,8 +130,52 @@ service cloud.firestore {
     // Lessons: signed-in users can read, admins manage with validated schema
     match /lessons/{lessonId} {
       allow read: if isSignedIn();
-      allow create, update: if isAdmin() &&
+      allow create: if isAdmin() &&
         request.resource.data.keys().hasOnly([
+          'title','summary','subject','topic','subtopic','category',
+          'lessonNumber','sortOrder','publishDate','coverImage','tags','content',
+          'interactiveHtml','widgetHtml','links','videoUrls','iframeUrls','imageUrls','attachments','questions',
+          'buttonLabel','buttonUrl','updatedAt','createdBy','authorName','createdAt',
+          'status','draftSavedAt','publishedAt','publishedBy','scrapedFromUrl','scrapedAt'
+        ]) &&
+        (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['draft','published']) &&
+        (
+          request.resource.data.status == 'draft'
+            ? (
+              (!request.resource.data.keys().hasAny(['title']) || request.resource.data.title == null || request.resource.data.title is string) &&
+              (!request.resource.data.keys().hasAny(['content']) || request.resource.data.content == null || request.resource.data.content is string)
+            )
+            : (
+              request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+              request.resource.data.content is string && request.resource.data.content.size() > 0
+            )
+        ) &&
+        (!request.resource.data.keys().hasAny(['summary']) || request.resource.data.summary == null || request.resource.data.summary is string) &&
+        (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
+        (!request.resource.data.keys().hasAny(['topic']) || request.resource.data.topic == null || request.resource.data.topic is string) &&
+        (!request.resource.data.keys().hasAny(['subtopic']) || request.resource.data.subtopic == null || request.resource.data.subtopic is string) &&
+        (!request.resource.data.keys().hasAny(['category']) || request.resource.data.category == null || request.resource.data.category is string) &&
+        (!request.resource.data.keys().hasAny(['lessonNumber']) || request.resource.data.lessonNumber == null || request.resource.data.lessonNumber is number) &&
+        (!request.resource.data.keys().hasAny(['sortOrder']) || request.resource.data.sortOrder == null || request.resource.data.sortOrder is number) &&
+        (!request.resource.data.keys().hasAny(['coverImage']) || request.resource.data.coverImage == null || request.resource.data.coverImage is string) &&
+        (!request.resource.data.keys().hasAny(['publishDate']) || request.resource.data.publishDate != null) &&
+        (!request.resource.data.keys().hasAny(['tags']) || (request.resource.data.tags is list && request.resource.data.tags.size() <= 60)) &&
+        (!request.resource.data.keys().hasAny(['links']) || (request.resource.data.links is list && request.resource.data.links.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['videoUrls']) || (request.resource.data.videoUrls is list && request.resource.data.videoUrls.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['iframeUrls']) || (request.resource.data.iframeUrls is list && request.resource.data.iframeUrls.size() <= 80)) &&
+        (!request.resource.data.keys().hasAny(['imageUrls']) || (request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 200)) &&
+        (!request.resource.data.keys().hasAny(['attachments']) || (request.resource.data.attachments is list && request.resource.data.attachments.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['questions']) || (request.resource.data.questions is list && request.resource.data.questions.size() <= 80)) &&
+        (!request.resource.data.keys().hasAny(['interactiveHtml']) || request.resource.data.interactiveHtml == null || request.resource.data.interactiveHtml is string) &&
+        (!request.resource.data.keys().hasAny(['widgetHtml']) || request.resource.data.widgetHtml == null || request.resource.data.widgetHtml is string) &&
+        (!request.resource.data.keys().hasAny(['buttonLabel']) || request.resource.data.buttonLabel == null || request.resource.data.buttonLabel is string) &&
+        (!request.resource.data.keys().hasAny(['buttonUrl']) || request.resource.data.buttonUrl == null || request.resource.data.buttonUrl is string) &&
+        (!request.resource.data.keys().hasAny(['authorName']) || request.resource.data.authorName == null || request.resource.data.authorName is string) &&
+        (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == null || request.resource.data.createdBy is string) &&
+        (!request.resource.data.keys().hasAny(['publishedBy']) || request.resource.data.publishedBy == null || request.resource.data.publishedBy is string) &&
+        (!request.resource.data.keys().hasAny(['scrapedFromUrl']) || request.resource.data.scrapedFromUrl == null || request.resource.data.scrapedFromUrl is string);
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly([
           'title','summary','subject','topic','subtopic','category',
           'lessonNumber','sortOrder','publishDate','coverImage','tags','content',
           'interactiveHtml','widgetHtml','links','videoUrls','iframeUrls','imageUrls','attachments','questions',
