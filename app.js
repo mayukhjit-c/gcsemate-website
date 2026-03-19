@@ -10959,7 +10959,13 @@ function setSkipLinkTarget(targetId) {
 }
 
 function showAuthPage(showLogin = true) {
+    document.body.classList.remove('public-about-mode');
     document.getElementById('landing-page').classList.add('hidden');
+    const mainApp = document.getElementById('main-app');
+    if (mainApp) {
+        mainApp.classList.add('hidden');
+        mainApp.style.display = 'none';
+    }
     setSkipLinkTarget('landing-content');
     const loginPage = document.getElementById('login-page');
     loginPage.classList.remove('hidden');
@@ -11379,6 +11385,10 @@ function applyRouteFromLocation() {
     if (!currentUser) {
         if (PUBLIC_PAGE_IDS.has(requestedPageId)) {
             showPublicPageOnly(requestedPageId);
+            return;
+        }
+        if (requestedPageId && requestedPageId !== 'subject-dashboard-page') {
+            showAuthPage(true);
             return;
         }
         showLandingOnly();
@@ -20264,6 +20274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetPage = link.dataset.page;
             if (!currentUser && targetPage && !PUBLIC_PAGE_IDS.has(targetPage)) {
                 showAuthPage(true);
+                showToast('Please sign in to open this page.', 'info');
                 return;
             }
             if (href && href.startsWith('/')) {
