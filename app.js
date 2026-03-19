@@ -57,6 +57,7 @@ const LESSON_VIEW_STATE = {
     sort: 'path'
 };
 const LESSON_FREE_DAILY_KEY = 'gcsemate_free_lesson_daily_access';
+const LESSON_LAST_SUBJECT_KEY = 'gcsemate_last_lesson_subject';
 const LESSON_TEMPLATES = {
     concept: {
         titlePrefix: 'Concept: ',
@@ -77,6 +78,56 @@ const LESSON_TEMPLATES = {
         titlePrefix: 'Flash Recap: ',
         summary: 'A high-speed recap with key points, definitions, and memory triggers.',
         content: '<h3>Must-know facts</h3><ul><li>Fact 1</li><li>Fact 2</li><li>Fact 3</li></ul><h3>Definitions</h3><p>Add concise definitions here.</p><h3>Common errors</h3><p>List mistakes students make and fixes.</p><h3>One-minute summary</h3><p>Finish with a compact recap.</p>'
+    },
+    'retrieval-quiz': {
+        titlePrefix: 'Retrieval Quiz: ',
+        summary: 'Quick-fire retrieval questions with model answers to strengthen memory.',
+        content: '<h3>Retrieval warm-up</h3><p>Add 5 short recall questions.</p><h3>Model responses</h3><p>Write concise mark-scheme style answers.</p><h3>Self-mark checklist</h3><ul><li>Key term included</li><li>Correct method</li><li>Exam language</li></ul>'
+    },
+    'misconception-clinic': {
+        titlePrefix: 'Misconception Clinic: ',
+        summary: 'Target common errors and fix them with clear examples.',
+        content: '<h3>Common misconceptions</h3><ul><li>Mistake 1</li><li>Mistake 2</li></ul><h3>Why they happen</h3><p>Explain where students go wrong.</p><h3>Correct approach</h3><p>Show the right method with contrast.</p>'
+    },
+    'practical-skills': {
+        titlePrefix: 'Practical Skills: ',
+        summary: 'Method-focused lesson for required practical and data interpretation skills.',
+        content: '<h3>Required practical setup</h3><p>List apparatus and safety points.</p><h3>Method</h3><ol><li>Step 1</li><li>Step 2</li><li>Step 3</li></ol><h3>Data analysis</h3><p>Show how to interpret results and evaluate reliability.</p>'
+    },
+    'essay-plan': {
+        titlePrefix: 'Essay Plan: ',
+        summary: 'A writing framework for high-mark extended responses.',
+        content: '<h3>Question unpacking</h3><p>Identify command word and focus.</p><h3>Plan structure</h3><ul><li>Point 1</li><li>Point 2</li><li>Judgement</li></ul><h3>Model paragraph</h3><p>Write one strong example paragraph.</p>'
+    },
+    'formula-drill': {
+        titlePrefix: 'Formula Drill: ',
+        summary: 'Formula recall and application practice with increasing difficulty.',
+        content: '<h3>Formula bank</h3><p>List must-know formulas.</p><h3>Substitute values</h3><p>Practice straightforward substitution.</p><h3>Mixed challenge</h3><p>Add exam-style multi-step problems.</p>'
+    },
+    'source-analysis': {
+        titlePrefix: 'Source Analysis: ',
+        summary: 'Analyse source material with evidence-based interpretation.',
+        content: '<h3>Source context</h3><p>Introduce the source and background.</p><h3>Key evidence</h3><ul><li>Quote 1 + inference</li><li>Quote 2 + inference</li></ul><h3>Exam response frame</h3><p>Build a structured source answer.</p>'
+    },
+    'compare-contrast': {
+        titlePrefix: 'Compare and Contrast: ',
+        summary: 'Develop comparative reasoning with clear similarities and differences.',
+        content: '<h3>Comparison grid</h3><p>Create two-column comparison points.</p><h3>Similarity and difference statements</h3><p>Use comparative vocabulary precisely.</p><h3>Exam paragraph model</h3><p>Write one high-quality comparative paragraph.</p>'
+    },
+    'case-study': {
+        titlePrefix: 'Case Study: ',
+        summary: 'Learn key case-study facts and deploy them in exam answers.',
+        content: '<h3>Case-study snapshot</h3><p>Where, when, what happened.</p><h3>Key data</h3><ul><li>Statistic 1</li><li>Statistic 2</li></ul><h3>Application task</h3><p>Use the case study in a 6-mark answer.</p>'
+    },
+    'exam-warmup': {
+        titlePrefix: 'Exam Warm-Up: ',
+        summary: 'Short pre-exam routine to activate memory and technique.',
+        content: '<h3>2-minute recall</h3><p>Brain-dump core facts.</p><h3>Technique reminders</h3><ul><li>Timing</li><li>Command words</li><li>Checking</li></ul><h3>Starter question set</h3><p>Complete 3 quick exam-style questions.</p>'
+    },
+    'challenge-extension': {
+        titlePrefix: 'Challenge Extension: ',
+        summary: 'Stretch lesson for high-attaining students with extension tasks.',
+        content: '<h3>Stretch problem</h3><p>Add a demanding multi-step question.</p><h3>Higher-tier strategy</h3><p>Explain an advanced method.</p><h3>Reflection</h3><p>Identify what made the challenge difficult and how to improve.</p>'
     }
 };
 const LESSON_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
@@ -469,6 +520,7 @@ let unsubscribeBlogPosts;
 let unsubscribeLessons;
 let unsubscribeLessonMetrics;
 let unsubscribeLessonProgress;
+let unsubscribeLessonProgressLeaderboard;
 let unsubscribeLessonComments;
 let unsubscribeUserEvents;
 let unsubscribeGlobalEvents;
@@ -481,6 +533,7 @@ let freeTrialSubjectOverride = null;
 let lastAutoOpenedFreeTrialSubjectKey = null;
 const LESSON_METRICS_MAP = new Map();
 const LESSON_PROGRESS_MAP = new Map();
+const LESSON_USER_COMPLETION_MAP = new Map();
 
 // Performance optimizations
 let animationFrameId = null;
@@ -4567,9 +4620,11 @@ auth.onAuthStateChanged(async (user) => {
         if (typeof unsubscribeLessons === 'function') { try { unsubscribeLessons(); } catch (_) {} unsubscribeLessons = null; }
         if (typeof unsubscribeLessonMetrics === 'function') { try { unsubscribeLessonMetrics(); } catch (_) {} unsubscribeLessonMetrics = null; }
         if (typeof unsubscribeLessonProgress === 'function') { try { unsubscribeLessonProgress(); } catch (_) {} unsubscribeLessonProgress = null; }
+        if (typeof unsubscribeLessonProgressLeaderboard === 'function') { try { unsubscribeLessonProgressLeaderboard(); } catch (_) {} unsubscribeLessonProgressLeaderboard = null; }
         if (typeof unsubscribeLessonComments === 'function') { try { unsubscribeLessonComments(); } catch (_) {} unsubscribeLessonComments = null; }
         LESSON_METRICS_MAP.clear();
         LESSON_PROGRESS_MAP.clear();
+        LESSON_USER_COMPLETION_MAP.clear();
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
             landingPage.classList.remove('hidden');
@@ -5982,6 +6037,26 @@ function setupRealtimeListeners() {
                 });
                 renderLessonsPage(allLessons);
             }, err => logError(err, 'Lesson Progress'));
+    }
+
+    if (isAdminUser()) {
+        if (unsubscribeLessonProgressLeaderboard) { try { unsubscribeLessonProgressLeaderboard(); } catch (_) {} }
+        unsubscribeLessonProgressLeaderboard = db.collectionGroup('lessonProgress')
+            .onSnapshot(snapshot => {
+                LESSON_USER_COMPLETION_MAP.clear();
+                snapshot.forEach(doc => {
+                    const data = doc.data() || {};
+                    if (!data.completedAt) return;
+                    const uid = doc.ref?.parent?.parent?.id;
+                    if (!uid) return;
+                    LESSON_USER_COMPLETION_MAP.set(uid, (LESSON_USER_COMPLETION_MAP.get(uid) || 0) + 1);
+                });
+                renderLessonsPage(allLessons);
+            }, err => logError(err, 'Lesson Progress Leaderboard'));
+    } else {
+        if (unsubscribeLessonProgressLeaderboard) { try { unsubscribeLessonProgressLeaderboard(); } catch (_) {} }
+        unsubscribeLessonProgressLeaderboard = null;
+        LESSON_USER_COMPLETION_MAP.clear();
     }
 
     // Listen for user-specific events
@@ -11102,6 +11177,8 @@ function showPage(pageId) {
     if (pageId === 'lessons-page') {
         setTimeout(() => {
             setupLessonsImagePasteHandler();
+            populateLessonSubjectOptions();
+            syncLessonSubjectCustomVisibility();
             setupLessonsFilters();
             renderLessonsPage(allLessons);
         }, 100);
@@ -14136,8 +14213,10 @@ function normalizeLesson(lesson = {}) {
         tags: parseBlogTags(lesson.tags),
         links: Array.isArray(lesson.links) ? lesson.links.filter(Boolean) : parseMultilineValues(lesson.links),
         videoUrls: Array.isArray(lesson.videoUrls) ? lesson.videoUrls.filter(Boolean) : parseMultilineValues(lesson.videoUrls),
+        iframeUrls: Array.isArray(lesson.iframeUrls) ? lesson.iframeUrls.filter(Boolean) : parseMultilineValues(lesson.iframeUrls),
         imageUrls: Array.isArray(lesson.imageUrls) ? lesson.imageUrls.filter(Boolean) : parseMultilineValues(lesson.imageUrls),
         attachments: Array.isArray(lesson.attachments) ? lesson.attachments.filter(Boolean) : parseMultilineValues(lesson.attachments),
+        questions: Array.isArray(lesson.questions) ? lesson.questions.map(item => ({ question: String(item?.question || '').trim(), answer: String(item?.answer || '').trim() })).filter(item => item.question) : parseLessonQuestions(lesson.questions),
         lessonNumber: normalizeLessonNumber(lesson.lessonNumber),
         sortOrder: normalizeLessonNumber(lesson.sortOrder),
         safeDate: getLessonPublishDate(lesson)
@@ -14153,6 +14232,8 @@ function getLessonSearchBlob(lesson) {
         lesson.subtopic,
         lesson.category,
         ...(lesson.tags || []),
+        ...(lesson.iframeUrls || []),
+        ...(lesson.questions || []).map(item => `${item.question || ''} ${item.answer || ''}`),
         String(lesson.content || '').replace(/<[^>]+>/g, ' ')
     ].join(' ').toLowerCase();
 }
@@ -14297,6 +14378,100 @@ function updateLessonCoverPreview() {
     previewWrap.classList.remove('hidden');
 }
 
+function normalizeSubjectToken(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function getLessonSubjectChoices() {
+    const fromLessons = allLessons
+        .map(item => normalizeLesson(item).subject)
+        .map(item => String(item || '').trim())
+        .filter(Boolean);
+    const base = Array.isArray(SUBJECTS) ? SUBJECTS.slice() : [];
+    const unique = [...new Set([...base, ...fromLessons])];
+    return unique.sort((a, b) => a.localeCompare(b));
+}
+
+function populateLessonSubjectOptions(preferredSubject = '') {
+    const subjectSelect = document.getElementById('lesson-subject');
+    if (!subjectSelect) return;
+    const customOption = '<option value="__custom__">Custom subject...</option>';
+    const subjects = getLessonSubjectChoices();
+    const normalizedPreferred = normalizeSubjectToken(preferredSubject);
+    const hasPreferred = subjects.some(subject => normalizeSubjectToken(subject) === normalizedPreferred);
+    subjectSelect.innerHTML = `<option value="">Select subject...</option>${subjects.map(subject => `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}</option>`).join('')}${customOption}`;
+
+    const stored = (() => {
+        try { return localStorage.getItem(LESSON_LAST_SUBJECT_KEY) || ''; } catch (_) { return ''; }
+    })();
+    const desired = preferredSubject || stored;
+    if (!desired) {
+        subjectSelect.value = '';
+        return;
+    }
+
+    if (hasPreferred) {
+        subjectSelect.value = subjects.find(subject => normalizeSubjectToken(subject) === normalizedPreferred) || '';
+        return;
+    }
+
+    subjectSelect.value = '__custom__';
+    const customInput = document.getElementById('lesson-subject-custom');
+    if (customInput) customInput.value = desired;
+}
+
+function syncLessonSubjectCustomVisibility() {
+    const subjectSelect = document.getElementById('lesson-subject');
+    const customInput = document.getElementById('lesson-subject-custom');
+    if (!subjectSelect || !customInput) return;
+    const customMode = subjectSelect.value === '__custom__';
+    customInput.classList.toggle('hidden', !customMode);
+    if (customMode) {
+        customInput.required = true;
+        customInput.focus();
+    } else {
+        customInput.required = false;
+    }
+}
+
+function getSelectedLessonSubjectValue() {
+    const subjectSelect = document.getElementById('lesson-subject');
+    const customInput = document.getElementById('lesson-subject-custom');
+    if (!subjectSelect) return '';
+    if (subjectSelect.value === '__custom__') {
+        return String(customInput?.value || '').trim();
+    }
+    return String(subjectSelect.value || '').trim();
+}
+
+function parseLessonQuestions(raw = '') {
+    return String(raw || '')
+        .split('\n')
+        .map(line => String(line || '').trim())
+        .filter(Boolean)
+        .map(line => {
+            const dividerIndex = line.indexOf('|');
+            if (dividerIndex < 0) return { question: line, answer: '' };
+            return {
+                question: line.slice(0, dividerIndex).trim(),
+                answer: line.slice(dividerIndex + 1).trim()
+            };
+        })
+        .filter(item => item.question);
+}
+
+function serializeLessonQuestions(questions = []) {
+    return (questions || [])
+        .map(item => {
+            const question = String(item?.question || '').trim();
+            const answer = String(item?.answer || '').trim();
+            if (!question) return '';
+            return answer ? `${question}|${answer}` : question;
+        })
+        .filter(Boolean)
+        .join('\n');
+}
+
 function autoArrangeLessonDraft() {
     const lessonNumberEl = document.getElementById('lesson-number');
     const sortOrderEl = document.getElementById('lesson-sort-order');
@@ -14304,7 +14479,7 @@ function autoArrangeLessonDraft() {
     const lessonId = document.getElementById('lesson-id')?.value;
 
     if (!lessonId) {
-        const subject = String(document.getElementById('lesson-subject')?.value || '').trim().toLowerCase();
+        const subject = normalizeSubjectToken(getSelectedLessonSubjectValue());
         const topic = String(document.getElementById('lesson-topic')?.value || '').trim().toLowerCase();
         const subtopic = String(document.getElementById('lesson-subtopic')?.value || '').trim().toLowerCase();
         const bucket = allLessons
@@ -14326,16 +14501,46 @@ function autoArrangeLessonDraft() {
     }
 
     const titleInput = document.getElementById('lesson-title');
-    const subjectInput = document.getElementById('lesson-subject');
     const topicInput = document.getElementById('lesson-topic');
     if (titleInput && !String(titleInput.value || '').trim()) {
-        const subject = String(subjectInput?.value || 'General').trim() || 'General';
+        const subject = String(getSelectedLessonSubjectValue() || 'General').trim() || 'General';
         const topic = String(topicInput?.value || 'Topic').trim() || 'Topic';
         const lessonNumber = String(lessonNumberEl?.value || '').trim();
         titleInput.value = lessonNumber ? `${subject} ${topic} - Lesson ${lessonNumber}` : `${subject} ${topic} lesson`;
     }
 
     showToast('Lesson draft auto-arranged.', 'info');
+}
+
+function showLessonTemplateOverrideModal(onReplace, onKeep) {
+    const modal = document.getElementById('confirmation-modal');
+    if (!modal) {
+        if (typeof onKeep === 'function') onKeep();
+        return;
+    }
+    modal.innerHTML = `
+        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-xl w-full max-w-md p-6 fade-in">
+            <h4 class="text-lg font-bold text-slate-900">Template and Existing Content</h4>
+            <p class="mt-2 text-sm text-slate-600">Your lesson editor already has text. Replace the current content with the template or keep your text and only fill empty fields.</p>
+            <div class="mt-5 flex flex-wrap justify-end gap-2">
+                <button id="lesson-template-cancel" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50">Cancel</button>
+                <button id="lesson-template-keep" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200">Keep text</button>
+                <button id="lesson-template-replace" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Replace text</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+
+    const close = () => { modal.style.display = 'none'; };
+    document.getElementById('lesson-template-cancel')?.addEventListener('click', close);
+    document.getElementById('lesson-template-keep')?.addEventListener('click', () => {
+        if (typeof onKeep === 'function') onKeep();
+        close();
+    });
+    document.getElementById('lesson-template-replace')?.addEventListener('click', () => {
+        if (typeof onReplace === 'function') onReplace();
+        close();
+    });
 }
 
 function applyLessonTemplate() {
@@ -14349,17 +14554,34 @@ function applyLessonTemplate() {
     const titleInput = document.getElementById('lesson-title');
     const summaryInput = document.getElementById('lesson-summary');
     const contentEditor = document.getElementById('lesson-content');
-    if (titleInput && !titleInput.value.trim()) {
-        titleInput.value = `${template.titlePrefix}Untitled`;
+
+    const applyScaffold = (replaceContent) => {
+        if (titleInput && !titleInput.value.trim()) {
+            titleInput.value = `${template.titlePrefix}Untitled`;
+        }
+        if (summaryInput && !summaryInput.value.trim()) {
+            summaryInput.value = template.summary;
+        }
+        if (contentEditor) {
+            const hasExisting = !!String(contentEditor.innerHTML || '').replace(/<[^>]+>/g, '').trim();
+            if (replaceContent || !hasExisting) {
+                contentEditor.innerHTML = template.content;
+            }
+        }
+        autoArrangeLessonDraft();
+        showToast('Template applied.', 'success');
+    };
+
+    const hasEditorContent = !!String(contentEditor?.innerHTML || '').replace(/<[^>]+>/g, '').trim();
+    if (hasEditorContent) {
+        showLessonTemplateOverrideModal(
+            () => applyScaffold(true),
+            () => applyScaffold(false)
+        );
+        return;
     }
-    if (summaryInput && !summaryInput.value.trim()) {
-        summaryInput.value = template.summary;
-    }
-    if (contentEditor && !String(contentEditor.innerHTML || '').replace(/<[^>]+>/g, '').trim()) {
-        contentEditor.innerHTML = template.content;
-    }
-    autoArrangeLessonDraft();
-    showToast('Template applied.', 'success');
+
+    applyScaffold(false);
 }
 
 function syncLessonFilterSelect(selectId, values, currentValue, allLabel) {
@@ -14489,6 +14711,68 @@ function renderLessonResultsSummary(visible, total) {
         : `${visible} lesson${visible === 1 ? '' : 's'} available`;
 }
 
+function getLessonLeaderboardDisplayName(uid) {
+    const user = allUsers?.[uid] || {};
+    return user.displayName || user.name || user.fullName || user.email || uid || 'Unknown user';
+}
+
+function renderLessonAnalyticsList(containerId, rows, valueLabel, emptyMessage) {
+    const host = document.getElementById(containerId);
+    if (!host) return;
+    if (!rows.length) {
+        host.innerHTML = `<p class="text-sm text-slate-500">${escapeHTML(emptyMessage)}</p>`;
+        return;
+    }
+    host.innerHTML = rows.map((row, index) => `
+        <div class="lesson-analytics-row">
+            <span class="lesson-analytics-rank">${index + 1}</span>
+            <span class="lesson-analytics-name">${escapeHTML(row.name || 'Untitled')}</span>
+            <span class="lesson-analytics-value">${escapeHTML(String(row.value))} ${escapeHTML(valueLabel)}</span>
+        </div>
+    `).join('');
+}
+
+function renderLessonAdminAnalyticsPanel(lessons = []) {
+    const panel = document.getElementById('lesson-admin-analytics');
+    if (!panel) return;
+    if (!isAdminUser()) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+
+    const lessonNameById = new Map(lessons.map(lesson => [lesson.id, lesson.title || 'Untitled lesson']));
+    const metricsRows = Array.from(LESSON_METRICS_MAP.entries()).map(([lessonId, metrics]) => ({
+        lessonId,
+        name: lessonNameById.get(lessonId) || metrics.title || 'Untitled lesson',
+        views: Number(metrics?.views || 0),
+        completions: Number(metrics?.completions || 0)
+    }));
+
+    const topViewed = metricsRows
+        .filter(item => item.views > 0)
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 8)
+        .map(item => ({ name: item.name, value: item.views }));
+
+    const topCompleted = metricsRows
+        .filter(item => item.completions > 0)
+        .sort((a, b) => b.completions - a.completions)
+        .slice(0, 8)
+        .map(item => ({ name: item.name, value: item.completions }));
+
+    const leaderboard = Array.from(LESSON_USER_COMPLETION_MAP.entries())
+        .map(([uid, count]) => ({ name: getLessonLeaderboardDisplayName(uid), value: Number(count || 0) }))
+        .filter(item => item.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+    renderLessonAnalyticsList('lesson-analytics-top-viewed', topViewed, 'views', 'No views tracked yet.');
+    renderLessonAnalyticsList('lesson-analytics-top-completed', topCompleted, 'completions', 'No completions tracked yet.');
+    renderLessonAnalyticsList('lesson-analytics-user-leaderboard', leaderboard, 'completed', 'No user completions yet.');
+}
+
 function getLessonAccessBadge(lessonId) {
     if (!currentUser) return { label: 'Sign in required', classes: 'bg-gray-100 text-gray-700 border-gray-200', locked: true };
     if (isAdminUser()) return { label: 'Admin access', classes: 'bg-emerald-100 text-emerald-700 border-emerald-200', locked: false };
@@ -14503,6 +14787,11 @@ function renderLessonsPage(lessons = []) {
     if (!list) return;
 
     setupLessonsFilters();
+    if (isAdminUser()) {
+        const currentSubject = getSelectedLessonSubjectValue();
+        populateLessonSubjectOptions(currentSubject);
+        syncLessonSubjectCustomVisibility();
+    }
     setLessonsStatusMessage('');
 
     const { processed, filtered } = getFilteredLessons(lessons);
@@ -14515,6 +14804,7 @@ function renderLessonsPage(lessons = []) {
     renderLessonsHierarchyTree(processed);
     updateLessonInsightCards(processed);
     renderLessonResultsSummary(filtered.length, processed.length);
+    renderLessonAdminAnalyticsPanel(processed);
 
     list.innerHTML = '';
     if (!processed.length) {
@@ -14677,7 +14967,7 @@ function serializeLessonForm() {
     return {
         title: document.getElementById('lesson-title')?.value?.trim() || '',
         summary: document.getElementById('lesson-summary')?.value?.trim() || '',
-        subject: document.getElementById('lesson-subject')?.value?.trim() || '',
+        subject: getSelectedLessonSubjectValue(),
         topic: document.getElementById('lesson-topic')?.value?.trim() || '',
         subtopic: document.getElementById('lesson-subtopic')?.value?.trim() || '',
         category: document.getElementById('lesson-category')?.value?.trim() || '',
@@ -14691,8 +14981,10 @@ function serializeLessonForm() {
         widgetHtml: sanitizeHTML(document.getElementById('lesson-widget-html')?.value || ''),
         links: parseMultilineValues(document.getElementById('lesson-links')?.value || ''),
         videoUrls: parseMultilineValues(document.getElementById('lesson-video-urls')?.value || ''),
+        iframeUrls: parseMultilineValues(document.getElementById('lesson-iframe-urls')?.value || ''),
         imageUrls: parseMultilineValues(document.getElementById('lesson-image-urls')?.value || ''),
         attachments: parseMultilineValues(document.getElementById('lesson-attachments')?.value || ''),
+        questions: parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''),
         buttonLabel: document.getElementById('lesson-button-label')?.value?.trim() || '',
         buttonUrl: document.getElementById('lesson-button-url')?.value?.trim() || '',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -14727,6 +15019,9 @@ async function handleSaveLesson() {
     }
 
     try {
+        try {
+            if (lessonData.subject) localStorage.setItem(LESSON_LAST_SUBJECT_KEY, lessonData.subject);
+        } catch (_) {}
         if (lessonId) {
             await db.collection('lessons').doc(lessonId).update(lessonData);
         } else {
@@ -14763,6 +15058,8 @@ function resetLessonForm() {
     if (lessonPublishDate) lessonPublishDate.value = '';
     const templateSelect = document.getElementById('lesson-template-select');
     if (templateSelect) templateSelect.value = '';
+    populateLessonSubjectOptions();
+    syncLessonSubjectCustomVisibility();
     updateLessonCoverPreview();
 }
 
@@ -14781,7 +15078,8 @@ function editLesson(lessonId) {
     setValue('lesson-id', normalized.id || '');
     setValue('lesson-title', normalized.title || '');
     setValue('lesson-summary', normalized.summary || '');
-    setValue('lesson-subject', normalized.subject || '');
+    populateLessonSubjectOptions(normalized.subject || '');
+    syncLessonSubjectCustomVisibility();
     setValue('lesson-topic', normalized.topic || '');
     setValue('lesson-subtopic', normalized.subtopic || '');
     setValue('lesson-category', normalized.category || '');
@@ -14793,8 +15091,10 @@ function editLesson(lessonId) {
     setValue('lesson-widget-html', normalized.widgetHtml || '');
     setValue('lesson-links', (normalized.links || []).join('\n'));
     setValue('lesson-video-urls', (normalized.videoUrls || []).join('\n'));
+    setValue('lesson-iframe-urls', (normalized.iframeUrls || []).join('\n'));
     setValue('lesson-image-urls', (normalized.imageUrls || []).join('\n'));
     setValue('lesson-attachments', (normalized.attachments || []).join('\n'));
+    setValue('lesson-questions', serializeLessonQuestions(normalized.questions || []));
     setValue('lesson-button-label', normalized.buttonLabel || '');
     setValue('lesson-button-url', normalized.buttonUrl || '');
 
@@ -14826,17 +15126,35 @@ async function deleteLesson(lessonId) {
 }
 
 function renderLessonMediaBlocks(lesson) {
+    const isEmbeddableUrl = (value) => /^https?:\/\//i.test(String(value || '').trim());
     const links = (lesson.links || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
     const videos = (lesson.videoUrls || []).map(url => `<div class="rounded-xl border border-gray-200 bg-white p-3"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></div>`).join('');
+    const iframes = (lesson.iframeUrls || [])
+        .filter(isEmbeddableUrl)
+        .map(url => `<div class="rounded-xl border border-gray-200 bg-white p-2 overflow-hidden"><iframe src="${escapeHTML(url)}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-64 rounded-lg border-0" allowfullscreen></iframe></div>`)
+        .join('');
     const images = (lesson.imageUrls || []).map(url => `<img src="${escapeHTML(url)}" alt="Lesson image" class="w-full rounded-xl border border-gray-200" loading="lazy" decoding="async">`).join('');
     const attachments = (lesson.attachments || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
+    const questions = (lesson.questions || []).map((item, index) => {
+        const question = escapeHTML(item?.question || '');
+        const answer = escapeHTML(item?.answer || '');
+        if (!question) return '';
+        return `
+            <details class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <summary class="cursor-pointer font-semibold text-slate-800">Q${index + 1}. ${question}</summary>
+                ${answer ? `<p class="mt-2 text-sm text-slate-600">${answer}</p>` : '<p class="mt-2 text-sm text-slate-500">No model answer added yet.</p>'}
+            </details>
+        `;
+    }).join('');
 
     return `
         ${lesson.buttonLabel && lesson.buttonUrl ? `<div class="mt-6"><a href="${escapeHTML(lesson.buttonUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors">${escapeHTML(lesson.buttonLabel)} <i class="fas fa-arrow-up-right-from-square"></i></a></div>` : ''}
         ${links ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Lesson links</h4><ul class="list-disc pl-5 space-y-1 text-sm">${links}</ul></section>` : ''}
         ${videos ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Video resources</h4><div class="grid grid-cols-1 gap-2">${videos}</div></section>` : ''}
+        ${iframes ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Embedded content</h4><div class="grid grid-cols-1 gap-3">${iframes}</div></section>` : ''}
         ${images ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Images</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${images}</div></section>` : ''}
         ${attachments ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Attachments</h4><ul class="list-disc pl-5 space-y-1 text-sm">${attachments}</ul></section>` : ''}
+        ${questions ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Practice questions</h4><div class="space-y-2">${questions}</div></section>` : ''}
         ${lesson.interactiveHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Interactive HTML</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.interactiveHtml)}</div></section>` : ''}
         ${lesson.widgetHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Widget</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.widgetHtml)}</div></section>` : ''}
     `;
@@ -15045,10 +15363,17 @@ function openLessonViewer(lessonId) {
 function setupLessonsImagePasteHandler() {
     const zone = document.getElementById('lesson-image-paste-zone');
     const imageUrls = document.getElementById('lesson-image-urls');
+    const iframeUrls = document.getElementById('lesson-iframe-urls');
     const editor = document.getElementById('lesson-content');
     const coverInput = document.getElementById('lesson-cover-image');
     if (!zone || !imageUrls || !editor || zone.dataset.bound === 'true') return;
     zone.dataset.bound = 'true';
+
+    const subjectSelect = document.getElementById('lesson-subject');
+    if (subjectSelect && !subjectSelect.dataset.bound) {
+        subjectSelect.dataset.bound = 'true';
+        subjectSelect.addEventListener('change', syncLessonSubjectCustomVisibility);
+    }
 
     const appendImageUrl = (url) => {
         const clean = String(url || '').trim();
@@ -15056,6 +15381,16 @@ function setupLessonsImagePasteHandler() {
         const existing = parseMultilineValues(imageUrls.value || '');
         if (!existing.includes(clean)) {
             imageUrls.value = existing.length ? `${existing.join('\n')}\n${clean}` : clean;
+        }
+    };
+
+    const appendIframeUrl = (url) => {
+        if (!iframeUrls) return;
+        const clean = String(url || '').trim();
+        if (!clean) return;
+        const existing = parseMultilineValues(iframeUrls.value || '');
+        if (!existing.includes(clean)) {
+            iframeUrls.value = existing.length ? `${existing.join('\n')}\n${clean}` : clean;
         }
     };
 
@@ -15067,12 +15402,34 @@ function setupLessonsImagePasteHandler() {
         appendImageUrl(clean);
     };
 
+    const insertIframeInLessonEditor = (url) => {
+        const clean = String(url || '').trim();
+        if (!/^https?:\/\//i.test(clean)) return;
+        editor.focus();
+        document.execCommand('insertHTML', false, `<div class="my-4 rounded-xl border border-slate-200 bg-slate-50 p-2"><iframe src="${escapeHTML(clean)}" class="w-full h-64 rounded-lg border-0" loading="lazy" referrerpolicy="no-referrer" allowfullscreen></iframe></div><p><br></p>`);
+        appendIframeUrl(clean);
+    };
+
+    const handleTextDropOrPaste = (text) => {
+        const clean = String(text || '').trim();
+        if (!clean) return false;
+        if (/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(clean)) {
+            insertImageInLessonEditor(clean);
+            showToast('Image URL inserted into lesson.', 'success');
+            return true;
+        }
+        if (/^https?:\/\//i.test(clean)) {
+            insertIframeInLessonEditor(clean);
+            showToast('IFrame URL embedded into lesson.', 'success');
+            return true;
+        }
+        return false;
+    };
+
     zone.addEventListener('paste', async (event) => {
         const textPaste = String(event.clipboardData?.getData('text/plain') || '').trim();
-        if (/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(textPaste)) {
+        if (handleTextDropOrPaste(textPaste)) {
             event.preventDefault();
-            insertImageInLessonEditor(textPaste);
-            showToast('Image URL inserted into lesson.', 'success');
             return;
         }
 
@@ -15102,16 +15459,60 @@ function setupLessonsImagePasteHandler() {
 
     editor.addEventListener('paste', async (event) => {
         const textPaste = String(event.clipboardData?.getData('text/plain') || '').trim();
-        if (!/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(textPaste)) return;
-        event.preventDefault();
-        insertImageInLessonEditor(textPaste);
-        showToast('Image URL embedded in lesson content.', 'success');
+        if (handleTextDropOrPaste(textPaste)) event.preventDefault();
     });
+
+    const onDragOver = (event) => {
+        event.preventDefault();
+        zone.classList.add('lesson-drop-target');
+    };
+
+    const onDragLeave = () => {
+        zone.classList.remove('lesson-drop-target');
+    };
+
+    const onDrop = async (event) => {
+        event.preventDefault();
+        zone.classList.remove('lesson-drop-target');
+        const dt = event.dataTransfer;
+        if (!dt) return;
+
+        const droppedText = String(dt.getData('text/plain') || '').trim();
+        if (handleTextDropOrPaste(droppedText)) return;
+
+        const files = Array.from(dt.files || []);
+        const imageFile = files.find(file => isBlogImageFile(file));
+        if (!imageFile) return;
+
+        try {
+            const uploadResult = await uploadImageWithFallback(imageFile, 'lesson-drop');
+            const imageUrl = uploadResult?.url || uploadResult;
+            if (!imageUrl) throw new Error('No uploaded URL returned');
+            insertImageInLessonEditor(imageUrl);
+            if (coverInput && !String(coverInput.value || '').trim()) {
+                coverInput.value = imageUrl;
+                updateLessonCoverPreview();
+            }
+            showToast('Dropped image uploaded and inserted.', 'success');
+        } catch (error) {
+            logError(error, 'Lesson Image Drop');
+            showToast('Could not upload dropped image.', 'error');
+        }
+    };
+
+    zone.addEventListener('dragover', onDragOver);
+    zone.addEventListener('dragleave', onDragLeave);
+    zone.addEventListener('drop', onDrop);
+    editor.addEventListener('dragover', onDragOver);
+    editor.addEventListener('dragleave', onDragLeave);
+    editor.addEventListener('drop', onDrop);
 
     if (coverInput && !coverInput.dataset.bound) {
         coverInput.dataset.bound = 'true';
         coverInput.addEventListener('input', updateLessonCoverPreview);
     }
+
+    syncLessonSubjectCustomVisibility();
 }
 
 function prepareLessonEditorCommand() {
@@ -18221,6 +18622,7 @@ function evaluateScientificExpression(rawValue) {
     if (!expr) return 0;
 
     expr = expr
+        .replace(/\bans\b/g, String(calcLastResult || 0))
         .replace(/\bpi\b/g, 'PI')
         .replace(/\be\b/g, 'E')
         .replace(/\bln\s*\(/g, 'log(')
@@ -18375,7 +18777,7 @@ function updateCalculatorShiftButtons() {
         ['tools-calc-tan', 'tan', 'tan⁻¹']
     ];
     if (shiftBtn) {
-        shiftBtn.textContent = calcShiftEnabled ? 'Shift On' : 'Shift Off';
+        shiftBtn.textContent = calcShiftEnabled ? '2nd On' : '2nd';
         shiftBtn.classList.toggle('is-active', calcShiftEnabled);
     }
     labels.forEach(([id, normalLabel, shiftLabel]) => {
@@ -18397,17 +18799,17 @@ function updateScientificCalculatorResult() {
         calcLastResult = result;
         calcLastExpression = input.value;
         resultEl.textContent = `Result: ${getFormattedCalculatorResult(result, formatSelect?.value || 'auto')}`;
-        resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-blue-700';
+        resultEl.className = 'scientific-calc-result';
         if (secondaryEl) {
             secondaryEl.textContent = `Fraction ${formatFraction(result)} • Standard form ${formatScientific(result)} • Surd ${formatSurd(result)} • Recurring ${formatRecurringDecimal(result)}`;
-            secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-gray-500';
+            secondaryEl.className = 'scientific-calc-secondary';
         }
     } catch (_) {
         resultEl.textContent = 'Result: Invalid input';
-        resultEl.className = 'mt-2 min-h-[1.5rem] text-sm font-semibold text-red-600';
+        resultEl.className = 'scientific-calc-result scientific-calc-result-error';
         if (secondaryEl) {
             secondaryEl.textContent = 'Use valid scientific input such as sin(30), 1/3, sqrt(2), or 6.02*10^23.';
-            secondaryEl.className = 'mt-1 min-h-[1.25rem] text-xs text-red-500';
+            secondaryEl.className = 'scientific-calc-secondary scientific-calc-secondary-error';
         }
     }
 }
@@ -18416,7 +18818,7 @@ function removeLastCalculatorToken(value = '') {
     const source = String(value || '');
     const tokenPatterns = [
         'asin(', 'acos(', 'atan(', 'sqrt(', 'round(', 'floor(', 'log10(',
-        'sin(', 'cos(', 'tan(', 'log(', 'ln(', 'abs(', '1/(', '*10^', 'pi', 'e'
+        'sin(', 'cos(', 'tan(', 'log(', 'ln(', 'abs(', '1/(', '*10^', 'ans', 'pi', 'e'
     ];
     const match = tokenPatterns.find(token => source.toLowerCase().endsWith(token));
     if (match) {
