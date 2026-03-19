@@ -1136,6 +1136,144 @@ transition: box-shadow 0.2s ease;
             border-radius: 0.75rem;
         }
 
+        .lesson-image-zoom-chip {
+            position: absolute;
+            right: 0.55rem;
+            bottom: 0.55rem;
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.72);
+            color: #f8fafc;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.3rem 0.52rem;
+            pointer-events: none;
+        }
+
+        .lesson-image-open-chip-inline {
+            border-radius: 9999px;
+            background: rgba(15, 23, 42, 0.72);
+            color: #f8fafc;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.3rem 0.52rem;
+        }
+
+        .lesson-question-card {
+            transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+        }
+
+        .lesson-question-card-correct {
+            border-color: rgba(16, 185, 129, 0.6) !important;
+            background: rgba(236, 253, 245, 0.78) !important;
+            box-shadow: 0 10px 22px -20px rgba(5, 150, 105, 0.6);
+        }
+
+        .lesson-question-card-wrong {
+            border-color: rgba(244, 63, 94, 0.5) !important;
+            background: rgba(255, 241, 242, 0.78) !important;
+            box-shadow: 0 10px 22px -20px rgba(225, 29, 72, 0.55);
+        }
+
+        .lesson-spotlight-shell {
+            border-radius: 1.2rem;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.7);
+            padding: 0.75rem;
+            box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.9);
+        }
+
+        .lesson-spotlight-stage {
+            position: relative;
+            min-height: 50vh;
+            max-height: 72vh;
+            overflow: auto;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.58);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .lesson-spotlight-image {
+            max-width: min(92vw, 1200px);
+            max-height: 68vh;
+            transform-origin: center center;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(203, 213, 225, 0.35);
+            transition: transform 180ms ease;
+            background: #0f172a;
+        }
+
+        .lesson-spotlight-toolbar {
+            margin-top: 0.55rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .lesson-spotlight-btn {
+            border-radius: 0.65rem;
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            background: rgba(15, 23, 42, 0.72);
+            color: #e2e8f0;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.45rem 0.68rem;
+            transition: background-color 140ms ease, border-color 140ms ease;
+        }
+
+        .lesson-spotlight-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(191, 219, 254, 0.5);
+        }
+
+        .lesson-spotlight-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .lesson-spotlight-counter {
+            color: #cbd5e1;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .lesson-spotlight-close {
+            position: absolute;
+            right: 1rem;
+            top: 0.85rem;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.72);
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        @media (max-width: 768px) {
+            .lesson-spotlight-stage {
+                min-height: 42vh;
+                max-height: 62vh;
+                padding: 0.6rem;
+            }
+
+            .lesson-spotlight-image {
+                max-height: 58vh;
+            }
+        }
+
         /* Public about mode */
         body.public-about-mode #welcome-message,
         body.public-about-mode #profile-picture,

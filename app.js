@@ -137,8 +137,15 @@ let lessonViewerSession = {
     lessonId: null,
     openedAt: 0,
     completionTimer: null,
-    hasAutoCompleted: false
+    hasAutoCompleted: false,
+    galleryImages: []
 };
+let lessonImageSpotlightState = {
+    images: [],
+    index: 0,
+    zoom: 1
+};
+let lessonQuestionBuilderState = [];
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
@@ -4610,7 +4617,7 @@ auth.onAuthStateChanged(async (user) => {
         if (loginPage) loginPage.classList.add('hidden');
         if (verifyPage) verifyPage.classList.add('hidden');
         // Close any open modals and mobile menu
-        ['mobile-menu','preview-modal','blog-viewer-modal','lesson-viewer-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
+        ['mobile-menu','preview-modal','blog-viewer-modal','lesson-viewer-modal','lesson-image-spotlight-modal','dmca-modal','legal-modal','edit-user-modal','event-modal','confirmation-modal','upgrade-modal']
             .forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -11180,6 +11187,7 @@ function showPage(pageId) {
             setupLessonsImagePasteHandler();
             populateLessonSubjectOptions();
             syncLessonSubjectCustomVisibility();
+            renderLessonQuestionBuilder(parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''));
             setupLessonsFilters();
             renderLessonsPage(allLessons);
         }, 100);
@@ -14217,7 +14225,9 @@ function normalizeLesson(lesson = {}) {
         iframeUrls: Array.isArray(lesson.iframeUrls) ? lesson.iframeUrls.filter(Boolean) : parseMultilineValues(lesson.iframeUrls),
         imageUrls: Array.isArray(lesson.imageUrls) ? lesson.imageUrls.filter(Boolean) : parseMultilineValues(lesson.imageUrls),
         attachments: Array.isArray(lesson.attachments) ? lesson.attachments.filter(Boolean) : parseMultilineValues(lesson.attachments),
-        questions: Array.isArray(lesson.questions) ? lesson.questions.map(item => ({ question: String(item?.question || '').trim(), answer: String(item?.answer || '').trim() })).filter(item => item.question) : parseLessonQuestions(lesson.questions),
+        questions: Array.isArray(lesson.questions)
+            ? lesson.questions.map((item, index) => normalizeLessonQuestionItem(item, index)).filter(item => item.question)
+            : parseLessonQuestions(lesson.questions),
         lessonNumber: normalizeLessonNumber(lesson.lessonNumber),
         sortOrder: normalizeLessonNumber(lesson.sortOrder),
         safeDate: getLessonPublishDate(lesson)
@@ -14234,7 +14244,7 @@ function getLessonSearchBlob(lesson) {
         lesson.category,
         ...(lesson.tags || []),
         ...(lesson.iframeUrls || []),
-        ...(lesson.questions || []).map(item => `${item.question || ''} ${item.answer || ''}`),
+        ...(lesson.questions || []).map(item => `${item.question || ''} ${item.answer || ''} ${item.correctAnswer || ''} ${(item.options || []).join(' ')} ${item.explanation || ''}`),
         String(lesson.content || '').replace(/<[^>]+>/g, ' ')
     ].join(' ').toLowerCase();
 }
@@ -14445,7 +14455,52 @@ function getSelectedLessonSubjectValue() {
     return String(subjectSelect.value || '').trim();
 }
 
-function parseLessonQuestions(raw = '') {
+function createLessonQuestionTemplate(type = 'short') {
+    const normalizedType = ['short', 'mcq', 'truefalse'].includes(type) ? type : 'short';
+    return {
+        type: normalizedType,
+        question: '',
+        options: normalizedType === 'mcq' ? ['Option A', 'Option B'] : (normalizedType === 'truefalse' ? ['True', 'False'] : []),
+        correctAnswer: normalizedType === 'truefalse' ? 'True' : '',
+        required: true,
+        points: 1,
+        placeholder: normalizedType === 'short' ? 'Type your answer...' : '',
+        explanation: ''
+    };
+}
+
+function normalizeLessonQuestionItem(raw = {}, index = 0) {
+    if (typeof raw === 'string') {
+        const parsed = parseLessonQuestions(raw)[0] || {};
+        raw = parsed;
+    }
+
+    const fallback = createLessonQuestionTemplate(raw?.type || 'short');
+    const type = ['short', 'mcq', 'truefalse'].includes(String(raw?.type || '').toLowerCase())
+        ? String(raw.type).toLowerCase()
+        : fallback.type;
+    const question = String(raw?.question || '').trim();
+    const options = type === 'mcq'
+        ? (Array.isArray(raw?.options) ? raw.options : String(raw?.options || '').split('\n'))
+            .map(item => String(item || '').trim())
+            .filter(Boolean)
+        : (type === 'truefalse' ? ['True', 'False'] : []);
+    const points = Number(raw?.points);
+
+    return {
+        id: String(raw?.id || `lesson-q-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`),
+        type,
+        question,
+        options,
+        correctAnswer: String(raw?.correctAnswer ?? raw?.answer ?? '').trim(),
+        required: raw?.required === undefined ? true : !!raw.required,
+        points: Number.isFinite(points) && points > 0 ? points : 1,
+        placeholder: String(raw?.placeholder || '').trim(),
+        explanation: String(raw?.explanation || '').trim()
+    };
+}
+
+function parseLegacyLessonQuestions(raw = '') {
     return String(raw || '')
         .split('\n')
         .map(line => String(line || '').trim())
@@ -14461,16 +14516,140 @@ function parseLessonQuestions(raw = '') {
         .filter(item => item.question);
 }
 
+function parseLessonQuestions(raw = '') {
+    if (Array.isArray(raw)) {
+        return raw.map((item, index) => normalizeLessonQuestionItem(item, index)).filter(item => item.question);
+    }
+
+    const text = String(raw || '').trim();
+    if (!text) return [];
+
+    if ((text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'))) {
+        try {
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed)) {
+                return parsed.map((item, index) => normalizeLessonQuestionItem(item, index)).filter(item => item.question);
+            }
+        } catch (_) {}
+    }
+
+    return parseLegacyLessonQuestions(text)
+        .map((item, index) => normalizeLessonQuestionItem({
+            type: 'short',
+            question: item.question,
+            correctAnswer: item.answer,
+            required: true,
+            points: 1
+        }, index))
+        .filter(item => item.question);
+}
+
 function serializeLessonQuestions(questions = []) {
     return (questions || [])
         .map(item => {
             const question = String(item?.question || '').trim();
-            const answer = String(item?.answer || '').trim();
+            const answer = String((item?.answer ?? item?.correctAnswer) || '').trim();
             if (!question) return '';
             return answer ? `${question}|${answer}` : question;
         })
         .filter(Boolean)
         .join('\n');
+}
+
+function collectLessonQuestionsFromBuilder() {
+    const host = document.getElementById('lesson-question-builder-list');
+    if (!host) return [];
+    const cards = Array.from(host.querySelectorAll('.lesson-question-item'));
+    const normalized = cards.map((card, index) => {
+        const type = String(card.getAttribute('data-type') || 'short').toLowerCase();
+        const question = String(card.querySelector('[data-field="question"]')?.value || '').trim();
+        const correctAnswer = String(card.querySelector('[data-field="correctAnswer"]')?.value || '').trim();
+        const pointsRaw = Number(card.querySelector('[data-field="points"]')?.value || 1);
+        const required = !!card.querySelector('[data-field="required"]')?.checked;
+        const placeholder = String(card.querySelector('[data-field="placeholder"]')?.value || '').trim();
+        const explanation = String(card.querySelector('[data-field="explanation"]')?.value || '').trim();
+        const optionsText = String(card.querySelector('[data-field="options"]')?.value || '').trim();
+        const options = type === 'mcq'
+            ? optionsText.split('\n').map(item => String(item || '').trim()).filter(Boolean)
+            : (type === 'truefalse' ? ['True', 'False'] : []);
+
+        return normalizeLessonQuestionItem({
+            id: card.getAttribute('data-id') || `lesson-q-${index}`,
+            type,
+            question,
+            options,
+            correctAnswer,
+            points: Number.isFinite(pointsRaw) && pointsRaw > 0 ? pointsRaw : 1,
+            required,
+            placeholder,
+            explanation
+        }, index);
+    }).filter(item => item.question);
+
+    lessonQuestionBuilderState = normalized;
+    const hidden = document.getElementById('lesson-questions');
+    if (hidden) {
+        hidden.value = JSON.stringify(normalized);
+    }
+    return normalized;
+}
+
+function renderLessonQuestionBuilder(questions = []) {
+    const host = document.getElementById('lesson-question-builder-list');
+    if (!host) return;
+    const normalizedQuestions = (questions || [])
+        .map((item, index) => normalizeLessonQuestionItem(item, index))
+        .filter(item => item.question || item.correctAnswer || (item.options && item.options.length));
+    lessonQuestionBuilderState = normalizedQuestions;
+
+    if (!normalizedQuestions.length) {
+        host.innerHTML = '<div class="rounded-lg border border-dashed border-indigo-200 bg-white px-4 py-5 text-sm text-slate-500">No form questions yet. Use the buttons above to add short answer, multiple-choice, or true/false questions.</div>';
+        const hidden = document.getElementById('lesson-questions');
+        if (hidden) hidden.value = '[]';
+        return;
+    }
+
+    host.innerHTML = normalizedQuestions.map((item, index) => {
+        const optionsValue = (item.options || []).join('\n');
+        const typeLabel = item.type === 'mcq' ? 'Multiple choice' : (item.type === 'truefalse' ? 'True/false' : 'Short answer');
+        return `
+            <article class="lesson-question-item rounded-xl border border-indigo-200 bg-white p-4" data-id="${escapeHTML(item.id)}" data-type="${escapeHTML(item.type)}">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-indigo-700">Question ${index + 1} · ${escapeHTML(typeLabel)}</p>
+                    <button type="button" onclick="removeLessonQuestionItem(${index})" class="px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold hover:bg-rose-100">Remove</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" data-field="question" placeholder="Question prompt" value="${escapeHTML(item.question)}" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" data-field="correctAnswer" placeholder="Correct answer (or option text)" value="${escapeHTML(item.correctAnswer)}" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" min="1" step="1" data-field="points" value="${escapeHTML(String(item.points || 1))}" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Points">
+                    <input type="text" data-field="placeholder" placeholder="Input placeholder (short answer only)" value="${escapeHTML(item.placeholder || '')}" class="w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                ${item.type === 'mcq' ? `<textarea data-field="options" rows="4" placeholder="MCQ options (one per line)" class="mt-3 w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">${escapeHTML(optionsValue)}</textarea>` : ''}
+                <textarea data-field="explanation" rows="2" placeholder="Optional explanation shown after submit" class="mt-3 w-full p-3 rounded-lg border border-gray-300/70 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">${escapeHTML(item.explanation || '')}</textarea>
+                <label class="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input type="checkbox" data-field="required" ${item.required ? 'checked' : ''} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    Required question
+                </label>
+            </article>
+        `;
+    }).join('');
+
+    const hidden = document.getElementById('lesson-questions');
+    if (hidden) {
+        hidden.value = JSON.stringify(normalizedQuestions);
+    }
+}
+
+function addLessonQuestionItem(type = 'short') {
+    const current = collectLessonQuestionsFromBuilder();
+    current.push(createLessonQuestionTemplate(type));
+    renderLessonQuestionBuilder(current);
+}
+
+function removeLessonQuestionItem(index) {
+    const current = collectLessonQuestionsFromBuilder();
+    current.splice(index, 1);
+    renderLessonQuestionBuilder(current);
 }
 
 function autoArrangeLessonDraft() {
@@ -14965,6 +15144,7 @@ function serializeLessonForm() {
     const publishDate = publishDateValue ? new Date(publishDateValue) : null;
     const isValidPublishDate = publishDate && !Number.isNaN(publishDate.getTime());
 
+    const builderQuestions = collectLessonQuestionsFromBuilder();
     return {
         title: document.getElementById('lesson-title')?.value?.trim() || '',
         summary: document.getElementById('lesson-summary')?.value?.trim() || '',
@@ -14985,7 +15165,9 @@ function serializeLessonForm() {
         iframeUrls: parseMultilineValues(document.getElementById('lesson-iframe-urls')?.value || ''),
         imageUrls: parseMultilineValues(document.getElementById('lesson-image-urls')?.value || ''),
         attachments: parseMultilineValues(document.getElementById('lesson-attachments')?.value || ''),
-        questions: parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''),
+        questions: builderQuestions.length
+            ? builderQuestions
+            : parseLessonQuestions(document.getElementById('lesson-questions')?.value || ''),
         buttonLabel: document.getElementById('lesson-button-label')?.value?.trim() || '',
         buttonUrl: document.getElementById('lesson-button-url')?.value?.trim() || '',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -15061,6 +15243,7 @@ function resetLessonForm() {
     if (templateSelect) templateSelect.value = '';
     populateLessonSubjectOptions();
     syncLessonSubjectCustomVisibility();
+    renderLessonQuestionBuilder([]);
     updateLessonCoverPreview();
 }
 
@@ -15095,7 +15278,8 @@ function editLesson(lessonId) {
     setValue('lesson-iframe-urls', (normalized.iframeUrls || []).join('\n'));
     setValue('lesson-image-urls', (normalized.imageUrls || []).join('\n'));
     setValue('lesson-attachments', (normalized.attachments || []).join('\n'));
-    setValue('lesson-questions', serializeLessonQuestions(normalized.questions || []));
+    setValue('lesson-questions', JSON.stringify(normalized.questions || []));
+    renderLessonQuestionBuilder(normalized.questions || []);
     setValue('lesson-button-label', normalized.buttonLabel || '');
     setValue('lesson-button-url', normalized.buttonUrl || '');
 
@@ -15126,7 +15310,8 @@ async function deleteLesson(lessonId) {
     });
 }
 
-function renderLessonMediaBlocks(lesson) {
+function renderLessonMediaBlocks(lesson, options = {}) {
+    const galleryOffset = Number(options.galleryOffset || 0);
     const isEmbeddableUrl = (value) => /^https?:\/\//i.test(String(value || '').trim());
     const links = (lesson.links || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
     const videos = (lesson.videoUrls || []).map(url => `<div class="rounded-xl border border-gray-200 bg-white p-3"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></div>`).join('');
@@ -15134,31 +15319,262 @@ function renderLessonMediaBlocks(lesson) {
         .filter(isEmbeddableUrl)
         .map(url => `<div class="rounded-xl border border-gray-200 bg-white p-2 overflow-hidden"><iframe src="${escapeHTML(url)}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-64 rounded-lg border-0" allowfullscreen></iframe></div>`)
         .join('');
-    const images = (lesson.imageUrls || []).map(url => `<img src="${escapeHTML(url)}" alt="Lesson image" class="w-full rounded-xl border border-gray-200" loading="lazy" decoding="async">`).join('');
+    const images = (lesson.imageUrls || []).map((url, index) => `
+        <button type="button" class="lesson-gallery-trigger group relative overflow-hidden rounded-xl border border-gray-200 bg-white" data-gallery-index="${galleryOffset + index}" aria-label="Open lesson image ${index + 1}">
+            <img src="${escapeHTML(url)}" alt="Lesson image ${index + 1}" class="w-full rounded-xl transition-transform duration-300 group-hover:scale-[1.02]" loading="lazy" decoding="async">
+            <span class="lesson-image-zoom-chip"><i class="fas fa-expand mr-1"></i>Open</span>
+        </button>
+    `).join('');
     const attachments = (lesson.attachments || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
-    const questions = (lesson.questions || []).map((item, index) => {
-        const question = escapeHTML(item?.question || '');
-        const answer = escapeHTML(item?.answer || '');
+    const normalizedQuestions = (lesson.questions || []).map((item, index) => normalizeLessonQuestionItem(item, index)).filter(item => item.question);
+    const questionCards = normalizedQuestions.map((item, index) => {
+        const question = escapeHTML(item.question || '');
+        const answer = escapeHTML(item.correctAnswer || item.answer || '');
+        const points = Number(item.points || 1);
+        const required = item.required !== false;
+        const type = item.type || 'short';
+        const optionsMarkup = type === 'mcq'
+            ? `<div class="space-y-2 mt-3">${(item.options || []).map((option, optionIndex) => `<label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"><input type="radio" name="lesson-question-${index}" value="${escapeHTML(option)}" class="text-blue-600 focus:ring-blue-500" ${required ? 'required' : ''}><span class="text-sm text-slate-700">${escapeHTML(option || `Option ${optionIndex + 1}`)}</span></label>`).join('')}</div>`
+            : (type === 'truefalse'
+                ? `<div class="space-y-2 mt-3">${['True', 'False'].map(option => `<label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"><input type="radio" name="lesson-question-${index}" value="${option}" class="text-blue-600 focus:ring-blue-500" ${required ? 'required' : ''}><span class="text-sm text-slate-700">${option}</span></label>`).join('')}</div>`
+                : `<input type="text" data-question-input="${index}" placeholder="${escapeHTML(item.placeholder || 'Type your answer...')}" class="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" ${required ? 'required' : ''}>`);
         if (!question) return '';
         return `
-            <details class="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <summary class="cursor-pointer font-semibold text-slate-800">Q${index + 1}. ${question}</summary>
-                ${answer ? `<p class="mt-2 text-sm text-slate-600">${answer}</p>` : '<p class="mt-2 text-sm text-slate-500">No model answer added yet.</p>'}
-            </details>
+            <article class="lesson-question-card rounded-xl border border-slate-200 bg-white px-4 py-3" data-question-index="${index}" data-question-type="${escapeHTML(type)}" data-correct-answer="${escapeHTML(answer)}" data-points="${escapeHTML(String(points))}" data-explanation="${escapeHTML(item.explanation || '')}">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="font-semibold text-slate-800">Q${index + 1}. ${question}</p>
+                    <span class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">${points} pt${points === 1 ? '' : 's'}</span>
+                </div>
+                ${optionsMarkup}
+                <p class="lesson-question-feedback mt-2 text-xs font-semibold"></p>
+            </article>
         `;
     }).join('');
+
+    const interactiveQuestions = normalizedQuestions.length
+        ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Practice form</h4><form id="lesson-interactive-questions-form" class="space-y-3">${questionCards}<div class="flex flex-wrap gap-2 pt-2"><button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"><i class="fas fa-check-circle"></i>Submit answers</button><button type="reset" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset form</button></div><p id="lesson-question-score" class="text-sm font-semibold text-slate-700"></p></form></section>`
+        : '';
 
     return `
         ${lesson.buttonLabel && lesson.buttonUrl ? `<div class="mt-6"><a href="${escapeHTML(lesson.buttonUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors">${escapeHTML(lesson.buttonLabel)} <i class="fas fa-arrow-up-right-from-square"></i></a></div>` : ''}
         ${links ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Lesson links</h4><ul class="list-disc pl-5 space-y-1 text-sm">${links}</ul></section>` : ''}
         ${videos ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Video resources</h4><div class="grid grid-cols-1 gap-2">${videos}</div></section>` : ''}
         ${iframes ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Embedded content</h4><div class="grid grid-cols-1 gap-3">${iframes}</div></section>` : ''}
-        ${images ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Images</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${images}</div></section>` : ''}
+        ${images ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Images</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${images}</div><p class="mt-2 text-xs text-slate-500">Click an image to open spotlight view with zoom, fullscreen, and gallery arrows.</p></section>` : ''}
         ${attachments ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Attachments</h4><ul class="list-disc pl-5 space-y-1 text-sm">${attachments}</ul></section>` : ''}
-        ${questions ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Practice questions</h4><div class="space-y-2">${questions}</div></section>` : ''}
+        ${interactiveQuestions}
         ${lesson.interactiveHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Interactive HTML</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.interactiveHtml)}</div></section>` : ''}
         ${lesson.widgetHtml ? `<section class="mt-8"><h4 class="text-lg font-bold text-slate-900 mb-2">Widget</h4><div class="rounded-xl border border-gray-200 bg-white p-4 overflow-auto">${sanitizeHTML(lesson.widgetHtml)}</div></section>` : ''}
     `;
+}
+
+function setupLessonQuestionForm(questions = []) {
+    const form = document.getElementById('lesson-interactive-questions-form');
+    const scoreEl = document.getElementById('lesson-question-score');
+    if (!form || !Array.isArray(questions) || questions.length === 0) return;
+
+    const normalized = questions.map((item, index) => normalizeLessonQuestionItem(item, index));
+    const normalizeToken = (value) => String(value || '').trim().toLowerCase();
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        let scoredPoints = 0;
+        let maxPoints = 0;
+        let correctCount = 0;
+
+        normalized.forEach((question, index) => {
+            const card = form.querySelector(`[data-question-index="${index}"]`);
+            if (!card) return;
+            const feedback = card.querySelector('.lesson-question-feedback');
+            const points = Number(question.points || 1);
+            maxPoints += points;
+
+            let userValue = '';
+            if (question.type === 'mcq' || question.type === 'truefalse') {
+                const selected = form.querySelector(`input[name="lesson-question-${index}"]:checked`);
+                userValue = String(selected?.value || '').trim();
+            } else {
+                userValue = String(form.querySelector(`[data-question-input="${index}"]`)?.value || '').trim();
+            }
+
+            const isCorrect = normalizeToken(userValue) === normalizeToken(question.correctAnswer || question.answer || '');
+            card.classList.toggle('lesson-question-card-correct', isCorrect);
+            card.classList.toggle('lesson-question-card-wrong', !isCorrect);
+            if (feedback) {
+                const explanation = String(question.explanation || '').trim();
+                if (isCorrect) {
+                    feedback.textContent = `Correct (+${points})${explanation ? ` · ${explanation}` : ''}`;
+                    feedback.className = 'lesson-question-feedback mt-2 text-xs font-semibold text-emerald-700';
+                } else {
+                    const answerLabel = String(question.correctAnswer || question.answer || '').trim() || 'No model answer set';
+                    feedback.textContent = `Not quite. Correct answer: ${answerLabel}${explanation ? ` · ${explanation}` : ''}`;
+                    feedback.className = 'lesson-question-feedback mt-2 text-xs font-semibold text-rose-700';
+                }
+            }
+
+            if (isCorrect) {
+                scoredPoints += points;
+                correctCount += 1;
+            }
+        });
+
+        if (scoreEl) {
+            const totalQuestions = normalized.length;
+            scoreEl.textContent = `Score: ${scoredPoints}/${maxPoints} points · ${correctCount}/${totalQuestions} correct`;
+            scoreEl.className = 'text-sm font-bold text-blue-700';
+        }
+    });
+
+    form.addEventListener('reset', () => {
+        setTimeout(() => {
+            form.querySelectorAll('.lesson-question-card').forEach(card => {
+                card.classList.remove('lesson-question-card-correct', 'lesson-question-card-wrong');
+                const feedback = card.querySelector('.lesson-question-feedback');
+                if (feedback) feedback.textContent = '';
+            });
+            if (scoreEl) {
+                scoreEl.textContent = '';
+                scoreEl.className = 'text-sm font-semibold text-slate-700';
+            }
+        }, 0);
+    });
+}
+
+function renderLessonImageSpotlight() {
+    const imageEl = document.getElementById('lesson-spotlight-image');
+    const counterEl = document.getElementById('lesson-spotlight-counter');
+    const prevEl = document.getElementById('lesson-spotlight-prev');
+    const nextEl = document.getElementById('lesson-spotlight-next');
+    const { images, index, zoom } = lessonImageSpotlightState;
+    if (!imageEl || !counterEl || !Array.isArray(images) || !images.length) return;
+    const boundedIndex = Math.max(0, Math.min(images.length - 1, index));
+    lessonImageSpotlightState.index = boundedIndex;
+    imageEl.src = images[boundedIndex];
+    imageEl.style.transform = `scale(${zoom})`;
+    counterEl.textContent = `${boundedIndex + 1} / ${images.length}`;
+    if (prevEl) prevEl.disabled = images.length <= 1;
+    if (nextEl) nextEl.disabled = images.length <= 1;
+}
+
+function openLessonImageSpotlight(startIndex = 0, images = []) {
+    const modal = document.getElementById('lesson-image-spotlight-modal');
+    if (!modal) return;
+    const safeImages = (images || []).map(item => String(item || '').trim()).filter(item => /^https?:\/\//i.test(item));
+    if (!safeImages.length) return;
+    lessonImageSpotlightState.images = safeImages;
+    lessonImageSpotlightState.index = Math.max(0, Math.min(safeImages.length - 1, Number(startIndex) || 0));
+    lessonImageSpotlightState.zoom = 1;
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    renderLessonImageSpotlight();
+}
+
+function closeLessonImageSpotlight() {
+    const modal = document.getElementById('lesson-image-spotlight-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    lessonImageSpotlightState.images = [];
+    lessonImageSpotlightState.index = 0;
+    lessonImageSpotlightState.zoom = 1;
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+    if (!document.querySelector('#preview-modal[style*="display: flex"]') &&
+        !document.querySelector('#blog-viewer-modal[style*="display: flex"]') &&
+        !document.querySelector('#lesson-viewer-modal[style*="display: flex"]')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+function stepLessonImageSpotlight(delta = 1) {
+    const total = lessonImageSpotlightState.images.length;
+    if (total <= 1) return;
+    const next = (lessonImageSpotlightState.index + delta + total) % total;
+    lessonImageSpotlightState.index = next;
+    lessonImageSpotlightState.zoom = 1;
+    renderLessonImageSpotlight();
+}
+
+function setLessonImageSpotlightZoom(delta = 0.2) {
+    const nextZoom = Math.max(0.5, Math.min(3, lessonImageSpotlightState.zoom + delta));
+    lessonImageSpotlightState.zoom = Number(nextZoom.toFixed(2));
+    renderLessonImageSpotlight();
+}
+
+function resetLessonImageSpotlightZoom() {
+    lessonImageSpotlightState.zoom = 1;
+    renderLessonImageSpotlight();
+}
+
+async function toggleLessonImageSpotlightFullscreen() {
+    const stage = document.getElementById('lesson-spotlight-stage');
+    if (!stage || !document.fullscreenEnabled) return;
+    try {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        } else {
+            await stage.requestFullscreen();
+        }
+    } catch (_) {}
+}
+
+function setupLessonImageGalleryBindings(images = []) {
+    const modal = document.getElementById('lesson-viewer-modal');
+    if (!modal) return;
+    const triggers = modal.querySelectorAll('.lesson-gallery-trigger');
+    triggers.forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const idx = Number(trigger.getAttribute('data-gallery-index') || 0);
+            openLessonImageSpotlight(idx, images);
+        });
+    });
+}
+
+function setupLessonSpotlightKeyboardSupport() {
+    if (document.body.dataset.lessonSpotlightKeysBound === 'true') return;
+    document.body.dataset.lessonSpotlightKeysBound = 'true';
+    const spotlightModal = document.getElementById('lesson-image-spotlight-modal');
+    if (spotlightModal) {
+        spotlightModal.addEventListener('click', (event) => {
+            if (event.target === spotlightModal) {
+                closeLessonImageSpotlight();
+            }
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        const modal = document.getElementById('lesson-image-spotlight-modal');
+        if (!modal || modal.classList.contains('hidden')) return;
+        if (event.key === 'Escape') {
+            closeLessonImageSpotlight();
+            return;
+        }
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            stepLessonImageSpotlight(-1);
+            return;
+        }
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            stepLessonImageSpotlight(1);
+            return;
+        }
+        if (event.key === '+' || event.key === '=') {
+            event.preventDefault();
+            setLessonImageSpotlightZoom(0.2);
+            return;
+        }
+        if (event.key === '-') {
+            event.preventDefault();
+            setLessonImageSpotlightZoom(-0.2);
+            return;
+        }
+        if (event.key === '0') {
+            event.preventDefault();
+            resetLessonImageSpotlightZoom();
+        }
+    });
 }
 
 function closeLessonViewer() {
@@ -15178,6 +15594,7 @@ function closeLessonViewer() {
     modal.style.display = 'none';
     modal.classList.add('hidden');
     modal.innerHTML = '';
+    closeLessonImageSpotlight();
 }
 
 function setupLessonAutoCompletionWatch(lessonId) {
@@ -15244,7 +15661,7 @@ function renderLessonComments(lessonId) {
             const allowed = isAdminUser() || currentUser?.tier === 'paid';
             if (!allowed) {
                 if (msg) {
-                    msg.textContent = 'Only Pro users can comment.';
+                    msg.textContent = 'Only Pro users and admins can comment.';
                     msg.className = 'text-red-600 text-sm h-4';
                 }
                 return;
@@ -15299,6 +15716,10 @@ function openLessonViewer(lessonId) {
     if (!modal) return;
 
     const tagChips = (normalized.tags || []).slice(0, 8).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
+    const galleryImages = [...new Set([
+        normalized.coverImage,
+        ...(normalized.imageUrls || [])
+    ].map(item => String(item || '').trim()).filter(item => /^https?:\/\//i.test(item)))];
     const pathLabel = [normalized.subject, normalized.topic, normalized.subtopic].filter(Boolean).join(' • ') || 'General lesson';
     const publishText = normalized.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
     const metrics = getLessonMetrics(normalized.id);
@@ -15318,7 +15739,7 @@ function openLessonViewer(lessonId) {
                 <button onclick="closeLessonViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" title="Close">×</button>
             </div>
             <div class="overflow-y-auto p-6 md:p-8">
-                ${normalized.coverImage ? `<img src="${escapeHTML(normalized.coverImage)}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200 mb-6" loading="lazy" decoding="async">` : ''}
+                ${normalized.coverImage ? `<button type="button" class="lesson-gallery-trigger block w-full text-left mb-6" data-gallery-index="0" aria-label="Open cover image in spotlight"><img src="${escapeHTML(normalized.coverImage)}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200" loading="lazy" decoding="async"><span class="lesson-image-open-chip-inline mt-2 inline-flex"><i class="fas fa-expand mr-1"></i>Open cover image</span></button>` : ''}
                 ${normalized.summary ? `<p class="text-sm text-slate-600 mb-5">${escapeHTML(normalized.summary)}</p>` : ''}
                 <div class="mb-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><i class="fas fa-eye mr-1 text-slate-500"></i>${metrics.views} views</div>
@@ -15327,7 +15748,7 @@ function openLessonViewer(lessonId) {
                 </div>
                 <div class="prose prose-sm md:prose-base max-w-none lesson-rich-content">${formatBlogLinks(sanitizeHTML(normalized.content || ''))}</div>
                 <div class="mt-5 flex flex-wrap gap-2">${tagChips}</div>
-                ${renderLessonMediaBlocks(normalized)}
+                ${renderLessonMediaBlocks(normalized, { galleryOffset: normalized.coverImage ? 1 : 0 })}
                 <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-6">
                     <button type="button" onclick="markLessonComplete('${escapeJS(normalized.id)}')" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
                         <i class="fas fa-check"></i>
@@ -15346,7 +15767,7 @@ function openLessonViewer(lessonId) {
                             </div>
                             <p id="lesson-comment-message" class="text-sm h-4"></p>
                         </form>
-                    ` : '<div class="mt-3 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg p-3">Comments are available to Pro users. <a href="#" class="text-blue-600 font-semibold" onclick="showPage(\'features-page\')">Upgrade to Pro</a> to join the discussion.</div>'}
+                    ` : '<div class="mt-3 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg p-3">Comments are available to Pro users and admins. <a href="#" class="text-blue-600 font-semibold" onclick="showPage(\'features-page\')">Upgrade to Pro</a> to join the discussion.</div>'}
                 </section>
             </div>
         </div>
@@ -15357,7 +15778,11 @@ function openLessonViewer(lessonId) {
     lessonViewerSession.lessonId = lessonId;
     lessonViewerSession.openedAt = Date.now();
     lessonViewerSession.hasAutoCompleted = false;
+    lessonViewerSession.galleryImages = galleryImages;
     setupLessonAutoCompletionWatch(lessonId);
+    setupLessonImageGalleryBindings(galleryImages);
+    setupLessonQuestionForm(normalized.questions || []);
+    setupLessonSpotlightKeyboardSupport();
     renderLessonComments(lessonId);
 }
 
@@ -15515,6 +15940,15 @@ function setupLessonsImagePasteHandler() {
 
     syncLessonSubjectCustomVisibility();
 }
+
+window.addLessonQuestionItem = addLessonQuestionItem;
+window.removeLessonQuestionItem = removeLessonQuestionItem;
+window.openLessonImageSpotlight = openLessonImageSpotlight;
+window.closeLessonImageSpotlight = closeLessonImageSpotlight;
+window.stepLessonImageSpotlight = stepLessonImageSpotlight;
+window.setLessonImageSpotlightZoom = setLessonImageSpotlightZoom;
+window.resetLessonImageSpotlightZoom = resetLessonImageSpotlightZoom;
+window.toggleLessonImageSpotlightFullscreen = toggleLessonImageSpotlightFullscreen;
 
 function prepareLessonEditorCommand() {
     const editor = document.getElementById('lesson-content');
@@ -21553,11 +21987,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // Setup modals
-    ['preview-modal', 'blog-viewer-modal', 'lesson-viewer-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'grades-admin-modal'].forEach(id => {
+    ['preview-modal', 'blog-viewer-modal', 'lesson-viewer-modal', 'lesson-image-spotlight-modal', 'dmca-modal', 'legal-modal', 'edit-user-modal', 'event-modal', 'confirmation-modal', 'upgrade-modal', 'grades-admin-modal'].forEach(id => {
         const modal = document.getElementById(id);
         if(modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target.id === id) {
+                    if (id === 'lesson-image-spotlight-modal') {
+                        closeLessonImageSpotlight();
+                        return;
+                    }
                     modal.style.display = 'none';
                     // Special case for viewers to stop media playback
                     if (id === 'blog-viewer-modal' || id === 'lesson-viewer-modal' || id === 'preview-modal') {
@@ -21568,6 +22006,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Escape to close
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && modal.style.display === 'flex') {
+                    if (id === 'lesson-image-spotlight-modal') {
+                        closeLessonImageSpotlight();
+                        return;
+                    }
                     modal.style.display = 'none';
                     if (id === 'blog-viewer-modal' || id === 'lesson-viewer-modal' || id === 'preview-modal') {
                         modal.innerHTML = '';

@@ -134,7 +134,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly([
           'title','summary','subject','topic','subtopic','category',
           'lessonNumber','sortOrder','publishDate','coverImage','tags','content',
-          'interactiveHtml','widgetHtml','links','videoUrls','imageUrls','attachments',
+          'interactiveHtml','widgetHtml','links','videoUrls','iframeUrls','imageUrls','attachments','questions',
           'buttonLabel','buttonUrl','updatedAt','createdBy','authorName','createdAt'
         ]) &&
         request.resource.data.title is string && request.resource.data.title.size() > 0 &&
@@ -151,8 +151,10 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['tags']) || (request.resource.data.tags is list && request.resource.data.tags.size() <= 60)) &&
         (!request.resource.data.keys().hasAny(['links']) || (request.resource.data.links is list && request.resource.data.links.size() <= 100)) &&
         (!request.resource.data.keys().hasAny(['videoUrls']) || (request.resource.data.videoUrls is list && request.resource.data.videoUrls.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['iframeUrls']) || (request.resource.data.iframeUrls is list && request.resource.data.iframeUrls.size() <= 80)) &&
         (!request.resource.data.keys().hasAny(['imageUrls']) || (request.resource.data.imageUrls is list && request.resource.data.imageUrls.size() <= 200)) &&
         (!request.resource.data.keys().hasAny(['attachments']) || (request.resource.data.attachments is list && request.resource.data.attachments.size() <= 100)) &&
+        (!request.resource.data.keys().hasAny(['questions']) || (request.resource.data.questions is list && request.resource.data.questions.size() <= 80)) &&
         (!request.resource.data.keys().hasAny(['interactiveHtml']) || request.resource.data.interactiveHtml == null || request.resource.data.interactiveHtml is string) &&
         (!request.resource.data.keys().hasAny(['widgetHtml']) || request.resource.data.widgetHtml == null || request.resource.data.widgetHtml is string) &&
         (!request.resource.data.keys().hasAny(['buttonLabel']) || request.resource.data.buttonLabel == null || request.resource.data.buttonLabel is string) &&
