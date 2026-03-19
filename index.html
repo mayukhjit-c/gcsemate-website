@@ -652,7 +652,7 @@
         <div id="site-announcement-banner" class="hidden"></div>
         <div id="app-status-banner" class="hidden"></div>
         
-        <header class="bg-white/90 backdrop-blur-xl p-3 sm:p-4 border-b border-gray-200/50 text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 relative shadow-sm" role="banner">
+        <header class="sticky top-0 z-50 bg-white/75 backdrop-blur-2xl p-3 sm:p-4 border-b border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.03)] text-gray-800 flex items-center flex-wrap lg:flex-nowrap gap-2 sm:gap-3 flex-shrink-0 transition-all duration-300" role="banner">
             <div class="flex-shrink-0">
                 <a href="#" onclick="event.preventDefault(); showPage('subject-dashboard-page');" class="flex items-center" aria-label="GCSEMate Home">
                     <img src="gcsemate%20new.png" alt="GCSEMate - GCSE Revision Platform" class="h-8 sm:h-10 w-auto transition-transform duration-200 hover:scale-105" loading="eager" decoding="async" width="120" height="40" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
@@ -724,7 +724,7 @@
                 </button>
             </div>
         </header>
-        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
+        <div id="mobile-menu" class="hidden lg:hidden fixed inset-0 bg-white/85 backdrop-blur-3xl z-50 overflow-y-auto overscroll-contain transition-transform duration-300 shadow-2xl border-l border-white/40" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
             <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-white sticky top-0">
                 <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-10 w-auto" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
                 <button id="close-menu-button" class="p-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close navigation menu" data-tooltip="Close navigation menu">
@@ -832,7 +832,7 @@
             <div id="page-container" class="relative">
                 <div id="subject-dashboard-page" class="page p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-                        <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
+                        <h2 class="text-3xl font-bold text-brand-gradient drop-shadow-sm">Your Subjects</h2>
                         <div id="dashboard-clock" class="dashboard-clock-shell bg-white/50 backdrop-blur-lg p-3 rounded-xl shadow-md border border-white/30 text-center">
                             <div class="dashboard-clock-analog" aria-hidden="true">
                                 <span class="dashboard-clock-hand hour" id="clock-hour-hand"></span>
@@ -1413,7 +1413,7 @@
                     <div class="tools-page-hero mb-6">
                         <div>
                             <p class="tools-section-eyebrow">Study space</p>
-                            <h2 class="text-3xl font-bold text-gray-800">Tools</h2>
+                            <h2 class="text-3xl font-bold text-brand-gradient drop-shadow-sm">Tools</h2>
                             <p class="text-gray-600 mt-2 max-w-3xl">Everything is grouped to be easier to scan: timer first, quick stats beside it, then your calculator, planner, notes, randomiser, and grade tracker below.</p>
                         </div>
                         <div class="tools-page-hero-chips">
@@ -2047,7 +2047,7 @@
                 </div>
                 <div id="useful-links-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Useful Links & Resources</h2>
+                        <h2 class="text-3xl font-bold text-brand-gradient drop-shadow-sm">Useful Links & Resources</h2>
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1 sm:flex-initial">
                                 <input id="links-search-input" type="search" placeholder="Search links..." class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" aria-label="Search links">
@@ -3764,5 +3764,8 @@
 
 </body>
 </html>
+
+
+
 
 
