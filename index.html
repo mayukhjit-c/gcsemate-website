@@ -1119,6 +1119,10 @@
                                         <span class="blog-insight-label">Latest publish date</span>
                                         <span id="lesson-latest-date" class="blog-insight-value text-base sm:text-lg">Not yet</span>
                                     </div>
+                                    <div class="blog-insight-tile">
+                                        <span class="blog-insight-label">Completed lessons</span>
+                                        <span id="lesson-completed-count" class="blog-insight-value">0</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="rounded-3xl border border-blue-100 bg-white/80 p-5 shadow-sm">
@@ -1131,8 +1135,29 @@
 
                     <div id="lessons-status-message" class="hidden mb-4 rounded-lg border border-red-200/60 bg-red-50/60 px-4 py-3 text-sm text-red-700" role="alert" aria-live="polite"></div>
 
-                    <div id="add-lesson-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8">
+                    <div id="add-lesson-form-container" class="hidden lesson-admin-shell bg-white/60 p-6 rounded-2xl shadow-md border border-white/40 mb-8">
                         <h3 id="lesson-form-title" class="text-xl font-semibold mb-4">Create New Lesson</h3>
+                        <div class="lesson-admin-toolbar mb-4 grid grid-cols-1 md:grid-cols-[1.2fr_auto_auto_auto] gap-3">
+                            <select id="lesson-template-select" class="w-full p-3 rounded-xl border border-blue-200/60 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select lesson template...</option>
+                                <option value="concept">Concept lesson</option>
+                                <option value="exam-technique">Exam technique lesson</option>
+                                <option value="worked-example">Worked example lesson</option>
+                                <option value="flash-recap">Flash recap lesson</option>
+                            </select>
+                            <button type="button" onclick="applyLessonTemplate()" class="px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors inline-flex items-center justify-center gap-2">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                Use Template
+                            </button>
+                            <button type="button" onclick="autoArrangeLessonDraft()" class="px-4 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center justify-center gap-2">
+                                <i class="fas fa-sort-amount-down"></i>
+                                Auto Arrange
+                            </button>
+                            <button type="button" onclick="resetLessonForm()" class="px-4 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition-colors inline-flex items-center justify-center gap-2">
+                                <i class="fas fa-rotate-left"></i>
+                                Reset
+                            </button>
+                        </div>
                         <form id="add-lesson-form" class="space-y-4" onsubmit="event.preventDefault(); handleSaveLesson();">
                             <input type="hidden" id="lesson-id">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1146,6 +1171,11 @@
                                 <input id="lesson-sort-order" type="number" step="1" placeholder="Sort order" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <input id="lesson-publish-date" type="datetime-local" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <input id="lesson-cover-image" type="url" placeholder="Cover image URL" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div id="lesson-cover-preview" class="hidden rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 mb-2">Cover preview</p>
+                                <img id="lesson-cover-preview-image" alt="Lesson cover preview" class="w-full max-h-56 object-cover rounded-lg border border-blue-100">
                             </div>
 
                             <input id="lesson-tags" type="text" placeholder="Tags (comma-separated)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1180,10 +1210,14 @@
                                         </label>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonFormatText('insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonFormatText('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-colors" onclick="openLessonImagePicker()" title="Insert Cropped Image">
+                                            <i class="fas fa-image"></i>
+                                        </button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonInsertLink()"><i class="fas fa-link"></i></button>
                                         <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition-colors" onclick="lessonFormatText('removeFormat')"><i class="fas fa-remove-format"></i></button>
                                     </div>
                                     <div id="lesson-content" contenteditable="true" placeholder="Write lesson content..." class="w-full p-4 min-h-[280px] rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 prose prose-sm max-w-none bg-white/80 transition-all" style="border: none;"></div>
+                                    <input type="file" id="hidden-lesson-image-input" accept="image/*" class="hidden" onchange="handleLessonImageFileSelect(event)">
                                 </div>
                             </div>
 
@@ -1202,10 +1236,11 @@
                             </div>
 
                             <div id="lesson-image-paste-zone" class="rounded-xl border border-dashed border-blue-300 bg-blue-50/60 px-4 py-3 text-sm text-blue-700">
-                                Paste an image here to append it into the lesson image list automatically.
+                                Paste an image or image URL here to automatically insert in lesson content and append to the image URL list.
                             </div>
 
                             <div class="flex justify-end gap-3">
+                                <button type="button" onclick="autoArrangeLessonDraft()" class="px-4 py-2 bg-emerald-100 text-emerald-700 font-semibold rounded-md hover:bg-emerald-200">Auto arrange</button>
                                 <button type="button" onclick="resetLessonForm()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300">Cancel</button>
                                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save Lesson</button>
                             </div>
@@ -3337,10 +3372,11 @@
         });
     });
     </script>
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <!-- Firebase Storage removed - using Cloudinary for free image hosting (25GB free tier) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script>
       // Your web app's Firebase configuration
       const firebaseConfig = {
@@ -3362,6 +3398,7 @@
             // Use var so app.js can access these globals.
             var auth;
             var db;
+            var storage;
             window.__gcsemateFirebaseInitError = null;
 
             try {
@@ -3374,6 +3411,7 @@
 
                     auth = firebase.auth();
                     db = firebase.firestore();
+                    storage = firebase.storage();
 
                     try {
                         if (!window.__firestoreSettingsApplied) {
@@ -3399,13 +3437,14 @@
                     // Reuse existing instances if this block runs again.
                     auth = auth || firebase.auth();
                     db = db || firebase.firestore();
+                    storage = storage || firebase.storage();
                 }
             } catch (e) {
                 window.__gcsemateFirebaseInitError = e;
                 console.warn('Firebase initialization failed', e);
             }
 
-            // Storage removed - using Cloudinary for free image hosting
+                // Image uploads use Firebase Storage first with Cloudinary fallback in app logic.
     </script>
         <!-- External JavaScript -->
     <script src="app.js"></script>

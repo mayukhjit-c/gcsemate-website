@@ -57,7 +57,36 @@ const LESSON_VIEW_STATE = {
     sort: 'path'
 };
 const LESSON_FREE_DAILY_KEY = 'gcsemate_free_lesson_daily_access';
+const LESSON_TEMPLATES = {
+    concept: {
+        titlePrefix: 'Concept: ',
+        summary: 'A focused concept lesson with definitions, examples, and checks for understanding.',
+        content: '<h3>Learning objectives</h3><ul><li>Understand the key concept.</li><li>Apply it in GCSE-style questions.</li><li>Avoid common mistakes.</li></ul><h3>Core explanation</h3><p>Write the core concept here.</p><h3>Worked mini-example</h3><p>Add a short worked example.</p><h3>Quick check</h3><p>Add 2-3 quick questions.</p>'
+    },
+    'exam-technique': {
+        titlePrefix: 'Exam Technique: ',
+        summary: 'A structured lesson focused on exam command words, timing, and mark-scheme technique.',
+        content: '<h3>Command words to watch</h3><ul><li>Explain</li><li>Compare</li><li>Evaluate</li></ul><h3>How to structure the answer</h3><p>Describe the paragraph strategy here.</p><h3>Examiner tips</h3><ul><li>Point</li><li>Evidence</li><li>Analysis</li></ul><h3>Timed task</h3><p>Set a 4-8 minute timed response.</p>'
+    },
+    'worked-example': {
+        titlePrefix: 'Worked Example: ',
+        summary: 'Step-by-step worked solution followed by independent practice.',
+        content: '<h3>Problem statement</h3><p>Write the question here.</p><h3>Step-by-step solution</h3><ol><li>Step 1</li><li>Step 2</li><li>Step 3</li></ol><h3>Why this works</h3><p>Explain reasoning and methods.</p><h3>Try it yourself</h3><p>Add a similar practice question.</p>'
+    },
+    'flash-recap': {
+        titlePrefix: 'Flash Recap: ',
+        summary: 'A high-speed recap with key points, definitions, and memory triggers.',
+        content: '<h3>Must-know facts</h3><ul><li>Fact 1</li><li>Fact 2</li><li>Fact 3</li></ul><h3>Definitions</h3><p>Add concise definitions here.</p><h3>Common errors</h3><p>List mistakes students make and fixes.</p><h3>One-minute summary</h3><p>Finish with a compact recap.</p>'
+    }
+};
+const LESSON_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
 let lessonsFiltersBound = false;
+let lessonViewerSession = {
+    lessonId: null,
+    openedAt: 0,
+    completionTimer: null,
+    hasAutoCompleted: false
+};
 let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
@@ -438,6 +467,9 @@ function formatDateUK(value, withTime = true) {
 let unsubscribeVideoPlaylists;
 let unsubscribeBlogPosts;
 let unsubscribeLessons;
+let unsubscribeLessonMetrics;
+let unsubscribeLessonProgress;
+let unsubscribeLessonComments;
 let unsubscribeUserEvents;
 let unsubscribeGlobalEvents;
 let unsubscribeAnnouncement;
@@ -447,6 +479,8 @@ let unsubscribeCurrentUserDoc;
 let recaptchaVerifier;
 let freeTrialSubjectOverride = null;
 let lastAutoOpenedFreeTrialSubjectKey = null;
+const LESSON_METRICS_MAP = new Map();
+const LESSON_PROGRESS_MAP = new Map();
 
 // Performance optimizations
 let animationFrameId = null;
@@ -4531,6 +4565,11 @@ auth.onAuthStateChanged(async (user) => {
             });
         if (typeof unsubscribeBlogComments === 'function') { try { unsubscribeBlogComments(); } catch (_) {} unsubscribeBlogComments = null; }
         if (typeof unsubscribeLessons === 'function') { try { unsubscribeLessons(); } catch (_) {} unsubscribeLessons = null; }
+        if (typeof unsubscribeLessonMetrics === 'function') { try { unsubscribeLessonMetrics(); } catch (_) {} unsubscribeLessonMetrics = null; }
+        if (typeof unsubscribeLessonProgress === 'function') { try { unsubscribeLessonProgress(); } catch (_) {} unsubscribeLessonProgress = null; }
+        if (typeof unsubscribeLessonComments === 'function') { try { unsubscribeLessonComments(); } catch (_) {} unsubscribeLessonComments = null; }
+        LESSON_METRICS_MAP.clear();
+        LESSON_PROGRESS_MAP.clear();
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
             landingPage.classList.remove('hidden');
@@ -5922,6 +5961,29 @@ function setupRealtimeListeners() {
                 showToast(friendly, 'error');
             } catch (_) {}
         });
+
+    if (unsubscribeLessonMetrics) { try { unsubscribeLessonMetrics(); } catch (_) {} }
+    unsubscribeLessonMetrics = db.collection('lessonMetrics')
+        .onSnapshot(snapshot => {
+            LESSON_METRICS_MAP.clear();
+            snapshot.forEach(doc => {
+                LESSON_METRICS_MAP.set(doc.id, { id: doc.id, ...doc.data() });
+            });
+            renderLessonsPage(allLessons);
+        }, err => logError(err, 'Lesson Metrics'));
+
+    if (currentUser?.uid) {
+        if (unsubscribeLessonProgress) { try { unsubscribeLessonProgress(); } catch (_) {} }
+        unsubscribeLessonProgress = db.collection('users').doc(currentUser.uid).collection('lessonProgress')
+            .onSnapshot(snapshot => {
+                LESSON_PROGRESS_MAP.clear();
+                snapshot.forEach(doc => {
+                    LESSON_PROGRESS_MAP.set(doc.id, { id: doc.id, ...doc.data() });
+                });
+                renderLessonsPage(allLessons);
+            }, err => logError(err, 'Lesson Progress'));
+    }
+
     // Listen for user-specific events
     unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
         .onSnapshot(snapshot => {
@@ -14139,6 +14201,167 @@ function getLessonAccessState(lessonId) {
     };
 }
 
+function getLessonMetrics(lessonId) {
+    if (!lessonId) return { views: 0, completions: 0 };
+    const metrics = LESSON_METRICS_MAP.get(lessonId) || {};
+    return {
+        views: Number(metrics.views || 0),
+        completions: Number(metrics.completions || 0)
+    };
+}
+
+function getLessonProgress(lessonId) {
+    if (!lessonId || !currentUser?.uid) return null;
+    return LESSON_PROGRESS_MAP.get(lessonId) || null;
+}
+
+function isLessonViewed(lessonId) {
+    const progress = getLessonProgress(lessonId);
+    return !!(progress?.viewedAt || progress?.lastOpenedAt);
+}
+
+function isLessonCompleted(lessonId) {
+    const progress = getLessonProgress(lessonId);
+    return !!progress?.completedAt;
+}
+
+async function recordLessonView(lesson) {
+    if (!isFirestoreAvailable() || !currentUser?.uid || !lesson?.id) return;
+    const lessonId = lesson.id;
+    const uid = currentUser.uid;
+    try {
+        await db.collection('users').doc(uid).collection('lessonProgress').doc(lessonId).set({
+            lessonId,
+            viewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            openCount: firebase.firestore.FieldValue.increment(1),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            title: lesson.title || ''
+        }, { merge: true });
+
+        await db.collection('lessonMetrics').doc(lessonId).set({
+            lessonId,
+            title: lesson.title || '',
+            views: firebase.firestore.FieldValue.increment(1),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastViewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    } catch (error) {
+        logError(error, 'Lesson View Tracking');
+    }
+}
+
+async function markLessonComplete(lessonId, source = 'manual') {
+    if (!isFirestoreAvailable() || !currentUser?.uid || !lessonId) return;
+    const lesson = allLessons.find(item => item.id === lessonId);
+    if (!lesson) return;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('lessonProgress').doc(lessonId).set({
+            lessonId,
+            completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            completedBy: source,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            title: lesson.title || ''
+        }, { merge: true });
+
+        await db.collection('lessonMetrics').doc(lessonId).set({
+            lessonId,
+            title: lesson.title || '',
+            completions: firebase.firestore.FieldValue.increment(1),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastCompletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        if (source === 'manual') {
+            showToast('Lesson marked as complete.', 'success');
+        }
+        renderLessonsPage(allLessons);
+    } catch (error) {
+        logError(error, 'Lesson Completion Tracking');
+    }
+}
+
+function updateLessonCoverPreview() {
+    const coverInput = document.getElementById('lesson-cover-image');
+    const previewWrap = document.getElementById('lesson-cover-preview');
+    const previewImage = document.getElementById('lesson-cover-preview-image');
+    if (!coverInput || !previewWrap || !previewImage) return;
+    const url = String(coverInput.value || '').trim();
+    if (!url) {
+        previewWrap.classList.add('hidden');
+        previewImage.removeAttribute('src');
+        return;
+    }
+    previewImage.src = url;
+    previewWrap.classList.remove('hidden');
+}
+
+function autoArrangeLessonDraft() {
+    const lessonNumberEl = document.getElementById('lesson-number');
+    const sortOrderEl = document.getElementById('lesson-sort-order');
+    const publishEl = document.getElementById('lesson-publish-date');
+    const lessonId = document.getElementById('lesson-id')?.value;
+
+    if (!lessonId) {
+        const subject = String(document.getElementById('lesson-subject')?.value || '').trim().toLowerCase();
+        const topic = String(document.getElementById('lesson-topic')?.value || '').trim().toLowerCase();
+        const subtopic = String(document.getElementById('lesson-subtopic')?.value || '').trim().toLowerCase();
+        const bucket = allLessons
+            .map(normalizeLesson)
+            .filter(item =>
+                String(item.subject || '').trim().toLowerCase() === subject &&
+                String(item.topic || '').trim().toLowerCase() === topic &&
+                String(item.subtopic || '').trim().toLowerCase() === subtopic
+            )
+            .sort((a, b) => (a.lessonNumber || 0) - (b.lessonNumber || 0));
+        const nextNumber = (bucket[bucket.length - 1]?.lessonNumber || 0) + 1;
+        if (lessonNumberEl && !lessonNumberEl.value) lessonNumberEl.value = String(nextNumber);
+        if (sortOrderEl && !sortOrderEl.value) sortOrderEl.value = String(nextNumber * 10);
+    }
+
+    if (publishEl && !publishEl.value) {
+        const now = new Date();
+        publishEl.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
+
+    const titleInput = document.getElementById('lesson-title');
+    const subjectInput = document.getElementById('lesson-subject');
+    const topicInput = document.getElementById('lesson-topic');
+    if (titleInput && !String(titleInput.value || '').trim()) {
+        const subject = String(subjectInput?.value || 'General').trim() || 'General';
+        const topic = String(topicInput?.value || 'Topic').trim() || 'Topic';
+        const lessonNumber = String(lessonNumberEl?.value || '').trim();
+        titleInput.value = lessonNumber ? `${subject} ${topic} - Lesson ${lessonNumber}` : `${subject} ${topic} lesson`;
+    }
+
+    showToast('Lesson draft auto-arranged.', 'info');
+}
+
+function applyLessonTemplate() {
+    const templateSelect = document.getElementById('lesson-template-select');
+    const key = templateSelect?.value;
+    if (!key || !LESSON_TEMPLATES[key]) {
+        showToast('Choose a lesson template first.', 'warning');
+        return;
+    }
+    const template = LESSON_TEMPLATES[key];
+    const titleInput = document.getElementById('lesson-title');
+    const summaryInput = document.getElementById('lesson-summary');
+    const contentEditor = document.getElementById('lesson-content');
+    if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = `${template.titlePrefix}Untitled`;
+    }
+    if (summaryInput && !summaryInput.value.trim()) {
+        summaryInput.value = template.summary;
+    }
+    if (contentEditor && !String(contentEditor.innerHTML || '').replace(/<[^>]+>/g, '').trim()) {
+        contentEditor.innerHTML = template.content;
+    }
+    autoArrangeLessonDraft();
+    showToast('Template applied.', 'success');
+}
+
 function syncLessonFilterSelect(selectId, values, currentValue, allLabel) {
     const select = document.getElementById(selectId);
     if (!select) return;
@@ -14237,6 +14460,7 @@ function updateLessonInsightCards(lessons = []) {
     const totalEl = document.getElementById('lesson-total-count');
     const subjectEl = document.getElementById('lesson-subject-count');
     const latestEl = document.getElementById('lesson-latest-date');
+    const completedEl = document.getElementById('lesson-completed-count');
     if (totalEl) totalEl.textContent = String(lessons.length);
     if (subjectEl) {
         const subjectCount = new Set(lessons.map(lesson => normalizeBlogToken(lesson.subject)).filter(Boolean)).size;
@@ -14245,6 +14469,10 @@ function updateLessonInsightCards(lessons = []) {
     if (latestEl) {
         const latest = [...lessons].sort((a, b) => b.safeDate - a.safeDate)[0];
         latestEl.textContent = latest ? latest.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not yet';
+    }
+    if (completedEl) {
+        const completedCount = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+        completedEl.textContent = String(completedCount);
     }
 }
 
@@ -14302,6 +14530,9 @@ function renderLessonsPage(lessons = []) {
     filtered.forEach(lesson => {
         const card = document.createElement('article');
         const accessBadge = getLessonAccessBadge(lesson.id);
+        const metrics = getLessonMetrics(lesson.id);
+        const viewed = isLessonViewed(lesson.id);
+        const completed = isLessonCompleted(lesson.id);
         const contentPreview = escapeHTML(String(lesson.summary || lesson.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150));
         const tagChips = (lesson.tags || []).slice(0, 3).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
         const lessonPath = [lesson.subject, lesson.topic, lesson.subtopic].filter(Boolean).join(' • ') || 'General';
@@ -14325,12 +14556,20 @@ function renderLessonsPage(lessons = []) {
             <h3 class="mt-3 text-xl font-black text-slate-900 leading-tight">${escapeHTML(lesson.title || 'Untitled lesson')}</h3>
             <p class="mt-2 text-sm text-slate-600">${contentPreview || 'Open this lesson to view the complete interactive content.'}${contentPreview ? '…' : ''}</p>
             <p class="mt-3 text-xs font-semibold text-blue-700">${escapeHTML(lessonPath)}</p>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+                ${viewed ? '<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">Viewed</span>' : ''}
+                ${completed ? '<span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Completed</span>' : ''}
+            </div>
             <div class="mt-2 flex flex-wrap gap-2">${tagChips}</div>
             <div class="mt-4 flex items-center justify-between gap-2">
                 <span class="text-xs text-slate-500">Published ${publishText}</span>
                 <button class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors" ${accessBadge.locked ? 'disabled' : ''} onclick="openLessonViewer('${escapeJS(lesson.id)}')">
                     ${accessBadge.locked ? 'Locked' : 'Open lesson'}
                 </button>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                <span><i class="fas fa-eye mr-1 text-slate-400"></i>${metrics.views} views</span>
+                <span><i class="fas fa-check-circle mr-1 text-emerald-500"></i>${metrics.completions} completions</span>
             </div>
         `;
         list.appendChild(card);
@@ -14464,6 +14703,7 @@ function serializeLessonForm() {
 
 async function handleSaveLesson() {
     if (!isAdminUser()) return;
+    autoArrangeLessonDraft();
     const messageEl = document.getElementById('add-lesson-message');
     if (!isFirestoreAvailable()) {
         const friendly = getFirebaseFriendlyMessage(getFirebaseBootstrapError(), 'Lessons are temporarily unavailable. Please try again shortly.');
@@ -14521,6 +14761,9 @@ function resetLessonForm() {
     if (content) content.innerHTML = '';
     const lessonPublishDate = document.getElementById('lesson-publish-date');
     if (lessonPublishDate) lessonPublishDate.value = '';
+    const templateSelect = document.getElementById('lesson-template-select');
+    if (templateSelect) templateSelect.value = '';
+    updateLessonCoverPreview();
 }
 
 function editLesson(lessonId) {
@@ -14563,6 +14806,7 @@ function editLesson(lessonId) {
 
     const content = document.getElementById('lesson-content');
     if (content) content.innerHTML = sanitizeHTML(normalized.content || '');
+    updateLessonCoverPreview();
 
     const formWrap = document.getElementById('add-lesson-form-container');
     if (formWrap) formWrap.scrollIntoView({ behavior: 'smooth' });
@@ -14599,11 +14843,114 @@ function renderLessonMediaBlocks(lesson) {
 }
 
 function closeLessonViewer() {
+    if (lessonViewerSession.completionTimer) {
+        clearTimeout(lessonViewerSession.completionTimer);
+        lessonViewerSession.completionTimer = null;
+    }
+    lessonViewerSession.lessonId = null;
+    lessonViewerSession.openedAt = 0;
+    lessonViewerSession.hasAutoCompleted = false;
+    if (unsubscribeLessonComments) {
+        try { unsubscribeLessonComments(); } catch (_) {}
+        unsubscribeLessonComments = null;
+    }
     const modal = document.getElementById('lesson-viewer-modal');
     if (!modal) return;
     modal.style.display = 'none';
     modal.classList.add('hidden');
     modal.innerHTML = '';
+}
+
+function setupLessonAutoCompletionWatch(lessonId) {
+    const scrollRoot = document.querySelector('#lesson-viewer-modal .overflow-y-auto');
+    if (!scrollRoot) return;
+
+    const maybeAutoComplete = () => {
+        if (lessonViewerSession.hasAutoCompleted || !lessonViewerSession.lessonId) return;
+        const bottomReached = scrollRoot.scrollTop + scrollRoot.clientHeight >= (scrollRoot.scrollHeight - 24);
+        const openLongEnough = Date.now() - lessonViewerSession.openedAt >= 5000;
+        if (!bottomReached || !openLongEnough) return;
+        lessonViewerSession.hasAutoCompleted = true;
+        markLessonComplete(lessonId, 'auto-scroll');
+    };
+
+    scrollRoot.addEventListener('scroll', maybeAutoComplete, { passive: true });
+    lessonViewerSession.completionTimer = setTimeout(maybeAutoComplete, 5200);
+}
+
+function renderLessonComments(lessonId) {
+    const list = document.getElementById('lesson-comments-list');
+    if (!list) return;
+    if (!isFirestoreAvailable()) {
+        list.innerHTML = '<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Comments are temporarily unavailable while the live database reconnects.</div>';
+        return;
+    }
+
+    if (unsubscribeLessonComments) {
+        try { unsubscribeLessonComments(); } catch (_) {}
+        unsubscribeLessonComments = null;
+    }
+
+    unsubscribeLessonComments = db.collection('lessons').doc(lessonId).collection('comments')
+        .orderBy('createdAt', 'asc')
+        .onSnapshot(snapshot => {
+            const comments = [];
+            snapshot.forEach(doc => comments.push({ id: doc.id, ...doc.data() }));
+            if (!comments.length) {
+                list.innerHTML = '<div class="text-sm text-slate-500">No comments yet. Start the discussion.</div>';
+                return;
+            }
+            list.innerHTML = comments.map(c => {
+                const name = escapeHtml(c.authorName || 'User');
+                const text = escapeHtml(c.text || '');
+                const when = c.createdAt?.toDate ? c.createdAt.toDate() : null;
+                const rel = when ? timeAgo(when) : '';
+                return `<div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-xs text-slate-500 mb-1">${name} • ${rel}</div><div class="text-sm text-slate-700 whitespace-pre-wrap">${text}</div></div>`;
+            }).join('');
+        }, err => {
+            logError(err, 'Lesson Comments');
+            list.innerHTML = `<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">${escapeHTML(getFirebaseFriendlyMessage(err, 'Could not load lesson comments.'))}</div>`;
+        });
+
+    const form = document.getElementById('lesson-add-comment-form');
+    if (form && !form.dataset.bound) {
+        form.dataset.bound = 'true';
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const input = document.getElementById('lesson-comment-input');
+            const msg = document.getElementById('lesson-comment-message');
+            const text = String(input?.value || '').trim();
+            if (msg) msg.textContent = '';
+            if (!text) return;
+            const allowed = isAdminUser() || currentUser?.tier === 'paid';
+            if (!allowed) {
+                if (msg) {
+                    msg.textContent = 'Only Pro users can comment.';
+                    msg.className = 'text-red-600 text-sm h-4';
+                }
+                return;
+            }
+            try {
+                await db.collection('lessons').doc(lessonId).collection('comments').add({
+                    text,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || currentUser.email || 'User',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                if (input) input.value = '';
+                if (msg) {
+                    msg.textContent = 'Comment posted.';
+                    msg.className = 'text-green-600 text-sm h-4';
+                }
+            } catch (error) {
+                logError(error, 'Lesson Comment Submit');
+                if (msg) {
+                    msg.textContent = getFirebaseFriendlyMessage(error, 'Could not post comment.');
+                    msg.className = 'text-red-600 text-sm h-4';
+                }
+            }
+        });
+    }
 }
 
 function openLessonViewer(lessonId) {
@@ -14626,6 +14973,8 @@ function openLessonViewer(lessonId) {
         renderLessonsPage(allLessons);
     }
 
+    recordLessonView(lesson);
+
     const normalized = normalizeLesson(lesson);
     const modal = document.getElementById('lesson-viewer-modal');
     if (!modal) return;
@@ -14633,6 +14982,11 @@ function openLessonViewer(lessonId) {
     const tagChips = (normalized.tags || []).slice(0, 8).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
     const pathLabel = [normalized.subject, normalized.topic, normalized.subtopic].filter(Boolean).join(' • ') || 'General lesson';
     const publishText = normalized.safeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const metrics = getLessonMetrics(normalized.id);
+    const progress = getLessonProgress(normalized.id);
+    const canComment = isAdminUser() || currentUser?.tier === 'paid';
+    const viewedLabel = progress?.viewedAt || progress?.lastOpenedAt ? 'Viewed' : 'Not viewed yet';
+    const completedLabel = progress?.completedAt ? 'Completed' : 'Not completed';
 
     modal.innerHTML = `
         <div class="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl w-full max-w-5xl flex flex-col fade-in max-h-[90vh]">
@@ -14647,43 +15001,117 @@ function openLessonViewer(lessonId) {
             <div class="overflow-y-auto p-6 md:p-8">
                 ${normalized.coverImage ? `<img src="${escapeHTML(normalized.coverImage)}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200 mb-6" loading="lazy" decoding="async">` : ''}
                 ${normalized.summary ? `<p class="text-sm text-slate-600 mb-5">${escapeHTML(normalized.summary)}</p>` : ''}
+                <div class="mb-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><i class="fas fa-eye mr-1 text-slate-500"></i>${metrics.views} views</div>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"><i class="fas fa-check-circle mr-1"></i>${metrics.completions} completions</div>
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">${escapeHTML(viewedLabel)} • ${escapeHTML(completedLabel)}</div>
+                </div>
                 <div class="prose prose-sm md:prose-base max-w-none lesson-rich-content">${formatBlogLinks(sanitizeHTML(normalized.content || ''))}</div>
                 <div class="mt-5 flex flex-wrap gap-2">${tagChips}</div>
                 ${renderLessonMediaBlocks(normalized)}
+                <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-6">
+                    <button type="button" onclick="markLessonComplete('${escapeJS(normalized.id)}')" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
+                        <i class="fas fa-check"></i>
+                        Mark lesson as complete
+                    </button>
+                    <span class="text-xs font-semibold text-slate-500">Auto-completes when you reach the end and stay for at least 5 seconds.</span>
+                </div>
+                <section class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 class="text-lg font-bold text-slate-900 mb-2">Lesson comments</h4>
+                    <div id="lesson-comments-list" class="space-y-3"></div>
+                    ${canComment ? `
+                        <form id="lesson-add-comment-form" class="mt-4 space-y-2">
+                            <textarea id="lesson-comment-input" class="w-full p-3 rounded-lg border border-gray-300/60 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Ask a question or share your answer strategy..."></textarea>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Post comment</button>
+                            </div>
+                            <p id="lesson-comment-message" class="text-sm h-4"></p>
+                        </form>
+                    ` : '<div class="mt-3 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg p-3">Comments are available to Pro users. <a href="#" class="text-blue-600 font-semibold" onclick="showPage(\'features-page\')">Upgrade to Pro</a> to join the discussion.</div>'}
+                </section>
             </div>
         </div>
     `;
 
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    lessonViewerSession.lessonId = lessonId;
+    lessonViewerSession.openedAt = Date.now();
+    lessonViewerSession.hasAutoCompleted = false;
+    setupLessonAutoCompletionWatch(lessonId);
+    renderLessonComments(lessonId);
 }
 
 function setupLessonsImagePasteHandler() {
     const zone = document.getElementById('lesson-image-paste-zone');
     const imageUrls = document.getElementById('lesson-image-urls');
-    if (!zone || !imageUrls || zone.dataset.bound === 'true') return;
+    const editor = document.getElementById('lesson-content');
+    const coverInput = document.getElementById('lesson-cover-image');
+    if (!zone || !imageUrls || !editor || zone.dataset.bound === 'true') return;
     zone.dataset.bound = 'true';
 
-    zone.addEventListener('paste', (event) => {
+    const appendImageUrl = (url) => {
+        const clean = String(url || '').trim();
+        if (!clean) return;
+        const existing = parseMultilineValues(imageUrls.value || '');
+        if (!existing.includes(clean)) {
+            imageUrls.value = existing.length ? `${existing.join('\n')}\n${clean}` : clean;
+        }
+    };
+
+    const insertImageInLessonEditor = (url) => {
+        const clean = String(url || '').trim();
+        if (!clean) return;
+        editor.focus();
+        document.execCommand('insertHTML', false, `<figure><img src="${escapeHTML(clean)}" alt="Lesson image" class="w-full rounded-xl border border-gray-200" loading="lazy" decoding="async"></figure><p><br></p>`);
+        appendImageUrl(clean);
+    };
+
+    zone.addEventListener('paste', async (event) => {
+        const textPaste = String(event.clipboardData?.getData('text/plain') || '').trim();
+        if (/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(textPaste)) {
+            event.preventDefault();
+            insertImageInLessonEditor(textPaste);
+            showToast('Image URL inserted into lesson.', 'success');
+            return;
+        }
+
         const items = event.clipboardData?.items || [];
         for (const item of items) {
             if (!item.type || !item.type.startsWith('image/')) continue;
             const file = item.getAsFile();
             if (!file) continue;
             event.preventDefault();
-            const reader = new FileReader();
-            reader.onload = () => {
-                const value = String(reader.result || '').trim();
-                if (!value) return;
-                imageUrls.value = imageUrls.value
-                    ? `${imageUrls.value.trim()}\n${value}`
-                    : value;
-                showToast('Pasted image added to lesson image list.', 'success');
-            };
-            reader.readAsDataURL(file);
+            try {
+                const uploadResult = await uploadImageWithFallback(file, 'lesson-paste');
+                const imageUrl = uploadResult?.url || uploadResult;
+                if (!imageUrl) throw new Error('No uploaded URL returned');
+                insertImageInLessonEditor(imageUrl);
+                if (coverInput && !String(coverInput.value || '').trim()) {
+                    coverInput.value = imageUrl;
+                    updateLessonCoverPreview();
+                }
+                showToast('Pasted image uploaded and inserted.', 'success');
+            } catch (error) {
+                logError(error, 'Lesson Image Paste');
+                showToast('Could not upload pasted image.', 'error');
+            }
             break;
         }
     });
+
+    editor.addEventListener('paste', async (event) => {
+        const textPaste = String(event.clipboardData?.getData('text/plain') || '').trim();
+        if (!/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(textPaste)) return;
+        event.preventDefault();
+        insertImageInLessonEditor(textPaste);
+        showToast('Image URL embedded in lesson content.', 'success');
+    });
+
+    if (coverInput && !coverInput.dataset.bound) {
+        coverInput.dataset.bound = 'true';
+        coverInput.addEventListener('input', updateLessonCoverPreview);
+    }
 }
 
 function prepareLessonEditorCommand() {
@@ -14744,12 +15172,17 @@ window.editLesson = editLesson;
 window.deleteLesson = deleteLesson;
 window.openLessonViewer = openLessonViewer;
 window.closeLessonViewer = closeLessonViewer;
+window.markLessonComplete = markLessonComplete;
+window.autoArrangeLessonDraft = autoArrangeLessonDraft;
+window.applyLessonTemplate = applyLessonTemplate;
 window.lessonFormatText = lessonFormatText;
 window.applyLessonFont = applyLessonFont;
 window.applyLessonTextColor = applyLessonTextColor;
 window.applyLessonHighlightColor = applyLessonHighlightColor;
 window.lessonInsertLink = lessonInsertLink;
 window.setLessonTreeFilter = setLessonTreeFilter;
+window.openLessonImagePicker = window.openLessonImagePicker || function() {};
+window.handleLessonImageFileSelect = window.handleLessonImageFileSelect || function() {};
 
 // WYSIWYG Rich Text Editor Functions
 let blogEditorSavedRange = null;
@@ -15207,7 +15640,7 @@ async function insertBlogImageFromFile(file, source = 'upload') {
     document.execCommand('insertHTML', false, `<span id="${placeholderId}" class="blog-image-placeholder">Uploading image...</span>`);
 
     try {
-        const uploadResult = await uploadBlogImageToStorage(file, source);
+        const uploadResult = await uploadImageWithFallback(file, source);
         const downloadURL = uploadResult.url || uploadResult; // Support both new format and legacy
         const placeholder = document.getElementById(placeholderId);
         const altText = escapeHTML(file.name || 'Embedded image');
@@ -15465,6 +15898,44 @@ async function processCloudinaryDeletions() {
     }
 }
 
+function canUseFirebaseStorage() {
+    return typeof storage !== 'undefined' && storage && typeof storage.ref === 'function';
+}
+
+async function uploadImageToFirebaseStorage(file, source = 'upload') {
+    if (!canUseFirebaseStorage()) {
+        throw new Error('Firebase Storage unavailable');
+    }
+    if (!currentUser?.uid) {
+        throw new Error('You must be signed in to upload images');
+    }
+
+    const compressedFile = await compressImage(file);
+    const safeName = String(file.name || 'image.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `editorUploads/${currentUser.uid}/${Date.now()}-${safeName}`;
+    const ref = storage.ref(path);
+
+    await ref.put(compressedFile, {
+        contentType: compressedFile.type || 'image/jpeg',
+        customMetadata: {
+            source,
+            uploadedBy: currentUser.uid
+        }
+    });
+
+    const url = await ref.getDownloadURL();
+    return { url, storagePath: path, provider: 'firebase-storage' };
+}
+
+async function uploadImageWithFallback(file, source = 'upload') {
+    try {
+        return await uploadImageToFirebaseStorage(file, source);
+    } catch (primaryError) {
+        console.warn('Primary image upload failed; falling back to Cloudinary.', primaryError);
+        return await uploadBlogImageToStorage(file, source);
+    }
+}
+
 async function uploadBlogImageToStorage(file, source = 'upload') {
     if (!currentUser || !currentUser.uid) {
         throw new Error('You must be signed in to upload images');
@@ -15568,11 +16039,19 @@ let cropState = {
     dragHandle: null,
     startX: 0,
     startY: 0,
-    originalFile: null
+    originalFile: null,
+    targetEditor: 'blog'
 };
 
-window.openImagePicker = function() {
+window.openImagePicker = function(targetEditor = 'blog') {
+    cropState.targetEditor = targetEditor === 'lesson' ? 'lesson' : 'blog';
     const input = document.getElementById('hidden-image-input');
+    if (input) input.click();
+};
+
+window.openLessonImagePicker = function() {
+    cropState.targetEditor = 'lesson';
+    const input = document.getElementById('hidden-lesson-image-input');
     if (input) input.click();
 };
 
@@ -15590,6 +16069,26 @@ window.handleImageFileSelect = function(event) {
         return;
     }
     
+    cropState.targetEditor = 'blog';
+    openImageCropModal(file);
+    event.target.value = ''; // Reset input
+};
+
+window.handleLessonImageFileSelect = function(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!isBlogImageFile(file)) {
+        showToast('Only image files are allowed', 'error');
+        return;
+    }
+
+    if (file.size > LESSON_IMAGE_MAX_SIZE) {
+        showToast('Images must be smaller than 5MB', 'error');
+        return;
+    }
+
+    cropState.targetEditor = 'lesson';
     openImageCropModal(file);
     event.target.value = ''; // Reset input
 };
@@ -15847,8 +16346,39 @@ window.applyCropAndUpload = async function() {
         type: `image/${format}`,
         lastModified: Date.now()
     });
+
+    const targetEditor = cropState.targetEditor || 'blog';
     
     closeImageCropModal();
+    if (targetEditor === 'lesson') {
+        try {
+            const uploaded = await uploadImageWithFallback(croppedFile, 'lesson-crop');
+            const imageUrl = uploaded?.url || uploaded;
+            const lessonEditor = document.getElementById('lesson-content');
+            const lessonImageUrls = document.getElementById('lesson-image-urls');
+            if (lessonEditor && imageUrl) {
+                lessonEditor.focus();
+                document.execCommand('insertHTML', false, `<figure><img src="${escapeHTML(imageUrl)}" alt="Lesson image" class="w-full rounded-xl border border-gray-200" loading="lazy" decoding="async"></figure><p><br></p>`);
+            }
+            if (lessonImageUrls && imageUrl) {
+                const existing = parseMultilineValues(lessonImageUrls.value || '');
+                if (!existing.includes(imageUrl)) {
+                    lessonImageUrls.value = existing.length ? `${existing.join('\n')}\n${imageUrl}` : imageUrl;
+                }
+            }
+            const coverInput = document.getElementById('lesson-cover-image');
+            if (coverInput && !String(coverInput.value || '').trim() && imageUrl) {
+                coverInput.value = imageUrl;
+                updateLessonCoverPreview();
+            }
+            showToast('Cropped lesson image inserted.', 'success');
+        } catch (error) {
+            logError(error, 'Lesson Crop Upload');
+            showToast('Could not upload cropped lesson image.', 'error');
+        }
+        return;
+    }
+
     await insertBlogImageFromFile(croppedFile, 'crop');
 };
 
@@ -15882,6 +16412,7 @@ window.closeImageCropModal = function() {
         startX: 0,
         startY: 0,
         originalFile: null,
+        targetEditor: 'blog',
         mouseMoveHandler: null,
         mouseUpHandler: null,
         aspectRatioChangeHandler: null

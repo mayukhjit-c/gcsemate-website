@@ -78,6 +78,15 @@ service cloud.firestore {
         allow read, write: if isSignedIn() && request.auth.uid == uid;
       }
 
+      // Per-user lesson progress
+      match /lessonProgress/{lessonId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.keys().hasOnly([
+            'lessonId','title','viewedAt','lastOpenedAt','openCount','completedAt','completedBy','updatedAt'
+          ]) &&
+          request.resource.data.lessonId == lessonId;
+      }
+
       // Per-user grade tracker entries
       match /gradeEntries/{entryId} {
         allow read: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
@@ -148,6 +157,34 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['buttonUrl']) || request.resource.data.buttonUrl == null || request.resource.data.buttonUrl is string) &&
         (!request.resource.data.keys().hasAny(['authorName']) || request.resource.data.authorName == null || request.resource.data.authorName is string) &&
         (!request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == null || request.resource.data.createdBy is string);
+      allow delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && (isPaid() || isAdmin()) &&
+          request.resource.data.keys().hasOnly(['text','authorId','authorName','createdAt']) &&
+          request.resource.data.text is string && request.resource.data.text.size() > 0 &&
+          request.resource.data.authorId == request.auth.uid;
+        allow update: if isSignedIn() &&
+          (isAdmin() || resource.data.authorId == request.auth.uid) &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['text','updatedAt']) &&
+          request.resource.data.text is string && request.resource.data.text.size() > 0;
+        allow delete: if isSignedIn() &&
+          (isAdmin() || resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    // Lesson metrics (aggregated views/completions counters maintained by client activity events)
+    match /lessonMetrics/{lessonId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.resource.data.keys().hasOnly([
+          'lessonId','title','views','completions','lastViewedAt','lastCompletedAt','updatedAt'
+        ]) &&
+        request.resource.data.lessonId == lessonId &&
+        (!request.resource.data.keys().hasAny(['title']) || request.resource.data.title == null || request.resource.data.title is string) &&
+        (!request.resource.data.keys().hasAny(['views']) || (request.resource.data.views is number && request.resource.data.views >= 0)) &&
+        (!request.resource.data.keys().hasAny(['completions']) || (request.resource.data.completions is number && request.resource.data.completions >= 0));
       allow delete: if isAdmin();
     }
 
