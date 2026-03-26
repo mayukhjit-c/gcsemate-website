@@ -7277,6 +7277,148 @@ async function handleSubscriptionRenewal() {
     }
 }
 
+// Subscription Management UI Functions
+async function loadSubscriptionStatus() {
+    if (!currentUser) return;
+    
+    try {
+        const container = document.getElementById('subscription-status-container');
+        if (!container) return;
+        
+        // Determine plan and status
+        const planName = currentUser.tier === 'paid' ? 'GCSEMate Pro' : 'Free Plan';
+        const expiryDate = currentUser.subscriptionExpiresAt ? 
+            (currentUser.subscriptionExpiresAt.toDate ? currentUser.subscriptionExpiresAt.toDate() : new Date(currentUser.subscriptionExpiresAt)) 
+            : null;
+        
+        // Update plan name
+        const planNameEl = document.getElementById('current-plan-name');
+        if (planNameEl) planNameEl.textContent = planName;
+        
+        // Update status
+        const statusEl = document.getElementById('subscription-status');
+        if (statusEl) {
+            if (currentUser.tier === 'paid' && expiryDate) {
+                const now = new Date();
+                const isExpired = expiryDate < now;
+                statusEl.textContent = isExpired ? 'Expired' : 'Active';
+                statusEl.className = isExpired ? 'text-lg font-semibold text-red-600' : 'text-lg font-semibold text-green-600';
+            } else {
+                statusEl.textContent = 'Inactive';
+                statusEl.className = 'text-lg font-semibold text-gray-800';
+            }
+        }
+        
+        // Update renewal and expiry dates
+        if (expiryDate) {
+            const renewalEl = document.getElementById('subscription-renewal-date');
+            const expiryEl = document.getElementById('subscription-expires-date');
+            const renewalDate = new Date(expiryDate);
+            renewalDate.setDate(renewalDate.getDate() + 1);
+            
+            if (renewalEl) renewalEl.textContent = formatDateUK(renewalDate);
+            if (expiryEl) expiryEl.textContent = formatDateUK(expiryDate);
+        } else {
+            if (document.getElementById('subscription-renewal-date')) document.getElementById('subscription-renewal-date').textContent = 'N/A';
+            if (document.getElementById('subscription-expires-date')) document.getElementById('subscription-expires-date').textContent = 'N/A';
+        }
+        
+        // Update start date (using account creation date or a default)
+        const startDateEl = document.getElementById('subscription-start-date');
+        if (startDateEl) {
+            if (currentUser.tier === 'paid' && currentUser.subscriptionRenewedAt) {
+                const startDate = currentUser.subscriptionRenewedAt.toDate ? currentUser.subscriptionRenewedAt.toDate() : new Date(currentUser.subscriptionRenewedAt);
+                startDateEl.textContent = formatDateUK(startDate);
+            } else if (currentUser.createdAt) {
+                const createdDate = currentUser.createdAt.toDate ? currentUser.createdAt.toDate() : new Date(currentUser.createdAt);
+                startDateEl.textContent = formatDateUK(createdDate);
+            } else {
+                startDateEl.textContent = 'N/A';
+            }
+        }
+        
+        // Show/hide subscription actions based on tier
+        const upgradeContainer = document.getElementById('upgrade-container');
+        const subscriberActions = document.getElementById('current-subscriber-actions');
+        
+        if (currentUser.tier === 'paid') {
+            if (upgradeContainer) upgradeContainer.classList.add('hidden');
+            if (subscriberActions) subscriberActions.classList.remove('hidden');
+        } else {
+            if (upgradeContainer) upgradeContainer.classList.remove('hidden');
+            if (subscriberActions) subscriberActions.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        logError(error, 'Load Subscription Status');
+    }
+}
+
+function showUpgradeConfirmation() {
+    const modal = document.getElementById('upgrade-confirmation-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+}
+
+function closeUpgradeConfirmation() {
+    const modal = document.getElementById('upgrade-confirmation-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+function proceedToCheckout() {
+    closeUpgradeConfirmation();
+    try {
+        ensureStripePricingTableLoaded().then(() => {
+            const pricingSection = document.getElementById('pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    } catch (_) {
+        showPage('checkout-page');
+    }
+}
+
+function showUnsubscribeConfirmation() {
+    const modal = document.getElementById('unsubscribe-confirmation-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+}
+
+function closeUnsubscribeConfirmation() {
+    const modal = document.getElementById('unsubscribe-confirmation-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+async function processUnsubscribe() {
+    if (!currentUser) {
+        showToast('Please log in to cancel your subscription.', 'error');
+        return;
+    }
+    
+    closeUnsubscribeConfirmation();
+    
+    try {
+        showToast('Redirecting to Stripe billing portal...', 'info');
+        // Open the Stripe billing portal where users can manage and cancel their subscription
+        window.open('https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00', '_blank', 'noopener,noreferrer');
+        showToast('You can now manage your subscription in the Stripe portal. Look for the cancel option.', 'success', 8000);
+    } catch (error) {
+        logError(error, 'Process Unsubscribe');
+        showToast('Unable to open the Stripe portal. Please try again or email admin@gcsemate.com.', 'error');
+    }
+}
+
 // View User Tracking Data
 async function viewUserTracking(userId) {
     if (currentUser.role !== 'admin') return;
@@ -11254,6 +11396,10 @@ function showPage(pageId) {
         setTimeout(() => updateToolsTimerUI(), 50);
     }
     
+    if (pageId === 'checkout-page') {
+        setTimeout(() => loadSubscriptionStatus(), 100);
+    }
+    
     // AI Tutor initialization removed (feature disabled)
 
     if (current && current !== newPage) {
@@ -11792,13 +11938,71 @@ function handleResetFreeTrialOverride() {
     saveFreeTrialSubjectOverride(null);
 }
 
-async function renderDashboard() {
+function updateDashboardStats() {
+    if (!currentUser) return;
+    
+    const subjectCountEl = document.getElementById('dashboard-subject-count');
+    const tierEl = document.getElementById('dashboard-tier');
+    
+    if (subjectCountEl) {
+        const allowedSubjects = currentUser.allowedSubjects || [];
+        const isFreeTier = (currentUser.tier || 'free') === 'free';
+        const count = isFreeTier ? SUBJECTS.length : (allowedSubjects.length || SUBJECTS.length);
+        subjectCountEl.textContent = count.toString();
+    }
+    
+    if (tierEl) {
+        const tierText = currentUser.tier === 'paid' ? 'Pro' : 'Free';
+        const tierColor = currentUser.tier === 'paid' ? 'emerald' : 'gray';
+        tierEl.textContent = tierText;
+        tierEl.className = `text-xl font-bold ${tierColor}-600`;
+    }
+}
+
+function updateDashboardClock() {
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    const reminderEl = document.getElementById('study-reminder-time');
+    
+    if (timeEl) {
+        const now = new Date();
+        timeEl.textContent = now.toLocaleTimeString('en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+    }
+    
+    if (dateEl) {
+        const now = new Date();
+        dateEl.textContent = new Intl.DateTimeFormat('en-GB', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short'
+        }).format(now);
+    }
+    
+    if (reminderEl) {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = 'Let\'s revise!';
+        if (hour < 12) greeting = 'Good morning! 🌅';
+        else if (hour < 17) greeting = 'Afternoon focus 📚';
+        else if (hour < 21) greeting = 'Evening session 🌙';
+        else greeting = 'Late study? ☕';
+        reminderEl.textContent = greeting;
+    }
+    
+    // Update clock every minute
+    setTimeout(updateDashboardClock, 60000);
+}
+    
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
     // Render skeleton loader
     let skeletonHTML = '';
     for (let i = 0; i < 10; i++) {
-        skeletonHTML += '<div class="h-36 skeleton"></div>';
+        skeletonHTML += '<div class="h-32 skeleton"></div>';
     }
     subjectGrid.innerHTML = skeletonHTML;
     
