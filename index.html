@@ -830,43 +830,24 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12z"/></svg>
             </button>
             <div id="page-container" class="relative">
-                <div id="subject-dashboard-page" class="page p-4 sm:p-6 lg:p-8 max-w-full mx-auto flex flex-col">
-                    <!-- Compact Horizontal Header -->
-                    <div class="mb-6 space-y-3">
-                        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900">Your Subjects</h2>
-                        <div class="flex flex-wrap items-center gap-3 sm:gap-6">
-                            <!-- Mini Clock -->
-                            <div id="dashboard-clock" class="dashboard-clock-shell bg-gradient-to-br from-blue-50 to-indigo-50 backdrop-blur-lg p-2.5 rounded-lg shadow-sm border border-blue-100/60 text-center min-w-[140px]">
-                                <div class="space-y-1">
-                                    <p id="clock-time" class="text-lg sm:text-xl font-bold text-gray-800 tracking-wider"></p>
-                                    <p id="clock-date" class="text-xs text-gray-600 font-semibold"></p>
-                                </div>
+                <div id="subject-dashboard-page" class="page p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+                        <h2 class="text-3xl font-bold text-gray-800">Your Subjects</h2>
+                        <div id="dashboard-clock" class="dashboard-clock-shell bg-white/50 backdrop-blur-lg p-3 rounded-xl shadow-md border border-white/30 text-center">
+                            <div class="dashboard-clock-analog" aria-hidden="true">
+                                <span class="dashboard-clock-hand hour" id="clock-hour-hand"></span>
+                                <span class="dashboard-clock-hand minute" id="clock-minute-hand"></span>
+                                <span class="dashboard-clock-hand second" id="clock-second-hand"></span>
+                                <span class="dashboard-clock-center"></span>
                             </div>
-                            
-                            <!-- Quick Stats -->
-                            <div class="flex gap-4 text-sm">
-                                <div class="px-3 py-2 rounded-lg bg-white/60 border border-gray-200">
-                                    <p class="text-xs text-gray-600">Total Subjects</p>
-                                    <p id="dashboard-subject-count" class="text-xl font-bold text-blue-600">0</p>
-                                </div>
-                                <div class="px-3 py-2 rounded-lg bg-white/60 border border-gray-200">
-                                    <p class="text-xs text-gray-600" id="dashboard-access-level">Access Level</p>
-                                    <p id="dashboard-tier" class="text-xl font-bold text-emerald-600">Free</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Study Reminder -->
-                            <div class="ml-auto px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-right">
-                                <p class="text-xs text-amber-700 font-semibold">Stay Focused</p>
-                                <p id="study-reminder-time" class="text-sm text-amber-900">Let's revise!</p>
+                            <div class="dashboard-clock-digital">
+                                <p id="clock-time" class="text-2xl font-bold text-gray-800 tracking-wider"></p>
+                                <p id="clock-date" class="text-xs text-gray-500 font-semibold uppercase tracking-widest"></p>
+                                <p id="clock-focus-label" class="dashboard-clock-focus-label">Stay in flow</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Large Interactive Grid Area (Scrollable if needed) -->
-                    <div class="flex-grow overflow-auto">
-                        <div id="subject-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 pb-4"></div>
-                    </div>
+                    <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
                 </div>
                 <div id="videos-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Revision Video Playlists</h2>
@@ -3137,140 +3118,42 @@
                         
                     </div>
                 </div>
-                <div id="checkout-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-                    <div class="mb-8">
-                        <button onclick="showPage('subject-dashboard-page')" class="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-colors mb-4">
-                            <i class="fas fa-chevron-left"></i> Back to Dashboard
-                        </button>
-                        <h1 class="text-4xl font-bold text-gray-900 mb-2">Subscription Management</h1>
-                        <p class="text-gray-600 text-lg">Upgrade your account or manage your current subscription</p>
-                    </div>
-                    
-                    <div id="checkout-alert" class="hidden rounded-lg border p-4 text-left text-sm mb-6"></div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                        <!-- Current Subscription Status -->
-                        <div class="lg:col-span-2">
-                            <div class="checkout-shell bg-white/60 p-6 sm:p-8 rounded-xl shadow-md border border-white/40">
-                                <h2 class="text-2xl font-bold text-gray-800 mb-6">Your Subscription</h2>
-                                
-                                <div id="subscription-status-container" class="space-y-4 mb-8">
-                                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-100">
-                                        <p class="text-sm text-gray-600 mb-1">Current Plan</p>
-                                        <p id="current-plan-name" class="text-2xl font-bold text-blue-900">Free</p>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="p-4 rounded-lg bg-white border border-gray-200">
-                                            <p class="text-sm text-gray-600 mb-1">Status</p>
-                                            <p id="subscription-status" class="text-lg font-semibold text-gray-800">Inactive</p>
-                                        </div>
-                                        <div class="p-4 rounded-lg bg-white border border-gray-200">
-                                            <p class="text-sm text-gray-600 mb-1">Renewal Date</p>
-                                            <p id="subscription-renewal-date" class="text-lg font-semibold text-gray-800">N/A</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="p-4 rounded-lg bg-white border border-gray-200">
-                                            <p class="text-sm text-gray-600 mb-1">Start Date</p>
-                                            <p id="subscription-start-date" class="text-lg font-semibold text-gray-800">N/A</p>
-                                        </div>
-                                        <div class="p-4 rounded-lg bg-white border border-gray-200">
-                                            <p class="text-sm text-gray-600 mb-1">Expires</p>
-                                            <p id="subscription-expires-date" class="text-lg font-semibold text-gray-800">N/A</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div id="upgrade-container" class="space-y-4">
-                                    <h3 class="text-lg font-semibold text-gray-800">Ready to upgrade?</h3>
-                                    <p class="text-sm text-gray-600">Unlock all Pro features including unlimited downloads, advanced file previews, and priority support.</p>
-                                    <div class="flex flex-wrap gap-3">
-                                        <button onclick="showUpgradeConfirmation()" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center gap-2">
-                                            <i class="fas fa-crown"></i> Upgrade to Pro (£1/month)
-                                        </button>
-                                        <a href="https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition-all flex items-center gap-2">
-                                            <i class="fas fa-cog"></i> Manage in Stripe
-                                        </a>
-                                    </div>
-                                </div>
-                                
-                                <div id="current-subscriber-actions" class="hidden pt-6 border-t border-gray-200 space-y-4">
-                                    <h3 class="text-lg font-semibold text-gray-800">Subscription Actions</h3>
-                                    <div class="flex flex-wrap gap-3">
-                                        <a href="https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all flex items-center gap-2">
-                                            <i class="fas fa-edit"></i> Update Payment Method
-                                        </a>
-                                        <button onclick="showUnsubscribeConfirmation()" class="px-6 py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-all flex items-center gap-2">
-                                            <i class="fas fa-times-circle"></i> Cancel Subscription
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- What You Get -->
-                        <div>
-                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-md">
-                                <h3 class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-star text-yellow-500"></i> Pro Features
-                                </h3>
-                                <ul class="space-y-3 text-sm text-blue-900">
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Unlimited subject hubs</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Full file browser access</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>One-click downloads</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Advanced previews</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Global events & countdowns</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Priority support</span>
-                                    </li>
-                                    <li class="flex gap-3">
-                                        <i class="fas fa-check text-green-600 flex-shrink-0 mt-0.5"></i>
-                                        <span>Cancel anytime</span>
-                                    </li>
+                <div id="checkout-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Upgrade to Pro</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto mb-6">Secure checkout is powered by Stripe. Pay £1/month plus VAT where applicable, cancel anytime, and GCSEMate will activate Pro access straight away with your expiry set for one month from successful payment.</p>
+                    <div class="checkout-shell bg-white/60 p-6 sm:p-8 rounded-xl shadow-md border border-white/40 space-y-6">
+                        <div id="checkout-alert" class="hidden rounded-lg border p-4 text-left text-sm"></div>
+                        <div class="grid gap-4 sm:grid-cols-2 text-left">
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                <p class="font-semibold text-blue-800 mb-2">What you unlock</p>
+                                <ul class="text-sm text-blue-900 space-y-1">
+                                    <li>• Unlimited subject hubs and full file browser</li>
+                                    <li>• One-click downloads and advanced previews</li>
+                                    <li>• Global events, countdowns, and premium support</li>
                                 </ul>
-                                
-                                <div class="mt-6 p-4 bg-white/60 rounded-lg border border-blue-100">
-                                    <p class="text-xs text-gray-600 mb-2"><strong>Key Info:</strong></p>
-                                    <ul class="text-xs text-gray-700 space-y-1">
-                                        <li>• £1/month + VAT</li>
-                                        <li>• Charged monthly</li>
-                                        <li>• Cancel anytime</li>
-                                        <li>• 30-day money back guarantee</li>
-                                    </ul>
-                                </div>
+                            </div>
+                            <div class="checkout-notes-panel bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                <p class="font-semibold text-gray-800 mb-2">Checkout notes</p>
+                                <ul class="text-sm text-gray-700 space-y-1">
+                                    <li>• Payments handled securely by Stripe</li>
+                                    <li>• The listed £1 price does not include VAT</li>
+                                    <li>• Pro activates as soon as payment succeeds</li>
+                                    <li>• Refresh once if the access badge has not updated yet</li>
+                                    <li>• Manage or cancel anytime in Stripe's customer portal</li>
+                                </ul>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Stripe Pricing Table for Upgrade -->
-                    <div id="pricing-section" class="checkout-shell bg-white/60 p-6 sm:p-8 rounded-xl shadow-md border border-white/40">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Complete Your Upgrade</h2>
-                        <p class="text-gray-600 mb-6">Secure checkout powered by Stripe. Your payment is processed safely and securely.</p>
+                        <p class="text-sm text-gray-700 bg-white/80 border border-gray-200 rounded-lg p-3">Checkout is handled entirely by Stripe below. Once payment succeeds, GCSEMate will upgrade your account, show a thank-you sequence, and keep access available immediately after refresh. The advertised £1 price excludes VAT where applicable. No shady side quests.</p>
                         <div class="checkout-embed-shell rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
                             <stripe-pricing-table pricing-table-id="prctbl_1Shn9qAPM42bf97sZB2AMB2r" publishable-key="pk_live_51ShczgAPM42bf97s4Wj60qT4QXQwKnaeUEbcHNR5XA1NxfDYRl8utLirBOkwpUCImk1J2ESK1UArM5w2dFP1B8ew00K7EuQVTb"></stripe-pricing-table>
                         </div>
-                    </div>
-                    
-                    <div class="mt-8 p-4 rounded-lg bg-blue-50 border border-blue-200 text-center">
-                        <p class="text-sm text-blue-900"><strong>Questions?</strong> Email us at <a href="mailto:admin@gcsemate.com" class="font-semibold hover:underline">admin@gcsemate.com</a> for support.</p>
+                        <div class="rounded-lg border border-blue-100 bg-blue-50/80 px-4 py-3 text-left text-sm text-blue-900">
+                            <p class="font-semibold text-blue-900">Already subscribed?</p>
+                            <p class="mt-1">Use the Stripe billing portal to manage payments with your email address and a one-time passcode.</p>
+                            <a href="https://billing.stripe.com/p/login/4gM8wO6ZT0280mg3CZfAc00" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 font-semibold text-blue-700 shadow-sm ring-1 ring-blue-200 transition-colors hover:bg-blue-100">Open billing portal</a>
+                        </div>
+                        <p class="text-sm text-gray-600">Having trouble with checkout or activation? Email <a class="underline hover:text-blue-700" href="mailto:admin@gcsemate.com">admin@gcsemate.com</a> and we will sort it manually.</p>
+                        <button onclick="showPage('subject-dashboard-page')" class="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-gray-600 text-white font-bold text-lg hover:bg-gray-700 transition-all" data-tooltip="Go back to dashboard">Return to Dashboard</button>
                     </div>
                 </div>
                 
@@ -3379,55 +3262,6 @@
             </div>
         </div>
     </div>
-    <div id="unsubscribe-confirmation-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[10004]" role="dialog" aria-modal="true" aria-labelledby="unsubscribe-title">
-        <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden fade-in">
-            <button onclick="closeUnsubscribeConfirmation()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex items-center justify-center transition-colors" aria-label="Close dialog">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-            <div class="p-8">
-                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
-                    <i class="fas fa-exclamation text-red-600 text-xl"></i>
-                </div>
-                <h2 id="unsubscribe-title" class="text-2xl font-bold text-gray-900 text-center mb-2">Cancel Subscription?</h2>
-                <p class="text-gray-600 text-center mb-6">Are you sure you want to cancel your Pro subscription? You'll lose access to Pro features at the end of your current billing period.</p>
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                    <p class="text-sm text-amber-900"><strong>Note:</strong> You can resubscribe at any time. Your data will be preserved.</p>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="closeUnsubscribeConfirmation()" class="flex-1 px-4 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition-colors">Keep Subscription</button>
-                    <button onclick="processUnsubscribe()" class="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors">Yes, Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div id="upgrade-confirmation-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[10004]" role="dialog" aria-modal="true" aria-labelledby="upgrade-confirm-title">
-        <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden fade-in">
-            <button onclick="closeUpgradeConfirmation()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex items-center justify-center transition-colors" aria-label="Close dialog">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-            <div class="p-8">
-                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mx-auto mb-4">
-                    <i class="fas fa-crown text-blue-600 text-xl"></i>
-                </div>
-                <h2 id="upgrade-confirm-title" class="text-2xl font-bold text-gray-900 text-center mb-2">Ready to Upgrade?</h2>
-                <p class="text-gray-600 text-center mb-4">You're about to upgrade to GCSEMate Pro for <strong>£1/month</strong> (plus VAT where applicable).</p>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 space-y-2">
-                    <p class="text-sm text-blue-900"><strong>You'll get:</strong></p>
-                    <ul class="text-sm text-blue-900 space-y-1">
-                        <li>✓ Unlimited downloads</li>
-                        <li>✓ Full file browser access</li>
-                        <li>✓ Cancel anytime</li>
-                    </ul>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="closeUpgradeConfirmation()" class="flex-1 px-4 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition-colors">Not Now</button>
-                    <button onclick="proceedToCheckout()" class="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">Upgrade Now</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="upgrade-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[9999]" role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title" aria-describedby="upgrade-modal-message" aria-hidden="true">
         <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden fade-in">
             <!-- Close X -->
