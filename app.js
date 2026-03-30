@@ -12623,7 +12623,7 @@ function createPlaylistCard(playlist) {
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const itemCount = Array.isArray(playlist?.items) ? playlist.items.length : (playlist?.url ? 1 : 0);
-    const adminActionsVisibility = isAdminUser() ? 'opacity-100 md:opacity-0 md:group-hover:opacity-100' : 'opacity-0';
+    const adminActionsVisibility = isAdminUser() ? 'opacity-100' : 'opacity-0';
 
     const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
     const subjectLabel = escapeHTML(playlist.subject || 'Revision playlist');
@@ -12631,13 +12631,15 @@ function createPlaylistCard(playlist) {
 
     card.innerHTML = `
         <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-br ${sourceMeta.accent || 'from-sky-500/15 via-white to-amber-400/10'}"></div>
-        <div class="absolute right-4 top-4 flex gap-2 transition-opacity ${adminActionsVisibility}">
+        <div class="absolute right-4 top-4 z-20 flex gap-2 transition-opacity ${adminActionsVisibility}">
             ${isAdminUser() ? `
-                <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
-                    <i class="fas fa-pen text-xs"></i>
+                <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-full border border-white/90 bg-white/95 px-3 text-xs font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
+                    <i class="fas fa-pen text-[10px]"></i>
+                    <span>Edit</span>
                 </button>
-                <button type="button" onclick="event.stopPropagation(); deletePlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-red-600 shadow-sm transition-colors hover:bg-red-50" data-tooltip="Delete playlist">
-                    <i class="fas fa-trash text-xs"></i>
+                <button type="button" onclick="event.stopPropagation(); deletePlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-full border border-white/90 bg-white/95 px-3 text-xs font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50" data-tooltip="Delete playlist">
+                    <i class="fas fa-trash text-[10px]"></i>
+                    <span>Delete</span>
                 </button>` : ''}
         </div>
         <div class="relative flex flex-1 flex-col p-5">
@@ -12650,9 +12652,9 @@ function createPlaylistCard(playlist) {
                     <h3 class="text-lg font-extrabold leading-snug text-slate-900 line-clamp-2">${escapeHTML(playlist.title)}</h3>
                     <p class="text-sm font-medium text-slate-500">${subjectLabel}</p>
                 </div>
-                <div class="flex-shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right shadow-sm">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Items</p>
-                    <p class="text-lg font-black text-slate-800">${itemCount || 1}</p>
+                <div class="flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-right shadow-sm">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Videos</p>
+                    <p class="text-base font-black leading-none text-slate-800">${itemCount || 1}</p>
                 </div>
             </div>
 
@@ -13334,9 +13336,9 @@ function getPlaylistSourceMeta(playlist) {
 function getPlaylistIframeSandbox(item, options = {}) {
     if (!item) return 'allow-scripts allow-same-origin allow-presentation';
     const base = ['allow-scripts', 'allow-same-origin', 'allow-presentation'];
-    const allowAdPopups = !!options?.allowAdPopups;
-    if (allowAdPopups && item.provider === 'abyss') {
-        base.push('allow-popups', 'allow-popups-to-escape-sandbox');
+    if (item.provider === 'abyss') {
+        // Abyss hosts often require ad-popup flow before video playback.
+        base.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-forms', 'allow-top-navigation-by-user-activation');
     }
     return base.join(' ');
 }
@@ -13673,6 +13675,10 @@ async function editPlaylist(id, currentTitle) {
         const curHasAds = !!data.hasAds;
         modal.innerHTML = `
         <div class="video-admin-modal-card bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-5xl p-6 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
+            <div class="mb-3 flex items-center gap-2">
+                <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
+                <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate admin videos</span>
+            </div>
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="text-2xl font-black tracking-tight text-slate-900">Edit Playlist</h3>
@@ -13826,6 +13832,10 @@ function deletePlaylist(id, playlistTitle = '') {
     const safeTitle = escapeHTML(String(playlistTitle || '').trim() || 'this playlist');
     modal.innerHTML = `
         <div class="video-admin-delete-modal bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-lg p-6 fade-in">
+            <div class="mb-3 flex items-center gap-2">
+                <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
+                <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate admin videos</span>
+            </div>
             <div class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-red-100 text-red-600">
                 <i class="fas fa-trash"></i>
             </div>
@@ -13870,14 +13880,120 @@ function deletePlaylist(id, playlistTitle = '') {
         };
     }
 }
-function handlePlaylistClick(playlist) {
+const youtubePlaylistExpansionCache = new Map();
+
+function getYouTubePlaylistIdForExpansion(playlist, items = []) {
+    const direct = String(playlist?.playlistId || '').trim();
+    if (direct) return direct;
+
+    const fromItems = (items || []).find(item => item?.type === 'youtube_playlist' && item?.videoId);
+    if (fromItems?.videoId) return String(fromItems.videoId).trim();
+
+    const parsedFromUrl = parseYoutubeUrl(playlist?.url || '');
+    if (parsedFromUrl?.type === 'youtube_playlist' && parsedFromUrl?.id) {
+        return String(parsedFromUrl.id).trim();
+    }
+
+    return '';
+}
+
+async function expandLegacyYouTubePlaylistItems(playlist, items = []) {
+    const normalized = ensureOrderedPlaylistItems(Array.isArray(items) ? items : []);
+    if (!normalized.length || normalized.length > 1) return normalized;
+    const first = normalized[0];
+    if (first?.type !== 'youtube_playlist') return normalized;
+
+    const playlistId = getYouTubePlaylistIdForExpansion(playlist, normalized);
+    if (!playlistId) return normalized;
+
+    if (youtubePlaylistExpansionCache.has(playlistId)) {
+        const cached = youtubePlaylistExpansionCache.get(playlistId) || [];
+        return ensureOrderedPlaylistItems(cached.map(item => ({ ...item })));
+    }
+
+    try {
+        const response = await fetch(`/api/youtube-playlist-items?playlistId=${encodeURIComponent(playlistId)}&maxItems=300`);
+        if (!response.ok) throw new Error(`Expansion failed (${response.status})`);
+        const payload = await response.json().catch(() => ({}));
+        const expanded = (Array.isArray(payload?.items) ? payload.items : []).map((entry, idx) => {
+            const source = entry?.watchUrl || (entry?.videoId ? `https://www.youtube.com/watch?v=${entry.videoId}` : '');
+            const parsed = parsePlaylistSourceInput(source);
+            if (!parsed || parsed.type !== 'youtube_video') return null;
+            return createPlaylistItemFromParsedSource(parsed, entry?.title || '', idx);
+        }).filter(Boolean);
+
+        if (!expanded.length) return normalized;
+
+        const ordered = ensureOrderedPlaylistItems(expanded);
+        youtubePlaylistExpansionCache.set(playlistId, ordered.map(item => ({ ...item })));
+        return ordered;
+    } catch (error) {
+        console.warn('Could not expand legacy YouTube playlist items', error);
+        return normalized;
+    }
+}
+
+function showAbyssPreplayWarningModal(item, itemIndex, totalItems) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmation-modal');
+        if (!modal) {
+            resolve(true);
+            return;
+        }
+
+        const label = escapeHTML(cleanPlaylistItemTitle(item?.title || 'Abyss video'));
+        const indexText = `${itemIndex + 1} / ${totalItems}`;
+        modal.innerHTML = `
+            <div class="video-admin-delete-modal bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-xl p-6 fade-in">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="gcsemate%20new.png" alt="GCSEMate" class="h-8 w-auto">
+                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Abyss playback warning</span>
+                </div>
+                <h3 class="text-xl font-black text-slate-900">Before playing this video</h3>
+                <p class="mt-2 text-sm text-slate-700">Video <span class="font-semibold">${label}</span> (${indexText}) may open advertisement tabs on the first 2 clicks.</p>
+                <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p class="font-semibold">Safety reminder</p>
+                    <p class="mt-1">If a new tab opens, close it immediately. Do not download files, sign in, or click anything on ad pages.</p>
+                </div>
+                <div class="mt-5 flex flex-wrap justify-end gap-2">
+                    <button id="abyss-warning-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
+                    <button id="abyss-warning-continue" class="px-4 py-2 rounded-md bg-amber-500 text-white font-semibold hover:bg-amber-600">I understand, play video</button>
+                </div>
+            </div>`;
+        modal.style.display = 'flex';
+
+        const onBackdropClick = (e) => {
+            if (e.target === modal) {
+                finish(false);
+            }
+        };
+
+        const finish = (ok) => {
+            modal.removeEventListener('click', onBackdropClick);
+            modal.style.display = 'none';
+            modal.innerHTML = '';
+            resolve(!!ok);
+        };
+
+        modal.querySelector('#abyss-warning-cancel')?.addEventListener('click', () => finish(false));
+        modal.querySelector('#abyss-warning-continue')?.addEventListener('click', () => finish(true));
+        modal.addEventListener('click', onBackdropClick);
+    });
+}
+
+async function handlePlaylistClick(playlist) {
     if (currentUser.tier === 'free') {
         openUpgradeModal('To watch revision video playlists, please upgrade to our Pro plan.');
         return;
     }
 
-    const items = normalizePlaylistItems(playlist);
+    let items = normalizePlaylistItems(playlist);
     if (!items.length) return showToast('Playlist is missing playable items.', 'error');
+    if (items.length <= 1 && items[0]?.type === 'youtube_playlist') {
+        setVideosStatusMessage('Loading videos from this YouTube playlist...');
+        items = await expandLegacyYouTubePlaylistItems(playlist, items);
+        setVideosStatusMessage('');
+    }
     openPlaylistViewerModal(playlist, items);
 }
 
@@ -14008,6 +14124,10 @@ function showVideoFallbackWarningModal(fallbackUrl, reason = '') {
     if (!modal) return;
     modal.innerHTML = `
         <div class="bg-white/95 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg p-6 fade-in">
+            <div class="mb-3 flex items-center gap-2">
+                <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
+                <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate</span>
+            </div>
             <h3 class="text-lg font-bold text-slate-900 mb-2">Video fallback activated</h3>
             <p class="text-sm text-slate-700 mb-3">${reasonText}</p>
             <p class="text-sm text-slate-700 mb-5">We switched to an ad-supported source so playback can continue. You may see ads or host prompts.</p>
@@ -14040,6 +14160,10 @@ function openPlaylistViewerModal(playlist, items) {
         renderAttempt += 1;
         const attemptId = renderAttempt;
         const current = items[activeIndex];
+        if (current?.provider === 'abyss') {
+            const proceed = await showAbyssPreplayWarningModal(current, activeIndex, items.length);
+            if (!proceed || attemptId !== renderAttempt) return;
+        }
         const playback = await getResolvedItemPlayback(current);
         if (attemptId !== renderAttempt) return;
         const embedUrl = playback.embedUrl;
@@ -14056,15 +14180,15 @@ function openPlaylistViewerModal(playlist, items) {
             frame.dataset.fallbackHandled = '0';
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
-        if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
+        if (title) title.textContent = `Video ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
         if (sourceLink) sourceLink.href = playback.watchUrl || current.watchUrl || current.sourceUrl || '#';
         if (stageNote) {
             if (playback.mode === 'youtube_resolved') {
                 stageNote.textContent = 'Resolved from external host to a direct YouTube embed to avoid popup-ad redirects.';
             } else if (playback.mode === 'external_unresolved') {
-                stageNote.textContent = 'This source is still external and may be restricted by its host. Popups remain blocked in the viewer.';
-            } else if (playlist.hasAds && current?.provider === 'abyss') {
-                stageNote.textContent = 'Ad-compatible mode is enabled for this source to improve playback. External ad windows may appear.';
+                stageNote.textContent = 'This source is external. If ads open new tabs, close them immediately and return here.';
+            } else if (current?.provider === 'abyss') {
+                stageNote.textContent = 'Abyss ad popups are enabled for playback compatibility. Close any ad tabs instantly.';
             } else {
                 stageNote.textContent = 'Embedded natively inside GCSEMate. Popups are blocked in the viewer.';
             }
@@ -14080,7 +14204,7 @@ function openPlaylistViewerModal(playlist, items) {
 
         if (frame) {
             const fallbackUrl = playback.watchUrl || getAdFallbackUrl(current);
-            const shouldUseTimeoutFallback = current?.provider === 'abyss' || playback.mode === 'external_unresolved';
+            const shouldUseTimeoutFallback = playback.mode === 'external_unresolved' && current?.provider !== 'abyss';
             const handleFallback = (reason) => {
                 if (!fallbackUrl || frame.dataset.fallbackHandled === '1' || attemptId !== renderAttempt) return;
                 frame.dataset.fallbackHandled = '1';
@@ -14119,10 +14243,14 @@ function openPlaylistViewerModal(playlist, items) {
             <div class="video-player-modal-card">
                 <div class="video-player-header">
                     <div class="min-w-0 space-y-2">
+                        <div class="video-player-brand-row">
+                            <img src="gcsemate%20new.png" alt="GCSEMate" class="video-player-brand-logo">
+                            <span class="video-player-brand-copy">GCSEMate Video Player</span>
+                        </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="video-player-eyebrow">${escapeHTML(sourceMeta.label || 'Video player')}</span>
-                            <span class="video-player-pill">${items.length} item${items.length === 1 ? '' : 's'}</span>
-                            ${playlist.hasAds ? '<span class="video-player-pill video-player-pill-warning">Popup-prone host blocked in player</span>' : ''}
+                            <span class="video-player-pill">${items.length} video${items.length === 1 ? '' : 's'}</span>
+                            ${playlist.hasAds ? '<span class="video-player-pill video-player-pill-warning">Abyss ads may open new tabs</span>' : ''}
                         </div>
                         <h3 id="playlist-viewer-title" class="video-player-title">${escapeHTML(playlist.title || 'Playlist')}</h3>
                         <p id="playlist-viewer-item-title" class="video-player-subtitle">Loading player...</p>
@@ -14133,6 +14261,8 @@ function openPlaylistViewerModal(playlist, items) {
                         </div>
                     </div>
                     <div class="video-player-actions">
+                        ${isAdminUser() ? `<button id="playlist-viewer-edit" type="button" class="video-player-nav-btn"><i class="fas fa-pen"></i><span>Edit</span></button>` : ''}
+                        ${isAdminUser() ? `<button id="playlist-viewer-delete" type="button" class="video-player-nav-btn"><i class="fas fa-trash"></i><span>Delete</span></button>` : ''}
                         <button id="playlist-viewer-prev" type="button" class="video-player-nav-btn"><i class="fas fa-chevron-left"></i><span>Prev</span></button>
                         <button id="playlist-viewer-next" type="button" class="video-player-nav-btn"><span>Next</span><i class="fas fa-chevron-right"></i></button>
                         <button id="playlist-viewer-close" type="button" class="video-player-close-btn">Close</button>
@@ -14152,7 +14282,7 @@ function openPlaylistViewerModal(playlist, items) {
                     </section>
                     <aside class="video-player-sidebar">
                         <div class="video-player-sidebar-head">
-                            <p class="video-player-sidebar-title">Playlist items</p>
+                            <p class="video-player-sidebar-title">Playlist videos</p>
                             <p class="video-player-sidebar-copy">Choose a lesson or episode without leaving this page.</p>
                         </div>
                         <div class="video-player-items-scroll" id="playlist-viewer-items">${itemsHtml}</div>
@@ -14192,6 +14322,14 @@ function openPlaylistViewerModal(playlist, items) {
 
     modal.querySelector('#playlist-viewer-close')?.addEventListener('click', () => {
         closePlaylistViewerModal(modal);
+    });
+    modal.querySelector('#playlist-viewer-edit')?.addEventListener('click', () => {
+        closePlaylistViewerModal(modal);
+        editPlaylist(playlist.id, playlist.title || '');
+    });
+    modal.querySelector('#playlist-viewer-delete')?.addEventListener('click', () => {
+        closePlaylistViewerModal(modal);
+        deletePlaylist(playlist.id, playlist.title || '');
     });
     modal.querySelector('#playlist-viewer-prev')?.addEventListener('click', () => {
         if (activeIndex > 0) {

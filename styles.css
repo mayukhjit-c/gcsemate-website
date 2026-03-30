@@ -4443,6 +4443,31 @@ to {
             scrollbar-gutter: stable;
         }
 
+        .video-player-brand-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+            width: fit-content;
+        }
+
+        .video-player-brand-logo {
+            display: block;
+            width: auto;
+            height: 1.2rem;
+        }
+
+        .video-player-brand-copy {
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
         .video-player-eyebrow,
         .video-player-pill,
         .video-player-badge,
@@ -4503,6 +4528,7 @@ to {
             align-items: center;
             justify-content: flex-end;
             gap: 0.5rem;
+            max-width: min(100%, 36rem);
         }
 
         .video-player-nav-btn,
