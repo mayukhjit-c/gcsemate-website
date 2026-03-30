@@ -12696,6 +12696,31 @@ function extractIframeSrcs(raw) {
     return all;
 }
 
+function cleanPlaylistItemTitle(title) {
+    return String(title || '')
+        .replace(/\.(mp4|webm|mkv|mov|m4v)$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function splitPlaylistEntry(rawValue) {
+    const raw = String(rawValue || '').trim();
+    if (!raw) return { title: '', sourceText: '' };
+    const pipeIndex = raw.indexOf('|');
+    if (pipeIndex === -1) return { title: '', sourceText: raw };
+
+    const left = raw.slice(0, pipeIndex).trim();
+    const right = raw.slice(pipeIndex + 1).trim();
+    const looksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)/i.test(right);
+    const leftLooksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)/i.test(left);
+
+    if (looksLikeSource && !leftLooksLikeSource) {
+        return { title: cleanPlaylistItemTitle(left), sourceText: right };
+    }
+
+    return { title: '', sourceText: raw };
+}
+
 function splitPlaylistSources(rawValue) {
     const raw = String(rawValue || '').trim();
     if (!raw) return [];
@@ -12709,8 +12734,11 @@ function parsePlaylistSourceInput(rawValue) {
     let raw = String(rawValue || '').trim();
     if (!raw) return null;
     raw = raw.replace(/^['"]+|['"]+$/g, '').trim();
-    const containsIframe = /<iframe/i.test(raw);
-    const sourceUrl = containsIframe ? extractIframeSrc(raw) : raw;
+    const entry = splitPlaylistEntry(raw);
+    const sourceInput = entry.sourceText || raw;
+    const itemTitle = entry.title || '';
+    const containsIframe = /<iframe/i.test(sourceInput);
+    const sourceUrl = containsIframe ? extractIframeSrc(sourceInput) : sourceInput;
     if (!sourceUrl) return null;
     let normalizedUrl;
     try {
@@ -12744,7 +12772,8 @@ function parsePlaylistSourceInput(rawValue) {
             id: youtubeData.id,
             sourceUrl: normalizedUrl,
             embedUrl: youtubeData.embedUrl,
-            watchUrl: youtubeData.watchUrl
+            watchUrl: youtubeData.watchUrl,
+            title: itemTitle
         };
     }
 
@@ -12762,7 +12791,8 @@ function parsePlaylistSourceInput(rawValue) {
             id: null,
             sourceUrl: normalizedUrl,
             embedUrl: normalizedUrl,
-            watchUrl: normalizedUrl
+            watchUrl: normalizedUrl,
+            title: itemTitle
         };
     }
 
@@ -12777,7 +12807,13 @@ function parsePlaylistItemsInput(rawValue) {
         const parsed = parsePlaylistSourceInput(entry);
         if (!parsed) return;
         const key = `${parsed.type}|${parsed.sourceUrl}`;
-        if (seen.has(key)) return;
+        if (seen.has(key)) {
+            const existing = items.find(item => `${item.type}|${item.sourceUrl}` === key);
+            if (existing && !existing.title && parsed.title) {
+                existing.title = parsed.title;
+            }
+            return;
+        }
         seen.add(key);
         items.push({
             id: `item-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 8)}`,
@@ -12787,14 +12823,19 @@ function parsePlaylistItemsInput(rawValue) {
             sourceUrl: parsed.sourceUrl,
             embedUrl: parsed.embedUrl,
             watchUrl: parsed.watchUrl,
-            videoId: parsed.id || null
+            videoId: parsed.id || null,
+            title: parsed.title || ''
         });
     });
     return items;
 }
 
 function serializePlaylistItems(items = []) {
-    return (items || []).map(item => item?.sourceUrl).filter(Boolean).join('\n');
+    return (items || []).map(item => {
+        if (!item?.sourceUrl) return '';
+        const title = cleanPlaylistItemTitle(item.title || '');
+        return title ? `${title}|${item.sourceUrl}` : item.sourceUrl;
+    }).filter(Boolean).join('\n');
 }
 
 function parseYouTubeCreatorCandidate(urlString) {
@@ -12842,9 +12883,10 @@ function renderPlaylistDnDList(container, items = [], onReorder = null) {
         row.className = 'flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-2 cursor-move';
         row.draggable = true;
         row.setAttribute('data-dnd-index', String(idx));
+        const displayTitle = cleanPlaylistItemTitle(item.title || '') || item.sourceUrl || '';
         row.innerHTML = `
             <span class="text-xs text-gray-500 w-6 text-center">${idx + 1}</span>
-            <span class="text-sm font-medium text-gray-700 flex-1 truncate">${escapeHTML(item.sourceUrl || '')}</span>
+            <span class="text-sm font-medium text-gray-700 flex-1 truncate">${escapeHTML(displayTitle)}</span>
             <span class="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-600">${item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YT playlist' : 'YT video')}</span>
         `;
         row.addEventListener('dragstart', () => { dragIndex = idx; row.classList.add('opacity-50'); });
@@ -12886,7 +12928,7 @@ function normalizePlaylistItems(playlist) {
 
 function playlistItemsToText(items = []) {
     if (!Array.isArray(items) || !items.length) return '';
-    return items.map(item => item?.sourceUrl).filter(Boolean).join('\n');
+    return serializePlaylistItems(items);
 }
 
 function renderPlaylistSourcePreview(rawValue, previewEl) {
@@ -12904,7 +12946,7 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
         embed.innerHTML = `
             <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
                 <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
-                <div class="p-2 text-xs text-gray-600">First item: <strong>YouTube playlist</strong>. ID: <strong>${escapeHTML(pid)}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+                <div class="p-2 text-xs text-gray-600">First item: <strong>${escapeHTML(cleanPlaylistItemTitle(first.title || 'YouTube playlist') || 'YouTube playlist')}</strong>. ID: <strong>${escapeHTML(pid)}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
             </div>`;
         previewEl.appendChild(embed);
     } else {
@@ -12912,7 +12954,7 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
         embed.innerHTML = `
             <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
                 <iframe src="${escapeHTML(first.embedUrl)}" title="Embedded source preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
-                <div class="p-2 text-xs text-gray-600">First item: <strong>${first.provider === 'abyss' ? 'Abyss embed' : 'YouTube video'}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open source link</a></div>
+                <div class="p-2 text-xs text-gray-600">First item: <strong>${escapeHTML(cleanPlaylistItemTitle(first.title || (first.provider === 'abyss' ? 'Abyss embed' : 'YouTube video')))}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open source link</a></div>
             </div>`;
         previewEl.appendChild(embed);
     }
@@ -13434,7 +13476,8 @@ function openPlaylistViewerModal(playlist, items) {
         const prevButton = modal.querySelector('#playlist-viewer-prev');
         const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) frame.src = embedUrl;
-        if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${(current.provider || 'source').toUpperCase()}`;
+        const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
+        if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
         if (sourceLink) sourceLink.href = current.watchUrl || current.sourceUrl || '#';
         if (prevButton) prevButton.disabled = activeIndex === 0;
         if (nextButton) nextButton.disabled = activeIndex >= maxIndex;
@@ -13447,7 +13490,7 @@ function openPlaylistViewerModal(playlist, items) {
     };
 
     const itemsHtml = items.map((item, idx) => {
-        const label = item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YouTube playlist' : 'YouTube video');
+        const label = cleanPlaylistItemTitle(item.title || '') || (item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YouTube playlist' : 'YouTube video'));
         const badge = item.type === 'youtube_playlist' ? 'Playlist' : (item.provider === 'abyss' ? 'External' : 'Video');
         return `<button type="button" data-item-index="${idx}" class="video-player-item w-full text-left">
             <span class="video-player-item-index">${idx + 1}</span>
