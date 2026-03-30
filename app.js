@@ -12560,6 +12560,7 @@ function createPlaylistCard(playlist) {
     const card = document.createElement('div');
     card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
     card.addEventListener('click', () => handlePlaylistClick(playlist));
+    const sourceMeta = getPlaylistSourceMeta(playlist);
 
     const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
 
@@ -12579,7 +12580,7 @@ function createPlaylistCard(playlist) {
 
     const label = document.createElement('span');
     label.className = 'text-xs text-gray-500 font-semibold';
-    label.textContent = 'YOUTUBE PLAYLIST';
+    label.textContent = sourceMeta.label;
 
     const openBtn = document.createElement('button');
     openBtn.type = 'button';
@@ -12630,26 +12631,112 @@ function attachAddPlaylistPreview() {
         const val = (urlInput.value || '').trim();
         preview.innerHTML = '';
         if (!val) return;
-        try {
-            const parsed = parseYoutubeUrl(val);
-            if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) {
-                preview.innerHTML = `<div class="text-sm text-yellow-600">Invalid YouTube playlist URL.</div>`;
-                return;
-            }
-            const pid = parsed.id;
-            const embed = document.createElement('div');
-            embed.innerHTML = `
-                <div class="w-full rounded overflow-hidden border border-gray-200/60">
-                    <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-                    <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong>. <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
-                </div>`;
-            preview.appendChild(embed);
-        } catch (e) {
-            preview.innerHTML = `<div class="text-sm text-yellow-600">Could not parse URL.</div>`;
-        }
+        renderPlaylistSourcePreview(val, preview);
     }
     urlInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderPreview, 250); });
     setTimeout(renderPreview, 60);
+}
+
+function extractIframeSrc(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    const quoted = raw.match(/<iframe[^>]*\ssrc\s*=\s*(["'])(.*?)\1/i);
+    if (quoted && quoted[2]) return quoted[2].trim();
+    const unquoted = raw.match(/<iframe[^>]*\ssrc\s*=\s*([^\s>]+)/i);
+    if (unquoted && unquoted[1]) return unquoted[1].trim();
+    return '';
+}
+
+function parsePlaylistSourceInput(rawValue) {
+    const raw = String(rawValue || '').trim();
+    if (!raw) return null;
+    const containsIframe = /<iframe/i.test(raw);
+    const sourceUrl = containsIframe ? extractIframeSrc(raw) : raw;
+    if (!sourceUrl) return null;
+    let normalizedUrl;
+    try {
+        const urlObj = new URL(sourceUrl);
+        if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') return null;
+        normalizedUrl = urlObj.toString();
+    } catch (_) {
+        return null;
+    }
+
+    const youtubeData = parseYoutubeUrl(normalizedUrl);
+    if (youtubeData && youtubeData.type === 'youtube_playlist' && youtubeData.id) {
+        return {
+            type: 'youtube_playlist',
+            provider: 'youtube',
+            id: youtubeData.id,
+            sourceUrl: normalizedUrl,
+            embedUrl: youtubeData.embedUrl,
+            watchUrl: youtubeData.watchUrl
+        };
+    }
+
+    let host = '';
+    try {
+        host = new URL(normalizedUrl).hostname.toLowerCase();
+    } catch (_) {
+        return null;
+    }
+    const isAbyssHost = host === 'short.icu' || host.endsWith('.short.icu') || host === 'abyss.to' || host.endsWith('.abyss.to');
+    if (isAbyssHost) {
+        return {
+            type: 'external_embed',
+            provider: 'abyss',
+            id: null,
+            sourceUrl: normalizedUrl,
+            embedUrl: normalizedUrl,
+            watchUrl: normalizedUrl
+        };
+    }
+
+    return null;
+}
+
+function renderPlaylistSourcePreview(rawValue, previewEl) {
+    if (!previewEl) return;
+    previewEl.innerHTML = '';
+    const parsed = parsePlaylistSourceInput(rawValue);
+    if (!parsed) {
+        previewEl.innerHTML = `<div class="text-sm text-yellow-600">Enter a YouTube playlist URL, an abyss.to/short.icu link, or a full iframe snippet.</div>`;
+        return;
+    }
+    if (parsed.type === 'youtube_playlist') {
+        const pid = parsed.id;
+        const embed = document.createElement('div');
+        embed.innerHTML = `
+            <div class="w-full rounded overflow-hidden border border-gray-200/60">
+                <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                <div class="p-2 text-xs text-gray-600">Source: <strong>YouTube playlist</strong>. ID: <strong>${escapeHTML(pid)}</strong>. <a href="${escapeHTML(parsed.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
+            </div>`;
+        previewEl.appendChild(embed);
+        return;
+    }
+    const embed = document.createElement('div');
+    embed.innerHTML = `
+        <div class="w-full rounded overflow-hidden border border-gray-200/60">
+            <iframe src="${escapeHTML(parsed.embedUrl)}" title="Embedded source preview" class="w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen></iframe>
+            <div class="p-2 text-xs text-gray-600">Source: <strong>Abyss embed</strong>. <a href="${escapeHTML(parsed.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open source link</a></div>
+        </div>`;
+    previewEl.appendChild(embed);
+}
+
+function getPlaylistSourceMeta(playlist) {
+    const type = String(playlist?.playlistType || '').toLowerCase();
+    const source = String(playlist?.embedSource || '').toLowerCase();
+    if (type === 'external_embed' || source === 'abyss') {
+        return { label: 'ABYSS EMBED' };
+    }
+    if (playlist?.url) {
+        try {
+            const host = new URL(String(playlist.url)).hostname.toLowerCase();
+            if (host === 'short.icu' || host.endsWith('.short.icu') || host === 'abyss.to' || host.endsWith('.abyss.to')) {
+                return { label: 'ABYSS EMBED' };
+            }
+        } catch (_) {}
+    }
+    return { label: 'YOUTUBE PLAYLIST' };
 }
 
 // Manage Playlists admin page
@@ -12905,21 +12992,24 @@ async function handleAddPlaylist() {
         messageEl.className = 'text-red-600 text-sm mt-2 h-4';
         return;
     }
-    const youtubeData = parseYoutubeUrl(url);
-    if (!youtubeData || youtubeData.type !== 'youtube_playlist') {
-         messageEl.textContent = 'Please enter a valid YouTube Playlist URL.';
+    const sourceData = parsePlaylistSourceInput(url);
+    if (!sourceData) {
+         messageEl.textContent = 'Please enter a valid source (YouTube playlist URL, abyss.to/short.icu link, or iframe snippet).';
          messageEl.className = 'text-red-600 text-sm mt-2 h-4';
          return;
     }
     try {
         const playlistData = {
             title: title,
-            playlistId: youtubeData.id,
+            playlistType: sourceData.type,
+            embedSource: sourceData.provider,
             subject: (document.getElementById('playlist-subject')?.value || '').trim(),
             tags: (document.getElementById('playlist-tags')?.value || '').split(/[\s,]+/).map(t=>t.trim()).filter(Boolean),
-            url: url,
+            url: sourceData.sourceUrl,
+            createdBy: currentUser.uid,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
+        if (sourceData.id) playlistData.playlistId = sourceData.id;
         await db.collection('videoPlaylists').add(playlistData);
         messageEl.textContent = 'Playlist added successfully!';
         messageEl.className = 'text-green-600 text-sm mt-2 h-4';
@@ -12948,14 +13038,14 @@ async function editPlaylist(id, currentTitle) {
             <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Playlist</h3>
             <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
             <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTitle)}" />
-            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">YouTube Playlist URL</label>
-            <input id="edit-playlist-url" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curUrl)}" />
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Playlist Source</label>
+            <textarea id="edit-playlist-url" rows="4" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Paste a YouTube playlist URL, abyss.to/short.icu URL, or full iframe code">${escapeHTML(curUrl)}</textarea>
             <div id="edit-playlist-preview" class="mt-3"></div>
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Subject</label>
             <input id="edit-playlist-subject" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curSubject)}" />
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Tags (comma-separated)</label>
             <input id="edit-playlist-tags" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTags)}" />
-            <p class="text-xs text-gray-500 mt-2">Playlist ID cannot be changed here. To replace a playlist, delete and add a new one.</p>
+            <p class="text-xs text-gray-500 mt-2">You can rename the playlist, change subject/tags, and switch source formats here.</p>
             <div class="flex justify-end gap-2 mt-4">
                 <button id="edit-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
                 <button id="edit-save" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Save</button>
@@ -12978,23 +13068,7 @@ async function editPlaylist(id, currentTitle) {
             const val = (urlInput.value || '').trim();
             preview.innerHTML = '';
             if (!val) return;
-            try {
-                const parsed = parseYoutubeUrl(val);
-                if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) {
-                    preview.innerHTML = `<div class="text-sm text-yellow-600">Invalid YouTube playlist URL.</div>`;
-                    return;
-                }
-                const pid = parsed.id;
-                const embed = document.createElement('div');
-                embed.innerHTML = `
-                    <div class="w-full rounded overflow-hidden border border-gray-200/60">
-                        <iframe src="https://www.youtube.com/embed/videoseries?list=${pid}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-                        <div class="p-2 text-xs text-gray-600">Playlist ID: <strong>${escapeHTML(pid)}</strong>. <a href="https://www.youtube.com/playlist?list=${pid}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
-                    </div>`;
-                preview.appendChild(embed);
-            } catch (e) {
-                preview.innerHTML = `<div class="text-sm text-yellow-600">Could not parse URL.</div>`;
-            }
+            renderPlaylistSourcePreview(val, preview);
         }
         urlInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderPreview, 250); });
         // initial render
@@ -13007,14 +13081,19 @@ async function editPlaylist(id, currentTitle) {
         const newSubject = document.getElementById('edit-playlist-subject').value.trim();
         const newTagsRaw = (document.getElementById('edit-playlist-tags').value || '').split(/[,\s]+/).map(t=>t.trim()).filter(Boolean);
         if (!newTitle) return showToast('Title is required', 'error');
-        // Validate URL if present
-        if (newUrl) {
-            const parsed = parseYoutubeUrl(newUrl);
-            if (!parsed || parsed.type !== 'youtube_playlist' || !parsed.id) return showToast('Please enter a valid YouTube Playlist URL.', 'error');
-        }
+        if (!newUrl) return showToast('Playlist source is required.', 'error');
+        const parsed = parsePlaylistSourceInput(newUrl);
+        if (!parsed) return showToast('Please enter a valid source (YouTube playlist URL, abyss.to/short.icu link, or iframe snippet).', 'error');
         try {
-            const updateData = { title: newTitle, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            if (newUrl) updateData.url = newUrl; else updateData.url = firebase.firestore.FieldValue.delete();
+            const updateData = {
+                title: newTitle,
+                url: parsed.sourceUrl,
+                playlistType: parsed.type,
+                embedSource: parsed.provider,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (parsed.id) updateData.playlistId = parsed.id;
+            else updateData.playlistId = firebase.firestore.FieldValue.delete();
             if (newSubject) updateData.subject = newSubject; else updateData.subject = firebase.firestore.FieldValue.delete();
             updateData.tags = newTagsRaw;
             await db.collection('videoPlaylists').doc(id).update(updateData);
@@ -13052,7 +13131,7 @@ function handlePlaylistClick(playlist) {
     // Always open playlists in a new tab (avoids YouTube embed configuration errors)
     const playlistUrl = (playlist && playlist.url) ? String(playlist.url) : '';
     if (playlistUrl) {
-        window.openYouTubeInNewTab(playlistUrl);
+        window.openVideoSourceInNewTab(playlistUrl);
         return;
     }
 
@@ -13069,6 +13148,12 @@ function handlePlaylistClick(playlist) {
 // =================================================================================
 // USEFUL LINKS LOGIC (SHARED PARSER)
 // =================================================================================
+
+window.openVideoSourceInNewTab = function(url) {
+    const parsed = parsePlaylistSourceInput(url);
+    const target = parsed?.watchUrl || url;
+    window.open(target, '_blank', 'noopener,noreferrer');
+};
 
 function parseYoutubeUrl(url) {
     try {
