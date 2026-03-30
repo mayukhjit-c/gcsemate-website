@@ -13613,6 +13613,9 @@ function showVideoFallbackWarningModal(fallbackUrl, reason = '') {
 function openPlaylistViewerModal(playlist, items) {
     const modal = document.getElementById('video-playlist-viewer-modal');
     if (!modal) return;
+    if (typeof modal.__playlistModalCleanup === 'function') {
+        modal.__playlistModalCleanup();
+    }
     let activeIndex = 0;
     let renderAttempt = 0;
     const sourceMeta = getPlaylistSourceMeta(playlist);
@@ -13701,7 +13704,7 @@ function openPlaylistViewerModal(playlist, items) {
                             <span class="video-player-pill">${items.length} item${items.length === 1 ? '' : 's'}</span>
                             ${playlist.hasAds ? '<span class="video-player-pill video-player-pill-warning">Popup-prone host blocked in player</span>' : ''}
                         </div>
-                        <h3 class="video-player-title">${escapeHTML(playlist.title || 'Playlist')}</h3>
+                        <h3 id="playlist-viewer-title" class="video-player-title">${escapeHTML(playlist.title || 'Playlist')}</h3>
                         <p id="playlist-viewer-item-title" class="video-player-subtitle">Loading player...</p>
                         <div class="video-player-badges">
                             ${playlist.creatorName ? `<span class="video-player-badge">Creator: ${escapeHTML(playlist.creatorName)}</span>` : ''}
@@ -13732,13 +13735,40 @@ function openPlaylistViewerModal(playlist, items) {
                             <p class="video-player-sidebar-title">Playlist items</p>
                             <p class="video-player-sidebar-copy">Choose a lesson or episode without leaving this page.</p>
                         </div>
-                        <div class="space-y-2" id="playlist-viewer-items">${itemsHtml}</div>
+                        <div class="video-player-items-scroll" id="playlist-viewer-items">${itemsHtml}</div>
                     </aside>
                 </div>
             </div>
         </div>`;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'playlist-viewer-title');
+    modal.setAttribute('aria-hidden', 'false');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    modal.style.display = 'flex';
+    modal.classList.remove('video-player-modal-open');
+    window.requestAnimationFrame(() => {
+        modal.classList.add('video-player-modal-open');
+    });
+
+    const onModalBackdropClick = (e) => {
+        if (e.target === modal) {
+            closePlaylistViewerModal(modal);
+        }
+    };
+    const onModalEscape = (e) => {
+        if (e.key === 'Escape' && (modal.style.display === 'flex' || !modal.classList.contains('hidden'))) {
+            closePlaylistViewerModal(modal);
+        }
+    };
+    modal.addEventListener('click', onModalBackdropClick);
+    document.addEventListener('keydown', onModalEscape);
+    modal.__playlistModalCleanup = () => {
+        modal.removeEventListener('click', onModalBackdropClick);
+        document.removeEventListener('keydown', onModalEscape);
+        modal.__playlistModalCleanup = null;
+    };
 
     modal.querySelector('#playlist-viewer-close')?.addEventListener('click', () => {
         closePlaylistViewerModal(modal);
@@ -13755,11 +13785,6 @@ function openPlaylistViewerModal(playlist, items) {
             renderActive();
         }
     });
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closePlaylistViewerModal(modal);
-        }
-    }, { once: true });
     modal.querySelectorAll('[data-item-index]').forEach(btn => {
         btn.addEventListener('click', () => {
             activeIndex = Number(btn.getAttribute('data-item-index'));
@@ -13771,8 +13796,14 @@ function openPlaylistViewerModal(playlist, items) {
 
 function closePlaylistViewerModal(modal) {
     if (!modal) return;
+    if (typeof modal.__playlistModalCleanup === 'function') {
+        modal.__playlistModalCleanup();
+    }
+    modal.setAttribute('aria-hidden', 'true');
+    modal.classList.remove('video-player-modal-open');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+    modal.style.display = 'none';
     modal.innerHTML = '';
 }
 
