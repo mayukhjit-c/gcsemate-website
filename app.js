@@ -6034,12 +6034,31 @@ function setupRealtimeListeners() {
     // Listen for video playlists
     unsubscribeVideoPlaylists = db.collection('videoPlaylists').orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
+            setVideosStatusMessage('');
             const playlists = [];
             snapshot.forEach(doc => {
                 playlists.push({ id: doc.id, ...doc.data() });
             });
             renderVideosPage(playlists);
-        }, err => logError(err, "Video Playlists"));
+        }, async err => {
+            logError(err, 'Video Playlists');
+            const friendly = getFirebaseFriendlyMessage(err, 'Could not load video playlists. Trying a fallback connection...');
+            setVideosStatusMessage(friendly);
+            try {
+                const fallbackSnapshot = await db.collection('videoPlaylists').get();
+                const playlists = [];
+                fallbackSnapshot.forEach(doc => {
+                    playlists.push({ id: doc.id, ...doc.data() });
+                });
+                playlists.sort((a, b) => new Date(b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (b.createdAt || 0)) - new Date(a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (a.createdAt || 0)));
+                renderVideosPage(playlists);
+                setVideosStatusMessage('Live updates for playlists are temporarily unavailable. Showing a fallback list.');
+            } catch (fallbackErr) {
+                logError(fallbackErr, 'Video Playlists Fallback');
+                setVideosStatusMessage(getFirebaseFriendlyMessage(fallbackErr, 'Video playlists are temporarily unavailable. Please refresh in a moment.'));
+                renderVideosPage([]);
+            }
+        });
     // Lessons removed
     // Listen for blog posts
     unsubscribeBlogPosts = db.collection('blogPosts').orderBy('createdAt', 'desc')
@@ -12522,6 +12541,19 @@ function renderVideosPage(playlists) {
     }
 }
 
+function setVideosStatusMessage(message = '') {
+    const status = document.getElementById('videos-status-message');
+    if (!status) return;
+    const safe = String(message || '').trim();
+    if (!safe) {
+        status.textContent = '';
+        status.classList.add('hidden');
+        return;
+    }
+    status.textContent = safe;
+    status.classList.remove('hidden');
+}
+
 function populatePlaylistSubjectFilter(playlists) {
     const select = document.getElementById('playlist-subject-filter');
     if (!select) return;
@@ -12629,16 +12661,16 @@ function createPlaylistCard(playlist) {
                 ${playlist.hasAds ? `<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">Popup-prone host</span>` : ''}
             </div>
 
-            ${playlist.description ? `<p class="mb-4 text-sm leading-6 text-slate-600 line-clamp-3">${escapeHTML(playlist.description)}</p>` : `<p class="mb-4 text-sm leading-6 text-slate-500">Open the player to browse the curated revision list inside GCSEMate.</p>`}
+            ${playlist.description ? `<p class="mb-4 text-sm leading-6 text-slate-600 line-clamp-3 video-card-description">${escapeHTML(playlist.description)}</p>` : `<p class="mb-4 text-sm leading-6 text-slate-500 video-card-description">Open the player to browse the curated revision list inside GCSEMate.</p>`}
 
-            ${tags.length ? `<div class="mb-4 flex flex-wrap gap-2">${tags.map(tag => `<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">${tag}</span>`).join('')}</div>` : ''}
+            ${tags.length ? `<div class="mb-4 flex flex-wrap gap-2 video-card-tags">${tags.map(tag => `<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">${tag}</span>`).join('')}</div>` : ''}
 
             <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
-                <div class="min-w-0 text-xs text-slate-500">
+                <div class="min-w-0 text-xs text-slate-500 video-card-footer-copy">
                     <p class="font-semibold text-slate-700">${escapeHTML(sourceMeta.subtitle || 'Native embed')}</p>
-                    <p>Rounded player, in-page controls, and popup blocking on embedded sources.</p>
+                    <p>Embedded in-page with fallback playback when hosts block secure embed mode.</p>
                 </div>
-                <button type="button" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-slate-800" data-tooltip="Open playlist in player">
+                <button type="button" class="video-playlist-open-btn inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-slate-800" data-tooltip="Open playlist in player">
                     <i class="fas fa-play text-xs"></i>
                     <span>Open player</span>
                 </button>
@@ -13457,17 +13489,74 @@ function getItemEmbedUrl(item) {
     if (!item) return null;
     if (item.type === 'youtube_video' && item.videoId) return `https://www.youtube.com/embed/${encodeURIComponent(item.videoId)}?modestbranding=1&rel=0&playsinline=1`;
     if (item.type === 'youtube_playlist' && item.videoId) return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(item.videoId)}&modestbranding=1&rel=0&playsinline=1`;
-    return item.embedUrl || item.sourceUrl || null;
+
+    const candidate = item.embedUrl || item.sourceUrl || '';
+    const parsedYoutube = parseYoutubeUrl(candidate);
+    if (parsedYoutube?.type === 'youtube_video' && parsedYoutube.id) {
+        return `https://www.youtube.com/embed/${encodeURIComponent(parsedYoutube.id)}?modestbranding=1&rel=0&playsinline=1`;
+    }
+    if (parsedYoutube?.type === 'youtube_playlist' && parsedYoutube.id) {
+        return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(parsedYoutube.id)}&modestbranding=1&rel=0&playsinline=1`;
+    }
+
+    if (/youtube\.com\/watch\?/i.test(candidate) || /youtu\.be\//i.test(candidate)) {
+        const reparsed = parsePlaylistSourceInput(candidate);
+        if (reparsed?.embedUrl) return reparsed.embedUrl;
+    }
+
+    return candidate || null;
+}
+
+function getAdFallbackUrl(item) {
+    if (!item) return '';
+    if (item.type === 'youtube_video' && item.videoId) {
+        return `https://www.youtube.com/watch?v=${encodeURIComponent(item.videoId)}`;
+    }
+    if (item.type === 'youtube_playlist' && item.videoId) {
+        return `https://www.youtube.com/playlist?list=${encodeURIComponent(item.videoId)}`;
+    }
+    const parsed = parseYoutubeUrl(item.sourceUrl || item.embedUrl || '');
+    if (parsed?.watchUrl) return parsed.watchUrl;
+    return item.sourceUrl || item.embedUrl || '';
+}
+
+function showVideoFallbackWarningModal(fallbackUrl, reason = '') {
+    const reasonText = reason === 'timeout'
+        ? 'The secure embed host took too long to respond.'
+        : 'The secure embed host refused the in-page connection.';
+    const safeFallbackUrl = escapeHTML(fallbackUrl || '#');
+    const modal = document.getElementById('confirmation-modal');
+    if (!modal) return;
+    modal.innerHTML = `
+        <div class="bg-white/95 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Video fallback activated</h3>
+            <p class="text-sm text-slate-700 mb-3">${reasonText}</p>
+            <p class="text-sm text-slate-700 mb-5">We switched to an ad-supported source so playback can continue. You may see ads or host prompts.</p>
+            <div class="flex flex-wrap justify-end gap-2">
+                <button id="video-fallback-close" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Continue</button>
+                <a href="${safeFallbackUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-md bg-amber-500 text-white font-semibold hover:bg-amber-600">Open ad-supported source</a>
+            </div>
+        </div>`;
+    modal.style.display = 'flex';
+    const closeBtn = document.getElementById('video-fallback-close');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
 }
 
 function openPlaylistViewerModal(playlist, items) {
     const modal = document.getElementById('video-playlist-viewer-modal');
     if (!modal) return;
     let activeIndex = 0;
+    let renderAttempt = 0;
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const maxIndex = Math.max(items.length - 1, 0);
 
     const renderActive = () => {
+        renderAttempt += 1;
+        const attemptId = renderAttempt;
         const current = items[activeIndex];
         const embedUrl = getItemEmbedUrl(current);
         if (!embedUrl) return;
@@ -13479,6 +13568,7 @@ function openPlaylistViewerModal(playlist, items) {
         if (frame) {
             frame.src = embedUrl;
             frame.setAttribute('sandbox', getPlaylistIframeSandbox(current));
+            frame.dataset.fallbackHandled = '0';
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
         if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
@@ -13491,6 +13581,26 @@ function openPlaylistViewerModal(playlist, items) {
             btn.classList.toggle('video-player-item-active', isActive);
             btn.classList.toggle('video-player-item-inactive', !isActive);
         });
+
+        if (frame) {
+            const fallbackUrl = getAdFallbackUrl(current);
+            const handleFallback = (reason) => {
+                if (!fallbackUrl || frame.dataset.fallbackHandled === '1' || attemptId !== renderAttempt) return;
+                frame.dataset.fallbackHandled = '1';
+                frame.src = fallbackUrl;
+                showVideoFallbackWarningModal(fallbackUrl, reason);
+            };
+
+            frame.onerror = () => handleFallback('error');
+            const timeoutId = window.setTimeout(() => {
+                if (attemptId !== renderAttempt || frame.dataset.fallbackHandled === '1') return;
+                handleFallback('timeout');
+            }, 7000);
+            frame.onload = () => {
+                if (attemptId !== renderAttempt) return;
+                window.clearTimeout(timeoutId);
+            };
+        }
     };
 
     const itemsHtml = items.map((item, idx) => {
@@ -23517,7 +23627,7 @@ function initializeUserExperienceControls() {
     quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
-    footerToggleButton?.addEventListener('click', toggleFooterCollapsePreference);
+    // Footer toggle has an inline click handler in HTML. Avoid double-binding here.
     applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {
