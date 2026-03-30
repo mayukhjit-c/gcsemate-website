@@ -13300,7 +13300,7 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
         const embed = document.createElement('div');
         embed.innerHTML = `
             <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
-                <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
+                <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                 <div class="p-2 text-xs text-gray-600">First item: <strong>${escapeHTML(cleanPlaylistItemTitle(first.title || 'YouTube playlist') || 'YouTube playlist')}</strong>. ID: <strong>${escapeHTML(pid)}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
             </div>`;
         previewEl.appendChild(embed);
@@ -13308,7 +13308,7 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
         const embed = document.createElement('div');
         embed.innerHTML = `
             <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
-                <iframe src="${escapeHTML(first.embedUrl)}" title="Embedded source preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
+                <iframe src="${escapeHTML(first.embedUrl)}" title="Embedded source preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
                 <div class="p-2 text-xs text-gray-600">First item: <strong>${escapeHTML(cleanPlaylistItemTitle(first.title || (first.provider === 'abyss' ? 'Abyss embed' : 'YouTube video')))}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open source link</a></div>
             </div>`;
         previewEl.appendChild(embed);
@@ -13333,15 +13333,6 @@ function getPlaylistSourceMeta(playlist) {
     return { label: 'YOUTUBE PLAYLIST', subtitle: 'Native YouTube playlist', accent: 'from-red-500/15 via-white to-rose-300/10' };
 }
 
-function getPlaylistIframeSandbox(item, options = {}) {
-    if (!item) return 'allow-scripts allow-same-origin allow-presentation';
-    const base = ['allow-scripts', 'allow-same-origin', 'allow-presentation'];
-    if (item.provider === 'abyss') {
-        // Abyss hosts often require ad-popup flow before video playback.
-        base.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-forms', 'allow-top-navigation-by-user-activation');
-    }
-    return base.join(' ');
-}
 
 // Manage Playlists admin page
 async function renderManagePlaylistsPage() {
@@ -13479,12 +13470,11 @@ function getVideoEmbed(url) {
                     id="iframe-${uniqueId}"
                     src="${finalUrl}" 
                     frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowfullscreen
                     class="video-player-frame w-full h-full"
                     loading="lazy"
                     referrerpolicy="strict-origin-when-cross-origin"
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
                     onerror="handleVideoEmbedError('${uniqueId}', '${watchUrl}')"
                     onload="handleVideoEmbedLoad('${uniqueId}')">
                 </iframe>
@@ -13516,7 +13506,6 @@ function getVideoEmbed(url) {
                 class="video-player-frame w-full h-full"
                 loading="lazy"
                 referrerpolicy="strict-origin-when-cross-origin"
-                sandbox="allow-scripts allow-same-origin allow-presentation"
                 onerror="handleVideoEmbedError('${fallbackId}', '${safeUrl}')"
                 onload="handleVideoEmbedLoad('${fallbackId}')">
             </iframe>
@@ -14176,7 +14165,7 @@ function openPlaylistViewerModal(playlist, items) {
         const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) {
             frame.src = embedUrl;
-            frame.setAttribute('sandbox', getPlaylistIframeSandbox(current, { allowAdPopups: !!playlist?.hasAds }));
+            frame.removeAttribute('sandbox');
             frame.dataset.fallbackHandled = '0';
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
@@ -14271,7 +14260,7 @@ function openPlaylistViewerModal(playlist, items) {
                 <div class="video-player-layout">
                     <section class="video-player-stage">
                         <div class="video-player-frame-shell">
-                            <iframe id="playlist-viewer-frame" src="" class="video-player-frame" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="${getPlaylistIframeSandbox(items[0], { allowAdPopups: !!playlist?.hasAds })}"></iframe>
+                            <iframe id="playlist-viewer-frame" src="" class="video-player-frame" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                         </div>
                         <div class="video-player-stage-footer">
                             <div class="min-w-0">
