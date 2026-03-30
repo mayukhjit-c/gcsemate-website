@@ -859,8 +859,40 @@
                      <div id="add-playlist-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8 video-playlist-form-shell">
                          <h3 class="text-xl font-semibold mb-4">Add New Video Playlist</h3>
                          <form id="add-playlist-form" class="space-y-6 mt-4" onsubmit="event.preventDefault(); handleAddPlaylist();">
-                             <input id="playlist-title" type="text" placeholder="Playlist Title (e.g., 'AQA Physics Paper 1')" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter a descriptive title for the playlist">
-                             <textarea id="playlist-url" rows="5" placeholder="Paste video sources in order (one per line): YouTube video/playlist URL, abyss.to/short.icu URL, or iframe code" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Add mixed YouTube and abyss sources in order, one per line"></textarea>
+                             <input id="playlist-title" type="text" placeholder="Playlist Title (e.g., 'AQA Physics Paper 1')" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter a descriptive title for the playlist">
+                             <textarea id="playlist-url" rows="6" placeholder="Raw sources (one per line). Format: optional title | source URL" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" data-tooltip="Paste mixed YouTube and abyss sources in order, one per line"></textarea>
+                             <section class="video-admin-builder-panel rounded-2xl border border-white/70 bg-white/65 p-4">
+                                 <div class="video-admin-builder-grid">
+                                     <div class="video-admin-builder-card">
+                                         <label for="playlist-import-youtube-url" class="video-admin-field-label">Import YouTube Playlist URL</label>
+                                         <div class="video-admin-inline-row">
+                                             <input id="playlist-import-youtube-url" type="url" placeholder="https://www.youtube.com/playlist?list=..." class="video-admin-input flex-1">
+                                             <button id="playlist-import-youtube-btn" type="button" class="video-admin-action-btn" data-tooltip="Auto extract playlist items in order">Import</button>
+                                         </div>
+                                         <p id="playlist-import-youtube-status" class="video-admin-status text-xs text-slate-500 mt-2" aria-live="polite"></p>
+                                     </div>
+                                     <div class="video-admin-builder-card">
+                                         <label for="playlist-manual-source" class="video-admin-field-label">Add Source Manually</label>
+                                         <input id="playlist-manual-title" type="text" placeholder="Optional display title" class="video-admin-input mb-2">
+                                         <div class="video-admin-inline-row">
+                                             <input id="playlist-manual-source" type="text" placeholder="YouTube video, abyss/short.icu URL, or iframe" class="video-admin-input flex-1">
+                                             <button id="playlist-add-source-btn" type="button" class="video-admin-action-btn video-admin-action-btn-alt" data-tooltip="Add one item to playlist order">Add Video</button>
+                                         </div>
+                                         <p class="text-xs text-slate-500 mt-2">Mix YouTube and Abyss freely, then drag to reorder.</p>
+                                     </div>
+                                 </div>
+                                 <div class="video-admin-builder-toolbar mt-3">
+                                     <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                         <i class="fas fa-list-ol"></i>
+                                         <span>Playback Order</span>
+                                     </div>
+                                     <div class="flex items-center gap-2">
+                                         <span id="playlist-builder-count" class="video-admin-counter-chip">0 item(s)</span>
+                                         <button id="playlist-clear-sources-btn" type="button" class="video-admin-clear-btn">Clear</button>
+                                     </div>
+                                 </div>
+                                 <div id="playlist-source-dnd" class="video-admin-dnd-list mt-3" aria-live="polite"></div>
+                             </section>
                              <input id="playlist-subject" type="text" placeholder="Subject (e.g., Physics, Maths)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Associate a subject to this playlist">
                              <input id="playlist-tags" type="text" placeholder="Tags (comma-separated, e.g., 'AQA,Paper1,GCSE')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Add tags to help filtering">
                              <input id="playlist-creator" type="text" placeholder="Creator name (optional, auto-detected for YouTube)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Leave blank to auto-detect from YouTube or default to Mayukhjit Chakraborty for abyss">
@@ -869,12 +901,12 @@
                                  <span class="ml-2">Mark this playlist as ad-heavy/popup-prone</span>
                              </label>
                              <textarea id="playlist-notes" rows="3" placeholder="Admin notes about this playlist (optional)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Internal notes shown in playlist details"></textarea>
-                            <div id="add-playlist-preview" class="mt-3"></div>
+                            <div id="add-playlist-preview" class="mt-3 video-admin-preview-shell"></div>
                              <label class="flex items-center text-sm text-gray-700 select-none">
                                  <input id="playlist-sync-confirm" type="checkbox" required class="gcse-checkbox">
                                  <span class="ml-2">I confirm this playlist is for all paid users.</span>
                              </label>
-                             <button type="submit" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors" data-tooltip="Save the new playlist">Add Playlist</button>
+                             <button type="submit" class="p-3 w-full rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors video-admin-submit-btn" data-tooltip="Save the new playlist">Create Playlist</button>
                          </form>
                          <p id="add-playlist-message" class="text-sm mt-2 h-4"></p>
                      </div>
