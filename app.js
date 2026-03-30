@@ -12461,14 +12461,33 @@ function renderVideosPage(playlists) {
     const grid = document.getElementById('playlist-grid');
     const adminForm = document.getElementById('add-playlist-form-container');
     if (!grid || !adminForm) return;
-    // Show admin form if user is admin
-    adminForm.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-    // store global playlists for filtering
-    window.allPlaylists = playlists || [];
-    grid.innerHTML = '';
+    const isAdmin = isAdminUser();
+
+    adminForm.style.display = isAdmin ? 'block' : 'none';
+
+    window.allPlaylists = Array.isArray(playlists) ? playlists : [];
     populatePlaylistSubjectFilter(window.allPlaylists);
-    if (!playlists || playlists.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Available Yet</h3><p class="mt-1 text-sm text-gray-500">Check back later for curated revision videos.</p></div>`;
+
+    if (!window.__playlistFilterBindingsReady) {
+        setupPlaylistFilters();
+        window.__playlistFilterBindingsReady = true;
+        return;
+    }
+
+    if (typeof window.__applyPlaylistFilters === 'function') {
+        window.__applyPlaylistFilters();
+        return;
+    }
+
+    grid.innerHTML = '';
+    if (!window.allPlaylists.length) {
+        grid.innerHTML = `<div class="col-span-full rounded-[28px] border border-slate-200 bg-white/90 p-8 text-center shadow-[0_20px_60px_-35px_rgba(15,23,42,0.18)]">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+                <i class="fas fa-video text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800">No revision playlists yet</h3>
+            <p class="mt-2 text-sm text-slate-500">Once playlists are added, they will appear here with a native in-page player.</p>
+        </div>`;
         return;
     }
     // Inject page-level JSON-LD for VideoGallery/ItemList
@@ -12496,14 +12515,11 @@ function renderVideosPage(playlists) {
         if (existing) { existing.replaceWith(node); } else { document.head.appendChild(node); }
     } catch(_){}
 
-    // Use client-side filters and render via createPlaylistCard
     try {
         setupPlaylistFilters();
     } catch (e) {
-        // Fallback: simple render
         playlists.forEach(p => grid.appendChild(createPlaylistCard(p)));
     }
-    return;
 }
 
 function populatePlaylistSubjectFilter(playlists) {
@@ -12525,6 +12541,11 @@ function setupPlaylistFilters() {
     const sortSelect = document.getElementById('playlist-sort');
     const grid = document.getElementById('playlist-grid');
     if (!grid) return;
+
+    if (typeof window.__applyPlaylistFilters === 'function') {
+        window.__applyPlaylistFilters();
+        return;
+    }
 
     function applyFilters() {
         const term = (search?.value||'').toLowerCase().trim();
@@ -12550,6 +12571,8 @@ function setupPlaylistFilters() {
         list.forEach(p => grid.appendChild(createPlaylistCard(p)));
     }
 
+    window.__applyPlaylistFilters = applyFilters;
+
     // debounce handlers
     let dT;
     [search, subjectFilter, tagFilter, sortSelect].forEach(el => {
@@ -12564,64 +12587,69 @@ function setupPlaylistFilters() {
 
 function createPlaylistCard(playlist) {
     const card = document.createElement('div');
-    card.className = 'relative bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg p-4 flex flex-col cursor-pointer transition-transform transform hover:scale-105';
+    card.className = 'video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(59,130,246,0.28)]';
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const itemCount = Array.isArray(playlist?.items) ? playlist.items.length : (playlist?.url ? 1 : 0);
 
     const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
+    const subjectLabel = escapeHTML(playlist.subject || 'Revision playlist');
+    const subtitle = sourceMeta.subtitle || 'Native in-page player';
 
-    const body = document.createElement('div');
-    body.className = 'flex-grow flex flex-col justify-center items-center text-center';
-    body.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 class="font-bold text-gray-800 leading-tight">${escapeHTML(playlist.title)}</h3>
-        ${playlist.creatorName ? `<p class="text-xs text-gray-500 mt-1">By ${escapeHTML(playlist.creatorName)}</p>` : ''}
-        ${itemCount ? `<p class="text-xs text-gray-500 mt-1">${itemCount} item${itemCount === 1 ? '' : 's'}</p>` : ''}
-        ${playlist.description ? `<p class="text-xs text-gray-500 mt-2 line-clamp-2">${escapeHTML(playlist.description)}</p>` : ''}
-        ${playlist.hasAds ? `<p class="mt-2 inline-flex items-center text-[11px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Ads/Popups Likely</p>` : ''}
-        ${tags.length ? `<div class="mt-2 flex gap-2 flex-wrap justify-center">${tags.map(t => `<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${t}</span>`).join('')}</div>` : ''}
-    `;
+    card.innerHTML = `
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-br ${sourceMeta.accent || 'from-sky-500/15 via-white to-amber-400/10'}"></div>
+        <div class="absolute right-4 top-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            ${currentUser?.role === 'admin' ? `
+                <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
+                    <i class="fas fa-pen text-xs"></i>
+                </button>
+                <button type="button" onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-red-600 shadow-sm transition-colors hover:bg-red-50" data-tooltip="Delete playlist">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>` : ''}
+        </div>
+        <div class="relative flex flex-1 flex-col p-5">
+            <div class="mb-4 flex items-start justify-between gap-3">
+                <div class="space-y-2 min-w-0">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                        <span>${escapeHTML(sourceMeta.label)}</span>
+                    </div>
+                    <h3 class="text-lg font-extrabold leading-snug text-slate-900 line-clamp-2">${escapeHTML(playlist.title)}</h3>
+                    <p class="text-sm font-medium text-slate-500">${subjectLabel}</p>
+                </div>
+                <div class="flex-shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right shadow-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Items</p>
+                    <p class="text-lg font-black text-slate-800">${itemCount || 1}</p>
+                </div>
+            </div>
 
-    const footer = document.createElement('div');
-    footer.className = 'mt-4 pt-3 border-t border-gray-200/60 flex justify-between items-center';
+            <div class="mb-4 flex flex-wrap gap-2">
+                ${playlist.creatorName ? `<span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">By ${escapeHTML(playlist.creatorName)}</span>` : ''}
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHTML(subtitle)}</span>
+                ${playlist.hasAds ? `<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">Popup-prone host</span>` : ''}
+            </div>
 
-    const label = document.createElement('span');
-    label.className = 'text-xs text-gray-500 font-semibold';
-    label.textContent = sourceMeta.label;
+            ${playlist.description ? `<p class="mb-4 text-sm leading-6 text-slate-600 line-clamp-3">${escapeHTML(playlist.description)}</p>` : `<p class="mb-4 text-sm leading-6 text-slate-500">Open the player to browse the curated revision list inside GCSEMate.</p>`}
 
-    const openBtn = document.createElement('button');
-    openBtn.type = 'button';
-    openBtn.className = 'px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5';
-    openBtn.setAttribute('data-tooltip', 'Open playlist in new tab');
-    openBtn.innerHTML = `<i class="fas fa-external-link-alt"></i><span>Open</span>`;
-    openBtn.addEventListener('click', (e) => {
+            ${tags.length ? `<div class="mb-4 flex flex-wrap gap-2">${tags.map(tag => `<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">${tag}</span>`).join('')}</div>` : ''}
+
+            <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+                <div class="min-w-0 text-xs text-slate-500">
+                    <p class="font-semibold text-slate-700">${escapeHTML(sourceMeta.subtitle || 'Native embed')}</p>
+                    <p>Rounded player, in-page controls, and popup blocking on embedded sources.</p>
+                </div>
+                <button type="button" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-slate-800" data-tooltip="Open playlist in player">
+                    <i class="fas fa-play text-xs"></i>
+                    <span>Open player</span>
+                </button>
+            </div>
+        </div>`;
+
+    const openBtn = card.querySelector('button[data-tooltip="Open playlist in player"]');
+    openBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         handlePlaylistClick(playlist);
     });
-
-    footer.appendChild(label);
-    footer.appendChild(openBtn);
-
-    card.appendChild(body);
-    card.appendChild(footer);
-
-    if (currentUser.role === 'admin') {
-        const adminWrap = document.createElement('div');
-        adminWrap.className = 'absolute top-2 right-2 flex gap-1';
-        adminWrap.innerHTML = `
-            <button onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="p-1.5 bg-blue-500/80 text-white rounded-full hover:bg-blue-600 transition-colors" data-tooltip="Edit Playlist">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
-            </button>
-            <button onclick="event.stopPropagation(); deletePlaylist('${playlist.id}')" class="p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors" data-tooltip="Delete Playlist">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-        `;
-        card.appendChild(adminWrap);
-    }
 
     return card;
 }
@@ -12874,16 +12902,16 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
         const pid = first.videoId;
         const embed = document.createElement('div');
         embed.innerHTML = `
-            <div class="w-full rounded overflow-hidden border border-gray-200/60">
-                <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+            <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
+                <iframe src="https://www.youtube.com/embed/videoseries?list=${escapeHTML(pid)}&modestbranding=1&rel=0&playsinline=1" title="Playlist preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
                 <div class="p-2 text-xs text-gray-600">First item: <strong>YouTube playlist</strong>. ID: <strong>${escapeHTML(pid)}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open on YouTube</a></div>
             </div>`;
         previewEl.appendChild(embed);
     } else {
         const embed = document.createElement('div');
         embed.innerHTML = `
-            <div class="w-full rounded overflow-hidden border border-gray-200/60">
-                <iframe src="${escapeHTML(first.embedUrl)}" title="Embedded source preview" class="w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen></iframe>
+            <div class="w-full overflow-hidden rounded-[22px] border border-gray-200/60 bg-gray-950 shadow-lg">
+                <iframe src="${escapeHTML(first.embedUrl)}" title="Embedded source preview" class="video-player-frame w-full" style="height:180px;border:0;" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
                 <div class="p-2 text-xs text-gray-600">First item: <strong>${first.provider === 'abyss' ? 'Abyss embed' : 'YouTube video'}</strong>. <a href="${escapeHTML(first.watchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open source link</a></div>
             </div>`;
         previewEl.appendChild(embed);
@@ -12900,12 +12928,19 @@ function getPlaylistSourceMeta(playlist) {
     const items = normalizePlaylistItems(playlist);
     if (items.length > 1) {
         const providers = new Set(items.map(i => i.provider));
-        if (providers.size > 1) return { label: 'HYBRID PLAYLIST' };
+        if (providers.size > 1) return { label: 'HYBRID PLAYLIST', subtitle: `${items.length} mixed items`, accent: 'from-sky-500/15 via-white to-violet-400/10' };
     }
     const first = items[0];
-    if (first?.provider === 'abyss') return { label: 'ABYSS EMBED' };
-    if (first?.type === 'youtube_video') return { label: 'YOUTUBE VIDEO' };
-    return { label: 'YOUTUBE PLAYLIST' };
+    if (first?.provider === 'abyss') return { label: 'ABYSS EMBED', subtitle: 'External embed source', accent: 'from-amber-400/15 via-white to-orange-300/10' };
+    if (first?.type === 'youtube_video') return { label: 'YOUTUBE VIDEO', subtitle: 'Single lesson video', accent: 'from-red-500/15 via-white to-sky-400/10' };
+    return { label: 'YOUTUBE PLAYLIST', subtitle: 'Native YouTube playlist', accent: 'from-red-500/15 via-white to-rose-300/10' };
+}
+
+function getPlaylistIframeSandbox(item) {
+    if (!item) return 'allow-scripts allow-same-origin allow-presentation';
+    const base = ['allow-scripts', 'allow-same-origin', 'allow-presentation'];
+    if (item.provider === 'abyss') base.push('allow-forms');
+    return base.join(' ');
 }
 
 // Manage Playlists admin page
@@ -13039,15 +13074,17 @@ function getVideoEmbed(url) {
             const finalUrl = `${data.embedUrl}${sep}modestbranding=1&rel=0&playsinline=1`;
             const watchUrl = escapeHTML(data.watchUrl || url);
             const uniqueId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${uniqueId}">
+            return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper video-player-shell rounded-[24px] overflow-hidden relative" id="${uniqueId}">
                 <iframe 
                     id="iframe-${uniqueId}"
                     src="${finalUrl}" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                     allowfullscreen
-                    class="w-full h-full"
+                    class="video-player-frame w-full h-full"
                     loading="lazy"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
                     onerror="handleVideoEmbedError('${uniqueId}', '${watchUrl}')"
                     onload="handleVideoEmbedLoad('${uniqueId}')">
                 </iframe>
@@ -13069,15 +13106,17 @@ function getVideoEmbed(url) {
         // Fallback generic embed
         const safeUrl = escapeHTML(url);
         const fallbackId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper rounded-lg overflow-hidden relative" id="${fallbackId}">
+        return `<div class="aspect-w-16 aspect-h-9 video-brand-wrapper video-player-shell rounded-[24px] overflow-hidden relative" id="${fallbackId}">
             <iframe 
                 id="iframe-${fallbackId}"
                 src="${safeUrl}" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 allowfullscreen
-                class="w-full h-full"
+                class="video-player-frame w-full h-full"
                 loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-same-origin allow-presentation"
                 onerror="handleVideoEmbedError('${fallbackId}', '${safeUrl}')"
                 onload="handleVideoEmbedLoad('${fallbackId}')">
             </iframe>
@@ -13382,6 +13421,8 @@ function openPlaylistViewerModal(playlist, items) {
     const modal = document.getElementById('video-playlist-viewer-modal');
     if (!modal) return;
     let activeIndex = 0;
+    const sourceMeta = getPlaylistSourceMeta(playlist);
+    const maxIndex = Math.max(items.length - 1, 0);
 
     const renderActive = () => {
         const current = items[activeIndex];
@@ -13389,41 +13430,77 @@ function openPlaylistViewerModal(playlist, items) {
         if (!embedUrl) return;
         const frame = modal.querySelector('#playlist-viewer-frame');
         const title = modal.querySelector('#playlist-viewer-item-title');
+        const sourceLink = modal.querySelector('#playlist-viewer-open-source');
+        const prevButton = modal.querySelector('#playlist-viewer-prev');
+        const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) frame.src = embedUrl;
         if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${(current.provider || 'source').toUpperCase()}`;
+        if (sourceLink) sourceLink.href = current.watchUrl || current.sourceUrl || '#';
+        if (prevButton) prevButton.disabled = activeIndex === 0;
+        if (nextButton) nextButton.disabled = activeIndex >= maxIndex;
         trackVideoView(playlist, current, activeIndex);
         modal.querySelectorAll('[data-item-index]').forEach(btn => {
             const isActive = Number(btn.getAttribute('data-item-index')) === activeIndex;
-            btn.classList.toggle('bg-blue-600', isActive);
-            btn.classList.toggle('text-white', isActive);
-            btn.classList.toggle('bg-white', !isActive);
-            btn.classList.toggle('text-gray-700', !isActive);
+            btn.classList.toggle('video-player-item-active', isActive);
+            btn.classList.toggle('video-player-item-inactive', !isActive);
         });
     };
 
     const itemsHtml = items.map((item, idx) => {
         const label = item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YouTube playlist' : 'YouTube video');
-        return `<button type="button" data-item-index="${idx}" class="w-full text-left px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-blue-50 transition-colors">${idx + 1}. ${escapeHTML(label)}</button>`;
+        const badge = item.type === 'youtube_playlist' ? 'Playlist' : (item.provider === 'abyss' ? 'External' : 'Video');
+        return `<button type="button" data-item-index="${idx}" class="video-player-item w-full text-left">
+            <span class="video-player-item-index">${idx + 1}</span>
+            <span class="video-player-item-copy">
+                <span class="video-player-item-label">${escapeHTML(label)}</span>
+                <span class="video-player-item-badge">${badge}</span>
+            </span>
+        </button>`;
     }).join('');
 
     modal.innerHTML = `
-        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-800">${escapeHTML(playlist.title || 'Playlist')}</h3>
-                    <p id="playlist-viewer-item-title" class="text-xs text-gray-500">Loading...</p>
-                    ${playlist.creatorName ? `<p class="text-xs text-gray-500">Creator: ${escapeHTML(playlist.creatorName)}</p>` : ''}
-                    ${playlist.hasAds ? `<p class="text-xs font-semibold text-amber-900">Warning: ads/popups likely for this playlist.</p>` : ''}
+        <div class="video-player-modal-shell">
+            <div class="video-player-modal-card">
+                <div class="video-player-header">
+                    <div class="min-w-0 space-y-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="video-player-eyebrow">${escapeHTML(sourceMeta.label || 'Video player')}</span>
+                            <span class="video-player-pill">${items.length} item${items.length === 1 ? '' : 's'}</span>
+                            ${playlist.hasAds ? '<span class="video-player-pill video-player-pill-warning">Popup-prone host blocked in player</span>' : ''}
+                        </div>
+                        <h3 class="video-player-title">${escapeHTML(playlist.title || 'Playlist')}</h3>
+                        <p id="playlist-viewer-item-title" class="video-player-subtitle">Loading player...</p>
+                        <div class="video-player-badges">
+                            ${playlist.creatorName ? `<span class="video-player-badge">Creator: ${escapeHTML(playlist.creatorName)}</span>` : ''}
+                            ${playlist.subject ? `<span class="video-player-badge">Subject: ${escapeHTML(playlist.subject)}</span>` : ''}
+                            ${playlist.description ? `<span class="video-player-badge">${escapeHTML(playlist.description.slice(0, 120))}${playlist.description.length > 120 ? '...' : ''}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="video-player-actions">
+                        <button id="playlist-viewer-prev" type="button" class="video-player-nav-btn"><i class="fas fa-chevron-left"></i><span>Prev</span></button>
+                        <button id="playlist-viewer-next" type="button" class="video-player-nav-btn"><span>Next</span><i class="fas fa-chevron-right"></i></button>
+                        <button id="playlist-viewer-close" type="button" class="video-player-close-btn">Close</button>
+                    </div>
                 </div>
-                <button id="playlist-viewer-close" type="button" class="px-3 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold">Close</button>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-0 min-h-0 flex-1">
-                <div class="bg-black min-h-[260px]">
-                    <iframe id="playlist-viewer-frame" src="" class="w-full h-full min-h-[260px]" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
-                </div>
-                <div class="p-3 overflow-y-auto bg-gray-50 border-l border-gray-200">
-                    ${playlist.description ? `<p class="text-xs text-gray-700 mb-3 p-2 rounded bg-white border border-gray-200">${escapeHTML(playlist.description)}</p>` : ''}
-                    <div class="space-y-2" id="playlist-viewer-items">${itemsHtml}</div>
+                <div class="video-player-layout">
+                    <section class="video-player-stage">
+                        <div class="video-player-frame-shell">
+                            <iframe id="playlist-viewer-frame" src="" class="video-player-frame" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="${getPlaylistIframeSandbox(items[0])}"></iframe>
+                        </div>
+                        <div class="video-player-stage-footer">
+                            <div class="min-w-0">
+                                <p class="video-player-stage-note">Embedded natively inside GCSEMate. Popups are blocked in the viewer.</p>
+                            </div>
+                            <a id="playlist-viewer-open-source" href="${escapeHTML(items[0]?.watchUrl || items[0]?.sourceUrl || '#')}" target="_blank" rel="noopener noreferrer" class="video-player-source-link">Open source</a>
+                        </div>
+                    </section>
+                    <aside class="video-player-sidebar">
+                        <div class="video-player-sidebar-head">
+                            <p class="video-player-sidebar-title">Playlist items</p>
+                            <p class="video-player-sidebar-copy">Choose a lesson or episode without leaving this page.</p>
+                        </div>
+                        <div class="space-y-2" id="playlist-viewer-items">${itemsHtml}</div>
+                    </aside>
                 </div>
             </div>
         </div>`;
@@ -13431,15 +13508,23 @@ function openPlaylistViewerModal(playlist, items) {
     modal.classList.add('flex');
 
     modal.querySelector('#playlist-viewer-close')?.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        modal.innerHTML = '';
+        closePlaylistViewerModal(modal);
+    });
+    modal.querySelector('#playlist-viewer-prev')?.addEventListener('click', () => {
+        if (activeIndex > 0) {
+            activeIndex -= 1;
+            renderActive();
+        }
+    });
+    modal.querySelector('#playlist-viewer-next')?.addEventListener('click', () => {
+        if (activeIndex < maxIndex) {
+            activeIndex += 1;
+            renderActive();
+        }
     });
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            modal.innerHTML = '';
+            closePlaylistViewerModal(modal);
         }
     }, { once: true });
     modal.querySelectorAll('[data-item-index]').forEach(btn => {
@@ -13449,6 +13534,13 @@ function openPlaylistViewerModal(playlist, items) {
         });
     });
     renderActive();
+}
+
+function closePlaylistViewerModal(modal) {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.innerHTML = '';
 }
 
 // =================================================================================
