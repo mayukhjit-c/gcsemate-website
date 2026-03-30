@@ -2658,6 +2658,28 @@
                                     <input id="ui-compact-badges" type="checkbox" class="gcse-checkbox">
                                 </label>
                             </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label>
+                                    <span class="block text-sm text-gray-700 mb-1">Banner size</span>
+                                    <select id="ui-banner-scale-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="0.85">Compact</option>
+                                        <option value="1">Default</option>
+                                        <option value="1.15">Large</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span class="block text-sm text-gray-700 mb-1">Footer size</span>
+                                    <select id="ui-footer-scale-select" class="tools-select w-full px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
+                                        <option value="0.85">Compact</option>
+                                        <option value="1">Default</option>
+                                        <option value="1.15">Large</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label class="flex items-center justify-between rounded-xl border border-gray-200 bg-white/80 px-4 py-3">
+                                <span class="text-sm font-semibold text-gray-700">Collapse footer by default</span>
+                                <input id="ui-footer-collapsed" type="checkbox" class="gcse-checkbox">
+                            </label>
                         </div>
                         <div class="mt-8 pt-6 border-t border-gray-200 space-y-4">
                             <div class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 shadow-sm">
@@ -3160,6 +3182,12 @@
             </div>
         </main>
         <footer id="page-footer" class="bg-gray-100/50 p-4 sm:p-6 text-center text-sm text-gray-600 border-t border-gray-200/50 flex-shrink-0" role="contentinfo">
+            <div class="flex justify-end mb-2">
+                <button id="footer-toggle-button" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-700 text-xs sm:text-sm font-semibold transition-colors" aria-expanded="true" aria-controls="footer-content">
+                    <i class="fas fa-compress-alt" aria-hidden="true"></i>
+                    <span>Collapse footer</span>
+                </button>
+            </div>
             <div id="footer-content" class="space-y-3">
                 <div class="flex items-center justify-center gap-2">
                     <span>Made with</span>

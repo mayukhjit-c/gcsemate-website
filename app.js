@@ -10863,6 +10863,9 @@ async function handleUpdateUserSettings() {
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const bannerScaleSelect = document.getElementById('ui-banner-scale-select');
+    const footerScaleSelect = document.getElementById('ui-footer-scale-select');
+    const footerCollapsedToggle = document.getElementById('ui-footer-collapsed');
     const displayName = displayNameInput.value.trim();
     const newPassword = passwordInput.value;
     const messageEl = document.getElementById('user-settings-message');
@@ -10917,7 +10920,10 @@ async function handleUpdateUserSettings() {
             density: densitySelect?.value || 'comfortable',
             radius: radiusSelect?.value || 'soft',
             motion: motionSelect?.value || 'smooth',
-            compactBadges: !!compactBadgesToggle?.checked
+            compactBadges: !!compactBadgesToggle?.checked,
+            bannerScale: Number(bannerScaleSelect?.value || 1),
+            footerScale: Number(footerScaleSelect?.value || 1),
+            footerCollapsed: !!footerCollapsedToggle?.checked
         });
         applyUserInterfacePreferences();
         updateWelcomeMessage();
@@ -22926,9 +22932,15 @@ function applyUserInterfacePreferences() {
     body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
     body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
     body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
+    body.classList.toggle('footer-collapsed', !!prefs.footerCollapsed);
     body.classList.toggle('dark-theme', false);
     root.classList.toggle('dark-theme', false);
     root.style.colorScheme = 'light';
+
+    const bannerScale = Math.max(0.75, Math.min(1.35, Number(prefs.bannerScale || 1)));
+    const footerScale = Math.max(0.75, Math.min(1.35, Number(prefs.footerScale || 1)));
+    root.style.setProperty('--ui-banner-scale', String(bannerScale));
+    root.style.setProperty('--ui-footer-scale', String(footerScale));
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) themeMeta.setAttribute('content', '#2563eb');
@@ -22937,6 +22949,9 @@ function applyUserInterfacePreferences() {
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const bannerScaleSelect = document.getElementById('ui-banner-scale-select');
+    const footerScaleSelect = document.getElementById('ui-footer-scale-select');
+    const footerCollapsedToggle = document.getElementById('ui-footer-collapsed');
     const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
@@ -22947,12 +22962,27 @@ function applyUserInterfacePreferences() {
     if (radiusSelect) radiusSelect.value = prefs.radius || 'soft';
     if (motionSelect) motionSelect.value = prefs.motion || 'smooth';
     if (compactBadgesToggle) compactBadgesToggle.checked = !!prefs.compactBadges;
+    if (bannerScaleSelect) bannerScaleSelect.value = String(bannerScale);
+    if (footerScaleSelect) footerScaleSelect.value = String(footerScale);
+    if (footerCollapsedToggle) footerCollapsedToggle.checked = !!prefs.footerCollapsed;
     if (themeModeSelect) themeModeSelect.value = themeMode;
     if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
 
     syncThemePresetButtons(prefs.themePreset || 'classic');
     syncQuickThemeToggles(themeMode);
+    syncFooterToggleButton();
+}
+
+function syncFooterToggleButton() {
+    const button = document.getElementById('footer-toggle-button');
+    const icon = button?.querySelector('i');
+    const label = button?.querySelector('span');
+    const collapsed = document.body.classList.contains('footer-collapsed');
+    if (!button || !icon || !label) return;
+    button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    icon.className = collapsed ? 'fas fa-expand-alt' : 'fas fa-compress-alt';
+    label.textContent = collapsed ? 'Expand footer' : 'Collapse footer';
 }
 
 function applyThemePreset(presetName = 'classic') {
@@ -22987,12 +23017,16 @@ function initializeUserExperienceControls() {
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
     const compactBadgesToggle = document.getElementById('ui-compact-badges');
+    const bannerScaleSelect = document.getElementById('ui-banner-scale-select');
+    const footerScaleSelect = document.getElementById('ui-footer-scale-select');
+    const footerCollapsedToggle = document.getElementById('ui-footer-collapsed');
     const themeModeSelect = document.getElementById('ui-theme-mode');
     const adminDensitySelect = document.getElementById('admin-density-select');
     const adminMotionSelect = document.getElementById('admin-motion-select');
     const quickThemeToggle = document.getElementById('theme-quick-toggle');
     const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
     const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
+    const footerToggleButton = document.getElementById('footer-toggle-button');
 
     densitySelect?.addEventListener('change', () => {
         saveUIPreferences({ density: densitySelect.value });
@@ -23010,6 +23044,18 @@ function initializeUserExperienceControls() {
         saveUIPreferences({ compactBadges: compactBadgesToggle.checked });
         applyUserInterfacePreferences();
     });
+    bannerScaleSelect?.addEventListener('change', () => {
+        saveUIPreferences({ bannerScale: Number(bannerScaleSelect.value || 1) });
+        applyUserInterfacePreferences();
+    });
+    footerScaleSelect?.addEventListener('change', () => {
+        saveUIPreferences({ footerScale: Number(footerScaleSelect.value || 1) });
+        applyUserInterfacePreferences();
+    });
+    footerCollapsedToggle?.addEventListener('change', () => {
+        saveUIPreferences({ footerCollapsed: !!footerCollapsedToggle.checked });
+        applyUserInterfacePreferences();
+    });
     themeModeSelect?.addEventListener('change', () => {
         saveUIPreferences({ themeMode: themeModeSelect.value });
         applyUserInterfacePreferences();
@@ -23025,6 +23071,11 @@ function initializeUserExperienceControls() {
     quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
+    footerToggleButton?.addEventListener('click', () => {
+        const collapsed = !document.body.classList.contains('footer-collapsed');
+        saveUIPreferences({ footerCollapsed: collapsed });
+        applyUserInterfacePreferences();
+    });
     applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {

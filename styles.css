@@ -37,6 +37,8 @@
 --card-radius: 16px;
 --input-radius: 12px;
 --button-radius: 12px;
+--ui-banner-scale: 1;
+--ui-footer-scale: 1;
         }
 
         html.dark-theme,
@@ -7354,6 +7356,36 @@ will-change: transform;
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
             scroll-behavior: auto !important;
+        }
+
+        #event-countdown-banner,
+        #site-announcement-banner,
+        #app-status-banner {
+            font-size: calc(0.95rem * var(--ui-banner-scale));
+        }
+
+        #page-footer {
+            font-size: calc(0.875rem * var(--ui-footer-scale));
+            padding-top: calc(1rem * var(--ui-footer-scale));
+            padding-bottom: calc(1rem * var(--ui-footer-scale));
+        }
+
+        #page-footer #footer-content {
+            transition: max-height 200ms ease, opacity 200ms ease, margin 200ms ease;
+            max-height: 420px;
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        body.footer-collapsed #page-footer {
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+
+        body.footer-collapsed #page-footer #footer-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
         }
 
         @media (max-width: 768px) {
