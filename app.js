@@ -12623,7 +12623,6 @@ function createPlaylistCard(playlist) {
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const itemCount = Array.isArray(playlist?.items) ? playlist.items.length : (playlist?.url ? 1 : 0);
-    const adminActionsVisibility = isAdminUser() ? 'opacity-100' : 'opacity-0';
 
     const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
     const subjectLabel = escapeHTML(playlist.subject || 'Revision playlist');
@@ -12631,17 +12630,6 @@ function createPlaylistCard(playlist) {
 
     card.innerHTML = `
         <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-br ${sourceMeta.accent || 'from-sky-500/15 via-white to-amber-400/10'}"></div>
-        <div class="absolute right-4 top-4 z-20 flex gap-2 transition-opacity ${adminActionsVisibility}">
-            ${isAdminUser() ? `
-                <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-full border border-white/90 bg-white/95 px-3 text-xs font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
-                    <i class="fas fa-pen text-[10px]"></i>
-                    <span>Edit</span>
-                </button>
-                <button type="button" onclick="event.stopPropagation(); deletePlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-full border border-white/90 bg-white/95 px-3 text-xs font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50" data-tooltip="Delete playlist">
-                    <i class="fas fa-trash text-[10px]"></i>
-                    <span>Delete</span>
-                </button>` : ''}
-        </div>
         <div class="relative flex flex-1 flex-col p-5">
             <div class="mb-4 flex items-start justify-between gap-3">
                 <div class="space-y-2 min-w-0">
@@ -12678,6 +12666,18 @@ function createPlaylistCard(playlist) {
                     <span>Open player</span>
                 </button>
             </div>
+            ${isAdminUser() ? `
+            <div class="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                <span class="mr-auto text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Admin Actions</span>
+                <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
+                    <i class="fas fa-pen text-[10px]"></i>
+                    <span>Edit</span>
+                </button>
+                <button type="button" onclick="event.stopPropagation(); deletePlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-red-600 shadow-sm transition-colors hover:bg-red-50" data-tooltip="Delete playlist">
+                    <i class="fas fa-trash text-[10px]"></i>
+                    <span>Delete</span>
+                </button>
+            </div>` : ''}
         </div>`;
 
     const openBtn = card.querySelector('button[data-tooltip="Open playlist in player"]');
