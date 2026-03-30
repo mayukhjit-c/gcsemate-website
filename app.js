@@ -12724,10 +12724,9 @@ function splitPlaylistEntry(rawValue) {
 function splitPlaylistSources(rawValue) {
     const raw = String(rawValue || '').trim();
     if (!raw) return [];
-    const iframeMatches = extractIframeSrcs(raw);
-    const cleaned = raw.replace(/<iframe[\s\S]*?<\/iframe>/ig, '\n');
-    const lineItems = cleaned.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    return [...iframeMatches, ...lineItems];
+    // Only split by newlines, do not extract iframes into bare URLs here,
+    // so that titles like "Title | <iframe...>" are preserved perfectly.
+    return raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 }
 
 function parsePlaylistSourceInput(rawValue) {
@@ -12981,7 +12980,9 @@ function getPlaylistSourceMeta(playlist) {
 function getPlaylistIframeSandbox(item) {
     if (!item) return 'allow-scripts allow-same-origin allow-presentation';
     const base = ['allow-scripts', 'allow-same-origin', 'allow-presentation'];
-    if (item.provider === 'abyss') base.push('allow-forms');
+    // By omitting allow-popups, allow-popups-to-escape-sandbox, and allow-top-navigation,
+    // we block the iframe from navigating to new tabs or opening popups.
+    // For Abyss, we removed allow-forms to be stricter, as forms can trigger new tabs.
     return base.join(' ');
 }
 
@@ -13475,7 +13476,10 @@ function openPlaylistViewerModal(playlist, items) {
         const sourceLink = modal.querySelector('#playlist-viewer-open-source');
         const prevButton = modal.querySelector('#playlist-viewer-prev');
         const nextButton = modal.querySelector('#playlist-viewer-next');
-        if (frame) frame.src = embedUrl;
+        if (frame) {
+            frame.src = embedUrl;
+            frame.setAttribute('sandbox', getPlaylistIframeSandbox(current));
+        }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
         if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
         if (sourceLink) sourceLink.href = current.watchUrl || current.sourceUrl || '#';

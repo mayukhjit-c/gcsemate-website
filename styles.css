@@ -4201,13 +4201,17 @@ to {
 
         .video-player-modal-shell {
             width: min(1200px, calc(100vw - 1.5rem));
-            max-height: 92vh;
+            height: 92vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .video-player-modal-card {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            width: 100%;
+            height: 100%;
             border-radius: 30px;
             border: 1px solid rgba(226, 232, 240, 0.9);
             background: rgba(255, 255, 255, 0.96);
@@ -4330,6 +4334,7 @@ to {
             display: grid;
             grid-template-columns: minmax(0, 2fr) minmax(280px, 0.95fr);
             min-height: 0;
+            flex: 1 1 auto;
         }
 
         .video-player-stage {
@@ -4384,7 +4389,7 @@ to {
             border-left: 1px solid rgba(226, 232, 240, 0.9);
             min-width: 0;
             max-height: 100%;
-            overflow: hidden;
+            overflow-y: auto;
         }
 
         .video-player-sidebar-head {
@@ -7756,10 +7761,13 @@ will-change: transform;
         body.footer-collapsed #page-footer #footer-content {
             max-height: 0;
             opacity: 0;
-            margin-top: 0;
+            margin: 0;
+            padding: 0;
+            border: none;
+            overflow: hidden;
             visibility: hidden;
             pointer-events: none;
-            transform: translateY(0.4rem);
+            display: none;
         }
 
         @media (max-width: 768px) {
