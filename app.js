@@ -13520,6 +13520,70 @@ function getAdFallbackUrl(item) {
     return item.sourceUrl || item.embedUrl || '';
 }
 
+const resolvedVideoSourceCache = new Map();
+
+async function resolveExternalVideoSource(item) {
+    if (!item) return null;
+    const source = String(item.sourceUrl || item.embedUrl || '').trim();
+    if (!source) return null;
+    if (item.provider !== 'abyss') return null;
+
+    if (resolvedVideoSourceCache.has(source)) {
+        return resolvedVideoSourceCache.get(source);
+    }
+
+    try {
+        const res = await fetch(`/api/resolve-video-url?url=${encodeURIComponent(source)}`);
+        if (!res.ok) throw new Error(`Resolver failed (${res.status})`);
+        const data = await res.json();
+        const resolved = {
+            sourceUrl: source,
+            finalUrl: data?.finalUrl || source,
+            youtube: data?.youtube || null
+        };
+        resolvedVideoSourceCache.set(source, resolved);
+        return resolved;
+    } catch (error) {
+        console.warn('Could not resolve external video source', error);
+        const fallback = { sourceUrl: source, finalUrl: source, youtube: null };
+        resolvedVideoSourceCache.set(source, fallback);
+        return fallback;
+    }
+}
+
+async function getResolvedItemPlayback(item) {
+    const defaultEmbed = getItemEmbedUrl(item);
+    const defaultWatch = getAdFallbackUrl(item);
+    const base = {
+        embedUrl: defaultEmbed,
+        watchUrl: defaultWatch,
+        wasResolved: false,
+        mode: 'default'
+    };
+
+    if (!item || item.provider !== 'abyss') return base;
+
+    const resolved = await resolveExternalVideoSource(item);
+    if (!resolved) return base;
+
+    if (resolved.youtube?.embedUrl) {
+        return {
+            embedUrl: resolved.youtube.embedUrl,
+            watchUrl: resolved.youtube.watchUrl || resolved.finalUrl || defaultWatch,
+            wasResolved: true,
+            mode: 'youtube_resolved'
+        };
+    }
+
+    // Keep source link available, but avoid claiming it's clean playback.
+    return {
+        embedUrl: defaultEmbed,
+        watchUrl: resolved.finalUrl || defaultWatch,
+        wasResolved: false,
+        mode: 'external_unresolved'
+    };
+}
+
 function showVideoFallbackWarningModal(fallbackUrl, reason = '') {
     const reasonText = reason === 'timeout'
         ? 'The secure embed host took too long to respond.'
@@ -13554,15 +13618,18 @@ function openPlaylistViewerModal(playlist, items) {
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const maxIndex = Math.max(items.length - 1, 0);
 
-    const renderActive = () => {
+    const renderActive = async () => {
         renderAttempt += 1;
         const attemptId = renderAttempt;
         const current = items[activeIndex];
-        const embedUrl = getItemEmbedUrl(current);
+        const playback = await getResolvedItemPlayback(current);
+        if (attemptId !== renderAttempt) return;
+        const embedUrl = playback.embedUrl;
         if (!embedUrl) return;
         const frame = modal.querySelector('#playlist-viewer-frame');
         const title = modal.querySelector('#playlist-viewer-item-title');
         const sourceLink = modal.querySelector('#playlist-viewer-open-source');
+        const stageNote = modal.querySelector('.video-player-stage-note');
         const prevButton = modal.querySelector('#playlist-viewer-prev');
         const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) {
@@ -13572,7 +13639,16 @@ function openPlaylistViewerModal(playlist, items) {
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
         if (title) title.textContent = `Item ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
-        if (sourceLink) sourceLink.href = current.watchUrl || current.sourceUrl || '#';
+        if (sourceLink) sourceLink.href = playback.watchUrl || current.watchUrl || current.sourceUrl || '#';
+        if (stageNote) {
+            if (playback.mode === 'youtube_resolved') {
+                stageNote.textContent = 'Resolved from external host to a direct YouTube embed to avoid popup-ad redirects.';
+            } else if (playback.mode === 'external_unresolved') {
+                stageNote.textContent = 'This source is still external and may be restricted by its host. Popups remain blocked in the viewer.';
+            } else {
+                stageNote.textContent = 'Embedded natively inside GCSEMate. Popups are blocked in the viewer.';
+            }
+        }
         if (prevButton) prevButton.disabled = activeIndex === 0;
         if (nextButton) nextButton.disabled = activeIndex >= maxIndex;
         trackVideoView(playlist, current, activeIndex);
@@ -13583,7 +13659,7 @@ function openPlaylistViewerModal(playlist, items) {
         });
 
         if (frame) {
-            const fallbackUrl = getAdFallbackUrl(current);
+            const fallbackUrl = playback.watchUrl || getAdFallbackUrl(current);
             const handleFallback = (reason) => {
                 if (!fallbackUrl || frame.dataset.fallbackHandled === '1' || attemptId !== renderAttempt) return;
                 frame.dataset.fallbackHandled = '1';
