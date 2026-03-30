@@ -255,7 +255,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update: if isAdmin() &&
         // Only allow a controlled set of fields so clients cannot inject arbitrary data.
-        request.resource.data.keys().hasOnly(['title','playlistId','playlistType','embedSource','subject','tags','url','items','createdAt','createdBy','updatedAt','description']) &&
+        request.resource.data.keys().hasOnly(['title','playlistId','playlistType','embedSource','subject','tags','url','items','createdAt','createdBy','updatedAt','description','creatorName','hasAds']) &&
         // Basic type checks
         request.resource.data.title is string &&
         (!request.resource.data.keys().hasAny(['playlistId']) || request.resource.data.playlistId == null || request.resource.data.playlistId is string) &&
@@ -265,6 +265,8 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['url']) || request.resource.data.url == null || request.resource.data.url is string) &&
         (!request.resource.data.keys().hasAny(['items']) || (request.resource.data.items is list && request.resource.data.items.size() <= 400)) &&
         (!request.resource.data.keys().hasAny(['description']) || request.resource.data.description == null || request.resource.data.description is string) &&
+        (!request.resource.data.keys().hasAny(['creatorName']) || request.resource.data.creatorName == null || request.resource.data.creatorName is string) &&
+        (!request.resource.data.keys().hasAny(['hasAds']) || request.resource.data.hasAds is bool) &&
         // tags must be a list (may be empty); limit size for safety
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;

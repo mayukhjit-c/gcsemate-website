@@ -12579,8 +12579,10 @@ function createPlaylistCard(playlist) {
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h3 class="font-bold text-gray-800 leading-tight">${escapeHTML(playlist.title)}</h3>
+        ${playlist.creatorName ? `<p class="text-xs text-gray-500 mt-1">By ${escapeHTML(playlist.creatorName)}</p>` : ''}
         ${itemCount ? `<p class="text-xs text-gray-500 mt-1">${itemCount} item${itemCount === 1 ? '' : 's'}</p>` : ''}
         ${playlist.description ? `<p class="text-xs text-gray-500 mt-2 line-clamp-2">${escapeHTML(playlist.description)}</p>` : ''}
+        ${playlist.hasAds ? `<p class="mt-2 inline-flex items-center text-[11px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Ads/Popups Likely</p>` : ''}
         ${tags.length ? `<div class="mt-2 flex gap-2 flex-wrap justify-center">${tags.map(t => `<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${t}</span>`).join('')}</div>` : ''}
     `;
 
@@ -12676,14 +12678,30 @@ function splitPlaylistSources(rawValue) {
 }
 
 function parsePlaylistSourceInput(rawValue) {
-    const raw = String(rawValue || '').trim();
+    let raw = String(rawValue || '').trim();
     if (!raw) return null;
+    raw = raw.replace(/^['"]+|['"]+$/g, '').trim();
     const containsIframe = /<iframe/i.test(raw);
     const sourceUrl = containsIframe ? extractIframeSrc(raw) : raw;
     if (!sourceUrl) return null;
     let normalizedUrl;
     try {
-        const urlObj = new URL(sourceUrl);
+        let candidate = String(sourceUrl || '').trim().replace(/^['"]+|['"]+$/g, '');
+        candidate = candidate
+            .replace(/&amp;/gi, '&')
+            .replace(/[)\]}>.,;]+$/g, '')
+            .trim();
+        if (candidate.startsWith('//')) {
+            candidate = `https:${candidate}`;
+        }
+        if (!/^https?:\/\//i.test(candidate)) {
+            if (/^(short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)\//i.test(candidate)) {
+                candidate = `https://${candidate}`;
+            } else if (/^(short\.icu|abyss\.to)$/i.test(candidate)) {
+                candidate = `https://${candidate}`;
+            }
+        }
+        const urlObj = new URL(candidate);
         if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') return null;
         normalizedUrl = urlObj.toString();
     } catch (_) {
@@ -12745,6 +12763,80 @@ function parsePlaylistItemsInput(rawValue) {
         });
     });
     return items;
+}
+
+function serializePlaylistItems(items = []) {
+    return (items || []).map(item => item?.sourceUrl).filter(Boolean).join('\n');
+}
+
+function parseYouTubeCreatorCandidate(urlString) {
+    try {
+        const u = new URL(urlString);
+        const parts = u.pathname.split('/').filter(Boolean);
+        if (parts[0] === '@' && parts[0].length > 1) return parts[0].slice(1);
+        if ((parts[0] === 'channel' || parts[0] === 'c' || parts[0] === 'user') && parts[1]) return parts[1];
+    } catch (_) {}
+    return '';
+}
+
+async function detectCreatorNameForItems(items = []) {
+    const firstYoutube = (items || []).find(i => i.provider === 'youtube');
+    if (!firstYoutube) return 'Mayukhjit Chakraborty';
+
+    const direct = parseYouTubeCreatorCandidate(firstYoutube.watchUrl || firstYoutube.sourceUrl || '');
+    if (direct) return direct;
+
+    try {
+        const target = encodeURIComponent(firstYoutube.watchUrl || firstYoutube.sourceUrl || '');
+        if (!target) return '';
+        const res = await fetch(`https://www.youtube.com/oembed?url=${target}&format=json`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data?.author_name) return String(data.author_name).trim();
+        }
+    } catch (_) {}
+    return '';
+}
+
+function renderPlaylistDnDList(container, items = [], onReorder = null) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!items.length) {
+        container.innerHTML = '<p class="text-xs text-gray-500">No valid items to reorder yet.</p>';
+        return;
+    }
+    let dragIndex = -1;
+    const list = document.createElement('div');
+    list.className = 'space-y-2';
+
+    items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-2 cursor-move';
+        row.draggable = true;
+        row.setAttribute('data-dnd-index', String(idx));
+        row.innerHTML = `
+            <span class="text-xs text-gray-500 w-6 text-center">${idx + 1}</span>
+            <span class="text-sm font-medium text-gray-700 flex-1 truncate">${escapeHTML(item.sourceUrl || '')}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-600">${item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YT playlist' : 'YT video')}</span>
+        `;
+        row.addEventListener('dragstart', () => { dragIndex = idx; row.classList.add('opacity-50'); });
+        row.addEventListener('dragend', () => { dragIndex = -1; row.classList.remove('opacity-50'); });
+        row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('ring-2', 'ring-blue-300'); });
+        row.addEventListener('dragleave', () => row.classList.remove('ring-2', 'ring-blue-300'));
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            row.classList.remove('ring-2', 'ring-blue-300');
+            const dropIndex = idx;
+            if (dragIndex < 0 || dropIndex === dragIndex) return;
+            const moved = items.splice(dragIndex, 1)[0];
+            items.splice(dropIndex, 0, moved);
+            items.forEach((it, i) => { it.order = i; });
+            renderPlaylistDnDList(container, items, onReorder);
+            if (typeof onReorder === 'function') onReorder(items);
+        });
+        list.appendChild(row);
+    });
+    container.appendChild(list);
 }
 
 function normalizePlaylistItems(playlist) {
@@ -13077,6 +13169,9 @@ async function handleAddPlaylist() {
     }
     try {
         const first = items[0];
+        const creatorInput = (document.getElementById('playlist-creator')?.value || '').trim();
+        const hasAds = !!document.getElementById('playlist-has-ads')?.checked;
+        const autoCreator = creatorInput || await detectCreatorNameForItems(items) || (first.provider === 'abyss' ? 'Mayukhjit Chakraborty' : '');
         const playlistData = {
             title: title,
             playlistType: first.type,
@@ -13084,6 +13179,8 @@ async function handleAddPlaylist() {
             subject: (document.getElementById('playlist-subject')?.value || '').trim(),
             tags: (document.getElementById('playlist-tags')?.value || '').split(/[\s,]+/).map(t=>t.trim()).filter(Boolean),
             description: (document.getElementById('playlist-notes')?.value || '').trim(),
+            creatorName: autoCreator,
+            hasAds,
             url: first.sourceUrl,
             items,
             createdBy: currentUser.uid,
@@ -13115,6 +13212,8 @@ async function editPlaylist(id, currentTitle) {
         const curSubject = data.subject || '';
         const curTags = (data.tags || []).join(', ');
         const curNotes = data.description || '';
+        const curCreatorName = data.creatorName || '';
+        const curHasAds = !!data.hasAds;
         modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-lg p-6 fade-in">
             <h3 class="text-lg font-semibold text-gray-800 mb-3">Edit Playlist</h3>
@@ -13122,11 +13221,21 @@ async function editPlaylist(id, currentTitle) {
             <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTitle)}" />
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Playlist Sources (order = playback order)</label>
             <textarea id="edit-playlist-url" rows="6" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="One source per line: YouTube URL, abyss/short.icu URL, or iframe snippet">${escapeHTML(curItemsText)}</textarea>
+            <div class="mt-2">
+                <p class="text-xs text-gray-600 mb-1">Drag to reorder visually:</p>
+                <div id="edit-playlist-dnd" class="rounded-lg border border-gray-200 bg-gray-50 p-2"></div>
+            </div>
             <div id="edit-playlist-preview" class="mt-3"></div>
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Subject</label>
             <input id="edit-playlist-subject" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curSubject)}" />
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Tags (comma-separated)</label>
             <input id="edit-playlist-tags" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTags)}" />
+            <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Creator Name</label>
+            <input id="edit-playlist-creator" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curCreatorName)}" placeholder="Auto if empty" />
+            <label class="mt-3 flex items-center text-sm text-amber-900 select-none rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                <input id="edit-playlist-has-ads" type="checkbox" class="gcse-checkbox" ${curHasAds ? 'checked' : ''}>
+                <span class="ml-2">Mark as ad-heavy/popup-prone</span>
+            </label>
             <label class="block text-sm font-medium text-gray-700 mb-1 mt-3">Admin Notes</label>
             <textarea id="edit-playlist-notes" rows="3" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Notes about this playlist">${escapeHTML(curNotes)}</textarea>
             <p class="text-xs text-gray-500 mt-2">Mix YouTube and Abyss sources freely. Rearrange by changing line order.</p>
@@ -13146,17 +13255,34 @@ async function editPlaylist(id, currentTitle) {
     (function attachPreview() {
         const urlInput = document.getElementById('edit-playlist-url');
         const preview = document.getElementById('edit-playlist-preview');
+        const dnd = document.getElementById('edit-playlist-dnd');
         if (!urlInput || !preview) return;
         let t;
+        let currentItems = parsePlaylistItemsInput(urlInput.value || '');
+        const syncFromItems = () => {
+            urlInput.value = serializePlaylistItems(currentItems);
+            renderPlaylistSourcePreview(urlInput.value, preview);
+            renderPlaylistDnDList(dnd, currentItems, (newOrder) => {
+                currentItems = newOrder.slice();
+                urlInput.value = serializePlaylistItems(currentItems);
+                renderPlaylistSourcePreview(urlInput.value, preview);
+            });
+        };
         function renderPreview() {
             const val = (urlInput.value || '').trim();
             preview.innerHTML = '';
             if (!val) return;
             renderPlaylistSourcePreview(val, preview);
+            currentItems = parsePlaylistItemsInput(val);
+            renderPlaylistDnDList(dnd, currentItems, (newOrder) => {
+                currentItems = newOrder.slice();
+                urlInput.value = serializePlaylistItems(currentItems);
+                renderPlaylistSourcePreview(urlInput.value, preview);
+            });
         }
         urlInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(renderPreview, 250); });
         // initial render
-        setTimeout(renderPreview, 60);
+        setTimeout(() => { renderPreview(); syncFromItems(); }, 60);
     })();
 
     document.getElementById('edit-save').onclick = async () => {
@@ -13165,18 +13291,23 @@ async function editPlaylist(id, currentTitle) {
         const newSubject = document.getElementById('edit-playlist-subject').value.trim();
         const newTagsRaw = (document.getElementById('edit-playlist-tags').value || '').split(/[,\s]+/).map(t=>t.trim()).filter(Boolean);
         const newNotes = document.getElementById('edit-playlist-notes').value.trim();
+        const newCreatorRaw = document.getElementById('edit-playlist-creator').value.trim();
+        const newHasAds = !!document.getElementById('edit-playlist-has-ads')?.checked;
         if (!newTitle) return showToast('Title is required', 'error');
         if (!newUrl) return showToast('Playlist source is required.', 'error');
         const parsedItems = parsePlaylistItemsInput(newUrl);
         if (!parsedItems.length) return showToast('Please enter valid sources (YouTube/abyss URLs or iframe snippets).', 'error');
         try {
             const first = parsedItems[0];
+            const finalCreator = newCreatorRaw || await detectCreatorNameForItems(parsedItems) || (first.provider === 'abyss' ? 'Mayukhjit Chakraborty' : '');
             const updateData = {
                 title: newTitle,
                 url: first.sourceUrl,
                 playlistType: first.type,
                 embedSource: first.provider,
                 items: parsedItems,
+                hasAds: newHasAds,
+                creatorName: finalCreator,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if (first.videoId) updateData.playlistId = first.videoId;
@@ -13281,6 +13412,8 @@ function openPlaylistViewerModal(playlist, items) {
                 <div>
                     <h3 class="text-lg font-bold text-gray-800">${escapeHTML(playlist.title || 'Playlist')}</h3>
                     <p id="playlist-viewer-item-title" class="text-xs text-gray-500">Loading...</p>
+                    ${playlist.creatorName ? `<p class="text-xs text-gray-500">Creator: ${escapeHTML(playlist.creatorName)}</p>` : ''}
+                    ${playlist.hasAds ? `<p class="text-xs font-semibold text-amber-900">Warning: ads/popups likely for this playlist.</p>` : ''}
                 </div>
                 <button id="playlist-viewer-close" type="button" class="px-3 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold">Close</button>
             </div>
@@ -13370,8 +13503,7 @@ function parseYoutubeUrl(url) {
                 };
             }
         }
-    } catch (e) { 
-        console.error("Could not parse YouTube URL", e); 
+    } catch (_) {
     }
     return null;
 }
@@ -23152,6 +23284,14 @@ function syncFooterToggleButton() {
     label.textContent = collapsed ? 'Expand footer' : 'Collapse footer';
 }
 
+function toggleFooterCollapsePreference() {
+    const collapsed = !document.body.classList.contains('footer-collapsed');
+    saveUIPreferences({ footerCollapsed: collapsed });
+    applyUserInterfacePreferences();
+}
+
+window.toggleFooterCollapseFromButton = toggleFooterCollapsePreference;
+
 function applyThemePreset(presetName = 'classic') {
     const hex = THEME_PRESETS[presetName] || THEME_PRESETS.classic;
     const rgb = hexToRgb(hex);
@@ -23238,11 +23378,7 @@ function initializeUserExperienceControls() {
     quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
-    footerToggleButton?.addEventListener('click', () => {
-        const collapsed = !document.body.classList.contains('footer-collapsed');
-        saveUIPreferences({ footerCollapsed: collapsed });
-        applyUserInterfacePreferences();
-    });
+    footerToggleButton?.addEventListener('click', toggleFooterCollapsePreference);
     applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {
