@@ -12631,7 +12631,7 @@ function createPlaylistCard(playlist) {
     card.innerHTML = `
         <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-br ${sourceMeta.accent || 'from-sky-500/15 via-white to-amber-400/10'}"></div>
         <div class="absolute right-4 top-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            ${currentUser?.role === 'admin' ? `
+            ${isAdminUser() ? `
                 <button type="button" onclick="event.stopPropagation(); editPlaylist('${playlist.id}', '${(playlist.title || '').replace(/'/g, "\\'")}')" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-blue-700 shadow-sm transition-colors hover:bg-blue-50" data-tooltip="Edit playlist">
                     <i class="fas fa-pen text-xs"></i>
                 </button>
@@ -13020,7 +13020,7 @@ function getPlaylistIframeSandbox(item) {
 
 // Manage Playlists admin page
 async function renderManagePlaylistsPage() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     const tbody = document.getElementById('manage-playlists-tbody');
     const search = document.getElementById('manage-search')?.value?.toLowerCase() || '';
     const selectAll = document.getElementById('manage-select-all');
@@ -13262,7 +13262,7 @@ function renderMarkdown(md) {
 }
 
 async function handleAddPlaylist() {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     const form = document.getElementById('add-playlist-form');
     const titleInput = document.getElementById('playlist-title');
     const urlInput = document.getElementById('playlist-url');
@@ -13313,7 +13313,7 @@ async function handleAddPlaylist() {
     }
 }
 async function editPlaylist(id, currentTitle) {
-    if (currentUser.role !== 'admin') return;
+    if (!isAdminUser()) return;
     const modal = document.getElementById('confirmation-modal');
     // Fetch current playlist data to prefill fields
     const docRef = db.collection('videoPlaylists').doc(id);
@@ -23703,7 +23703,10 @@ function initializeUserExperienceControls() {
     quickThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     mobileThemeToggle?.addEventListener('click', toggleQuickThemeMode);
     feedbackDismissButton?.addEventListener('click', dismissFeedbackWidget);
-    // Footer toggle has an inline click handler in HTML. Avoid double-binding here.
+    if (footerToggleButton && !footerToggleButton.dataset.boundToggle) {
+        footerToggleButton.addEventListener('click', toggleFooterCollapsePreference);
+        footerToggleButton.dataset.boundToggle = 'true';
+    }
     applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {
