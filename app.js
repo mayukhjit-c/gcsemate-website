@@ -2378,6 +2378,13 @@ async function initializeUserTracking() {
     }, 'User Tracking Initialization');
 }
 
+const ACCOUNT_SHARING_ENFORCEMENT_TIERS = new Set(['paid', 'pro', 'family', 'friend']);
+
+function isSharingEnforcementTier(tierValue) {
+    const normalizedTier = String(tierValue || '').trim().toLowerCase();
+    return ACCOUNT_SHARING_ENFORCEMENT_TIERS.has(normalizedTier);
+}
+
 // Check for concurrent sessions (account sharing detection)
 async function checkConcurrentSessions() {
     return safeExecuteAsync(async () => {
@@ -2395,13 +2402,17 @@ async function checkConcurrentSessions() {
         });
         
         const isAdmin = (currentUser.role || '').toLowerCase() === 'admin';
+        const enforceSharingRules = isSharingEnforcementTier(currentUser?.tier);
 
         if (activeSessions.length > 0) {
             if (isAdmin) {
                 await handleAdminNewIPChallenge(activeSessions);
-            } else {
+            } else if (enforceSharingRules) {
                 // Account sharing detected
                 await handleAccountSharing(activeSessions);
+            } else {
+                // Free tier users are excluded from automated sharing bans.
+                console.info('Concurrent sessions detected for free-tier user; enforcement skipped.', currentUser?.uid);
             }
         }
         
@@ -2411,6 +2422,8 @@ async function checkConcurrentSessions() {
 // Handle account sharing detection
 async function handleAccountSharing(concurrentSessions) {
     return safeExecuteAsync(async () => {
+        if (!isSharingEnforcementTier(currentUser?.tier)) return;
+
         const tierBeforeViolation = currentUser?.tier || 'free';
 
         // Remove paid access
@@ -2519,13 +2532,13 @@ function showAccountSharingWarning() {
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Account Sharing Detected</h2>
                 <p class="text-gray-600 mb-6">
-                    Your account has been detected being used from multiple locations simultaneously. 
+                    Your paid account has been detected being used from multiple locations simultaneously.
                     This violates our terms of service.
                 </p>
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                     <h3 class="font-semibold text-red-800 mb-2">Actions Taken:</h3>
                     <ul class="text-sm text-red-700 space-y-1">
-                        <li>• Paid access has been removed</li>
+                        <li>• Paid-plan access has been removed</li>
                         <li>• Account downgraded to free tier</li>
                         <li>• You will be logged out in 10 seconds</li>
                     </ul>
@@ -3499,21 +3512,25 @@ function exportDiagnosticData() {
 
 // Clear diagnostic logs
 async function clearDiagnosticLogs() {
-    if (confirm('Are you sure you want to clear all diagnostic logs?')) {
-        try {
-            const batch = db.batch();
-            const logsSnapshot = await db.collection('errorLogs').limit(500).get();
-            
-            logsSnapshot.docs.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            
-            await batch.commit();
-            adminDiagnostics.errorLogs = [];
-            showToast('Diagnostic logs cleared successfully', 'success');
-        } catch (error) {
-            showToast('Failed to clear diagnostic logs', 'error');
-        }
+    const confirmed = await confirmActionWithModal(
+        'Clear all diagnostic logs? This cannot be undone.',
+        { okText: 'Clear Logs', cancelText: 'Cancel', tone: 'danger' }
+    );
+    if (!confirmed) return;
+
+    try {
+        const batch = db.batch();
+        const logsSnapshot = await db.collection('errorLogs').limit(500).get();
+
+        logsSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        adminDiagnostics.errorLogs = [];
+        showToast('Diagnostic logs cleared successfully', 'success');
+    } catch (error) {
+        showToast('Failed to clear diagnostic logs', 'error');
     }
 }
 
@@ -4048,14 +4065,16 @@ function clearAppLoadingFailsafes() {
 function scheduleAppLoadingFailsafe() {
     clearAppLoadingFailsafes();
 
-    const attemptHide = () => {
+    const attemptHide = (force = false) => {
+        // Avoid revealing landing/login while Firebase auth is still resolving.
+        if (!force && !hasResolvedInitialAuthState) return;
         try { ensureInitialView(); } catch (_) {}
         hideAppLoading();
     };
 
-    // Primary hide attempt at 4s, secondary at 8s to avoid stuck gray screens
-    appLoadingFailsafePrimary = setTimeout(attemptHide, 4000);
-    appLoadingFailsafeSecondary = setTimeout(attemptHide, 8000);
+    // Primary hide waits for resolved auth; secondary is a hard fallback.
+    appLoadingFailsafePrimary = setTimeout(() => attemptHide(false), 4000);
+    appLoadingFailsafeSecondary = setTimeout(() => attemptHide(true), 12000);
 }
 
 function hideAppLoading() {
@@ -4443,12 +4462,16 @@ window.addEventListener('load', () => {
     const overlay = document.getElementById('app-loading');
     const logo = overlay?.querySelector?.('.animate-logo');
     if (logo) { requestAnimationFrame(() => { logo.style.opacity = '1'; logo.style.transform = 'translateY(0)'; }); }
-    // Hide overlay quickly once auth state has resolved.
-    setTimeout(() => {
+
+    const maybeHideOverlay = () => {
         if (!hasResolvedInitialAuthState) return;
         ensureInitialView();
         hideAppLoading();
-    }, 2600);
+    };
+
+    // Remove fixed delays: hide as soon as auth is ready.
+    maybeHideOverlay();
+    setTimeout(maybeHideOverlay, 900);
 }, { once: true });
 
 // Cleanup on page unload
@@ -4480,6 +4503,10 @@ if (!isAuthAvailable()) {
 
 auth.onAuthStateChanged(async (user) => {
     hasResolvedInitialAuthState = true;
+    try {
+        window.__gcsemateAuthResolved = true;
+        window.dispatchEvent(new Event('gcsemate-auth-ready'));
+    } catch (_) {}
     isResolvingAuthenticatedSession = !!(user && user.emailVerified);
     if (!isFirestoreAvailable()) {
         isResolvingAuthenticatedSession = false;
@@ -6318,6 +6345,14 @@ function toggleAdminFocusMode() {
     applyAdminDashboardFocusMode();
 }
 
+function scrollAdminSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+window.scrollAdminSection = scrollAdminSection;
+
 // Rate Limiting System
 const RateLimiter = {
     // Storage keys
@@ -7019,17 +7054,20 @@ function renderUserManagementPanel(allUsers) {
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
         const hasSharingFlag = !!user.accountSharingDetected;
+        const userTier = String(user.tier || 'free').toLowerCase();
+        const displayName = escapeHTML(user.displayName || 'Unnamed user');
+        const emailText = escapeHTML(user.email || 'No email on file');
         const card = document.createElement('div');
-        card.className = 'bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-gray-200/50 flex flex-col hover:shadow-lg transition-all duration-200';
+        card.className = 'admin-user-card bg-white/85 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-200/70 flex flex-col gap-3 hover:shadow-md transition-all duration-200';
         card.innerHTML = `
-            <div class="flex items-start justify-between">
-                <label class="inline-flex items-center gap-2 select-none">
+            <div class="flex items-start justify-between gap-2">
+                <label class="inline-flex items-center gap-2 select-none text-xs text-gray-600">
                     <input type="checkbox" class="user-select gcse-checkbox" value="${user.id}">
-                    <span class="text-sm text-gray-600">Select</span>
+                    <span>Select</span>
                 </label>
-                <div>
+                <div class="relative">
                     <button class="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-xs font-semibold" onclick="toggleQuickSetMenu(this)" aria-haspopup="menu">Quick Set</button>
-                    <div class="hidden absolute mt-1 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10 quick-set-menu">
+                    <div class="hidden absolute mt-1 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-10 quick-set-menu">
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}','paid',null)">Set Tier: Paid</button>
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}','free',null)">Set Tier: Free</button>
                         <button class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50" onclick="quickSetTierRole('${user.id}',null,'admin')">Set Role: Admin</button>
@@ -7037,38 +7075,41 @@ function renderUserManagementPanel(allUsers) {
                     </div>
                 </div>
             </div>
-            <div class="flex-grow mt-3">
-                <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-bold text-lg text-gray-800">${user.displayName}</h4>
-                    <div class="flex gap-1 items-center flex-wrap justify-end">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h4 class="font-bold text-base text-gray-800 truncate">${displayName}</h4>
+                    <p class="text-xs text-gray-500 truncate">${emailText}</p>
+                </div>
+                <div class="flex gap-1 items-center flex-wrap justify-end">
                         ${hasSharingFlag ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Sharing Flagged</span>' : ''}
-                        ${user.tier === 'paid' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pro</span>' : ''}
+                        ${userTier !== 'free' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Paid</span>' : ''}
                         ${user.role === 'admin' ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Admin</span>' : ''}
-                    </div>
                 </div>
-                <p class="text-sm text-gray-500 mb-3">${user.email}</p>
-                <div class="flex gap-2 mb-3">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.tier === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${capitalizeFirstLetter(user.tier)}</span>
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${capitalizeFirstLetter(user.role)}</span>
-                </div>
-                <div class="mt-3 text-xs text-gray-600 space-y-1">
-                    <div><span class="font-semibold">Last Login:</span> ${formatDateMaybe(user.lastLoginAt)}</div>
+            </div>
+            <div class="admin-user-metrics grid grid-cols-2 gap-2 text-[11px] text-gray-600">
+                <div class="rounded-lg bg-slate-50 p-2"><span class="block font-semibold text-slate-700">Tier</span><span>${escapeHTML(capitalizeFirstLetter(user.tier || 'free'))}</span></div>
+                <div class="rounded-lg bg-slate-50 p-2"><span class="block font-semibold text-slate-700">Role</span><span>${escapeHTML(capitalizeFirstLetter(user.role || 'user'))}</span></div>
+                <div class="rounded-lg bg-slate-50 p-2"><span class="block font-semibold text-slate-700">Last Login</span><span>${formatDateMaybe(user.lastLoginAt)}</span></div>
+                <div class="rounded-lg bg-slate-50 p-2"><span class="block font-semibold text-slate-700">Sharing</span><span>${sharingInstances}</span></div>
+            </div>
+            <details class="admin-user-details">
+                <summary class="text-xs font-semibold text-blue-700 cursor-pointer select-none">More details</summary>
+                <div class="mt-2 space-y-1 text-[11px] text-gray-600">
                     <div><span class="font-semibold">Last Logout:</span> ${formatDateMaybe(user.lastLogoutAt)}</div>
                     ${user.lastSessionDurationMs ? `<div><span class="font-semibold">Last Session:</span> ${formatDurationMs(user.lastSessionDurationMs)}</div>` : ''}
                     ${topSubject ? `<div><span class="font-semibold">Top Subject:</span> ${escapeHTML(topSubject.subject)} (${formatDurationMs(topSubject.ms)})</div>` : ''}
                     ${user.lastAccess ? `<div><span class="font-semibold">Last Access:</span> ${formatDateMaybe(user.lastAccess)}</div>` : ''}
-                    <div><span class="font-semibold">Sharing Instances:</span> ${sharingInstances}</div>
                     ${user.accountSharingDetectedAt ? `<div><span class="font-semibold">Last Sharing Flag:</span> ${formatDateMaybe(user.accountSharingDetectedAt)}</div>` : ''}
                     ${user.ipInfo ? `<div class="flex items-center gap-2"><img src="https://flagcdn.com/24x18/${(user.ipInfo.country_code||'').toLowerCase()}.png" alt="${user.ipInfo.country || 'Unknown'}" class="w-4 h-3 rounded-sm border border-gray-200" onerror="this.onerror=null; this.src='https://flagcdn.com/24x18/${(user.ipInfo.country||'').toLowerCase().replace(/\s+/g, '-')}.png'; this.onerror=function(){this.style.display='none';};" style="display:block;"> <span>${user.ipInfo.ip || ''} • ${user.ipInfo.country || 'Unknown'} ${user.ipInfo.city ? '• ' + user.ipInfo.city : ''}</span></div>` : ''}
                 </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+            </details>
+            <div class="admin-user-actions grid grid-cols-2 gap-2">
                 <button data-user-action="edit" data-user-id="${user.id}" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
                 <button data-user-action="activity" data-user-id="${user.id}" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
                 <button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>
-                <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing Log</button>
-                <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Force Logout</button>
-                ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore Access</button>` : ''}
+                <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing</button>
+                <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Logout</button>
+                ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore</button>` : '<div class="hidden sm:block"></div>'}
             </div>
         `;
         container.appendChild(card);
@@ -8261,6 +8302,18 @@ async function quickSetTierRole(userId, tier, role) {
     const update = {};
     if (tier) update.tier = tier;
     if (role) update.role = role;
+    const changeSummary = [
+        tier ? `tier to ${capitalizeFirstLetter(tier)}` : null,
+        role ? `role to ${capitalizeFirstLetter(role)}` : null
+    ].filter(Boolean).join(' and ');
+    if (!changeSummary) return;
+
+    const confirmed = await confirmActionWithModal(
+        `Apply quick update and set ${changeSummary}?`,
+        { okText: 'Apply Update', cancelText: 'Cancel', tone: 'primary' }
+    );
+    if (!confirmed) return;
+
     try {
 await db.collection('users').doc(userId).update(update);
 showToast('Updated', 'success');
@@ -8272,6 +8325,13 @@ function getSelectedUserIds() {
 async function bulkForceLogout() {
     const ids = getSelectedUserIds();
     if (!ids.length) { showToast('No users selected', 'info'); return; }
+
+    const confirmed = await confirmActionWithModal(
+        `Force logout for ${ids.length} selected user${ids.length !== 1 ? 's' : ''}?`,
+        { okText: 'Force Logout', cancelText: 'Cancel', tone: 'danger' }
+    );
+    if (!confirmed) return;
+
     try {
 const batch = db.batch();
 ids.forEach(id => batch.update(db.collection('users').doc(id), { forceLogoutAt: firebase.firestore.FieldValue.serverTimestamp() }));
@@ -8282,6 +8342,13 @@ showToast('Forced logout for selected users', 'success');
 async function bulkSendReset() {
     const ids = getSelectedUserIds();
     if (!ids.length) { showToast('No users selected', 'info'); return; }
+
+    const confirmed = await confirmActionWithModal(
+        `Send password reset emails to ${ids.length} selected user${ids.length !== 1 ? 's' : ''}?`,
+        { okText: 'Send Reset Emails', cancelText: 'Cancel', tone: 'primary' }
+    );
+    if (!confirmed) return;
+
     // Send in sequence to avoid rate limits
     let ok = 0, fail = 0;
     for (const id of ids) {
@@ -8345,6 +8412,14 @@ async function adminSendPasswordReset(email) {
     }
 }
 async function adminForceLogout(userId) {
+    const targetUser = allUsers[userId];
+    const targetLabel = targetUser?.displayName || targetUser?.email || 'this user';
+    const confirmed = await confirmActionWithModal(
+        `Force logout for ${targetLabel}?`,
+        { okText: 'Force Logout', cancelText: 'Cancel', tone: 'danger' }
+    );
+    if (!confirmed) return;
+
     try {
         await db.collection('users').doc(userId).update({ forceLogoutAt: firebase.firestore.FieldValue.serverTimestamp() });
         showToast('User will be logged out shortly.', 'success');
@@ -8361,6 +8436,12 @@ async function adminRestoreAccountAccess(userId) {
         showToast('User not found', 'error');
         return;
     }
+
+    const confirmed = await confirmActionWithModal(
+        `Restore account access for ${user.displayName || user.email || 'this user'}?`,
+        { okText: 'Restore Access', cancelText: 'Cancel', tone: 'success' }
+    );
+    if (!confirmed) return;
 
     try {
         const restoredTier = user.tierBeforeSharingViolation || user.tier || 'free';
@@ -9151,6 +9232,18 @@ async function toggleMaintenanceMode() {
         const doc = await maintenanceRef.get();
         const current = normalizeMaintenanceState(doc.exists ? doc.data() : {});
         const isEnabled = current.enabled;
+
+        const confirmed = await confirmActionWithModal(
+            isEnabled
+                ? 'Disable maintenance mode and bring the site back online?'
+                : 'Enable maintenance mode for non-admin users?',
+            {
+                okText: isEnabled ? 'Disable' : 'Enable',
+                cancelText: 'Cancel',
+                tone: isEnabled ? 'danger' : 'primary'
+            }
+        );
+        if (!confirmed) return;
         
         await maintenanceRef.set({
             enabled: !isEnabled,
@@ -9193,6 +9286,13 @@ async function saveSectionMaintenanceConfig() {
             sectionMap[item.value] = !!item.checked;
         });
 
+        const activeCount = Object.values(sectionMap).filter(Boolean).length;
+        const confirmed = await confirmActionWithModal(
+            `Save section maintenance changes? ${activeCount} section${activeCount !== 1 ? 's' : ''} will be marked as under maintenance.`,
+            { okText: 'Save Sections', cancelText: 'Cancel', tone: 'primary' }
+        );
+        if (!confirmed) return;
+
         await db.collection('settings').doc('maintenance').set({
             sections: sectionMap,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -9224,6 +9324,12 @@ async function setMaintenanceMessage() {
         showToast('Message cannot be empty', 'error');
         return;
     }
+
+    const confirmed = await confirmActionWithModal(
+        'Apply this custom maintenance message?',
+        { okText: 'Apply Message', cancelText: 'Cancel', tone: 'primary' }
+    );
+    if (!confirmed) return;
     
     try {
         await db.collection('settings').doc('maintenance').set({
@@ -9347,6 +9453,12 @@ async function applyMaintenanceTemplate() {
             applyBtn.classList.remove('opacity-70', 'cursor-not-allowed');
         }
     };
+
+    const confirmed = await confirmActionWithModal(
+        'Apply this maintenance template and update the live maintenance message?',
+        { okText: 'Apply Template', cancelText: 'Cancel', tone: 'primary' }
+    );
+    if (!confirmed) return;
     
     try {
         setApplyButtonState(true);
@@ -10775,7 +10887,11 @@ window.clearSystemLogs = async function() {
         return;
     }
 
-    if (!confirm('Are you sure you want to clear all system logs? This action cannot be undone.')) {
+    const confirmed = await confirmActionWithModal(
+        'Clear all system logs? This action cannot be undone.',
+        { okText: 'Clear System Logs', cancelText: 'Cancel', tone: 'danger' }
+    );
+    if (!confirmed) {
         return;
     }
     
@@ -11545,6 +11661,34 @@ function closeCheckoutSuccessModal() {
 
 window.closeCheckoutSuccessModal = closeCheckoutSuccessModal;
 
+function contactSupportAfterCheckout() {
+    let openedWidget = false;
+
+    try {
+        if (window.OpenWidget && typeof window.OpenWidget.call === 'function') {
+            window.OpenWidget.call('open');
+            openedWidget = true;
+        }
+    } catch (_) {}
+
+    if (!openedWidget) {
+        try {
+            if (typeof window.openFeedbackWidget === 'function') {
+                window.openFeedbackWidget();
+                openedWidget = true;
+            }
+        } catch (_) {}
+    }
+
+    if (!openedWidget) {
+        window.location.href = 'mailto:admin@gcsemate.com?subject=GCSEMate%20payment%20activation';
+    }
+
+    showToast('Please message us in the bottom-right support button. Final activation confirmation is completed within 2 business days.', 'info', 7000);
+}
+
+window.contactSupportAfterCheckout = contactSupportAfterCheckout;
+
 function completeCheckoutSuccessExperience(source = 'checkout') {
     if (!currentUser || currentUser.tier !== 'paid') return false;
     const now = Date.now();
@@ -11553,8 +11697,8 @@ function completeCheckoutSuccessExperience(source = 'checkout') {
 
     clearPendingCheckoutSuccess();
     refreshPaidAccessExperience();
-    setCheckoutAlertState('success', `Payment received. Pro access is active. ${getCheckoutSuccessExpiryMessage(currentUser)} If anything looks wrong, email admin@gcsemate.com.`);
-    try { showToast('Pro activated. Thank you for upgrading!', 'success', 5000); } catch (_) {}
+    setCheckoutAlertState('success', `Payment received. ${getCheckoutSuccessExpiryMessage(currentUser)} Please contact us using the bottom-right support button so final account activation confirmation can be completed within 2 business days.`);
+    try { showToast('Payment received. Please contact support in the bottom-right button for activation confirmation.', 'success', 6500); } catch (_) {}
     openCheckoutSuccessModal();
 
     if (source === 'query' && getCurrentVisiblePageId() !== 'checkout-page') {
@@ -11584,12 +11728,12 @@ function handleCheckoutQueryParamsIfPresent() {
             if (currentUser?.tier === 'paid') {
                 completeCheckoutSuccessExperience('query');
             } else {
-                setCheckoutAlertState('info', 'Payment received. Activating Pro access now. This can take a few seconds. If it still has not updated shortly, refresh once or email admin@gcsemate.com.');
+                setCheckoutAlertState('info', 'Payment received. Activating access now. Please contact us in the bottom-right support button so activation confirmation can be completed within 2 business days.');
                 waitForProActivation(45000).then((ok) => {
                     if (ok) {
                         completeCheckoutSuccessExperience('query');
                     } else {
-                        setCheckoutAlertState('warning', 'We are still activating your Pro access. Refresh once, and if it still does not update, email admin@gcsemate.com.');
+                        setCheckoutAlertState('warning', 'We are still activating your Pro access. Refresh once, then contact us in the bottom-right support button if it still has not updated.');
                     }
                 });
             }
@@ -11727,6 +11871,12 @@ async function postAnnouncement() {
         showToast('Announcement message is too long (max 500 characters)', 'error');
         return;
     }
+
+    const confirmed = await confirmActionWithModal(
+        'Post this announcement to all users now?',
+        { okText: 'Post Banner', cancelText: 'Cancel', tone: 'primary' }
+    );
+    if (!confirmed) return;
     
     try {
         await db.collection('settings').doc('announcement').set({ 
@@ -11760,6 +11910,13 @@ function updateAnnouncementCounter() {
 
 async function clearAnnouncement() {
     if (currentUser.role !== 'admin') return;
+
+    const confirmed = await confirmActionWithModal(
+        'Clear the live announcement banner for everyone?',
+        { okText: 'Clear Banner', cancelText: 'Cancel', tone: 'danger' }
+    );
+    if (!confirmed) return;
+
     try {
         await db.collection('settings').doc('announcement').set({ 
             message: '',
@@ -11810,11 +11967,30 @@ async function saveFreeTrialSubjectOverride(subjectName) {
 function handleSaveFreeTrialOverride() {
     const select = document.getElementById('free-trial-subject-select');
     if (!select) return;
-    saveFreeTrialSubjectOverride(select.value || null);
+    const selectedSubject = select.value || null;
+    const message = selectedSubject
+        ? `Set the free rotating subject to ${selectedSubject}?`
+        : 'Switch free subject access back to automatic rotation?';
+
+    confirmActionWithModal(message, {
+        okText: 'Confirm',
+        cancelText: 'Cancel',
+        tone: 'primary'
+    }).then((confirmed) => {
+        if (!confirmed) return;
+        saveFreeTrialSubjectOverride(selectedSubject);
+    });
 }
 
 function handleResetFreeTrialOverride() {
-    saveFreeTrialSubjectOverride(null);
+    confirmActionWithModal('Reset free subject access to automatic rotation?', {
+        okText: 'Reset',
+        cancelText: 'Cancel',
+        tone: 'primary'
+    }).then((confirmed) => {
+        if (!confirmed) return;
+        saveFreeTrialSubjectOverride(null);
+    });
 }
 
 async function renderDashboard() {
@@ -19679,27 +19855,89 @@ function showSpecificationModal(pdfUrl, title) {
 }
 
 function showConfirmationModal(message, onConfirm, options = {}) {
-    const { okText = 'OK', cancelText = 'Cancel', showCancel = true } = options;
+    const {
+        okText = 'OK',
+        cancelText = 'Cancel',
+        showCancel = true,
+        onCancel = null,
+        tone = 'danger'
+    } = options;
     const modal = document.getElementById('confirmation-modal');
+    if (!modal || typeof onConfirm !== 'function') return;
+
+    const toneClass = tone === 'primary'
+        ? 'px-6 py-2 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700'
+        : tone === 'success'
+            ? 'px-6 py-2 bg-emerald-600 text-white font-bold rounded-md hover:bg-emerald-700'
+            : 'px-6 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700';
+
+    modal.classList.remove('hidden');
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-sm p-6 text-center fade-in">
             <p class="text-lg font-semibold text-gray-800 mb-6">${message}</p>
             <div class="flex justify-center gap-4">
                 ${showCancel ? `<button id="confirm-cancel" class="px-6 py-2 bg-gray-200 text-gray-800 font-bold rounded-md hover:bg-gray-300">${cancelText}</button>` : ''}
-                <button id="confirm-yes" class="px-6 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700">${okText}</button>
+                <button id="confirm-yes" class="${toneClass}">${okText}</button>
             </div>
         </div>
     `;
     modal.style.display = 'flex';
-    document.getElementById('confirm-yes').onclick = () => {
-        onConfirm();
+
+    let resolved = false;
+    const cleanup = () => {
         modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.innerHTML = '';
+        modal.removeEventListener('click', handleBackdropClick);
+        document.removeEventListener('keydown', handleEscapeClose);
     };
-    if (showCancel) {
-        document.getElementById('confirm-cancel').onclick = () => {
-            modal.style.display = 'none';
-        };
+
+    const resolveModal = (confirmed) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        if (confirmed) {
+            onConfirm();
+        } else if (typeof onCancel === 'function') {
+            onCancel();
+        }
+    };
+
+    const handleBackdropClick = (event) => {
+        if (event.target === modal) {
+            resolveModal(false);
+        }
+    };
+
+    const handleEscapeClose = (event) => {
+        if (event.key === 'Escape') {
+            resolveModal(false);
+        }
+    };
+
+    modal.addEventListener('click', handleBackdropClick);
+    document.addEventListener('keydown', handleEscapeClose);
+
+    const confirmButton = document.getElementById('confirm-yes');
+    if (confirmButton) {
+        confirmButton.onclick = () => resolveModal(true);
     }
+
+    if (showCancel) {
+        const cancelButton = document.getElementById('confirm-cancel');
+        if (cancelButton) {
+            cancelButton.onclick = () => resolveModal(false);
+        }
+    }
+}
+
+function confirmActionWithModal(message, options = {}) {
+    return new Promise((resolve) => {
+        showConfirmationModal(message, () => resolve(true), {
+            ...options,
+            onCancel: () => resolve(false)
+        });
+    });
 }
 
 function showDeleteAccountModal() {
@@ -22041,9 +22279,9 @@ function applyJokeToUI(joke, statusText = 'Joke loaded') {
     const typeLabel = joke?.type ? String(joke.type).replace(/-/g, ' ') : 'any';
     if (elements.loadingJokeEl) {
         if (joke?.setup && joke?.punchline) {
-            elements.loadingJokeEl.textContent = `${joke.setup} - ${joke.punchline}`;
+            elements.loadingJokeEl.textContent = `Quick break: ${joke.setup} ${joke.punchline}`;
         } else {
-            elements.loadingJokeEl.textContent = 'Joke break unavailable right now.';
+            elements.loadingJokeEl.textContent = 'Loading a quick study break...';
         }
     }
     if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
@@ -22099,11 +22337,13 @@ async function fetchAndRenderToolsJoke(forceRefresh = false) {
 
 function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
     const elements = getQuoteElements();
-    if (elements.loadingTextEl) elements.loadingTextEl.textContent = quoteText || 'No quote available right now.';
-    if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `By ${quoteAuthor}` : '';
+    const safeQuoteText = (quoteText || '').trim();
+    const renderedQuote = safeQuoteText ? `"${safeQuoteText}"` : 'No quote available right now.';
+    if (elements.loadingTextEl) elements.loadingTextEl.textContent = renderedQuote;
+    if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `- ${quoteAuthor}` : '';
     if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
-    if (elements.toolsTextEl) elements.toolsTextEl.textContent = quoteText || '';
-    if (elements.toolsAuthorEl) elements.toolsAuthorEl.textContent = quoteAuthor ? `By ${quoteAuthor}` : '';
+    if (elements.toolsTextEl) elements.toolsTextEl.textContent = renderedQuote;
+    if (elements.toolsAuthorEl) elements.toolsAuthorEl.textContent = quoteAuthor ? `- ${quoteAuthor}` : '';
 }
 
 async function fetchAndRenderDailyQuote(forceRefresh = false) {
@@ -22123,7 +22363,7 @@ async function fetchAndRenderDailyQuote(forceRefresh = false) {
         } catch (_) {}
     }
 
-    applyQuoteToUI('Loading quote...', '', 'Loading quote...');
+    applyQuoteToUI('Curating a quote for today...', '', 'Loading quote...');
 
     const endpoints = [
         'https://thequoteshub.com/api/today',
@@ -22144,7 +22384,7 @@ async function fetchAndRenderDailyQuote(forceRefresh = false) {
     }
 
     if (!payload?.text) {
-        applyQuoteToUI('Could not load quote right now.', '', 'Quote unavailable');
+        applyQuoteToUI('Quote is taking a short break. Please try again in a moment.', '', 'Quote unavailable');
         if (lastError) logError(lastError, 'Fetch Daily Quote');
         return;
     }
