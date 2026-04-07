@@ -188,6 +188,7 @@ let currentDate = new Date();
 let activeCountdowns = [];
 let currentCountdownIndex = 0;
 let toolsTimerInterval = null;
+let toolsTimerClockInterval = null;
 let unsubscribeToolsNotes = null;
 let toolsNotesSaveTimeout = null;
 let toolsNotesSyncState = 'idle';
@@ -230,9 +231,21 @@ let toolsTimerState = {
     breakDurationMinutes: 5,
     soundEnabled: true,
     timerTheme: 'blue',
+    clockDisplayMode: 'both',
+    pipVisible: false,
+    pipBounds: { left: null, top: null, width: 260, height: 148 },
     isBreakMode: false,
+    sessionStartedAtMs: null,
     lastTickAt: null,
     dayKey: ''
+};
+let toolsTimerPipInitialized = false;
+let toolsTimerPipResizeObserver = null;
+let toolsTimerPipDrag = {
+    active: false,
+    pointerId: null,
+    offsetX: 0,
+    offsetY: 0
 };
 let toolsPageInitialized = false;
 let toolsPlannerItems = [];
@@ -241,6 +254,7 @@ let toolsWheelSpinning = false;
 let toolsWheelRafId = null;
 let unsubscribeGradeEntries = null;
 let userGradeEntries = [];
+let lastSyncedGradeEntriesCount = null;
 let unsubscribeFlashcardDecks = null;
 let flashcardDecks = [];
 let selectedFlashcardDeckId = null;
@@ -534,6 +548,7 @@ const ANNOUNCEMENT_TEMPLATES = {
     maintenance: 'Heads up: brief maintenance Sunday 7-8pm UK. Sessions auto-resume; we will post live updates if it runs long.',
     examWarmup: 'Daily warm-up is live: 3 quick questions plus solutions. Jump in before class to bank easy marks.'
 };
+const ANNOUNCEMENT_DISMISSED_KEY = 'gcsemate_dismissed_announcements';
 let clockInterval = null;
 let lastForceLogoutAt = null;
 let unsubscribeUserManagement;
@@ -586,12 +601,17 @@ let unsubscribeAnnouncement;
 let unsubscribeFreeTrialSettings;
 let unsubscribeBlogComments;
 let unsubscribeCurrentUserDoc;
+let announcementSourceItems = [];
+let announcementVisibleItems = [];
+let currentAnnouncementIndex = 0;
 let recaptchaVerifier;
 let freeTrialSubjectOverride = null;
 let lastAutoOpenedFreeTrialSubjectKey = null;
 const LESSON_METRICS_MAP = new Map();
 const LESSON_PROGRESS_MAP = new Map();
 const LESSON_USER_COMPLETION_MAP = new Map();
+const userGradeAvailabilityCache = new Map();
+const userGradeAvailabilityFetches = new Set();
 
 // Performance optimizations
 let animationFrameId = null;
@@ -5979,8 +5999,8 @@ function setupRealtimeListeners() {
     // Listen for announcements
     unsubscribeAnnouncement = db.collection('settings').doc('announcement')
         .onSnapshot(doc => {
-            const data = doc.data();
-            showAnnouncement(data ? data.message : '');
+            const data = doc.data() || {};
+            showAnnouncement(data);
         }, err => logError(err, "Announcement"));
     if (unsubscribeFreeTrialSettings) {
         try { unsubscribeFreeTrialSettings(); } catch (_) {}
@@ -6347,8 +6367,17 @@ function toggleAdminFocusMode() {
 
 function scrollAdminSection(sectionId) {
     const section = document.getElementById(sectionId);
-    if (!section) return;
+    if (!section) {
+        showToast('That admin section is not available right now.', 'warning');
+        return;
+    }
+    if (section.classList.contains('hidden')) {
+        adminOptionalCollapsed = false;
+        applyAdminDashboardFocusMode();
+    }
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    section.classList.add('admin-section-target');
+    setTimeout(() => section.classList.remove('admin-section-target'), 1400);
 }
 
 window.scrollAdminSection = scrollAdminSection;
@@ -6914,6 +6943,54 @@ async function resendVerificationEmail() {
 // =================================================================================
 // ADMIN & USER SETTINGS
 // =================================================================================
+function queueUserGradeAvailabilityCheck(userId) {
+    if (!userId || !db || userGradeAvailabilityFetches.has(userId)) return;
+    userGradeAvailabilityFetches.add(userId);
+
+    db.collection('users').doc(userId).collection('gradeEntries').limit(1).get()
+        .then(async (snapshot) => {
+            const hasEntries = !snapshot.empty;
+            userGradeAvailabilityCache.set(userId, hasEntries);
+            if (allUsers[userId]) {
+                allUsers[userId].hasGradeEntries = hasEntries;
+                if (!hasEntries) allUsers[userId].gradeEntriesCount = 0;
+            }
+
+            // Best-effort cache write so future renders are instant.
+            try {
+                await db.collection('users').doc(userId).set(
+                    hasEntries
+                        ? { hasGradeEntries: true }
+                        : { hasGradeEntries: false, gradeEntriesCount: 0 },
+                    { merge: true }
+                );
+            } catch (_) {}
+
+            renderUserManagementPanel(allUsers);
+        })
+        .catch((error) => {
+            logError(error, 'Grade Availability Check');
+        })
+        .finally(() => {
+            userGradeAvailabilityFetches.delete(userId);
+        });
+}
+
+function userHasSavedGrades(user) {
+    if (!user) return false;
+    const count = Number(user.gradeEntriesCount || 0);
+    if (Number.isFinite(count) && count > 0) return true;
+    if (user.hasGradeEntries === true) return true;
+
+    const cached = userGradeAvailabilityCache.get(user.id);
+    if (typeof cached === 'boolean') return cached;
+
+    if (user.hasGradeEntries === undefined && !Number.isFinite(Number(user.gradeEntriesCount))) {
+        queueUserGradeAvailabilityCheck(user.id);
+    }
+    return false;
+}
+
 function renderUserManagementPanel(allUsers) {
     const container = document.getElementById('user-management-grid');
     if (!container) return;
@@ -7054,9 +7131,13 @@ function renderUserManagementPanel(allUsers) {
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
         const hasSharingFlag = !!user.accountSharingDetected;
+        const hasSavedGrades = userHasSavedGrades(user);
         const userTier = String(user.tier || 'free').toLowerCase();
         const displayName = escapeHTML(user.displayName || 'Unnamed user');
         const emailText = escapeHTML(user.email || 'No email on file');
+        const gradesActionMarkup = hasSavedGrades
+            ? `<button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>`
+            : '<span class="px-3 py-2 bg-gray-100 text-gray-500 font-semibold rounded-lg text-sm text-center border border-gray-200" title="No saved grades for this user">No Grades</span>';
         const card = document.createElement('div');
         card.className = 'admin-user-card bg-white/85 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-200/70 flex flex-col gap-3 hover:shadow-md transition-all duration-200';
         card.innerHTML = `
@@ -7106,7 +7187,7 @@ function renderUserManagementPanel(allUsers) {
             <div class="admin-user-actions grid grid-cols-2 gap-2">
                 <button data-user-action="edit" data-user-id="${user.id}" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
                 <button data-user-action="activity" data-user-id="${user.id}" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
-                <button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>
+                ${gradesActionMarkup}
                 <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing</button>
                 <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Logout</button>
                 ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore</button>` : '<div class="hidden sm:block"></div>'}
@@ -11276,6 +11357,7 @@ function updateWelcomeMessage() {
     
     if (document.getElementById('user-displayname')) document.getElementById('user-displayname').value = currentUser.displayName;
     if (document.getElementById('user-email')) document.getElementById('user-email').value = currentUser.email;
+    renderSubscriptionStatusPanel(currentUser);
 }
 function renderError(container, message) {
     if (container) {
@@ -11393,6 +11475,13 @@ function showPage(pageId) {
 
     if (pageId === 'tools-page') {
         setTimeout(() => updateToolsTimerUI(), 50);
+    }
+
+    if (pageId === 'account-settings-page') {
+        setTimeout(() => {
+            renderSubscriptionStatusPanel(currentUser);
+            renderNavTabCustomizer();
+        }, 50);
     }
     
     // AI Tutor initialization removed (feature disabled)
@@ -11629,6 +11718,45 @@ function getCheckoutSuccessExpiryMessage(user = currentUser) {
     return `Access is active until ${formatDateUK(expiryDate)}.`;
 }
 
+function renderSubscriptionStatusPanel(user = currentUser) {
+    const statusEl = document.getElementById('subscription-status-text');
+    const amountEl = document.getElementById('subscription-amount-text');
+    const expiryEl = document.getElementById('subscription-expiry-text');
+    const renewEl = document.getElementById('subscription-renew-text');
+    const warningEl = document.getElementById('subscription-warning-banner');
+    if (!statusEl || !amountEl || !expiryEl || !renewEl || !warningEl) return;
+
+    const tier = String(user?.tier || 'free').toLowerCase();
+    const stripeStatus = String(user?.stripeStatus || '').toLowerCase();
+    const expiryRaw = user?.subscriptionExpiresAt;
+    const expiryDate = expiryRaw ? (expiryRaw.toDate ? expiryRaw.toDate() : new Date(expiryRaw)) : null;
+    const hasValidExpiry = expiryDate instanceof Date && !Number.isNaN(expiryDate.getTime());
+    const now = new Date();
+    const daysLeft = hasValidExpiry ? Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+    const isPaid = tier === 'paid';
+    const readableStatus = stripeStatus
+        ? stripeStatus.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+        : (isPaid ? 'Active' : 'Free');
+
+    const autoRenewOnStatuses = new Set(['active', 'trialing', 'past_due', 'incomplete']);
+    const autoRenewEnabled = isPaid && autoRenewOnStatuses.has(stripeStatus || 'active');
+
+    statusEl.textContent = isPaid ? `Paid • ${readableStatus}` : 'Free plan';
+    amountEl.textContent = isPaid ? '£1.00 / month (+ VAT where applicable)' : '£0.00 / month';
+    expiryEl.textContent = hasValidExpiry ? formatDateUK(expiryDate) : (isPaid ? 'Syncing expiry...' : 'Not set');
+    renewEl.textContent = autoRenewEnabled ? 'On (managed in Stripe)' : 'Off';
+
+    if (isPaid && hasValidExpiry && daysLeft !== null && daysLeft <= 5 && daysLeft >= 0) {
+        const dayLabel = daysLeft === 0 ? 'today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+        warningEl.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="font-bold">Subscription warning</p><p class="mt-1">Your Pro access expires ${dayLabel}. Open Stripe billing to renew or cancel.</p></div></div>`;
+        warningEl.classList.remove('hidden');
+    } else {
+        warningEl.classList.add('hidden');
+        warningEl.textContent = '';
+    }
+}
+
 function openCheckoutSuccessModal() {
     const modal = document.getElementById('checkout-success-modal');
     if (!modal) return;
@@ -11819,20 +11947,104 @@ function configureStripePricingTableIdentity() {
     } catch (_) {}
 }
 
-function showAnnouncement(message) {
+function toAnnouncementTimestampMs(value) {
+    if (!value) return 0;
+    if (value?.toDate) {
+        const date = value.toDate();
+        return Number.isFinite(date?.getTime?.()) ? date.getTime() : 0;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+}
+
+function getDismissedAnnouncementIds() {
+    try {
+        const raw = localStorage.getItem(ANNOUNCEMENT_DISMISSED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((value) => String(value || '')).filter(Boolean);
+    } catch (_) {
+        return [];
+    }
+}
+
+function setDismissedAnnouncementIds(ids = []) {
+    try {
+        localStorage.setItem(ANNOUNCEMENT_DISMISSED_KEY, JSON.stringify(ids));
+    } catch (_) {}
+}
+
+function normalizeAnnouncementItems(payload) {
+    const source = payload || {};
+    const rawItems = [];
+
+    if (Array.isArray(source)) {
+        rawItems.push(...source);
+    } else if (Array.isArray(source.items)) {
+        rawItems.push(...source.items);
+    }
+
+    if (typeof source.message === 'string' && source.message.trim()) {
+        rawItems.push({
+            id: source.id || 'legacy_announcement',
+            message: source.message,
+            postedAtMs: toAnnouncementTimestampMs(source.postedAt)
+        });
+    }
+
+    return rawItems
+        .map((item, index) => {
+            const message = String(item?.message || item?.text || '').trim();
+            if (!message) return null;
+            const rawId = String(item?.id || `${toAnnouncementTimestampMs(item?.postedAtMs || item?.postedAt)}_${index}`).trim();
+            const safeId = rawId.replace(/[^a-zA-Z0-9:_-]/g, '_') || `announcement_${index}`;
+            return {
+                id: safeId,
+                message,
+                postedAtMs: toAnnouncementTimestampMs(item?.postedAtMs || item?.postedAt)
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => (b.postedAtMs || 0) - (a.postedAtMs || 0));
+}
+
+function showAnnouncement(payload) {
     const announcementBanner = document.getElementById('site-announcement-banner');
-    if (message && message.trim() !== '') {
-        lastAnnouncementMessage = message;
-        const safeMessage = escapeHTML(message);
-        const safeProgress = typeof progressText !== 'undefined' && progressText ? escapeHTML(progressText) : '';
+    if (!announcementBanner) return;
+
+    const normalized = normalizeAnnouncementItems(payload);
+    announcementSourceItems = normalized;
+
+    const dismissed = new Set(getDismissedAnnouncementIds());
+    announcementVisibleItems = normalized.filter((item) => !dismissed.has(item.id));
+
+    if (announcementVisibleItems.length > 0) {
+        currentAnnouncementIndex = Math.min(Math.max(currentAnnouncementIndex, 0), announcementVisibleItems.length - 1);
+        const current = announcementVisibleItems[currentAnnouncementIndex];
+        const safeMessage = escapeHTML(current.message);
+        const hasMultiple = announcementVisibleItems.length > 1;
+        const postedLabel = current.postedAtMs
+            ? new Date(current.postedAtMs).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+            : '';
+        const progressText = hasMultiple
+            ? `${currentAnnouncementIndex + 1}/${announcementVisibleItems.length}`
+            : postedLabel;
+
         announcementBanner.innerHTML = `<div class="site-announcement-shell" role="status" aria-live="polite">
+            <div class="site-announcement-nav">
+                ${hasMultiple ? `<button onclick="nextAnnouncement(-1)" class="site-announcement-arrow" type="button" aria-label="Previous announcement">‹</button>` : ''}
+            </div>
             <div class="site-announcement-copy">
                 <span class="site-announcement-message">${safeMessage}</span>
-                ${safeProgress ? `<span class="site-announcement-progress">${safeProgress}</span>` : ''}
+                ${progressText ? `<span class="site-announcement-progress">${escapeHTML(progressText)}</span>` : ''}
+            </div>
+            <div class="site-announcement-nav">
+                ${hasMultiple ? `<button onclick="nextAnnouncement(1)" class="site-announcement-arrow" type="button" aria-label="Next announcement">›</button>` : ''}
             </div>
             <div class="site-announcement-actions">
                 <button onclick="restoreLastAnnouncement()" class="site-announcement-restore" type="button">Restore</button>
-                <button onclick="dismissAnnouncement()" class="site-announcement-dismiss" type="button" data-tooltip="Dismiss announcement" aria-label="Dismiss announcement">×</button>
+                <button onclick="dismissAnnouncement()" class="site-announcement-dismiss" type="button" data-tooltip="Dismiss this announcement" aria-label="Dismiss this announcement">×</button>
             </div>
         </div>`;
         announcementBanner.classList.remove('hidden');
@@ -11841,23 +12053,30 @@ function showAnnouncement(message) {
     }
 }
 
-let lastAnnouncementMessage = '';
+function nextAnnouncement(step = 1) {
+    if (!announcementVisibleItems.length) return;
+    const offset = Number(step) || 1;
+    currentAnnouncementIndex = (currentAnnouncementIndex + offset + announcementVisibleItems.length) % announcementVisibleItems.length;
+    showAnnouncement({ items: announcementSourceItems });
+}
+
 function dismissAnnouncement() {
-    try {
-        const banner = document.getElementById('site-announcement-banner');
-        if (!banner) return;
-        const textNode = banner.querySelector('.truncate');
-        if (textNode) {
-            lastAnnouncementMessage = textNode.textContent || lastAnnouncementMessage;
-        }
-        banner.classList.add('hidden');
-    } catch (_) {}
+    if (!announcementVisibleItems.length) return;
+    const current = announcementVisibleItems[currentAnnouncementIndex];
+    if (!current?.id) return;
+    const dismissed = new Set(getDismissedAnnouncementIds());
+    dismissed.add(current.id);
+    setDismissedAnnouncementIds(Array.from(dismissed));
+    showAnnouncement({ items: announcementSourceItems });
 }
 
 function restoreLastAnnouncement() {
-    if (!lastAnnouncementMessage) return;
-    showAnnouncement(lastAnnouncementMessage);
+    setDismissedAnnouncementIds([]);
+    showAnnouncement({ items: announcementSourceItems });
 }
+
+window.nextAnnouncement = nextAnnouncement;
+
 async function postAnnouncement() {
     if (currentUser.role !== 'admin') return;
     const text = document.getElementById('announcement-text').value.trim();
@@ -11879,12 +12098,24 @@ async function postAnnouncement() {
     if (!confirmed) return;
     
     try {
-        await db.collection('settings').doc('announcement').set({ 
+        const announcementRef = db.collection('settings').doc('announcement');
+        const existingSnapshot = await announcementRef.get();
+        const existingItems = normalizeAnnouncementItems(existingSnapshot.data() || {});
+        const nextItems = [{
+            id: `ann_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
             message: text,
+            postedAtMs: Date.now()
+        }, ...existingItems].slice(0, 20);
+
+        await announcementRef.set({ 
+            items: nextItems,
+            message: nextItems[0]?.message || '',
             postedAt: firebase.firestore.FieldValue.serverTimestamp(),
             postedBy: currentUser.uid
-        });
-        showAnnouncement(text);
+        }, { merge: true });
+
+        setDismissedAnnouncementIds([]);
+        showAnnouncement({ items: nextItems });
         showToast('Announcement posted!', 'success');
     } catch (error) {
         logError(error, 'Post Announcement');
@@ -11919,13 +12150,22 @@ async function clearAnnouncement() {
 
     try {
         await db.collection('settings').doc('announcement').set({ 
+            items: [],
             message: '',
             clearedAt: firebase.firestore.FieldValue.serverTimestamp(),
             clearedBy: currentUser.uid
         });
+
+        announcementSourceItems = [];
+        announcementVisibleItems = [];
+        currentAnnouncementIndex = 0;
+        setDismissedAnnouncementIds([]);
+
         const announcementBanner = document.getElementById('site-announcement-banner');
-        announcementBanner.classList.add('hidden');
-        document.getElementById('announcement-text').value = '';
+        if (announcementBanner) announcementBanner.classList.add('hidden');
+        const textarea = document.getElementById('announcement-text');
+        if (textarea) textarea.value = '';
+        updateAnnouncementCounter();
         showToast('Announcement cleared!', 'success');
     } catch (error) {
         logError(error, 'Clear Announcement');
@@ -11996,6 +12236,7 @@ function handleResetFreeTrialOverride() {
 async function renderDashboard() {
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
+    renderDashboardExamCalendarCard();
     // Render skeleton loader
     let skeletonHTML = '';
     for (let i = 0; i < 10; i++) {
@@ -15050,6 +15291,7 @@ function renderCalendar(userEvents, globalEvents) {
         calendarGrid.appendChild(dayEl);
     }
     updateCalendarInsights();
+    renderDashboardExamCalendarCard();
     renderCalendarAgenda();
     updateCountdownBanner();
 }
@@ -15097,6 +15339,80 @@ function updateCalendarInsights() {
             ? `${nextEvent.startDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${nextEvent.category || (nextEvent.isGlobal ? 'Global event' : 'Personal event')}`
             : 'Add a revision event or deadline to populate this space.';
     }
+}
+
+function getUpcomingExamEvents(limit = 3) {
+    const events = [];
+    const seen = new Set();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    [calendarUserEvents, calendarGlobalEvents].forEach((eventMap, mapIndex) => {
+        Object.entries(eventMap || {}).forEach(([fallbackDate, items]) => {
+            (items || []).forEach((event) => {
+                const dateText = event.date || fallbackDate;
+                const dateObj = new Date(`${dateText}T00:00:00`);
+                if (Number.isNaN(dateObj.getTime()) || dateObj < today) return;
+
+                const categoryText = String(event.category || '').toLowerCase();
+                const titleText = String(event.title || '').toLowerCase();
+                const isExam = categoryText.includes('exam') || /\b(exam|mock|paper|assessment|test)\b/.test(titleText);
+                if (!isExam) return;
+
+                const id = String(event.id || `${dateText}_${event.title || 'exam'}`);
+                if (seen.has(id)) return;
+                seen.add(id);
+
+                events.push({
+                    ...event,
+                    isGlobal: mapIndex === 1,
+                    dateObj,
+                    dateText
+                });
+            });
+        });
+    });
+
+    return events.sort((a, b) => a.dateObj - b.dateObj).slice(0, Math.max(1, limit));
+}
+
+function renderDashboardExamCalendarCard() {
+    const titleEl = document.getElementById('dashboard-next-exam-title');
+    const metaEl = document.getElementById('dashboard-next-exam-meta');
+    const listEl = document.getElementById('dashboard-next-exam-list');
+    if (!titleEl || !metaEl || !listEl) return;
+
+    const upcoming = getUpcomingExamEvents(3);
+    const primary = upcoming[0];
+    const secondary = upcoming.slice(1);
+
+    if (!primary) {
+        titleEl.textContent = 'No upcoming exams yet';
+        metaEl.textContent = 'Add exam events in Calendar to see your next deadline here.';
+        listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
+        return;
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const days = Math.max(0, Math.ceil((primary.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const dayText = days === 0 ? 'Today' : `${days} day${days === 1 ? '' : 's'} away`;
+
+    titleEl.textContent = primary.title || 'Upcoming exam';
+    metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}`;
+
+    if (!secondary.length) {
+        listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
+        return;
+    }
+
+    listEl.innerHTML = secondary.map((event) => {
+        const diff = Math.max(0, Math.ceil((event.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        return `<button type="button" class="dashboard-exam-pill" onclick="showPage('calendar-page')">
+            <span class="dashboard-exam-pill-title">${escapeHTML(event.title || 'Exam')}</span>
+            <span class="dashboard-exam-pill-meta">${event.dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${diff === 0 ? 'Today' : `${diff}d`}</span>
+        </button>`;
+    }).join('');
 }
 
 // New: Support multiple view modes for calendar
@@ -20549,6 +20865,12 @@ function updateToolsTimerFullscreenButton() {
 }
 
 function saveToolsState() {
+    const safePipBounds = {
+        left: Number.isFinite(toolsTimerState?.pipBounds?.left) ? Math.max(0, Math.round(toolsTimerState.pipBounds.left)) : null,
+        top: Number.isFinite(toolsTimerState?.pipBounds?.top) ? Math.max(0, Math.round(toolsTimerState.pipBounds.top)) : null,
+        width: Number.isFinite(toolsTimerState?.pipBounds?.width) ? Math.max(220, Math.min(420, Math.round(toolsTimerState.pipBounds.width))) : 260,
+        height: Number.isFinite(toolsTimerState?.pipBounds?.height) ? Math.max(130, Math.min(280, Math.round(toolsTimerState.pipBounds.height))) : 148
+    };
     try {
         localStorage.setItem('gcsemate_tools_state', JSON.stringify({
             mode: toolsTimerState.mode,
@@ -20563,7 +20885,11 @@ function saveToolsState() {
             breakDurationMinutes: toolsTimerState.breakDurationMinutes,
             soundEnabled: toolsTimerState.soundEnabled,
             timerTheme: toolsTimerState.timerTheme,
+            clockDisplayMode: toolsTimerState.clockDisplayMode,
+            pipVisible: !!toolsTimerState.pipVisible,
+            pipBounds: safePipBounds,
             isBreakMode: toolsTimerState.isBreakMode,
+            sessionStartedAtMs: Number.isFinite(toolsTimerState.sessionStartedAtMs) ? toolsTimerState.sessionStartedAtMs : null,
             dayKey: toolsTimerState.dayKey
         }));
     } catch (_) {}
@@ -20605,8 +20931,328 @@ function loadToolsState() {
             : 5;
         toolsTimerState.soundEnabled = parsed.soundEnabled !== false;
         toolsTimerState.timerTheme = ['blue', 'sunset', 'forest', 'midnight', 'aurora', 'rose'].includes(parsed.timerTheme) ? parsed.timerTheme : 'blue';
+        toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(parsed.clockDisplayMode) ? parsed.clockDisplayMode : 'both';
+        toolsTimerState.pipVisible = !!parsed.pipVisible;
+        const parsedBounds = parsed.pipBounds || {};
+        toolsTimerState.pipBounds = {
+            left: Number.isFinite(parsedBounds.left) ? Math.max(0, parsedBounds.left) : null,
+            top: Number.isFinite(parsedBounds.top) ? Math.max(0, parsedBounds.top) : null,
+            width: Number.isFinite(parsedBounds.width) ? Math.max(220, Math.min(420, parsedBounds.width)) : 260,
+            height: Number.isFinite(parsedBounds.height) ? Math.max(130, Math.min(280, parsedBounds.height)) : 148
+        };
         toolsTimerState.isBreakMode = !!parsed.isBreakMode;
+        toolsTimerState.sessionStartedAtMs = Number.isFinite(parsed.sessionStartedAtMs) ? parsed.sessionStartedAtMs : null;
     } catch (_) {}
+}
+
+function formatToolsTime24Hour(timestampMs) {
+    if (!Number.isFinite(timestampMs)) return '--:--';
+    const date = new Date(timestampMs);
+    if (Number.isNaN(date.getTime())) return '--:--';
+    return date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+}
+
+function getToolsTimerPlannedDurationSeconds() {
+    const timerMode = getTimerModeFromState();
+    if (timerMode === 'custom') return Math.max(1, toolsTimerState.customDurationSeconds || TOOLS_TIMER_MODES.custom.durationSeconds);
+    return Math.max(1, TOOLS_TIMER_MODES[timerMode]?.durationSeconds || TOOLS_TIMER_MODES.pomodoro.durationSeconds);
+}
+
+function updateToolsTimerSessionWindow(nowMs = Date.now()) {
+    const startEl = document.getElementById('tools-timer-start-time');
+    const endEl = document.getElementById('tools-timer-end-time');
+    if (!startEl || !endEl) return;
+
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
+    let startMs = Number.isFinite(toolsTimerState.sessionStartedAtMs) ? toolsTimerState.sessionStartedAtMs : null;
+    let endMs = null;
+
+    if (isStopwatch) {
+        if (toolsTimerState.isRunning && !Number.isFinite(startMs)) {
+            startMs = nowMs - Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+        }
+    } else if (toolsTimerState.isRunning) {
+        endMs = Number.isFinite(toolsTimerState.countdownEndAtMs)
+            ? toolsTimerState.countdownEndAtMs
+            : nowMs + Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+        if (!Number.isFinite(startMs)) {
+            startMs = endMs - Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+        }
+    } else if (Number.isFinite(startMs) && toolsTimerState.remainingSeconds > 0) {
+        endMs = nowMs + Math.max(0, toolsTimerState.remainingSeconds) * 1000;
+    }
+
+    startEl.textContent = `Start ${Number.isFinite(startMs) ? formatToolsTime24Hour(startMs) : '--:--'}`;
+    endEl.textContent = `End ${!isStopwatch && Number.isFinite(endMs) ? formatToolsTime24Hour(endMs) : '--:--'}`;
+}
+
+function updateToolsTimerClockDisplay() {
+    const wrap = document.getElementById('tools-timer-clock-wrap');
+    const analog = document.getElementById('tools-timer-analog-clock');
+    const digital = document.getElementById('tools-timer-digital-clock');
+    const hourHand = document.getElementById('tools-timer-clock-hour');
+    const minuteHand = document.getElementById('tools-timer-clock-minute');
+    const secondHand = document.getElementById('tools-timer-clock-second');
+
+    const displayMode = ['both', 'digital', 'analog'].includes(toolsTimerState.clockDisplayMode)
+        ? toolsTimerState.clockDisplayMode
+        : 'both';
+
+    if (wrap) wrap.dataset.clockDisplay = displayMode;
+    if (analog) analog.classList.toggle('hidden', displayMode === 'digital');
+    if (digital) digital.classList.toggle('hidden', displayMode === 'analog');
+
+    const now = new Date();
+    if (digital) {
+        digital.textContent = now.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    }
+
+    if (hourHand && minuteHand && secondHand) {
+        const seconds = now.getSeconds();
+        const minutes = now.getMinutes() + (seconds / 60);
+        const hours = (now.getHours() % 12) + (minutes / 60);
+
+        secondHand.style.transform = `translateX(-50%) rotate(${seconds * 6}deg)`;
+        minuteHand.style.transform = `translateX(-50%) rotate(${minutes * 6}deg)`;
+        hourHand.style.transform = `translateX(-50%) rotate(${hours * 30}deg)`;
+    }
+}
+
+function getToolsTimerStatusText() {
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
+    if (isStopwatch) {
+        return toolsTimerState.isRunning ? 'Stopwatch running' : 'Stopwatch ready';
+    }
+    const modeLabel = (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro).label;
+    if (toolsTimerState.isBreakMode) {
+        return toolsTimerState.isRunning ? 'Break in progress' : 'Break ready';
+    }
+    return toolsTimerState.isRunning ? `${modeLabel} in progress` : 'Ready to focus';
+}
+
+function clampToolsTimerPipBounds(bounds = {}) {
+    const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
+    const viewportHeight = Math.max(260, window.innerHeight || document.documentElement.clientHeight || 260);
+    const margin = 8;
+
+    const width = Math.max(220, Math.min(420, Number(bounds.width) || 260));
+    const height = Math.max(130, Math.min(280, Number(bounds.height) || 148));
+    const maxLeft = Math.max(margin, viewportWidth - width - margin);
+    const maxTop = Math.max(margin, viewportHeight - height - margin);
+    const defaultLeft = Math.max(margin, viewportWidth - width - 20);
+    const defaultTop = Math.max(margin, viewportHeight - height - 28);
+
+    const left = Number.isFinite(bounds.left)
+        ? Math.min(maxLeft, Math.max(margin, Number(bounds.left)))
+        : defaultLeft;
+    const top = Number.isFinite(bounds.top)
+        ? Math.min(maxTop, Math.max(margin, Number(bounds.top)))
+        : defaultTop;
+
+    return {
+        left,
+        top,
+        width,
+        height
+    };
+}
+
+function applyToolsTimerPipBounds({ save = false } = {}) {
+    const pip = document.getElementById('tools-timer-pip');
+    if (!pip) return;
+
+    const clamped = clampToolsTimerPipBounds(toolsTimerState.pipBounds || {});
+    toolsTimerState.pipBounds = clamped;
+
+    pip.style.left = `${Math.round(clamped.left)}px`;
+    pip.style.top = `${Math.round(clamped.top)}px`;
+    pip.style.width = `${Math.round(clamped.width)}px`;
+    pip.style.height = `${Math.round(clamped.height)}px`;
+
+    if (save) saveToolsState();
+}
+
+function rememberToolsTimerPipBoundsFromDom() {
+    const pip = document.getElementById('tools-timer-pip');
+    if (!pip) return;
+    const rect = pip.getBoundingClientRect();
+    toolsTimerState.pipBounds = clampToolsTimerPipBounds({
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height
+    });
+}
+
+function snapToolsTimerPipToEdge() {
+    const pip = document.getElementById('tools-timer-pip');
+    if (!pip || !toolsTimerState.pipVisible) return;
+
+    const rect = pip.getBoundingClientRect();
+    const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
+    const viewportHeight = Math.max(260, window.innerHeight || document.documentElement.clientHeight || 260);
+    const margin = 8;
+
+    const distanceLeft = Math.abs(rect.left - margin);
+    const distanceRight = Math.abs((viewportWidth - margin) - rect.right);
+    const snappedLeft = distanceLeft <= distanceRight
+        ? margin
+        : Math.max(margin, viewportWidth - rect.width - margin);
+    const snappedTop = Math.min(
+        Math.max(margin, rect.top),
+        Math.max(margin, viewportHeight - rect.height - margin)
+    );
+
+    toolsTimerState.pipBounds = clampToolsTimerPipBounds({
+        left: snappedLeft,
+        top: snappedTop,
+        width: rect.width,
+        height: rect.height
+    });
+
+    pip.classList.add('is-snapping');
+    applyToolsTimerPipBounds();
+    saveToolsState();
+    setTimeout(() => pip.classList.remove('is-snapping'), 220);
+}
+
+function onToolsTimerPipPointerMove(event) {
+    if (!toolsTimerPipDrag.active || event.pointerId !== toolsTimerPipDrag.pointerId) return;
+    const pip = document.getElementById('tools-timer-pip');
+    if (!pip) return;
+
+    const currentWidth = pip.offsetWidth || toolsTimerState.pipBounds?.width || 260;
+    const currentHeight = pip.offsetHeight || toolsTimerState.pipBounds?.height || 148;
+
+    const next = clampToolsTimerPipBounds({
+        left: event.clientX - toolsTimerPipDrag.offsetX,
+        top: event.clientY - toolsTimerPipDrag.offsetY,
+        width: currentWidth,
+        height: currentHeight
+    });
+
+    toolsTimerState.pipBounds = next;
+    pip.style.left = `${Math.round(next.left)}px`;
+    pip.style.top = `${Math.round(next.top)}px`;
+    pip.style.width = `${Math.round(next.width)}px`;
+    pip.style.height = `${Math.round(next.height)}px`;
+}
+
+function endToolsTimerPipDrag(pointerId = null) {
+    if (!toolsTimerPipDrag.active) return;
+    if (pointerId !== null && pointerId !== toolsTimerPipDrag.pointerId) return;
+
+    toolsTimerPipDrag.active = false;
+    toolsTimerPipDrag.pointerId = null;
+
+    const pip = document.getElementById('tools-timer-pip');
+    if (pip) pip.classList.remove('is-dragging');
+
+    window.removeEventListener('pointermove', onToolsTimerPipPointerMove);
+    window.removeEventListener('pointerup', onToolsTimerPipPointerUp);
+    window.removeEventListener('pointercancel', onToolsTimerPipPointerUp);
+
+    rememberToolsTimerPipBoundsFromDom();
+    snapToolsTimerPipToEdge();
+}
+
+function onToolsTimerPipPointerUp(event) {
+    endToolsTimerPipDrag(event?.pointerId);
+}
+
+function onToolsTimerPipPointerDown(event) {
+    if (event.button !== 0) return;
+    if (event.target.closest('button')) return;
+
+    const pip = document.getElementById('tools-timer-pip');
+    if (!pip || pip.classList.contains('hidden')) return;
+
+    const rect = pip.getBoundingClientRect();
+    toolsTimerPipDrag.active = true;
+    toolsTimerPipDrag.pointerId = event.pointerId;
+    toolsTimerPipDrag.offsetX = event.clientX - rect.left;
+    toolsTimerPipDrag.offsetY = event.clientY - rect.top;
+
+    pip.classList.add('is-dragging');
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch (_) {}
+
+    window.addEventListener('pointermove', onToolsTimerPipPointerMove);
+    window.addEventListener('pointerup', onToolsTimerPipPointerUp);
+    window.addEventListener('pointercancel', onToolsTimerPipPointerUp);
+
+    event.preventDefault();
+}
+
+function updateToolsTimerPipUI() {
+    const pip = document.getElementById('tools-timer-pip');
+    const timeEl = document.getElementById('tools-timer-pip-time');
+    const statusEl = document.getElementById('tools-timer-pip-status');
+    const playPauseBtn = document.getElementById('tools-timer-pip-playpause');
+    const toggleBtn = document.getElementById('tools-timer-pip-toggle');
+
+    if (timeEl) timeEl.textContent = formatClock(toolsTimerState.remainingSeconds);
+    if (statusEl) statusEl.textContent = getToolsTimerStatusText();
+    if (playPauseBtn) playPauseBtn.textContent = toolsTimerState.isRunning ? 'Pause' : 'Start';
+    if (toggleBtn) toggleBtn.textContent = toolsTimerState.pipVisible ? 'Hide Mini Timer' : 'Open Mini Timer';
+
+    if (pip) {
+        pip.classList.toggle('hidden', !toolsTimerState.pipVisible);
+        pip.classList.toggle('is-running', !!toolsTimerState.isRunning);
+    }
+}
+
+function setToolsTimerPipVisible(visible, { save = true } = {}) {
+    toolsTimerState.pipVisible = !!visible;
+    if (toolsTimerState.pipVisible) applyToolsTimerPipBounds();
+    updateToolsTimerPipUI();
+    if (save) saveToolsState();
+}
+
+function onToolsTimerPipViewportResize() {
+    if (!toolsTimerState.pipVisible) return;
+    applyToolsTimerPipBounds({ save: true });
+}
+
+function initializeToolsTimerPip() {
+    const pip = document.getElementById('tools-timer-pip');
+    const header = document.getElementById('tools-timer-pip-header');
+    const playPauseBtn = document.getElementById('tools-timer-pip-playpause');
+    const closeBtn = document.getElementById('tools-timer-pip-close');
+    if (!pip || !header) return;
+
+    if (!toolsTimerPipInitialized) {
+        header.addEventListener('pointerdown', onToolsTimerPipPointerDown);
+        playPauseBtn?.addEventListener('click', () => {
+            if (toolsTimerState.isRunning) stopToolsTimer();
+            else startToolsTimer();
+        });
+        closeBtn?.addEventListener('click', () => setToolsTimerPipVisible(false));
+
+        window.addEventListener('resize', onToolsTimerPipViewportResize, { passive: true });
+
+        if (window.ResizeObserver && !toolsTimerPipResizeObserver) {
+            toolsTimerPipResizeObserver = new ResizeObserver(() => {
+                if (!toolsTimerState.pipVisible) return;
+                rememberToolsTimerPipBoundsFromDom();
+                applyToolsTimerPipBounds({ save: true });
+            });
+            toolsTimerPipResizeObserver.observe(pip);
+        }
+
+        toolsTimerPipInitialized = true;
+    }
+
+    applyToolsTimerPipBounds();
+    setToolsTimerPipVisible(!!toolsTimerState.pipVisible, { save: false });
 }
 
 function getTimerModeFromState() {
@@ -20683,6 +21329,7 @@ function resetToolsTimer(mode = toolsTimerState.mode) {
     toolsTimerState.countdownEndAtMs = null;
     toolsTimerState.stopwatchStartedAtMs = null;
     toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
+    toolsTimerState.sessionStartedAtMs = null;
     toolsTimerState.lastTickAt = null;
     if (toolsTimerInterval) {
         clearInterval(toolsTimerInterval);
@@ -20700,6 +21347,9 @@ function stopToolsTimer() {
     toolsTimerState.countdownEndAtMs = null;
     toolsTimerState.stopwatchStartedAtMs = null;
     toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
+    if (toolsTimerState.remainingSeconds <= 0) {
+        toolsTimerState.sessionStartedAtMs = null;
+    }
     toolsTimerState.lastTickAt = null;
     if (toolsTimerInterval) {
         clearInterval(toolsTimerInterval);
@@ -20783,6 +21433,9 @@ function startToolsTimer() {
     const now = Date.now();
     toolsTimerState.isRunning = true;
     toolsTimerState.lastTickAt = now;
+    if (!Number.isFinite(toolsTimerState.sessionStartedAtMs)) {
+        toolsTimerState.sessionStartedAtMs = now;
+    }
     if (toolsTimerState.mode === 'stopwatch') {
         toolsTimerState.stopwatchBaseSeconds = toolsTimerState.remainingSeconds;
         toolsTimerState.stopwatchStartedAtMs = now;
@@ -20811,6 +21464,7 @@ function updateToolsTimerUI() {
     const breakLengthSelect = document.getElementById('tools-timer-break-length');
     const soundToggle = document.getElementById('tools-timer-sound');
     const timerThemeSelect = document.getElementById('tools-timer-theme');
+    const clockDisplaySelect = document.getElementById('tools-timer-clock-display');
     const startBtn = document.getElementById('tools-timer-start');
     const pauseBtn = document.getElementById('tools-timer-pause');
     const completedEl = document.getElementById('tools-timer-completed-count');
@@ -20831,6 +21485,7 @@ function updateToolsTimerUI() {
     if (breakLengthSelect) breakLengthSelect.value = String(toolsTimerState.breakDurationMinutes || 5);
     if (soundToggle) soundToggle.checked = toolsTimerState.soundEnabled !== false;
     if (timerThemeSelect) timerThemeSelect.value = toolsTimerState.timerTheme || 'blue';
+    if (clockDisplaySelect) clockDisplaySelect.value = toolsTimerState.clockDisplayMode || 'both';
 
     const modeConfig = isStopwatch ? TOOLS_TIMER_MODES.stopwatch : (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro);
 
@@ -20854,13 +21509,7 @@ function updateToolsTimerUI() {
             ? `${formatClock(toolsTimerState.remainingSeconds)} elapsed`
             : `${Math.round(progress)}% complete`;
     }
-    if (isStopwatch) {
-        statusEl.textContent = toolsTimerState.isRunning ? 'Stopwatch running' : 'Stopwatch ready';
-    } else {
-        statusEl.textContent = toolsTimerState.isBreakMode
-            ? (toolsTimerState.isRunning ? 'Break in progress' : 'Break ready')
-            : (toolsTimerState.isRunning ? `${modeConfig.label} in progress` : 'Ready to focus');
-    }
+    statusEl.textContent = getToolsTimerStatusText();
 
     if (completedEl) completedEl.textContent = String(toolsTimerState.completedSessions || 0);
     if (breakStateEl) breakStateEl.textContent = toolsTimerState.isBreakMode ? `${toolsTimerState.breakDurationMinutes}m` : 'Off';
@@ -20871,10 +21520,13 @@ function updateToolsTimerUI() {
         timerCard.classList.toggle('is-break-mode', !!toolsTimerState.isBreakMode);
     }
 
-    const defaultDuration = toolsTimerState.mode === 'custom'
-        ? toolsTimerState.customDurationSeconds
-        : (TOOLS_TIMER_MODES[getTimerModeFromState()]?.durationSeconds || TOOLS_TIMER_MODES.pomodoro.durationSeconds);
-    const needsResume = !toolsTimerState.isRunning && toolsTimerState.remainingSeconds > 0 && toolsTimerState.remainingSeconds < defaultDuration;
+    const defaultDuration = toolsTimerState.mode === 'stopwatch'
+        ? 0
+        : getToolsTimerPlannedDurationSeconds();
+    const needsResume = !toolsTimerState.isRunning && (
+        (isStopwatch && toolsTimerState.remainingSeconds > 0)
+        || (!isStopwatch && toolsTimerState.remainingSeconds > 0 && toolsTimerState.remainingSeconds < defaultDuration)
+    );
     if (startBtn) {
         startBtn.textContent = toolsTimerState.isRunning ? 'Pause' : (needsResume ? 'Resume' : 'Start');
         startBtn.classList.toggle('bg-amber-500', toolsTimerState.isRunning);
@@ -20884,6 +21536,10 @@ function updateToolsTimerUI() {
     }
     if (pauseBtn) pauseBtn.classList.add('hidden');
     updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
+
+    updateToolsTimerSessionWindow(Date.now());
+    updateToolsTimerClockDisplay();
+    updateToolsTimerPipUI();
 
     updateToolsTimerFullscreenButton();
 }
@@ -22119,6 +22775,25 @@ function updateGradeSelectPreview() {
     gradeSelect.style.borderColor = theme.border;
 }
 
+async function syncCurrentUserGradeMetadata(count) {
+    if (!currentUser?.uid || !db) return;
+    const safeCount = Math.max(0, Number(count) || 0);
+    if (lastSyncedGradeEntriesCount === safeCount) return;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).set({
+            hasGradeEntries: safeCount > 0,
+            gradeEntriesCount: safeCount,
+            gradeEntriesUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        lastSyncedGradeEntriesCount = safeCount;
+        currentUser.hasGradeEntries = safeCount > 0;
+        currentUser.gradeEntriesCount = safeCount;
+    } catch (error) {
+        logError(error, 'Sync Grade Metadata');
+    }
+}
+
 async function saveGradeEntry() {
     const messageEl = document.getElementById('tools-grade-message');
     const subjectSelect = document.getElementById('tools-grade-subject');
@@ -22176,6 +22851,7 @@ async function saveGradeEntry() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        await syncCurrentUserGradeMetadata((userGradeEntries?.length || 0) + 1);
 
         assessmentInput.value = '';
         gradeSelect.value = '';
@@ -22197,6 +22873,7 @@ async function deleteGradeEntry(entryId) {
     if (!entryId || !currentUser || !db) return;
     try {
         await db.collection('users').doc(currentUser.uid).collection('gradeEntries').doc(entryId).delete();
+        await syncCurrentUserGradeMetadata(Math.max(0, (userGradeEntries?.length || 1) - 1));
         showToast('Grade deleted.', 'success');
     } catch (error) {
         logError(error, 'Delete Grade Entry');
@@ -22216,6 +22893,7 @@ function subscribeToGradeEntries() {
         .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
             userGradeEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            syncCurrentUserGradeMetadata(userGradeEntries.length);
             updateGradeSubjectOptions();
             renderGradeTrackerTables();
         }, error => {
@@ -23229,6 +23907,8 @@ function initializeToolsPage() {
     const breakLengthSelect = document.getElementById('tools-timer-break-length');
     const soundToggle = document.getElementById('tools-timer-sound');
     const timerThemeSelect = document.getElementById('tools-timer-theme');
+    const clockDisplaySelect = document.getElementById('tools-timer-clock-display');
+    const pipToggleBtn = document.getElementById('tools-timer-pip-toggle');
     const customInput = document.getElementById('tools-timer-custom-input');
     const customHoursInput = document.getElementById('tools-timer-custom-hours');
     const customMinutesInput = document.getElementById('tools-timer-custom-minutes');
@@ -23334,6 +24014,20 @@ function initializeToolsPage() {
                 toolsTimerState.timerTheme = timerThemeSelect.value || 'blue';
                 saveToolsState();
                 updateToolsTimerUI();
+            });
+        }
+        if (clockDisplaySelect) {
+            clockDisplaySelect.addEventListener('change', () => {
+                toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(clockDisplaySelect.value)
+                    ? clockDisplaySelect.value
+                    : 'both';
+                saveToolsState();
+                updateToolsTimerUI();
+            });
+        }
+        if (pipToggleBtn) {
+            pipToggleBtn.addEventListener('click', () => {
+                setToolsTimerPipVisible(!toolsTimerState.pipVisible);
             });
         }
         document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
@@ -23567,6 +24261,14 @@ function initializeToolsPage() {
     }
 
     initializeFlashcardsTool();
+    initializeToolsTimerPip();
+
+    if (!toolsTimerClockInterval) {
+        toolsTimerClockInterval = setInterval(() => {
+            updateToolsTimerClockDisplay();
+            updateToolsTimerSessionWindow(Date.now());
+        }, 1000);
+    }
 
     updateGradeSubjectOptions();
     populateStudyRandomiserSubjects();
@@ -24360,6 +25062,146 @@ function saveUIPreferences(nextPrefs = {}) {
     } catch (_) {}
 }
 
+const NAV_TAB_DEFAULT_ORDER = [
+    'subject-dashboard-page',
+    'videos-page',
+    'blog-page',
+    'lessons-page',
+    'calendar-page',
+    'tools-page',
+    'useful-links-page',
+    'about-page',
+    'features-page',
+    'help-page'
+];
+
+const NAV_TAB_LABELS = {
+    'subject-dashboard-page': 'Subjects',
+    'videos-page': 'Videos',
+    'blog-page': 'Blog',
+    'lessons-page': 'Lessons',
+    'calendar-page': 'Calendar',
+    'tools-page': 'Tools',
+    'useful-links-page': 'Useful Links',
+    'about-page': 'About',
+    'features-page': 'Features',
+    'help-page': 'Help'
+};
+
+function normalizeNavTabPrefs(rawPrefs = {}) {
+    const baseOrder = [...NAV_TAB_DEFAULT_ORDER];
+    const incomingOrder = Array.isArray(rawPrefs.order) ? rawPrefs.order : [];
+    const dedupedOrder = [];
+
+    incomingOrder.forEach((pageId) => {
+        if (!NAV_TAB_DEFAULT_ORDER.includes(pageId) || dedupedOrder.includes(pageId)) return;
+        dedupedOrder.push(pageId);
+    });
+
+    baseOrder.forEach((pageId) => {
+        if (!dedupedOrder.includes(pageId)) dedupedOrder.push(pageId);
+    });
+
+    const hidden = new Set(Array.isArray(rawPrefs.hidden) ? rawPrefs.hidden.filter((pageId) => NAV_TAB_DEFAULT_ORDER.includes(pageId)) : []);
+    if (hidden.size >= NAV_TAB_DEFAULT_ORDER.length) {
+        hidden.delete('subject-dashboard-page');
+    }
+
+    return {
+        order: dedupedOrder,
+        hidden: Array.from(hidden)
+    };
+}
+
+function getSavedNavTabPrefs() {
+    return normalizeNavTabPrefs(getSavedUIPreferences().navTabs || {});
+}
+
+function saveNavTabPrefs(nextPrefs = {}) {
+    const current = getSavedNavTabPrefs();
+    const merged = normalizeNavTabPrefs({
+        ...current,
+        ...nextPrefs
+    });
+    saveUIPreferences({ navTabs: merged });
+    return merged;
+}
+
+function applyNavigationTabPreferences() {
+    const prefs = getSavedNavTabPrefs();
+    const hiddenSet = new Set(prefs.hidden);
+
+    const applyToContainer = (containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const links = Array.from(container.querySelectorAll('.nav-link[data-page]'))
+            .filter((link) => NAV_TAB_DEFAULT_ORDER.includes(link.dataset.page));
+        const linkMap = new Map(links.map((link) => [link.dataset.page, link]));
+
+        prefs.order.forEach((pageId) => {
+            const link = linkMap.get(pageId);
+            if (!link) return;
+            container.appendChild(link);
+            const hidden = hiddenSet.has(pageId);
+            link.classList.toggle('hidden', hidden);
+            link.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+        });
+    };
+
+    applyToContainer('desktop-main-nav');
+    applyToContainer('mobile-main-nav');
+}
+
+function moveNavTab(pageId, direction) {
+    const prefs = getSavedNavTabPrefs();
+    const currentIndex = prefs.order.indexOf(pageId);
+    if (currentIndex === -1) return prefs;
+    const nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= prefs.order.length) return prefs;
+    const nextOrder = [...prefs.order];
+    [nextOrder[currentIndex], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[currentIndex]];
+    return saveNavTabPrefs({ order: nextOrder });
+}
+
+function toggleNavTabVisibility(pageId) {
+    const prefs = getSavedNavTabPrefs();
+    const hidden = new Set(prefs.hidden);
+    if (hidden.has(pageId)) hidden.delete(pageId);
+    else hidden.add(pageId);
+    return saveNavTabPrefs({ hidden: Array.from(hidden) });
+}
+
+function resetNavTabsToDefault() {
+    return saveNavTabPrefs({ order: [...NAV_TAB_DEFAULT_ORDER], hidden: [] });
+}
+
+function renderNavTabCustomizer() {
+    const listEl = document.getElementById('nav-tab-customizer-list');
+    if (!listEl) return;
+
+    const prefs = getSavedNavTabPrefs();
+    const hidden = new Set(prefs.hidden);
+
+    listEl.innerHTML = prefs.order.map((pageId, index) => {
+        const label = NAV_TAB_LABELS[pageId] || pageId;
+        const isHidden = hidden.has(pageId);
+        return `
+            <div class="nav-tab-item ${isHidden ? 'is-hidden' : ''}">
+                <div>
+                    <p class="nav-tab-label">${escapeHTML(label)}</p>
+                    <p class="nav-tab-meta">${isHidden ? 'Removed from navigation' : 'Visible in navigation'}</p>
+                </div>
+                <div class="nav-tab-actions">
+                    <button type="button" data-nav-action="up" data-nav-page="${pageId}" class="nav-tab-action-btn" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button type="button" data-nav-action="down" data-nav-page="${pageId}" class="nav-tab-action-btn" ${index === prefs.order.length - 1 ? 'disabled' : ''}>↓</button>
+                    <button type="button" data-nav-action="toggle" data-nav-page="${pageId}" class="nav-tab-action-btn nav-tab-action-btn-wide">${isHidden ? 'Restore' : 'Remove'}</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function applyUserInterfacePreferences() {
     const prefs = getSavedUIPreferences();
     const body = document.body;
@@ -24411,6 +25253,7 @@ function applyUserInterfacePreferences() {
     if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
 
+    applyNavigationTabPreferences();
     syncThemePresetButtons(prefs.themePreset || 'classic');
     syncQuickThemeToggles(themeMode);
     syncFooterToggleButton();
@@ -24477,6 +25320,8 @@ function initializeUserExperienceControls() {
     const mobileThemeToggle = document.getElementById('theme-quick-toggle-mobile');
     const feedbackDismissButton = document.getElementById('feedback-dismiss-button');
     const footerToggleButton = document.getElementById('footer-toggle-button');
+    const navTabList = document.getElementById('nav-tab-customizer-list');
+    const navTabResetButton = document.getElementById('nav-tab-reset');
 
     densitySelect?.addEventListener('change', () => {
         saveUIPreferences({ density: densitySelect.value });
@@ -24525,6 +25370,36 @@ function initializeUserExperienceControls() {
         footerToggleButton.addEventListener('click', toggleFooterCollapsePreference);
         footerToggleButton.dataset.boundToggle = 'true';
     }
+
+    if (navTabList && !navTabList.dataset.boundTabs) {
+        navTabList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-nav-action][data-nav-page]');
+            if (!button) return;
+            const action = button.dataset.navAction;
+            const pageId = button.dataset.navPage;
+            if (!pageId) return;
+
+            if (action === 'up') moveNavTab(pageId, -1);
+            else if (action === 'down') moveNavTab(pageId, 1);
+            else if (action === 'toggle') toggleNavTabVisibility(pageId);
+
+            applyUserInterfacePreferences();
+            renderNavTabCustomizer();
+        });
+        navTabList.dataset.boundTabs = 'true';
+    }
+
+    if (navTabResetButton && !navTabResetButton.dataset.boundTabs) {
+        navTabResetButton.addEventListener('click', () => {
+            resetNavTabsToDefault();
+            applyUserInterfacePreferences();
+            renderNavTabCustomizer();
+            showToast('Navigation tabs reset to default order.', 'success');
+        });
+        navTabResetButton.dataset.boundTabs = 'true';
+    }
+
+    renderNavTabCustomizer();
     applyFeedbackWidgetVisibility();
 
     if (window.matchMedia) {

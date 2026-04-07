@@ -6642,8 +6642,508 @@ will-change: transform;
             color: #e2e8f0 !important;
         }
 
+        .timer-session-window {
+            margin-top: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            border-radius: 999px;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.35rem 0.75rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #1d4ed8;
+        }
+
+        .timer-clock-shell {
+            border-radius: 1rem;
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            background: rgba(255, 255, 255, 0.64);
+            padding: 0.85rem;
+        }
+
+        .timer-clock-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .timer-clock-wrap {
+            margin-top: 0.7rem;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem 0.85rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .timer-clock-wrap[data-clock-display="digital"] {
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+
+        .timer-clock-wrap[data-clock-display="analog"] {
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+
+        .tools-timer-analog-clock {
+            width: 86px;
+            height: 86px;
+            border-radius: 999px;
+            border: 3px solid rgba(37, 99, 235, 0.35);
+            background:
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.94), rgba(219, 234, 254, 0.86)),
+                repeating-conic-gradient(from 0deg, rgba(37, 99, 235, 0.22) 0deg 6deg, transparent 6deg 30deg);
+            position: relative;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 14px 22px -18px rgba(30, 64, 175, 0.62);
+        }
+
+        .tools-timer-analog-hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: 50% 100%;
+            border-radius: 999px;
+            background: #1e3a8a;
+            transition: transform 120ms linear;
+        }
+
+        .tools-timer-analog-hand.hour {
+            width: 4px;
+            height: 25px;
+            margin-left: -2px;
+        }
+
+        .tools-timer-analog-hand.minute {
+            width: 3px;
+            height: 33px;
+            margin-left: -1.5px;
+            background: #1d4ed8;
+        }
+
+        .tools-timer-analog-hand.second {
+            width: 2px;
+            height: 37px;
+            margin-left: -1px;
+            background: #dc2626;
+        }
+
+        .tools-timer-analog-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #1d4ed8;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+        }
+
+        .tools-timer-digital-clock {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tools-timer-pip {
+            position: fixed;
+            left: calc(100vw - 280px);
+            top: calc(100vh - 184px);
+            width: 260px;
+            height: 148px;
+            min-width: 220px;
+            min-height: 130px;
+            max-width: 420px;
+            max-height: 280px;
+            resize: both;
+            overflow: hidden;
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.42);
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.95));
+            box-shadow: 0 26px 48px -34px rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            z-index: 1400;
+            transition: box-shadow 150ms ease, border-color 150ms ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .tools-timer-pip.is-running {
+            border-color: rgba(37, 99, 235, 0.5);
+            box-shadow: 0 24px 46px -30px rgba(37, 99, 235, 0.6);
+        }
+
+        .tools-timer-pip.is-dragging {
+            cursor: grabbing;
+            box-shadow: 0 28px 52px -28px rgba(15, 23, 42, 0.55);
+        }
+
+        .tools-timer-pip.is-snapping {
+            transition: left 180ms ease, top 180ms ease, box-shadow 160ms ease;
+        }
+
+        .tools-timer-pip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 0.65rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+            background: linear-gradient(130deg, rgba(219, 234, 254, 0.85), rgba(255, 255, 255, 0.85));
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .tools-timer-pip-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #1e40af;
+        }
+
+        .tools-timer-pip-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.38rem;
+        }
+
+        .tools-timer-pip-btn {
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e3a8a;
+            border-radius: 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.22rem 0.5rem;
+            min-width: 2.2rem;
+            transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+        }
+
+        .tools-timer-pip-btn:hover {
+            background: rgba(219, 234, 254, 0.9);
+            border-color: rgba(37, 99, 235, 0.45);
+        }
+
+        .tools-timer-pip-close {
+            font-size: 1rem;
+            line-height: 1;
+            padding-left: 0.45rem;
+            padding-right: 0.45rem;
+        }
+
+        .tools-timer-pip-body {
+            height: calc(100% - 40px);
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.65rem 0.7rem;
+        }
+
+        .tools-timer-pip-time {
+            margin: 0;
+            font-size: clamp(1.2rem, 1rem + 1.35vw, 1.8rem);
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tools-timer-pip-status {
+            margin: 0;
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #475569;
+            line-height: 1.3;
+        }
+
+        .dashboard-exam-card {
+            display: grid;
+            grid-template-columns: 1.45fr minmax(220px, 1fr);
+            gap: 0.95rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(191, 219, 254, 0.9);
+            background: linear-gradient(140deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.95));
+            box-shadow: 0 18px 30px -28px rgba(37, 99, 235, 0.6);
+        }
+
+        .dashboard-exam-main {
+            border-radius: 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.9rem;
+        }
+
+        .dashboard-exam-kicker {
+            margin: 0;
+            font-size: 0.67rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #2563eb;
+        }
+
+        .dashboard-exam-title {
+            margin: 0.2rem 0 0;
+            font-size: 1.22rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.25;
+        }
+
+        .dashboard-exam-meta {
+            margin: 0.42rem 0 0;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .dashboard-exam-list-wrap {
+            border-radius: 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: rgba(255, 255, 255, 0.78);
+            padding: 0.82rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.62rem;
+        }
+
+        .dashboard-exam-list-label {
+            margin: 0;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .dashboard-exam-list {
+            display: grid;
+            gap: 0.48rem;
+        }
+
+        .dashboard-exam-empty {
+            margin: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .dashboard-exam-pill {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 0.72rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.55rem 0.68rem;
+            text-align: left;
+            display: grid;
+            gap: 0.2rem;
+            transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+        }
+
+        .dashboard-exam-pill:hover {
+            transform: translateY(-1px);
+            border-color: rgba(37, 99, 235, 0.45);
+            background: rgba(239, 246, 255, 0.95);
+        }
+
+        .dashboard-exam-pill-title {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .dashboard-exam-pill-meta {
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .dashboard-exam-open-calendar {
+            align-self: flex-start;
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            border-radius: 0.68rem;
+            background: rgba(219, 234, 254, 0.88);
+            color: #1d4ed8;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 0.38rem 0.66rem;
+            transition: background-color 140ms ease, border-color 140ms ease;
+        }
+
+        .dashboard-exam-open-calendar:hover {
+            background: rgba(191, 219, 254, 0.92);
+            border-color: rgba(37, 99, 235, 0.45);
+        }
+
+        .nav-tab-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.85rem;
+            border-radius: 0.85rem;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.92);
+            padding: 0.72rem 0.8rem;
+        }
+
+        .nav-tab-item.is-hidden {
+            border-style: dashed;
+            opacity: 0.8;
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        .nav-tab-label {
+            margin: 0;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .nav-tab-meta {
+            margin: 0.15rem 0 0;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .nav-tab-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .nav-tab-action-btn {
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 0.62rem;
+            background: rgba(255, 255, 255, 0.96);
+            color: #0f172a;
+            font-size: 0.76rem;
+            font-weight: 700;
+            min-width: 2rem;
+            padding: 0.36rem 0.54rem;
+            transition: background-color 120ms ease, border-color 120ms ease;
+        }
+
+        .nav-tab-action-btn:hover:not(:disabled) {
+            background: rgba(219, 234, 254, 0.92);
+            border-color: rgba(37, 99, 235, 0.42);
+        }
+
+        .nav-tab-action-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .nav-tab-action-btn-wide {
+            min-width: 4.4rem;
+        }
+
+        .admin-section-target {
+            position: relative;
+            animation: admin-section-target-pulse 1.35s ease;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.42), 0 18px 32px -28px rgba(37, 99, 235, 0.65);
+        }
+
+        @keyframes admin-section-target-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55), 0 16px 26px -22px rgba(37, 99, 235, 0.45);
+            }
+            55% {
+                box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.12), 0 22px 36px -24px rgba(37, 99, 235, 0.62);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 18px 30px -28px rgba(37, 99, 235, 0.5);
+            }
+        }
+
+        body.dark-theme .timer-session-window,
+        body.dark-theme .timer-clock-shell,
+        body.dark-theme .timer-clock-wrap,
+        body.dark-theme .dashboard-exam-card,
+        body.dark-theme .dashboard-exam-main,
+        body.dark-theme .dashboard-exam-list-wrap,
+        body.dark-theme .dashboard-exam-pill,
+        body.dark-theme .nav-tab-item,
+        body.dark-theme .tools-timer-pip {
+            background: rgba(15, 23, 42, 0.88) !important;
+            border-color: rgba(71, 85, 105, 0.78) !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-theme .tools-timer-pip-header {
+            background: rgba(30, 41, 59, 0.86);
+            border-bottom-color: rgba(71, 85, 105, 0.7);
+        }
+
+        body.dark-theme .tools-timer-pip-btn,
+        body.dark-theme .dashboard-exam-open-calendar,
+        body.dark-theme .nav-tab-action-btn {
+            background: rgba(30, 41, 59, 0.95);
+            color: #dbeafe;
+            border-color: rgba(96, 165, 250, 0.35);
+        }
+
+        body.dark-theme .tools-timer-digital-clock,
+        body.dark-theme .dashboard-exam-title,
+        body.dark-theme .dashboard-exam-pill-title,
+        body.dark-theme .nav-tab-label,
+        body.dark-theme .tools-timer-pip-time {
+            color: #f8fafc;
+        }
+
+        body.dark-theme .dashboard-exam-meta,
+        body.dark-theme .dashboard-exam-pill-meta,
+        body.dark-theme .dashboard-exam-empty,
+        body.dark-theme .nav-tab-meta,
+        body.dark-theme .tools-timer-pip-status {
+            color: #94a3b8;
+        }
+
         #site-announcement-banner {
             margin: 0.75rem 1rem 0;
+        }
+
+        .site-announcement-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.32rem;
+            flex-shrink: 0;
+        }
+
+        .site-announcement-arrow {
+            border: 0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            color: inherit;
+            min-width: 1.9rem;
+            min-height: 1.9rem;
+            line-height: 1;
+            font-size: 1.04rem;
+            font-weight: 700;
+            transition: background-color 120ms ease;
+        }
+
+        .site-announcement-arrow:hover {
+            background: rgba(255, 255, 255, 0.28);
         }
 
         .site-announcement-shell {
@@ -6780,10 +7280,52 @@ will-change: transform;
                 margin: 0.5rem 0.75rem 0;
             }
 
+            .timer-session-window {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.45rem;
+                font-size: 0.68rem;
+                padding-left: 0.6rem;
+                padding-right: 0.6rem;
+            }
+
+            .timer-clock-wrap {
+                grid-template-columns: 1fr;
+                justify-items: center;
+            }
+
+            .tools-timer-analog-clock {
+                width: 74px;
+                height: 74px;
+            }
+
+            .tools-timer-pip {
+                width: min(92vw, 320px);
+                min-width: min(92vw, 220px);
+                max-width: 92vw;
+            }
+
+            .dashboard-exam-card {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tab-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-tab-actions {
+                justify-content: flex-start;
+            }
+
             .site-announcement-shell {
                 align-items: flex-start;
                 padding: 0.68rem 0.78rem;
                 border-radius: 0.9rem;
+            }
+
+            .site-announcement-nav {
+                margin-top: 0.1rem;
             }
 
             .site-announcement-copy {
