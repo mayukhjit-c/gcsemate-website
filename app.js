@@ -595,6 +595,7 @@ let unsubscribeLessons;
 let unsubscribeLessonMetrics;
 let unsubscribeLessonProgress;
 let unsubscribeLessonProgressLeaderboard;
+let unsubscribeStreakLeaderboard;
 let unsubscribeLessonComments;
 let unsubscribeUserEvents;
 let unsubscribeGlobalEvents;
@@ -611,6 +612,8 @@ let lastAutoOpenedFreeTrialSubjectKey = null;
 const LESSON_METRICS_MAP = new Map();
 const LESSON_PROGRESS_MAP = new Map();
 const LESSON_USER_COMPLETION_MAP = new Map();
+let streakLeaderboardRows = [];
+let streakStateSyncPromise = null;
 const userGradeAvailabilityCache = new Map();
 const userGradeAvailabilityFetches = new Set();
 
@@ -2381,6 +2384,9 @@ async function initializeUserTracking() {
         } catch (_) {}
         
         // Update daily stats
+        const streakState = await syncUserStreakState('login');
+        userActivityTracker.dailyStats.studyStreak = Number(streakState?.current || 0);
+        renderDashboardStreakLeaderboard();
         userActivityTracker.dailyStats.loginCount++;
         await updateDailyStats();
         
@@ -2615,6 +2621,133 @@ async function logUserActivity(activityType, additionalData = {}) {
     }, 'User Activity Logging');
 }
 
+function getLocalDateKey(date = new Date()) {
+    const safeDate = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(safeDate.getTime())) return '';
+    const year = safeDate.getFullYear();
+    const month = String(safeDate.getMonth() + 1).padStart(2, '0');
+    const day = String(safeDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getPreviousLocalDateKey(dateKey) {
+    if (!dateKey) return '';
+    const parsed = new Date(`${dateKey}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return '';
+    parsed.setDate(parsed.getDate() - 1);
+    return getLocalDateKey(parsed);
+}
+
+function sanitizeAvatarEmojiInput(value) {
+    if (typeof value !== 'string') return '';
+    const compact = value.replace(/\s+/g, '').trim();
+    if (!compact) return '';
+    return Array.from(compact).slice(0, 4).join('');
+}
+
+function getUserAvatarEmoji(user = currentUser) {
+    return sanitizeAvatarEmojiInput(user?.avatarEmoji || '');
+}
+
+async function upsertStreakLeaderboardEntry({
+    studyStreak = Number(currentUser?.studyStreakCurrent || 0),
+    bestStudyStreak = Number(currentUser?.studyStreakBest || 0),
+    streakLastActiveDate = currentUser?.studyStreakLastActiveDate || getLocalDateKey()
+} = {}) {
+    if (!currentUser?.uid) return;
+
+    const safeStudyStreak = Math.max(0, Number(studyStreak || 0));
+    const safeBestStudyStreak = Math.max(safeStudyStreak, Number(bestStudyStreak || 0));
+    const safeDateKey = typeof streakLastActiveDate === 'string' && streakLastActiveDate
+        ? streakLastActiveDate
+        : getLocalDateKey();
+
+    await db.collection('streakLeaderboard').doc(currentUser.uid).set({
+        userId: currentUser.uid,
+        displayName: String(currentUser.displayName || currentUser.email || 'User').trim(),
+        avatarEmoji: getUserAvatarEmoji(currentUser) || null,
+        profilePictureURL: currentUser.profilePictureURL || null,
+        studyStreak: safeStudyStreak,
+        bestStudyStreak: safeBestStudyStreak,
+        streakLastActiveDate: safeDateKey,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
+
+async function syncUserStreakState(trigger = 'activity') {
+    if (!currentUser?.uid) {
+        return { current: 0, best: 0, dateKey: getLocalDateKey() };
+    }
+    if (streakStateSyncPromise) return streakStateSyncPromise;
+
+    streakStateSyncPromise = (async () => {
+        const todayKey = getLocalDateKey();
+        const yesterdayKey = getPreviousLocalDateKey(todayKey);
+        let userData = { ...(currentUser || {}) };
+
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                userData = { ...userData, ...(userDoc.data() || {}) };
+            }
+        } catch (error) {
+            console.warn('Could not read user streak state, falling back to local profile:', error);
+        }
+
+        const previousCurrent = Math.max(0, Number(userData.studyStreakCurrent || 0));
+        const previousBest = Math.max(previousCurrent, Number(userData.studyStreakBest || 0));
+        const previousDateKey = typeof userData.studyStreakLastActiveDate === 'string'
+            ? userData.studyStreakLastActiveDate
+            : '';
+
+        let nextCurrent = previousCurrent;
+        if (previousDateKey === todayKey) {
+            nextCurrent = Math.max(previousCurrent, 1);
+        } else if (previousDateKey === yesterdayKey) {
+            nextCurrent = Math.max(previousCurrent + 1, 1);
+        } else {
+            nextCurrent = 1;
+        }
+
+        const nextBest = Math.max(previousBest, nextCurrent);
+        const shouldPersistUserState = previousDateKey !== todayKey || previousCurrent !== nextCurrent || previousBest !== nextBest;
+
+        if (shouldPersistUserState) {
+            await db.collection('users').doc(currentUser.uid).set({
+                studyStreakCurrent: nextCurrent,
+                studyStreakBest: nextBest,
+                studyStreakLastActiveDate: todayKey,
+                studyStreakUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+
+        currentUser.studyStreakCurrent = nextCurrent;
+        currentUser.studyStreakBest = nextBest;
+        currentUser.studyStreakLastActiveDate = todayKey;
+        userActivityTracker.dailyStats.studyStreak = nextCurrent;
+
+        try {
+            await upsertStreakLeaderboardEntry({
+                studyStreak: nextCurrent,
+                bestStudyStreak: nextBest,
+                streakLastActiveDate: todayKey
+            });
+        } catch (error) {
+            console.warn(`Unable to sync streak leaderboard (${trigger}):`, error);
+        }
+
+        return {
+            current: nextCurrent,
+            best: nextBest,
+            dateKey: todayKey
+        };
+    })().finally(() => {
+        streakStateSyncPromise = null;
+    });
+
+    return streakStateSyncPromise;
+}
+
 // Update daily statistics
 async function updateDailyStats() {
     if (!currentUser) return;
@@ -2630,7 +2763,7 @@ async function updateDailyStats() {
             totalSessionTime: userActivityTracker.dailyStats.totalSessionTime,
             subjectsStudied: Array.from(userActivityTracker.dailyStats.subjectsStudied),
             filesAccessed: Array.from(userActivityTracker.dailyStats.filesAccessed),
-            studyStreak: userActivityTracker.dailyStats.studyStreak,
+            studyStreak: Number(userActivityTracker.dailyStats.studyStreak || currentUser?.studyStreakCurrent || 0),
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
     } catch (error) {
@@ -4545,6 +4678,7 @@ auth.onAuthStateChanged(async (user) => {
     if (unsubscribeAnnouncement) unsubscribeAnnouncement();
     if (unsubscribeFreeTrialSettings) { try { unsubscribeFreeTrialSettings(); } catch(_){} unsubscribeFreeTrialSettings = null; }
     if (unsubscribeCurrentUserDoc) { try { unsubscribeCurrentUserDoc(); } catch(_){} unsubscribeCurrentUserDoc = null; }
+    if (unsubscribeStreakLeaderboard) { try { unsubscribeStreakLeaderboard(); } catch(_){} unsubscribeStreakLeaderboard = null; }
     if (unsubscribeToolsNotes) { try { unsubscribeToolsNotes(); } catch(_){} unsubscribeToolsNotes = null; }
     if (clockInterval) clearInterval(clockInterval);
     if (serverTimeInterval) stopServerTimeUpdates();
@@ -4611,6 +4745,8 @@ auth.onAuthStateChanged(async (user) => {
                         // Re-render admin/user panels accordingly
                         try { initializeAppState(); } catch(_){}
                     }
+                    updateWelcomeMessage();
+                    renderDashboardStreakLeaderboard();
                     updateInlineUpsellBanner();
                     // Update AI Tutor navigation visibility
                     updateAITutorNavVisibility();
@@ -4674,6 +4810,8 @@ auth.onAuthStateChanged(async (user) => {
                         if (roleChanged) {
                             try { initializeAppState(); } catch(_){ }
                         }
+                        updateWelcomeMessage();
+                        renderDashboardStreakLeaderboard();
                         updateInlineUpsellBanner();
                         updateAITutorNavVisibility();
                     });
@@ -4727,10 +4865,12 @@ auth.onAuthStateChanged(async (user) => {
         if (typeof unsubscribeLessonMetrics === 'function') { try { unsubscribeLessonMetrics(); } catch (_) {} unsubscribeLessonMetrics = null; }
         if (typeof unsubscribeLessonProgress === 'function') { try { unsubscribeLessonProgress(); } catch (_) {} unsubscribeLessonProgress = null; }
         if (typeof unsubscribeLessonProgressLeaderboard === 'function') { try { unsubscribeLessonProgressLeaderboard(); } catch (_) {} unsubscribeLessonProgressLeaderboard = null; }
+        if (typeof unsubscribeStreakLeaderboard === 'function') { try { unsubscribeStreakLeaderboard(); } catch (_) {} unsubscribeStreakLeaderboard = null; }
         if (typeof unsubscribeLessonComments === 'function') { try { unsubscribeLessonComments(); } catch (_) {} unsubscribeLessonComments = null; }
         LESSON_METRICS_MAP.clear();
         LESSON_PROGRESS_MAP.clear();
         LESSON_USER_COMPLETION_MAP.clear();
+        streakLeaderboardRows = [];
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
             landingPage.classList.remove('hidden');
@@ -4792,6 +4932,7 @@ function initializeAppState() {
     mainApp.style.display = 'flex';
     mainApp.classList.add('fade-in');
     updateWelcomeMessage();
+    renderDashboardStreakLeaderboard();
     setupRealtimeListeners();
     startClock();
     hideAppLoading();
@@ -6184,6 +6325,31 @@ function setupRealtimeListeners() {
         unsubscribeLessonProgressLeaderboard = null;
         LESSON_USER_COMPLETION_MAP.clear();
     }
+
+    if (unsubscribeStreakLeaderboard) { try { unsubscribeStreakLeaderboard(); } catch (_) {} }
+    unsubscribeStreakLeaderboard = db.collection('streakLeaderboard')
+        .orderBy('studyStreak', 'desc')
+        .limit(25)
+        .onSnapshot(snapshot => {
+            streakLeaderboardRows = [];
+            snapshot.forEach(doc => {
+                const data = doc.data() || {};
+                streakLeaderboardRows.push({
+                    id: doc.id,
+                    userId: data.userId || doc.id,
+                    displayName: data.displayName || 'Learner',
+                    avatarEmoji: sanitizeAvatarEmojiInput(data.avatarEmoji || ''),
+                    profilePictureURL: data.profilePictureURL || '',
+                    studyStreak: Math.max(0, Number(data.studyStreak || 0)),
+                    bestStudyStreak: Math.max(0, Number(data.bestStudyStreak || 0)),
+                    streakLastActiveDate: data.streakLastActiveDate || ''
+                });
+            });
+            renderDashboardStreakLeaderboard(streakLeaderboardRows);
+        }, error => {
+            logError(error, 'Streak Leaderboard');
+            renderDashboardStreakLeaderboard(streakLeaderboardRows);
+        });
 
     // Listen for user-specific events
     unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
@@ -7879,6 +8045,8 @@ window.applyProfilePictureCrop = async function() {
             
             currentUser.profilePictureURL = downloadURL;
             updateProfilePictureInUI(downloadURL);
+            try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+            renderDashboardStreakLeaderboard();
             
             await logUserActivity('profile_picture_upload', {
                 fileName: profileCropState.originalFile.name,
@@ -7949,41 +8117,39 @@ window.closeProfilePictureCropModal = function() {
 };
 
 function updateProfilePictureInUI(imageURL) {
-    // Update profile picture in header
-    const profilePic = document.getElementById('profile-picture');
-    if (profilePic) {
-        profilePic.src = imageURL;
-        profilePic.onerror = function() {
-            this.src = ''; // Fallback to default avatar
-        };
-        // Add click handler to change profile picture
-        if (!profilePic.dataset.clickHandlerAdded) {
-            profilePic.style.cursor = 'pointer';
-            profilePic.addEventListener('click', () => {
-                if (currentUser) {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                            uploadProfilePicture(file);
-                        }
-                    };
-                    input.click();
-                }
-            });
-            profilePic.dataset.clickHandlerAdded = 'true';
-        }
+    if (currentUser) {
+        currentUser.profilePictureURL = imageURL || '';
     }
-    
-    // Update profile picture in account settings
-    const accountProfilePic = document.getElementById('account-profile-picture');
-    if (accountProfilePic) {
-        accountProfilePic.src = imageURL;
-        accountProfilePic.onerror = function() {
-            this.src = ''; // Fallback to default avatar
+
+    renderCurrentUserAvatars();
+
+    // Keep quick-upload click target in the header image
+    const profilePic = document.getElementById('profile-picture');
+    const profileEmoji = document.getElementById('profile-picture-emoji');
+    const triggerUpload = () => {
+        if (!currentUser) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                uploadProfilePicture(file);
+            }
         };
+        input.click();
+    };
+
+    if (profilePic && !profilePic.dataset.clickHandlerAdded) {
+        profilePic.style.cursor = 'pointer';
+        profilePic.addEventListener('click', triggerUpload);
+        profilePic.dataset.clickHandlerAdded = 'true';
+    }
+
+    if (profileEmoji && !profileEmoji.dataset.clickHandlerAdded) {
+        profileEmoji.style.cursor = 'pointer';
+        profileEmoji.addEventListener('click', triggerUpload);
+        profileEmoji.dataset.clickHandlerAdded = 'true';
     }
 }
 
@@ -8088,6 +8254,8 @@ async function removeProfilePicture() {
         
         // Update UI
         updateProfilePictureInUI('');
+        try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+        renderDashboardStreakLeaderboard();
         
         // Log activity
         await logUserActivity('profile_picture_remove', {});
@@ -11076,6 +11244,7 @@ async function clearSystemCache() {
 async function handleUpdateUserSettings() {
     const displayNameInput = document.getElementById('user-displayname');
     const passwordInput = document.getElementById('user-password');
+    const avatarEmojiInput = document.getElementById('user-avatar-emoji');
     const densitySelect = document.getElementById('ui-density-select');
     const radiusSelect = document.getElementById('ui-radius-select');
     const motionSelect = document.getElementById('ui-motion-select');
@@ -11085,6 +11254,7 @@ async function handleUpdateUserSettings() {
     const footerCollapsedToggle = document.getElementById('ui-footer-collapsed');
     const displayName = displayNameInput.value.trim();
     const newPassword = passwordInput.value;
+    const avatarEmoji = sanitizeAvatarEmojiInput(avatarEmojiInput?.value || '');
     const messageEl = document.getElementById('user-settings-message');
     const nameErrorEl = document.getElementById('user-displayname-error') || displayNameInput.nextElementSibling;
     const passwordErrorEl = document.getElementById('user-password-error') || passwordInput.nextElementSibling;
@@ -11121,8 +11291,18 @@ async function handleUpdateUserSettings() {
     }
     
     try {
-        // Update Firestore display name
-        await db.collection('users').doc(currentUser.uid).update({ displayName });
+        // Update Firestore profile details
+        const profilePayload = {
+            displayName,
+            avatarUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (avatarEmoji) {
+            profilePayload.avatarEmoji = avatarEmoji;
+        } else {
+            profilePayload.avatarEmoji = firebase.firestore.FieldValue.delete();
+        }
+
+        await db.collection('users').doc(currentUser.uid).update(profilePayload);
         await auth.currentUser.updateProfile({ displayName: displayName });
         
         // Update password if provided
@@ -11133,6 +11313,11 @@ async function handleUpdateUserSettings() {
         
         // Update local state
         currentUser.displayName = displayName;
+        if (avatarEmoji) {
+            currentUser.avatarEmoji = avatarEmoji;
+        } else {
+            delete currentUser.avatarEmoji;
+        }
         saveUIPreferences({
             density: densitySelect?.value || 'comfortable',
             radius: radiusSelect?.value || 'soft',
@@ -11144,6 +11329,8 @@ async function handleUpdateUserSettings() {
         });
         applyUserInterfacePreferences();
         updateWelcomeMessage();
+        try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+        renderDashboardStreakLeaderboard();
         messageEl.textContent = 'Settings saved successfully!';
         messageEl.className = 'text-green-600 text-sm text-center h-4';
         displayNameInput.classList.remove('border-red-500', 'bg-red-50');
@@ -11324,40 +11511,112 @@ function generatePfpUrl(email) {
     const initial = (email ? email.charAt(0) : '?').toUpperCase();
     return `https://placehold.co/40x40/3B82F6/FFFFFF?text=${initial}`;
 }
+
+function getUserDisplayInitial(user = currentUser) {
+    const source = String(user?.displayName || user?.email || '').trim();
+    return source ? source.charAt(0).toUpperCase() : '?';
+}
+
+function renderAvatarSlot({ imageElement, emojiElement, user = currentUser }) {
+    if (!imageElement && !emojiElement) return;
+    const avatarEmoji = getUserAvatarEmoji(user);
+    const fallbackUrl = generatePfpUrl(user?.email || '');
+    const imageUrl = user?.profilePictureURL || fallbackUrl;
+
+    if (avatarEmoji) {
+        if (emojiElement) {
+            emojiElement.textContent = avatarEmoji;
+            emojiElement.classList.remove('hidden');
+            emojiElement.setAttribute('title', `${user?.displayName || 'User'} avatar`);
+            emojiElement.setAttribute('aria-hidden', 'false');
+        }
+        if (imageElement) {
+            imageElement.classList.add('hidden');
+            imageElement.setAttribute('aria-hidden', 'true');
+        }
+        return;
+    }
+
+    if (emojiElement) {
+        emojiElement.textContent = '';
+        emojiElement.classList.add('hidden');
+        emojiElement.setAttribute('aria-hidden', 'true');
+    }
+
+    if (imageElement) {
+        imageElement.classList.remove('hidden');
+        imageElement.removeAttribute('aria-hidden');
+        imageElement.src = imageUrl;
+        imageElement.onerror = function() {
+            this.onerror = null;
+            this.src = fallbackUrl;
+        };
+    }
+}
+
+function renderCurrentUserAvatars() {
+    renderAvatarSlot({
+        imageElement: document.getElementById('profile-picture'),
+        emojiElement: document.getElementById('profile-picture-emoji'),
+        user: currentUser
+    });
+    renderAvatarSlot({
+        imageElement: document.getElementById('account-profile-picture'),
+        emojiElement: document.getElementById('account-profile-picture-emoji'),
+        user: currentUser
+    });
+}
+
+function renderAccountAvatarPreviewFromInput() {
+    if (!currentUser) return;
+    const input = document.getElementById('user-avatar-emoji');
+    if (!input) return;
+    const previewEmoji = sanitizeAvatarEmojiInput(input.value || '');
+    input.value = previewEmoji;
+    renderAvatarSlot({
+        imageElement: document.getElementById('account-profile-picture'),
+        emojiElement: document.getElementById('account-profile-picture-emoji'),
+        user: { ...currentUser, avatarEmoji: previewEmoji }
+    });
+}
+
+function setAvatarEmojiPreset(emoji) {
+    const input = document.getElementById('user-avatar-emoji');
+    if (!input) return;
+    input.value = sanitizeAvatarEmojiInput(emoji || '');
+    renderAccountAvatarPreviewFromInput();
+}
+
+function clearAvatarEmojiSelection() {
+    const input = document.getElementById('user-avatar-emoji');
+    if (!input) return;
+    input.value = '';
+    renderAccountAvatarPreviewFromInput();
+}
+
 function updateWelcomeMessage() {
     if (!currentUser) return;
     const welcomeEl = document.getElementById('welcome-message');
-    const name = capitalizeFirstLetter(currentUser.displayName);
-    welcomeEl.textContent = `Welcome, ${name}!`;
-    // Ensure truncation has a title tooltip for full name
-    welcomeEl.title = `Welcome, ${name}!`;
-    
-    // Update profile pictures
-    const profilePic = document.getElementById('profile-picture');
-    const accountProfilePic = document.getElementById('account-profile-picture');
-    
-    if (currentUser.profilePictureURL) {
-        // Use uploaded profile picture
-        if (profilePic) profilePic.src = currentUser.profilePictureURL;
-        if (accountProfilePic) accountProfilePic.src = currentUser.profilePictureURL;
-    } else {
-        // Use generated avatar
-        const avatarUrl = generatePfpUrl(currentUser.email);
-        if (profilePic) profilePic.src = avatarUrl;
-        if (accountProfilePic) accountProfilePic.src = avatarUrl;
+    const name = capitalizeFirstLetter(currentUser.displayName || (currentUser.email || '').split('@')[0] || 'Learner');
+    if (welcomeEl) {
+        welcomeEl.textContent = `Welcome, ${name}!`;
+        // Ensure truncation has a title tooltip for full name
+        welcomeEl.title = `Welcome, ${name}!`;
     }
-    
-    // Set error handlers for profile pictures
-    [profilePic, accountProfilePic].forEach(img => {
-        if (img) {
-            img.onerror = function() {
-                this.src = generatePfpUrl(currentUser.email);
-            };
-        }
-    });
-    
-    if (document.getElementById('user-displayname')) document.getElementById('user-displayname').value = currentUser.displayName;
+
+    renderCurrentUserAvatars();
+
+    const displayNameInput = document.getElementById('user-displayname');
+    if (displayNameInput) displayNameInput.value = currentUser.displayName;
     if (document.getElementById('user-email')) document.getElementById('user-email').value = currentUser.email;
+    const avatarInput = document.getElementById('user-avatar-emoji');
+    if (avatarInput) {
+        avatarInput.value = getUserAvatarEmoji(currentUser);
+        if (!avatarInput.dataset.listenerBound) {
+            avatarInput.addEventListener('input', renderAccountAvatarPreviewFromInput);
+            avatarInput.dataset.listenerBound = 'true';
+        }
+    }
     renderSubscriptionStatusPanel(currentUser);
 }
 function renderError(container, message) {
@@ -12237,10 +12496,84 @@ function handleResetFreeTrialOverride() {
     });
 }
 
+function getStreakLeaderboardAvatarMarkup(entry) {
+    const emoji = sanitizeAvatarEmojiInput(entry?.avatarEmoji || '');
+    if (emoji) {
+        return `<span class="dashboard-streak-avatar-emoji">${escapeHTML(emoji)}</span>`;
+    }
+
+    const fallbackInitial = getUserDisplayInitial({
+        displayName: entry?.displayName,
+        email: entry?.userId || ''
+    });
+    const photoUrl = String(entry?.profilePictureURL || '').trim();
+    if (photoUrl) {
+        return `<img class="dashboard-streak-avatar-image" src="${escapeHTML(photoUrl)}" alt="${escapeHTML(entry?.displayName || 'Learner')} avatar" loading="lazy" decoding="async">`;
+    }
+    return `<span class="dashboard-streak-avatar-fallback">${escapeHTML(fallbackInitial)}</span>`;
+}
+
+function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
+    const listEl = document.getElementById('dashboard-streak-leaderboard-list');
+    const currentEl = document.getElementById('dashboard-streak-current');
+    const bestEl = document.getElementById('dashboard-streak-best');
+    const rankEl = document.getElementById('dashboard-streak-rank');
+    if (!listEl || !currentEl || !bestEl || !rankEl) return;
+
+    const normalizedRows = Array.isArray(rows)
+        ? rows
+            .map((entry) => ({
+                ...entry,
+                userId: entry?.userId || entry?.id || '',
+                displayName: String(entry?.displayName || 'Learner').trim(),
+                studyStreak: Math.max(0, Number(entry?.studyStreak || 0)),
+                bestStudyStreak: Math.max(0, Number(entry?.bestStudyStreak || 0))
+            }))
+            .filter((entry) => entry.userId)
+        : [];
+
+    const topRows = normalizedRows.slice(0, 10);
+    const myIndex = normalizedRows.findIndex((entry) => entry.userId === currentUser?.uid);
+    const myRow = myIndex >= 0 ? normalizedRows[myIndex] : null;
+
+    const currentStreak = Math.max(0, Number(myRow?.studyStreak || currentUser?.studyStreakCurrent || userActivityTracker?.dailyStats?.studyStreak || 0));
+    const bestStreak = Math.max(currentStreak, Number(myRow?.bestStudyStreak || currentUser?.studyStreakBest || 0));
+
+    currentEl.textContent = String(currentStreak);
+    bestEl.textContent = String(bestStreak);
+    if (myIndex >= 0) {
+        rankEl.textContent = `#${myIndex + 1}`;
+    } else if (currentStreak > 0) {
+        rankEl.textContent = 'Outside Top 25';
+    } else {
+        rankEl.textContent = 'Unranked';
+    }
+
+    if (!topRows.length) {
+        listEl.innerHTML = '<p class="dashboard-streak-empty">Complete at least one study session to enter the streak league.</p>';
+        return;
+    }
+
+    listEl.innerHTML = topRows.map((entry, index) => {
+        const isCurrentUser = entry.userId === currentUser?.uid;
+        const safeName = escapeHTML(entry.displayName || 'Learner');
+        const streakLabel = `${entry.studyStreak} day${entry.studyStreak === 1 ? '' : 's'}`;
+        return `
+            <div class="dashboard-streak-row${isCurrentUser ? ' is-current' : ''}">
+                <span class="dashboard-streak-rank-badge">${index + 1}</span>
+                <span class="dashboard-streak-avatar">${getStreakLeaderboardAvatarMarkup(entry)}</span>
+                <span class="dashboard-streak-name">${safeName}${isCurrentUser ? ' (You)' : ''}</span>
+                <span class="dashboard-streak-value">${escapeHTML(streakLabel)}</span>
+            </div>
+        `;
+    }).join('');
+}
+
 async function renderDashboard() {
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
     renderDashboardExamCalendarCard();
+    renderDashboardStreakLeaderboard();
     // Render skeleton loader
     let skeletonHTML = '';
     for (let i = 0; i < 10; i++) {

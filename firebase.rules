@@ -33,12 +33,25 @@ service cloud.firestore {
         'accountSharingRestoredBy','tierBeforeSharingViolation','concurrentSessions'
       ]);
     }
+    function hasValidAvatarFields(data) {
+      return (!data.keys().hasAny(['avatarEmoji']) || data.avatarEmoji == null || (data.avatarEmoji is string && data.avatarEmoji.size() <= 16)) &&
+        (!data.keys().hasAny(['profilePictureURL']) || data.profilePictureURL == null || data.profilePictureURL is string);
+    }
+    function hasValidStudyStreakFields(data) {
+      return (!data.keys().hasAny(['studyStreakCurrent']) || (data.studyStreakCurrent is number && data.studyStreakCurrent >= 0 && data.studyStreakCurrent <= 36500)) &&
+        (!data.keys().hasAny(['studyStreakBest']) || (data.studyStreakBest is number && data.studyStreakBest >= 0 && data.studyStreakBest <= 36500)) &&
+        (!data.keys().hasAny(['studyStreakLastActiveDate']) || (data.studyStreakLastActiveDate is string && data.studyStreakLastActiveDate.matches('^\\d{4}-\\d{2}-\\d{2}$')));
+    }
     function isSafeUserCreate(uid) {
       return isSignedIn() && request.auth.uid == uid &&
         request.resource.data.keys().hasOnly([
           'displayName','email','tier','role','starredFiles','allowedSubjects','createdAt',
-          'preferences','theme','profilePictureURL','profilePictureUpdatedAt'
+          'preferences','theme','profilePictureURL','profilePictureUpdatedAt',
+          'avatarEmoji','avatarUpdatedAt',
+          'studyStreakCurrent','studyStreakBest','studyStreakLastActiveDate','studyStreakUpdatedAt'
         ]) &&
+        hasValidAvatarFields(request.resource.data) &&
+        hasValidStudyStreakFields(request.resource.data) &&
         (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'user') &&
         (!request.resource.data.keys().hasAny(['tier']) || request.resource.data.tier == 'free') &&
         (!request.resource.data.keys().hasAny(['allowedSubjects']) || request.resource.data.allowedSubjects == null);
@@ -53,7 +66,10 @@ service cloud.firestore {
       // Note: Users can update their own profile fields including subscription-related fields
       // Subscription fields are managed by the system and admin, but users can read them
       allow read: if isSignedIn() && request.auth.uid == uid;
-      allow update: if isSignedIn() && request.auth.uid == uid && !hasProtectedUserFieldChanges();
+      allow update: if isSignedIn() && request.auth.uid == uid &&
+        !hasProtectedUserFieldChanges() &&
+        hasValidAvatarFields(request.resource.data) &&
+        hasValidStudyStreakFields(request.resource.data);
 
       // Admin full control for support (including password reset, account deletion, subscription management)
       allow read, update, delete: if isAdmin();
@@ -420,6 +436,25 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['userId','date','loginCount','totalSessionTime','subjectsStudied','filesAccessed','studyStreak','lastUpdated']) &&
         request.resource.data.userId == request.auth.uid;
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // STREAK LEADERBOARD (shared read, self-managed write)
+    match /streakLeaderboard/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly([
+          'userId','displayName','avatarEmoji','profilePictureURL',
+          'studyStreak','bestStudyStreak','streakLastActiveDate','updatedAt'
+        ]) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 &&
+        (!request.resource.data.keys().hasAny(['avatarEmoji']) || request.resource.data.avatarEmoji == null || (request.resource.data.avatarEmoji is string && request.resource.data.avatarEmoji.size() <= 16)) &&
+        (!request.resource.data.keys().hasAny(['profilePictureURL']) || request.resource.data.profilePictureURL == null || request.resource.data.profilePictureURL is string) &&
+        request.resource.data.studyStreak is number && request.resource.data.studyStreak >= 0 && request.resource.data.studyStreak <= 36500 &&
+        request.resource.data.bestStudyStreak is number && request.resource.data.bestStudyStreak >= request.resource.data.studyStreak && request.resource.data.bestStudyStreak <= 36500 &&
+        request.resource.data.streakLastActiveDate is string && request.resource.data.streakLastActiveDate.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+        request.resource.data.updatedAt != null;
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
     }
 
     // ACCOUNT VIOLATIONS (account sharing detection)

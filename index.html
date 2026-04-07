@@ -722,7 +722,10 @@
                     <span class="online-text">Online</span>
                 </div>
                 <span id="welcome-message" class="text-xs xl:text-sm font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
-                <img id="profile-picture" src="" alt="User Profile Picture" class="w-8 h-8 rounded-full border-2 border-white shadow-sm mr-4 flex-shrink-0 transition-transform duration-200 hover:scale-110" loading="lazy" decoding="async">
+                <div id="profile-avatar-shell" class="relative mr-4 flex-shrink-0 w-8 h-8">
+                    <img id="profile-picture" src="" alt="User Profile Picture" class="w-8 h-8 rounded-full border-2 border-white shadow-sm transition-transform duration-200 hover:scale-110" loading="lazy" decoding="async">
+                    <span id="profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-header hidden" aria-hidden="true"></span>
+                </div>
                 <a href="/account" class="nav-link text-sm font-semibold py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
                 <button id="logout-button" class="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition-all duration-200 flex-shrink-0 hover:shadow-md transform hover:scale-105" data-tooltip="End your session">Logout</button>
             </div>
@@ -873,6 +876,33 @@
                                 <p class="dashboard-exam-empty">No additional exams queued.</p>
                             </div>
                             <p class="dashboard-exam-pin-help">Pin any exam to keep it on top here.</p>
+                        </div>
+                    </div>
+                    <div id="dashboard-streak-leaderboard-card" class="dashboard-streak-card mb-6" aria-live="polite">
+                        <div class="dashboard-streak-overview">
+                            <p class="dashboard-streak-kicker">Streak League</p>
+                            <h3 class="dashboard-streak-title">Daily consistency wins</h3>
+                            <p class="dashboard-streak-meta">Keep your revision streak alive each day to move up the leaderboard.</p>
+                            <div class="dashboard-streak-metrics">
+                                <div class="dashboard-streak-metric">
+                                    <span id="dashboard-streak-current" class="dashboard-streak-metric-value">0</span>
+                                    <span class="dashboard-streak-metric-label">Current streak</span>
+                                </div>
+                                <div class="dashboard-streak-metric">
+                                    <span id="dashboard-streak-best" class="dashboard-streak-metric-value">0</span>
+                                    <span class="dashboard-streak-metric-label">Best streak</span>
+                                </div>
+                                <div class="dashboard-streak-metric">
+                                    <span id="dashboard-streak-rank" class="dashboard-streak-metric-value">Unranked</span>
+                                    <span class="dashboard-streak-metric-label">Leaderboard rank</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-streak-list-wrap">
+                            <p class="dashboard-streak-list-label">Top streaks</p>
+                            <div id="dashboard-streak-leaderboard-list" class="dashboard-streak-list">
+                                <p class="dashboard-streak-empty">Complete at least one study session to enter the streak league.</p>
+                            </div>
                         </div>
                     </div>
                     <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
@@ -2662,8 +2692,9 @@
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                             <h4 class="text-lg font-semibold text-gray-800 mb-3">Profile Picture</h4>
                             <div class="flex items-center gap-4">
-                                <div class="relative">
+                                <div class="relative w-16 h-16">
                                     <img id="account-profile-picture" src="" alt="Profile Picture" class="w-16 h-16 rounded-full border-2 border-gray-300 shadow-sm">
+                                    <span id="account-profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-account hidden" aria-hidden="true"></span>
                                     <div class="absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
                                         <svg class="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -2679,8 +2710,24 @@
                                             Remove
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Available for Pro users only</p>
+                                    <p class="text-xs text-gray-500 mt-1">Use either a photo or an emoji avatar.</p>
                                 </div>
+                            </div>
+                            <div class="mt-4 rounded-lg border border-gray-200 bg-white/80 p-3">
+                                <label for="user-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Emoji Avatar</label>
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    <button type="button" onclick="setAvatarEmojiPreset('🔥')" class="emoji-avatar-preset-btn">🔥</button>
+                                    <button type="button" onclick="setAvatarEmojiPreset('🚀')" class="emoji-avatar-preset-btn">🚀</button>
+                                    <button type="button" onclick="setAvatarEmojiPreset('🧠')" class="emoji-avatar-preset-btn">🧠</button>
+                                    <button type="button" onclick="setAvatarEmojiPreset('📚')" class="emoji-avatar-preset-btn">📚</button>
+                                    <button type="button" onclick="setAvatarEmojiPreset('⚡')" class="emoji-avatar-preset-btn">⚡</button>
+                                    <button type="button" onclick="setAvatarEmojiPreset('🎯')" class="emoji-avatar-preset-btn">🎯</button>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <input id="user-avatar-emoji" type="text" maxlength="12" placeholder="Type your emoji" class="flex-1 px-3 py-2 rounded-lg border border-gray-300 bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Emoji avatar">
+                                    <button type="button" onclick="clearAvatarEmojiSelection()" class="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-300 transition-colors">Clear emoji</button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">Your emoji appears in the header and on the streak leaderboard.</p>
                             </div>
                         </div>
                         
