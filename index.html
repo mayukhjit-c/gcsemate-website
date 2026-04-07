@@ -862,13 +862,17 @@
                             <p class="dashboard-exam-kicker">Exam Radar</p>
                             <h3 id="dashboard-next-exam-title" class="dashboard-exam-title">No upcoming exams yet</h3>
                             <p id="dashboard-next-exam-meta" class="dashboard-exam-meta">Add exam events in Calendar to see your next deadline here.</p>
+                            <div class="dashboard-exam-main-actions">
+                                <button id="dashboard-next-exam-pin" type="button" class="dashboard-exam-pin-btn hidden" aria-pressed="false">Pin this exam</button>
+                                <button type="button" onclick="showPage('calendar-page')" class="dashboard-exam-open-calendar dashboard-exam-open-calendar-main">Open calendar</button>
+                            </div>
                         </div>
                         <div class="dashboard-exam-list-wrap">
                             <p class="dashboard-exam-list-label">After that</p>
                             <div id="dashboard-next-exam-list" class="dashboard-exam-list">
                                 <p class="dashboard-exam-empty">No additional exams queued.</p>
                             </div>
-                            <button type="button" onclick="showPage('calendar-page')" class="dashboard-exam-open-calendar">Open calendar</button>
+                            <p class="dashboard-exam-pin-help">Pin any exam to keep it on top here.</p>
                         </div>
                     </div>
                     <div id="subject-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"></div>
@@ -1530,6 +1534,7 @@
                                         </select>
                                         <button id="tools-timer-pip-toggle" class="px-3 py-2 rounded-lg bg-white/90 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-50 transition-colors">Open Mini Timer</button>
                                     </div>
+                                    <p class="timer-clock-help">Choose your clock style and open Mini Timer to keep focus while navigating other pages.</p>
                                     <div id="tools-timer-clock-wrap" class="timer-clock-wrap" data-clock-display="both">
                                         <div id="tools-timer-analog-clock" class="tools-timer-analog-clock" aria-hidden="true">
                                             <span class="tools-timer-analog-hand hour" id="tools-timer-clock-hour"></span>
@@ -1599,7 +1604,7 @@
                                     <div id="tools-timer-progress" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
                                 </div>
                                 <p id="tools-timer-progress-label" class="mt-2 text-xs font-semibold text-gray-600">0% complete</p>
-                                <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                                <div class="timer-primary-actions mt-6 flex flex-wrap items-center justify-center gap-3">
                                     <button id="tools-timer-start" class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors min-w-[110px]">Start</button>
                                     <button id="tools-timer-pause" class="hidden px-5 py-2.5 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors min-w-[110px]">Pause</button>
                                     <button id="tools-timer-reset" class="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition-colors min-w-[110px]">Reset</button>

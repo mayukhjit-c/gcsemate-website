@@ -549,6 +549,7 @@ const ANNOUNCEMENT_TEMPLATES = {
     examWarmup: 'Daily warm-up is live: 3 quick questions plus solutions. Jump in before class to bank easy marks.'
 };
 const ANNOUNCEMENT_DISMISSED_KEY = 'gcsemate_dismissed_announcements';
+const DASHBOARD_PINNED_EXAM_KEY = 'gcsemate_dashboard_pinned_exam';
 let clockInterval = null;
 let lastForceLogoutAt = null;
 let unsubscribeUserManagement;
@@ -11474,7 +11475,10 @@ function showPage(pageId) {
     }
 
     if (pageId === 'tools-page') {
-        setTimeout(() => updateToolsTimerUI(), 50);
+        setTimeout(() => {
+            initializeToolsTimerPip();
+            updateToolsTimerUI();
+        }, 50);
     }
 
     if (pageId === 'account-settings-page') {
@@ -15359,12 +15363,15 @@ function getUpcomingExamEvents(limit = 3) {
                 const isExam = categoryText.includes('exam') || /\b(exam|mock|paper|assessment|test)\b/.test(titleText);
                 if (!isExam) return;
 
-                const id = String(event.id || `${dateText}_${event.title || 'exam'}`);
-                if (seen.has(id)) return;
-                seen.add(id);
+                const sourcePrefix = mapIndex === 1 ? 'global' : 'user';
+                const baseId = String(event.id || `${dateText}_${event.title || 'exam'}`).trim();
+                const eventKey = `${sourcePrefix}:${baseId}:${dateText}`;
+                if (seen.has(eventKey)) return;
+                seen.add(eventKey);
 
                 events.push({
                     ...event,
+                    eventKey,
                     isGlobal: mapIndex === 1,
                     dateObj,
                     dateText
@@ -15380,16 +15387,35 @@ function renderDashboardExamCalendarCard() {
     const titleEl = document.getElementById('dashboard-next-exam-title');
     const metaEl = document.getElementById('dashboard-next-exam-meta');
     const listEl = document.getElementById('dashboard-next-exam-list');
+    const pinEl = document.getElementById('dashboard-next-exam-pin');
     if (!titleEl || !metaEl || !listEl) return;
 
-    const upcoming = getUpcomingExamEvents(3);
-    const primary = upcoming[0];
-    const secondary = upcoming.slice(1);
+    const upcoming = getUpcomingExamEvents(12);
+    const pinnedKey = getPinnedDashboardExamId();
+    const ordered = [...upcoming];
+    const pinnedIndex = pinnedKey ? ordered.findIndex((event) => event.eventKey === pinnedKey) : -1;
+
+    if (pinnedKey && pinnedIndex === -1) {
+        setPinnedDashboardExamId('');
+    }
+
+    if (pinnedIndex > 0) {
+        const [pinnedEvent] = ordered.splice(pinnedIndex, 1);
+        ordered.unshift(pinnedEvent);
+    }
+
+    const primary = ordered[0];
+    const secondary = ordered.slice(1, 3);
 
     if (!primary) {
         titleEl.textContent = 'No upcoming exams yet';
         metaEl.textContent = 'Add exam events in Calendar to see your next deadline here.';
         listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
+        if (pinEl) {
+            pinEl.classList.add('hidden');
+            pinEl.setAttribute('aria-pressed', 'false');
+            pinEl.onclick = null;
+        }
         return;
     }
 
@@ -15397,9 +15423,18 @@ function renderDashboardExamCalendarCard() {
     now.setHours(0, 0, 0, 0);
     const days = Math.max(0, Math.ceil((primary.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     const dayText = days === 0 ? 'Today' : `${days} day${days === 1 ? '' : 's'} away`;
+    const isPrimaryPinned = getPinnedDashboardExamId() === primary.eventKey;
 
     titleEl.textContent = primary.title || 'Upcoming exam';
-    metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}`;
+    metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}${isPrimaryPinned ? ' • Pinned' : ''}`;
+
+    if (pinEl) {
+        pinEl.classList.remove('hidden');
+        pinEl.classList.toggle('is-pinned', isPrimaryPinned);
+        pinEl.setAttribute('aria-pressed', isPrimaryPinned ? 'true' : 'false');
+        pinEl.textContent = isPrimaryPinned ? 'Pinned to dashboard' : 'Pin this exam';
+        pinEl.onclick = () => toggleDashboardExamPinById(primary.eventKey);
+    }
 
     if (!secondary.length) {
         listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
@@ -15408,10 +15443,14 @@ function renderDashboardExamCalendarCard() {
 
     listEl.innerHTML = secondary.map((event) => {
         const diff = Math.max(0, Math.ceil((event.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-        return `<button type="button" class="dashboard-exam-pill" onclick="showPage('calendar-page')">
-            <span class="dashboard-exam-pill-title">${escapeHTML(event.title || 'Exam')}</span>
-            <span class="dashboard-exam-pill-meta">${event.dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${diff === 0 ? 'Today' : `${diff}d`}</span>
-        </button>`;
+        const isPinned = getPinnedDashboardExamId() === event.eventKey;
+        return `<div class="dashboard-exam-pill ${isPinned ? 'is-pinned' : ''}">
+            <button type="button" class="dashboard-exam-pill-open" onclick="showPage('calendar-page')">
+                <span class="dashboard-exam-pill-title">${escapeHTML(event.title || 'Exam')}</span>
+                <span class="dashboard-exam-pill-meta">${event.dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${diff === 0 ? 'Today' : `${diff}d`}${isPinned ? ' • Pinned' : ''}</span>
+            </button>
+            <button type="button" class="dashboard-exam-pill-pin ${isPinned ? 'is-pinned' : ''}" onclick="event.stopPropagation(); toggleDashboardExamPinById('${escapeJS(event.eventKey)}')">${isPinned ? 'Pinned' : 'Pin'}</button>
+        </div>`;
     }).join('');
 }
 
@@ -20784,6 +20823,63 @@ function getTodayKeyForTools() {
     return new Date().toISOString().slice(0, 10);
 }
 
+function ensureAnalogClockNumbers(clockElement, numberClass) {
+    if (!clockElement || !numberClass) return;
+    if (clockElement.dataset.clockNumbersMounted === 'true') return;
+
+    for (let number = 1; number <= 12; number += 1) {
+        const marker = document.createElement('span');
+        marker.className = numberClass;
+        marker.textContent = String(number);
+        marker.style.setProperty('--clock-angle', `${number * 30}deg`);
+        clockElement.appendChild(marker);
+    }
+
+    clockElement.dataset.clockNumbersMounted = 'true';
+}
+
+function initializeAnalogClockFaceNumbers() {
+    document.querySelectorAll('.dashboard-clock-analog').forEach((clockEl) => {
+        ensureAnalogClockNumbers(clockEl, 'dashboard-clock-number');
+    });
+    document.querySelectorAll('.tools-timer-analog-clock').forEach((clockEl) => {
+        ensureAnalogClockNumbers(clockEl, 'tools-timer-clock-number');
+    });
+}
+
+function getPinnedDashboardExamId() {
+    try {
+        return String(localStorage.getItem(DASHBOARD_PINNED_EXAM_KEY) || '').trim();
+    } catch (_) {
+        return '';
+    }
+}
+
+function setPinnedDashboardExamId(eventKey = '') {
+    const safeKey = String(eventKey || '').trim();
+    try {
+        if (safeKey) localStorage.setItem(DASHBOARD_PINNED_EXAM_KEY, safeKey);
+        else localStorage.removeItem(DASHBOARD_PINNED_EXAM_KEY);
+    } catch (_) {}
+}
+
+function toggleDashboardExamPinById(eventKey = '') {
+    const safeKey = String(eventKey || '').trim();
+    if (!safeKey) return;
+
+    const currentPinned = getPinnedDashboardExamId();
+    const isPinned = currentPinned === safeKey;
+    setPinnedDashboardExamId(isPinned ? '' : safeKey);
+
+    try {
+        showToast(isPinned ? 'Pinned exam removed from dashboard.' : 'Exam pinned to dashboard.', isPinned ? 'info' : 'success');
+    } catch (_) {}
+
+    renderDashboardExamCalendarCard();
+}
+
+window.toggleDashboardExamPinById = toggleDashboardExamPinById;
+
 function formatDurationShort(totalSeconds) {
     const safe = Math.max(0, Math.floor(totalSeconds || 0));
     const h = Math.floor(safe / 3600);
@@ -20991,6 +21087,8 @@ function updateToolsTimerSessionWindow(nowMs = Date.now()) {
 }
 
 function updateToolsTimerClockDisplay() {
+    initializeAnalogClockFaceNumbers();
+
     const wrap = document.getElementById('tools-timer-clock-wrap');
     const analog = document.getElementById('tools-timer-analog-clock');
     const digital = document.getElementById('tools-timer-digital-clock');
@@ -21211,11 +21309,20 @@ function updateToolsTimerPipUI() {
 }
 
 function setToolsTimerPipVisible(visible, { save = true } = {}) {
+    if (visible && !toolsTimerPipInitialized) {
+        initializeToolsTimerPip();
+    }
     toolsTimerState.pipVisible = !!visible;
     if (toolsTimerState.pipVisible) applyToolsTimerPipBounds();
     updateToolsTimerPipUI();
     if (save) saveToolsState();
 }
+
+function toggleToolsTimerPipVisibility() {
+    setToolsTimerPipVisible(!toolsTimerState.pipVisible);
+}
+
+window.toggleToolsTimerPipVisibility = toggleToolsTimerPipVisibility;
 
 function onToolsTimerPipViewportResize() {
     if (!toolsTimerState.pipVisible) return;
@@ -21237,13 +21344,23 @@ function initializeToolsTimerPip() {
         });
         closeBtn?.addEventListener('click', () => setToolsTimerPipVisible(false));
 
+        pip.addEventListener('pointerup', () => {
+            if (toolsTimerPipDrag.active || !toolsTimerState.pipVisible) return;
+            rememberToolsTimerPipBoundsFromDom();
+            saveToolsState();
+        });
+
         window.addEventListener('resize', onToolsTimerPipViewportResize, { passive: true });
 
         if (window.ResizeObserver && !toolsTimerPipResizeObserver) {
+            let resizeRaf = null;
             toolsTimerPipResizeObserver = new ResizeObserver(() => {
                 if (!toolsTimerState.pipVisible) return;
-                rememberToolsTimerPipBoundsFromDom();
-                applyToolsTimerPipBounds({ save: true });
+                if (resizeRaf) cancelAnimationFrame(resizeRaf);
+                resizeRaf = requestAnimationFrame(() => {
+                    rememberToolsTimerPipBoundsFromDom();
+                    saveToolsState();
+                });
             });
             toolsTimerPipResizeObserver.observe(pip);
         }
@@ -24016,7 +24133,7 @@ function initializeToolsPage() {
                 updateToolsTimerUI();
             });
         }
-        if (clockDisplaySelect) {
+        if (clockDisplaySelect && !clockDisplaySelect.dataset.boundClockDisplay) {
             clockDisplaySelect.addEventListener('change', () => {
                 toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(clockDisplaySelect.value)
                     ? clockDisplaySelect.value
@@ -24024,11 +24141,13 @@ function initializeToolsPage() {
                 saveToolsState();
                 updateToolsTimerUI();
             });
+            clockDisplaySelect.dataset.boundClockDisplay = 'true';
         }
-        if (pipToggleBtn) {
+        if (pipToggleBtn && !pipToggleBtn.dataset.boundPipToggle) {
             pipToggleBtn.addEventListener('click', () => {
-                setToolsTimerPipVisible(!toolsTimerState.pipVisible);
+                toggleToolsTimerPipVisibility();
             });
+            pipToggleBtn.dataset.boundPipToggle = 'true';
         }
         document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
 
@@ -24258,6 +24377,23 @@ function initializeToolsPage() {
         }
 
         toolsPageInitialized = true;
+    }
+
+    if (clockDisplaySelect && !clockDisplaySelect.dataset.boundClockDisplay) {
+        clockDisplaySelect.addEventListener('change', () => {
+            toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(clockDisplaySelect.value)
+                ? clockDisplaySelect.value
+                : 'both';
+            saveToolsState();
+            updateToolsTimerUI();
+        });
+        clockDisplaySelect.dataset.boundClockDisplay = 'true';
+    }
+    if (pipToggleBtn && !pipToggleBtn.dataset.boundPipToggle) {
+        pipToggleBtn.addEventListener('click', () => {
+            toggleToolsTimerPipVisibility();
+        });
+        pipToggleBtn.dataset.boundPipToggle = 'true';
     }
 
     initializeFlashcardsTool();
@@ -26045,6 +26181,8 @@ function updateCountdownBanner() {
 }
 // --- Clock Function ---
 function startClock() {
+    initializeAnalogClockFaceNumbers();
+
     const timeEl = document.getElementById('clock-time');
     const dateEl = document.getElementById('clock-date');
     const hourHand = document.getElementById('clock-hour-hand');
@@ -26175,6 +26313,7 @@ window.addEventListener('beforeunload', () => {
     if (lazyLoadObserver) lazyLoadObserver.disconnect();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+    if (toolsTimerClockInterval) clearInterval(toolsTimerClockInterval);
     debounceTimers.forEach(timer => clearTimeout(timer));
     throttleTimers.forEach(timer => clearTimeout(timer));
 });
