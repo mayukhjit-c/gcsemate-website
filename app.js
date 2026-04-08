@@ -641,6 +641,7 @@ const LESSON_METRICS_MAP = new Map();
 const LESSON_PROGRESS_MAP = new Map();
 const LESSON_USER_COMPLETION_MAP = new Map();
 let streakLeaderboardRows = [];
+let navTabDragPageId = null;
 let streakStateSyncPromise = null;
 const userGradeAvailabilityCache = new Map();
 const userGradeAvailabilityFetches = new Set();
@@ -5461,10 +5462,10 @@ function initializeAppState() {
             const enabled = maintenanceData.enabled;
             const message = maintenanceData.message;
             
-            // Update online/offline status based on maintenance mode
-            updateOnlineStatus(enabled);
+            // Update online/partial/offline status based on maintenance mode
+            updateOnlineStatus(maintenanceData);
             renderSectionMaintenanceControls();
-            initializeMaintenanceStatus();
+            initializeMaintenanceStatus(maintenanceData);
             
             if (enabled && currentUser?.role !== 'admin') {
                 showMaintenancePage(message);
@@ -6962,31 +6963,107 @@ function scheduleUpdateAnalytics() {
     }, ANALYTICS_DEBOUNCE_MS);
 }
 
-// Update online/offline status based on maintenance mode
-function updateOnlineStatus(maintenanceEnabled) {
-    const onlineStatusElements = document.querySelectorAll('.online-status');
-    const onlineTextElements = document.querySelectorAll('.online-text');
-    
-    onlineStatusElements.forEach(element => {
-        if (maintenanceEnabled) {
-            element.className = 'w-2 h-2 bg-red-400 rounded-full animate-pulse';
-        } else {
-            element.className = 'w-2 h-2 bg-green-400 rounded-full animate-pulse';
-        }
-    });
-    
-    onlineTextElements.forEach(element => {
-        element.textContent = maintenanceEnabled ? 'Offline' : 'Online';
-    });
+function parseMaintenanceBooleanFlag(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
+    }
+    return false;
 }
 
 function normalizeMaintenanceState(rawData = {}) {
+    const sectionOptions = new Set(SECTION_MAINTENANCE_OPTIONS.map((option) => option.id));
+    const rawSections = rawData.sections && typeof rawData.sections === 'object' ? rawData.sections : {};
+    const normalizedSections = {};
+
+    Object.keys(rawSections).forEach((pageId) => {
+        if (!sectionOptions.has(pageId)) return;
+        normalizedSections[pageId] = parseMaintenanceBooleanFlag(rawSections[pageId]);
+    });
+
+    const normalizedMessage = typeof rawData.message === 'string' && rawData.message.trim()
+        ? rawData.message.trim()
+        : 'System is currently under maintenance. Please check back later.';
+
     return {
-        enabled: !!rawData.enabled,
-        message: rawData.message || 'System is currently under maintenance. Please check back later.',
+        enabled: parseMaintenanceBooleanFlag(rawData.enabled),
+        message: normalizedMessage,
         eta: rawData.eta || null,
-        sections: rawData.sections && typeof rawData.sections === 'object' ? rawData.sections : {}
+        sections: normalizedSections
     };
+}
+
+function getActiveMaintenanceSectionCount(state = maintenanceStateCache) {
+    const sections = state?.sections && typeof state.sections === 'object' ? state.sections : {};
+    return Object.values(sections).filter(Boolean).length;
+}
+
+function getMaintenanceStatusInfo(state = maintenanceStateCache) {
+    const normalizedState = normalizeMaintenanceState(state || {});
+    const sectionCount = getActiveMaintenanceSectionCount(normalizedState);
+
+    if (normalizedState.enabled) {
+        return {
+            key: 'offline',
+            dotClass: 'bg-red-400',
+            userText: 'Offline',
+            systemText: 'System Offline',
+            adminStatusText: 'Global Maintenance',
+            adminStatusClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800',
+            sectionCount
+        };
+    }
+
+    if (sectionCount > 0) {
+        return {
+            key: 'partial',
+            dotClass: 'bg-amber-400',
+            userText: 'Limited',
+            systemText: 'Partially Online',
+            adminStatusText: `${sectionCount} Section${sectionCount === 1 ? '' : 's'} Limited`,
+            adminStatusClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800',
+            sectionCount
+        };
+    }
+
+    return {
+        key: 'online',
+        dotClass: 'bg-green-400',
+        userText: 'Online',
+        systemText: 'System Online',
+        adminStatusText: 'Fully Online',
+        adminStatusClass: 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800',
+        sectionCount
+    };
+}
+
+// Update online/partial/offline status based on maintenance mode
+function updateOnlineStatus(maintenanceState = maintenanceStateCache) {
+    const info = getMaintenanceStatusInfo(maintenanceState);
+    const onlineStatusElements = document.querySelectorAll('.online-status');
+    const onlineTextElements = document.querySelectorAll('.online-text');
+
+    onlineStatusElements.forEach((element) => {
+        element.className = `w-2 h-2 ${info.dotClass} rounded-full animate-pulse online-status`;
+    });
+
+    onlineTextElements.forEach((element) => {
+        const context = (element.getAttribute('data-status-context') || '').toLowerCase();
+        if (context === 'system') {
+            element.textContent = info.systemText;
+            return;
+        }
+
+        if (context === 'user') {
+            element.textContent = info.userText;
+            return;
+        }
+
+        const fallbackLooksSystem = /system/i.test(element.textContent || '');
+        element.textContent = fallbackLooksSystem ? info.systemText : info.userText;
+    });
 }
 
 function getSectionLabel(pageId) {
@@ -7011,17 +7088,12 @@ async function checkMaintenanceMode() {
         const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
         const maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
         maintenanceStateCache = maintenanceData;
+        updateOnlineStatus(maintenanceData);
         if (maintenanceData.enabled) {
             const message = maintenanceData.message;
             
-            // Update online status
-            updateOnlineStatus(true);
-            
             // Show maintenance page
             showMaintenancePage(message);
-        } else {
-            // Update online status to show online
-            updateOnlineStatus(false);
         }
     } catch (error) {
         console.error('Error checking maintenance mode:', error);
@@ -10247,37 +10319,46 @@ function updateSystemHealthUI(results) {
 }
 
 // Initialize maintenance mode status for admin dashboard
-async function initializeMaintenanceStatus() {
+async function initializeMaintenanceStatus(maintenanceStateInput = null) {
     try {
-        const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
-        const maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
+        let maintenanceData = maintenanceStateInput ? normalizeMaintenanceState(maintenanceStateInput) : null;
+        if (!maintenanceData) {
+            const maintenanceDoc = await db.collection('settings').doc('maintenance').get();
+            maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
+        }
+
         maintenanceStateCache = maintenanceData;
-        const isEnabled = maintenanceData.enabled;
-        const message = maintenanceData.message;
-        
+
+        const statusInfo = getMaintenanceStatusInfo(maintenanceData);
         const statusEl = document.getElementById('maintenance-status');
         const buttonEl = document.getElementById('toggle-maintenance-btn');
         const messageEl = document.getElementById('maintenance-message');
-        
-        if (isEnabled) {
-            statusEl.textContent = 'Enabled';
-            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-            buttonEl.textContent = 'Disable Maintenance';
-            buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
-        } else {
-            statusEl.textContent = 'Disabled';
-            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-            buttonEl.textContent = 'Enable Maintenance';
-            buttonEl.className = 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
+
+        if (statusEl) {
+            statusEl.textContent = statusInfo.adminStatusText;
+            statusEl.className = statusInfo.adminStatusClass;
         }
-        
+
+        if (buttonEl) {
+            if (maintenanceData.enabled) {
+                buttonEl.textContent = 'Disable Global Maintenance';
+                buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
+            } else {
+                buttonEl.textContent = 'Enable Global Maintenance';
+                buttonEl.className = 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
+            }
+        }
+
         if (messageEl) {
-            messageEl.textContent = message;
+            messageEl.textContent = maintenanceData.message;
         }
+
         const etaEl = document.getElementById('maintenance-eta');
         if (etaEl) {
             etaEl.textContent = maintenanceData.eta ? formatDateMaybe(maintenanceData.eta) : '-';
         }
+
+        updateOnlineStatus(maintenanceData);
         renderSectionMaintenanceControls();
     } catch (error) {
         logError(error, 'Maintenance Status Initialization');
@@ -10311,27 +10392,21 @@ async function toggleMaintenanceMode() {
             message: current.message,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
+        }, { merge: true });
+
+        const nextState = normalizeMaintenanceState({
+            ...current,
+            enabled: !isEnabled
         });
-        
-        const statusEl = document.getElementById('maintenance-status');
-        const buttonEl = document.getElementById('toggle-maintenance-btn');
-        
+        maintenanceStateCache = nextState;
+        updateOnlineStatus(nextState);
+        initializeMaintenanceStatus(nextState);
+
         if (!isEnabled) {
-            statusEl.textContent = 'Enabled';
-            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-            buttonEl.textContent = 'Disable Maintenance';
-            buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
-            showToast('Maintenance mode enabled', 'warning');
+            showToast('Global maintenance mode enabled', 'warning');
         } else {
-            statusEl.textContent = 'Disabled';
-            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
-            buttonEl.textContent = 'Enable Maintenance';
-            buttonEl.className = 'w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors';
-            showToast('Maintenance mode disabled', 'success');
+            showToast('Global maintenance mode disabled', 'success');
         }
-        
-        // Update online status
-        updateOnlineStatus(!isEnabled);
     } catch (error) {
         console.error('Error toggling maintenance mode:', error);
         showToast('Failed to toggle maintenance mode', 'error');
@@ -10359,6 +10434,14 @@ async function saveSectionMaintenanceConfig() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         }, { merge: true });
+
+        const nextState = normalizeMaintenanceState({
+            ...maintenanceStateCache,
+            sections: sectionMap
+        });
+        maintenanceStateCache = nextState;
+        updateOnlineStatus(nextState);
+        initializeMaintenanceStatus(nextState);
 
         showToast('Section maintenance settings updated.', 'success');
     } catch (error) {
@@ -10393,12 +10476,24 @@ async function setMaintenanceMessage() {
     if (!confirmed) return;
     
     try {
+        const maintenanceRef = db.collection('settings').doc('maintenance');
+        const currentDoc = await maintenanceRef.get();
+        const currentState = normalizeMaintenanceState(currentDoc.exists ? currentDoc.data() : maintenanceStateCache);
+
         await db.collection('settings').doc('maintenance').set({
-            enabled: true,
+            enabled: currentState.enabled,
             message: message.trim(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
         }, { merge: true });
+
+        const nextState = normalizeMaintenanceState({
+            ...currentState,
+            message: message.trim()
+        });
+        maintenanceStateCache = nextState;
+        updateOnlineStatus(nextState);
+        initializeMaintenanceStatus(nextState);
         
         if (currentMessageEl) currentMessageEl.textContent = message.trim();
         showToast('Maintenance message updated', 'success');
@@ -10525,9 +10620,10 @@ async function applyMaintenanceTemplate() {
         setApplyButtonState(true);
         const maintenanceRef = db.collection('settings').doc('maintenance');
         const existingDoc = await maintenanceRef.get();
+        const existingState = normalizeMaintenanceState(existingDoc.exists ? existingDoc.data() : maintenanceStateCache);
 
         const maintenanceData = {
-            enabled: true,
+            enabled: existingState.enabled,
             message,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: currentUser.uid
@@ -10540,41 +10636,24 @@ async function applyMaintenanceTemplate() {
         }
         
         await maintenanceRef.set(maintenanceData, { merge: true });
-        
-        // Update UI elements
-        const statusEl = document.getElementById('maintenance-status');
-        const buttonEl = document.getElementById('toggle-maintenance-btn');
-        const messageEl = document.getElementById('maintenance-message');
-        const etaEl = document.getElementById('maintenance-eta');
-        
-        if (statusEl) {
-            statusEl.textContent = 'Enabled';
-            statusEl.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
-        }
-        
-        if (buttonEl) {
-            buttonEl.textContent = 'Disable Maintenance';
-            buttonEl.className = 'w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
-        }
-        
-        if (messageEl) {
-            messageEl.textContent = message;
-        }
-        
-        if (etaEl) {
-            if (etaTimestamp && etaDateTime) {
-                etaEl.textContent = formatDateUK(etaDateTime);
-            } else {
-                etaEl.textContent = '-';
-            }
-        }
-        
-        updateOnlineStatus(true);
-        initializeMaintenanceStatus();
+
+        const nextState = normalizeMaintenanceState({
+            ...existingState,
+            message,
+            eta: etaTimestamp || null
+        });
+        maintenanceStateCache = nextState;
+        updateOnlineStatus(nextState);
+        initializeMaintenanceStatus(nextState);
         
         const modal = document.getElementById('maintenance-template-modal');
         if (modal) modal.classList.add('hidden');
-        showToast('Maintenance mode activated with template', 'success');
+        showToast(
+            existingState.enabled
+                ? 'Maintenance template applied while global maintenance remains enabled.'
+                : 'Maintenance template saved. Global maintenance remains disabled.',
+            'success'
+        );
     } catch (error) {
         logError(error, 'Apply Maintenance Template');
         showToast(`Failed to apply maintenance template: ${error.message || 'Unknown error'}`, 'error');
@@ -13656,6 +13735,17 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     const heatTier = getDashboardStreakHeatTier(currentStreak);
     const freezeCount = getDashboardStreakFreezeCount(currentStreak, bestStreak);
     const achievements = getDashboardStreakAchievements(currentStreak, bestStreak, myRank);
+    const topRowsSignature = topRows
+        .map((entry) => `${entry.userId}:${entry.studyStreak}:${entry.bestStudyStreak}:${entry.displayName}`)
+        .join('|');
+    const podiumSignature = normalizedRows
+        .slice(0, 3)
+        .map((entry) => `${entry.userId}:${entry.studyStreak}:${entry.displayName}`)
+        .join('|');
+    const achievementsSignature = achievements
+        .map((achievement) => `${achievement.label}:${achievement.unlocked ? '1' : '0'}`)
+        .join('|');
+    const sparklineSignature = `${currentStreak}:${bestStreak}`;
 
     animateDashboardStreakMetric(currentEl, currentStreak);
     animateDashboardStreakMetric(bestEl, bestStreak);
@@ -13686,54 +13776,73 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
         heatLabelEl.textContent = `${heatTier.label} | ${heatTier.percent}%`;
     }
     if (sparklineEl) {
-        sparklineEl.innerHTML = getDashboardStreakSparklineMarkup(currentStreak, bestStreak);
+        if (sparklineEl.dataset.signature !== sparklineSignature) {
+            sparklineEl.innerHTML = getDashboardStreakSparklineMarkup(currentStreak, bestStreak);
+            sparklineEl.dataset.signature = sparklineSignature;
+        }
     }
     if (freezeCountEl) {
         freezeCountEl.textContent = String(freezeCount);
     }
     if (achievementsEl) {
-        achievementsEl.innerHTML = getDashboardStreakAchievementsMarkup(achievements);
+        if (achievementsEl.dataset.signature !== achievementsSignature) {
+            achievementsEl.innerHTML = getDashboardStreakAchievementsMarkup(achievements);
+            achievementsEl.dataset.signature = achievementsSignature;
+        }
     }
     if (podiumEl) {
-        podiumEl.innerHTML = getDashboardStreakPodiumMarkup(normalizedRows);
+        if (podiumEl.dataset.signature !== podiumSignature) {
+            podiumEl.innerHTML = getDashboardStreakPodiumMarkup(normalizedRows);
+            podiumEl.dataset.signature = podiumSignature;
+        }
     }
 
     if (challengeEl) {
+        let challengeText = '';
         if (myIndex === 0 && currentStreak > 0) {
-            challengeEl.textContent = 'You are leading the streak league. Keep momentum today.';
+            challengeText = 'You are leading the streak league. Keep momentum today.';
         } else if (myIndex > 0) {
             const nextRow = normalizedRows[myIndex - 1];
             const gap = Math.max(1, Number(nextRow?.studyStreak || 0) - currentStreak);
-            challengeEl.textContent = `${gap} day${gap === 1 ? '' : 's'} to climb to #${myIndex}.`;
+            challengeText = `${gap} day${gap === 1 ? '' : 's'} to climb to #${myIndex}.`;
         } else if (currentStreak > 0) {
-            challengeEl.textContent = 'You are outside the top 25. Keep stacking sessions to break in.';
+            challengeText = 'You are outside the top 25. Keep stacking sessions to break in.';
         } else {
-            challengeEl.textContent = 'Complete one focus session today to ignite your streak.';
+            challengeText = 'Complete one focus session today to ignite your streak.';
         }
         if (freezeCount > 0 && currentStreak > 0) {
-            challengeEl.textContent += ` ${freezeCount} freeze${freezeCount === 1 ? '' : 's'} available.`;
+            challengeText += ` ${freezeCount} freeze${freezeCount === 1 ? '' : 's'} available.`;
+        }
+        if (challengeEl.textContent !== challengeText) {
+            challengeEl.textContent = challengeText;
         }
     }
 
     if (!topRows.length) {
-        listEl.innerHTML = '<p class="dashboard-streak-empty">Complete at least one study session to enter the streak league.</p>';
+        if (listEl.dataset.signature !== 'empty') {
+            listEl.innerHTML = '<p class="dashboard-streak-empty">Complete at least one study session to enter the streak league.</p>';
+            listEl.dataset.signature = 'empty';
+        }
         return;
     }
 
-    listEl.innerHTML = topRows.map((entry, index) => {
-        const isCurrentUser = entry.userId === currentUser?.uid;
-        const safeName = escapeHTML(entry.displayName || 'Learner');
-        const streakLabel = `${entry.studyStreak} day${entry.studyStreak === 1 ? '' : 's'}`;
-        const rankBadge = index < 3 ? `T${index + 1}` : String(index + 1);
-        return `
-            <div class="dashboard-streak-row${isCurrentUser ? ' is-current' : ''}" style="--streak-row-delay:${index * 70}ms">
-                <span class="dashboard-streak-rank-badge${index < 3 ? ' has-medal' : ''}">${rankBadge}</span>
-                <span class="dashboard-streak-avatar">${getStreakLeaderboardAvatarMarkup(entry)}</span>
-                <span class="dashboard-streak-name">${safeName}${isCurrentUser ? ' (You)' : ''}</span>
-                <span class="dashboard-streak-value">${escapeHTML(streakLabel)}</span>
-            </div>
-        `;
-    }).join('');
+    if (listEl.dataset.signature !== topRowsSignature) {
+        listEl.innerHTML = topRows.map((entry, index) => {
+            const isCurrentUser = entry.userId === currentUser?.uid;
+            const safeName = escapeHTML(entry.displayName || 'Learner');
+            const streakLabel = `${entry.studyStreak} day${entry.studyStreak === 1 ? '' : 's'}`;
+            const rankBadge = index < 3 ? `T${index + 1}` : String(index + 1);
+            return `
+                <div class="dashboard-streak-row${isCurrentUser ? ' is-current' : ''}" style="--streak-row-delay:${index * 70}ms">
+                    <span class="dashboard-streak-rank-badge${index < 3 ? ' has-medal' : ''}">${rankBadge}</span>
+                    <span class="dashboard-streak-avatar">${getStreakLeaderboardAvatarMarkup(entry)}</span>
+                    <span class="dashboard-streak-name">${safeName}${isCurrentUser ? ' (You)' : ''}</span>
+                    <span class="dashboard-streak-value">${escapeHTML(streakLabel)}</span>
+                </div>
+            `;
+        }).join('');
+        listEl.dataset.signature = topRowsSignature;
+    }
 }
 
 async function renderDashboard() {
@@ -26994,6 +27103,21 @@ function moveNavTab(pageId, direction) {
     return saveNavTabPrefs({ order: nextOrder });
 }
 
+function reorderNavTabByTarget(pageId, targetPageId) {
+    const prefs = getSavedNavTabPrefs();
+    if (!pageId || !targetPageId || pageId === targetPageId) return prefs;
+
+    const nextOrder = [...prefs.order];
+    const fromIndex = nextOrder.indexOf(pageId);
+    const toIndex = nextOrder.indexOf(targetPageId);
+    if (fromIndex === -1 || toIndex === -1) return prefs;
+
+    const [moved] = nextOrder.splice(fromIndex, 1);
+    const insertionIndex = fromIndex < toIndex ? Math.max(0, toIndex - 1) : toIndex;
+    nextOrder.splice(insertionIndex, 0, moved);
+    return saveNavTabPrefs({ order: nextOrder });
+}
+
 function toggleNavTabVisibility(pageId) {
     const prefs = getSavedNavTabPrefs();
     const hidden = new Set(prefs.hidden);
@@ -27011,25 +27135,61 @@ function renderNavTabCustomizer() {
     if (!listEl) return;
 
     const prefs = getSavedNavTabPrefs();
-    const hidden = new Set(prefs.hidden);
+    const hiddenSet = new Set(prefs.hidden);
+    const visibleOrder = prefs.order.filter((pageId) => !hiddenSet.has(pageId));
+    const hiddenOrder = prefs.order.filter((pageId) => hiddenSet.has(pageId));
 
-    listEl.innerHTML = prefs.order.map((pageId, index) => {
+    const renderItem = (pageId, isHiddenItem = false) => {
         const label = NAV_TAB_LABELS[pageId] || pageId;
-        const isHidden = hidden.has(pageId);
         return `
-            <div class="nav-tab-item ${isHidden ? 'is-hidden' : ''}">
-                <div>
+            <div class="nav-tab-item ${isHiddenItem ? 'is-hidden' : 'is-draggable'}" data-nav-page="${pageId}" data-nav-hidden="${isHiddenItem ? 'true' : 'false'}" data-nav-droppable="${isHiddenItem ? 'false' : 'true'}" draggable="${isHiddenItem ? 'false' : 'true'}">
+                <div class="nav-tab-item-copy">
                     <p class="nav-tab-label">${escapeHTML(label)}</p>
-                    <p class="nav-tab-meta">${isHidden ? 'Removed from navigation' : 'Visible in navigation'}</p>
+                    <p class="nav-tab-meta">${isHiddenItem ? 'Removed from navigation' : 'Visible in navigation'}</p>
                 </div>
                 <div class="nav-tab-actions">
-                    <button type="button" data-nav-action="up" data-nav-page="${pageId}" class="nav-tab-action-btn" ${index === 0 ? 'disabled' : ''}>↑</button>
-                    <button type="button" data-nav-action="down" data-nav-page="${pageId}" class="nav-tab-action-btn" ${index === prefs.order.length - 1 ? 'disabled' : ''}>↓</button>
-                    <button type="button" data-nav-action="toggle" data-nav-page="${pageId}" class="nav-tab-action-btn nav-tab-action-btn-wide">${isHidden ? 'Restore' : 'Remove'}</button>
+                    ${isHiddenItem ? '' : '<button type="button" data-nav-action="drag-handle" class="nav-tab-action-btn nav-tab-drag-handle" aria-label="Drag to reorder"><i class="fas fa-grip-lines" aria-hidden="true"></i></button>'}
+                    <button type="button" data-nav-action="toggle" data-nav-page="${pageId}" class="nav-tab-action-btn nav-tab-action-btn-wide">${isHiddenItem ? 'Restore' : 'Remove'}</button>
                 </div>
             </div>
         `;
-    }).join('');
+    };
+
+    listEl.innerHTML = `
+        <div class="nav-tab-group">
+            <div class="nav-tab-group-head">
+                <p class="nav-tab-group-title">Visible tabs</p>
+                <p class="nav-tab-group-help">Drag and drop to reorder.</p>
+            </div>
+            <div class="space-y-2">
+                ${visibleOrder.length ? visibleOrder.map((pageId) => renderItem(pageId, false)).join('') : '<p class="nav-tab-empty">No visible tabs yet.</p>'}
+            </div>
+        </div>
+        <div class="nav-tab-group nav-tab-group-muted">
+            <div class="nav-tab-group-head">
+                <p class="nav-tab-group-title">Removed tabs</p>
+                ${hiddenOrder.length ? '<button type="button" data-nav-action="restore-all" class="nav-tab-action-btn nav-tab-action-btn-wide">Restore all</button>' : '<p class="nav-tab-group-help">Nothing removed.</p>'}
+            </div>
+            <div class="space-y-2">
+                ${hiddenOrder.length ? hiddenOrder.map((pageId) => renderItem(pageId, true)).join('') : '<p class="nav-tab-empty">No removed tabs.</p>'}
+            </div>
+        </div>
+    `;
+}
+
+function hasUserSetFooterCollapsePreference(prefs = getSavedUIPreferences()) {
+    return !!prefs && Object.prototype.hasOwnProperty.call(prefs, 'footerCollapsed');
+}
+
+function shouldAutoCollapseFooterForTouch() {
+    try {
+        const coarsePointer = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        const hasTouchPoints = Number(navigator.maxTouchPoints || 0) > 0;
+        const smallViewport = Number(window.innerWidth || 0) > 0 && Number(window.innerWidth || 0) <= 820;
+        return smallViewport && (coarsePointer || hasTouchPoints);
+    } catch (_) {
+        return false;
+    }
 }
 
 function applyUserInterfacePreferences() {
@@ -27041,12 +27201,15 @@ function applyUserInterfacePreferences() {
     const themeMode = prefs.themeMode || 'light';
     const prefersDark = false;
     const resolvedDark = false;
+    const footerCollapsed = hasUserSetFooterCollapsePreference(prefs)
+        ? !!prefs.footerCollapsed
+        : shouldAutoCollapseFooterForTouch();
 
     body.classList.toggle('compact-ui', prefs.density === 'compact');
     body.classList.toggle('sharp-ui', prefs.radius === 'sharp');
     body.classList.toggle('reduced-motion-ui', prefs.motion === 'reduced');
     body.classList.toggle('compact-badges-ui', !!prefs.compactBadges);
-    body.classList.toggle('footer-collapsed', !!prefs.footerCollapsed);
+    body.classList.toggle('footer-collapsed', footerCollapsed);
     body.classList.toggle('dark-theme', false);
     root.classList.toggle('dark-theme', false);
     root.style.colorScheme = 'light';
@@ -27078,7 +27241,7 @@ function applyUserInterfacePreferences() {
     if (compactBadgesToggle) compactBadgesToggle.checked = !!prefs.compactBadges;
     if (bannerScaleSelect) bannerScaleSelect.value = String(bannerScale);
     if (footerScaleSelect) footerScaleSelect.value = String(footerScale);
-    if (footerCollapsedToggle) footerCollapsedToggle.checked = !!prefs.footerCollapsed;
+    if (footerCollapsedToggle) footerCollapsedToggle.checked = footerCollapsed;
     if (themeModeSelect) themeModeSelect.value = themeMode;
     if (adminDensitySelect) adminDensitySelect.value = prefs.density || 'comfortable';
     if (adminMotionSelect) adminMotionSelect.value = prefs.motion || 'smooth';
@@ -27203,18 +27366,79 @@ function initializeUserExperienceControls() {
 
     if (navTabList && !navTabList.dataset.boundTabs) {
         navTabList.addEventListener('click', (event) => {
-            const button = event.target.closest('button[data-nav-action][data-nav-page]');
+            const button = event.target.closest('button[data-nav-action]');
             if (!button) return;
             const action = button.dataset.navAction;
             const pageId = button.dataset.navPage;
-            if (!pageId) return;
 
-            if (action === 'up') moveNavTab(pageId, -1);
-            else if (action === 'down') moveNavTab(pageId, 1);
-            else if (action === 'toggle') toggleNavTabVisibility(pageId);
+            if (action === 'toggle' && pageId) {
+                toggleNavTabVisibility(pageId);
+            } else if (action === 'restore-all') {
+                saveNavTabPrefs({ hidden: [] });
+            } else {
+                return;
+            }
 
             applyUserInterfacePreferences();
             renderNavTabCustomizer();
+        });
+
+        navTabList.addEventListener('dragstart', (event) => {
+            const row = event.target.closest('.nav-tab-item[data-nav-page]');
+            if (!row || row.dataset.navHidden === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            navTabDragPageId = row.dataset.navPage || null;
+            if (!navTabDragPageId) {
+                event.preventDefault();
+                return;
+            }
+
+            row.classList.add('is-dragging');
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', navTabDragPageId);
+            }
+        });
+
+        navTabList.addEventListener('dragover', (event) => {
+            if (!navTabDragPageId) return;
+            const targetRow = event.target.closest('.nav-tab-item[data-nav-droppable="true"]');
+            if (!targetRow || targetRow.dataset.navPage === navTabDragPageId) return;
+
+            event.preventDefault();
+            navTabList.querySelectorAll('.nav-tab-item.is-drop-target').forEach((row) => row.classList.remove('is-drop-target'));
+            targetRow.classList.add('is-drop-target');
+        });
+
+        navTabList.addEventListener('dragleave', (event) => {
+            const row = event.target.closest('.nav-tab-item.is-drop-target');
+            if (!row) return;
+            row.classList.remove('is-drop-target');
+        });
+
+        navTabList.addEventListener('drop', (event) => {
+            const targetRow = event.target.closest('.nav-tab-item[data-nav-droppable="true"]');
+            const sourcePageId = navTabDragPageId || (event.dataTransfer ? event.dataTransfer.getData('text/plain') : '');
+            if (!targetRow || !sourcePageId) return;
+
+            event.preventDefault();
+            const targetPageId = targetRow.dataset.navPage;
+            if (targetPageId && sourcePageId !== targetPageId) {
+                reorderNavTabByTarget(sourcePageId, targetPageId);
+                applyUserInterfacePreferences();
+                renderNavTabCustomizer();
+            }
+
+            navTabList.querySelectorAll('.nav-tab-item').forEach((row) => row.classList.remove('is-drop-target', 'is-dragging'));
+            navTabDragPageId = null;
+        });
+
+        navTabList.addEventListener('dragend', () => {
+            navTabList.querySelectorAll('.nav-tab-item').forEach((row) => row.classList.remove('is-drop-target', 'is-dragging'));
+            navTabDragPageId = null;
         });
         navTabList.dataset.boundTabs = 'true';
     }
