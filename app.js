@@ -247,14 +247,26 @@ let toolsTimerPipDrag = {
     offsetX: 0,
     offsetY: 0
 };
+const STREAK_NEW_TAG_END_DATE_UTC = Date.UTC(2026, 3, 12, 0, 0, 0, 0); // Show through Apr 11, 2026
+const AVATAR_SLOT_OPTIONS = ['🔥', '🚀', '🧠', '📚', '⚡', '🎯', '🦉', '🧪', '🧩', '🏆', '🌟', '💡'];
+let avatarOnboardingState = {
+    visible: false,
+    selectedIndex: 0,
+    luckyIntervalId: null,
+    luckyTimeoutId: null,
+    syncing: false,
+    initialized: false
+};
 let middleAutoScrollState = {
     active: false,
     anchorX: 0,
     anchorY: 0,
+    pointerX: 0,
     pointerY: 0,
     scrollHost: null,
     rafId: null,
-    indicatorEl: null
+    indicatorEl: null,
+    activatedAtMs: 0
 };
 let toolsPageInitialized = false;
 let toolsPlannerItems = [];
@@ -2084,6 +2096,21 @@ function shouldIgnoreMiddleAutoScrollTarget(target) {
     return !!target.closest('button, a, input, textarea, select, label, summary, details, [role="button"], [contenteditable="true"], iframe, canvas, video');
 }
 
+function getMiddleAutoScrollHostFromTarget(target) {
+    const fallbackHost = document.getElementById('page-content');
+    let node = target instanceof Element ? target : null;
+
+    while (node && node !== document.body) {
+        const style = window.getComputedStyle(node);
+        const canScrollY = /(auto|scroll|overlay)/.test(String(style.overflowY || ''))
+            && (node.scrollHeight > node.clientHeight + 2);
+        if (canScrollY) return node;
+        node = node.parentElement;
+    }
+
+    return fallbackHost;
+}
+
 function removeMiddleAutoScrollIndicator() {
     const indicator = middleAutoScrollState.indicatorEl;
     if (!indicator) return;
@@ -2135,6 +2162,7 @@ function stopMiddleAutoScroll() {
 
     window.removeEventListener('mousemove', handleMiddleAutoScrollMove, true);
     window.removeEventListener('mousedown', handleMiddleAutoScrollCancel, true);
+    window.removeEventListener('auxclick', handleMiddleAutoScrollCancel, true);
     window.removeEventListener('wheel', handleMiddleAutoScrollCancel, true);
     window.removeEventListener('keydown', handleMiddleAutoScrollKeydown, true);
     window.removeEventListener('blur', stopMiddleAutoScroll, true);
@@ -2144,16 +2172,21 @@ function stopMiddleAutoScroll() {
 
 function handleMiddleAutoScrollMove(event) {
     if (!middleAutoScrollState.active) return;
+    middleAutoScrollState.pointerX = event.clientX;
     middleAutoScrollState.pointerY = event.clientY;
 }
 
 function handleMiddleAutoScrollCancel(event) {
     if (!middleAutoScrollState.active) return;
 
-    if (event.type === 'mousedown') {
+    if (event.type === 'mousedown' || event.type === 'auxclick') {
         const button = Number(event.button);
         if (![0, 1, 2].includes(button)) return;
-        if (button === 1) event.preventDefault();
+        if (button === 1) {
+            const elapsedMs = Date.now() - Number(middleAutoScrollState.activatedAtMs || 0);
+            if (elapsedMs < 90) return;
+            event.preventDefault();
+        }
     }
 
     stopMiddleAutoScroll();
@@ -2171,13 +2204,16 @@ function startMiddleAutoScroll(event, scrollHost) {
     state.active = true;
     state.anchorX = event.clientX;
     state.anchorY = event.clientY;
+    state.pointerX = event.clientX;
     state.pointerY = event.clientY;
     state.scrollHost = scrollHost;
+    state.activatedAtMs = Date.now();
 
     mountMiddleAutoScrollIndicator(state.anchorX, state.anchorY);
 
     window.addEventListener('mousemove', handleMiddleAutoScrollMove, true);
     window.addEventListener('mousedown', handleMiddleAutoScrollCancel, true);
+    window.addEventListener('auxclick', handleMiddleAutoScrollCancel, true);
     window.addEventListener('wheel', handleMiddleAutoScrollCancel, true);
     window.addEventListener('keydown', handleMiddleAutoScrollKeydown, true);
     window.addEventListener('blur', stopMiddleAutoScroll, true);
@@ -2188,7 +2224,7 @@ function startMiddleAutoScroll(event, scrollHost) {
 function handlePageMiddleMouseDown(event) {
     if (event.button !== 1) return;
 
-    const scrollHost = document.getElementById('page-content');
+    const scrollHost = getMiddleAutoScrollHostFromTarget(event.target);
     if (!scrollHost) return;
     if (scrollHost.scrollHeight <= scrollHost.clientHeight + 2) return;
     if (shouldIgnoreMiddleAutoScrollTarget(event.target)) return;
@@ -2782,6 +2818,240 @@ function sanitizeAvatarEmojiInput(value) {
 
 function getUserAvatarEmoji(user = currentUser) {
     return sanitizeAvatarEmojiInput(user?.avatarEmoji || '');
+}
+
+function hasUserProfilePicture(user = currentUser) {
+    return !!String(user?.profilePictureURL || '').trim();
+}
+
+function currentUserHasAvatar(user = currentUser) {
+    return !!(getUserAvatarEmoji(user) || hasUserProfilePicture(user));
+}
+
+function shouldShowDashboardStreakNewTag(now = Date.now()) {
+    return Number(now) < STREAK_NEW_TAG_END_DATE_UTC;
+}
+
+function getAvatarSlotOption(index = 0) {
+    const total = AVATAR_SLOT_OPTIONS.length;
+    if (!total) return '🙂';
+    const normalized = ((Math.floor(index) % total) + total) % total;
+    return AVATAR_SLOT_OPTIONS[normalized];
+}
+
+function getAvatarSlotWindow(index = 0) {
+    return {
+        upper: getAvatarSlotOption(index - 1),
+        current: getAvatarSlotOption(index),
+        lower: getAvatarSlotOption(index + 1)
+    };
+}
+
+function getAvatarSlotIndexForEmoji(emoji = '') {
+    const normalized = sanitizeAvatarEmojiInput(emoji);
+    if (!normalized) return -1;
+    return AVATAR_SLOT_OPTIONS.findIndex((option) => option === normalized);
+}
+
+function clearAvatarOnboardingTimers() {
+    if (avatarOnboardingState.luckyIntervalId) {
+        clearInterval(avatarOnboardingState.luckyIntervalId);
+        avatarOnboardingState.luckyIntervalId = null;
+    }
+    if (avatarOnboardingState.luckyTimeoutId) {
+        clearTimeout(avatarOnboardingState.luckyTimeoutId);
+        avatarOnboardingState.luckyTimeoutId = null;
+    }
+}
+
+function setAvatarOnboardingVisible(visible) {
+    const overlay = document.getElementById('avatar-onboarding-overlay');
+    if (!overlay) return;
+    const shouldShow = !!visible;
+    overlay.classList.toggle('hidden', !shouldShow);
+    overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    document.body.classList.toggle('avatar-onboarding-active', shouldShow);
+    avatarOnboardingState.visible = shouldShow;
+}
+
+function setAvatarOnboardingMessage(message = '', tone = 'muted') {
+    const messageEl = document.getElementById('avatar-onboarding-message');
+    if (!messageEl) return;
+    messageEl.textContent = message || '';
+    messageEl.dataset.tone = tone;
+}
+
+function renderAvatarOnboardingSlotWindow(index = avatarOnboardingState.selectedIndex, { animate = false } = {}) {
+    avatarOnboardingState.selectedIndex = Math.floor(Number(index || 0));
+    const slotWindow = document.getElementById('avatar-slot-window');
+    const upperEl = document.getElementById('avatar-slot-upper');
+    const currentEl = document.getElementById('avatar-slot-current');
+    const lowerEl = document.getElementById('avatar-slot-lower');
+    const slot = getAvatarSlotWindow(avatarOnboardingState.selectedIndex);
+
+    if (upperEl) upperEl.textContent = slot.upper;
+    if (currentEl) currentEl.textContent = slot.current;
+    if (lowerEl) lowerEl.textContent = slot.lower;
+
+    if (slotWindow && animate) {
+        slotWindow.classList.remove('is-spinning');
+        // Force reflow so repeated spins retrigger smoothly.
+        void slotWindow.offsetHeight;
+        slotWindow.classList.add('is-spinning');
+    }
+}
+
+function stepAvatarOnboardingSlot(step = 1, { animate = true } = {}) {
+    const delta = Number(step || 0);
+    avatarOnboardingState.selectedIndex += delta;
+    renderAvatarOnboardingSlotWindow(avatarOnboardingState.selectedIndex, { animate });
+}
+
+function stopAvatarOnboardingLuckySpin() {
+    clearAvatarOnboardingTimers();
+    const slotWindow = document.getElementById('avatar-slot-window');
+    if (slotWindow) slotWindow.classList.remove('is-spinning');
+}
+
+function startAvatarOnboardingLuckySpin() {
+    if (!avatarOnboardingState.visible || avatarOnboardingState.syncing) return;
+    stopAvatarOnboardingLuckySpin();
+
+    setAvatarOnboardingMessage('Feeling lucky...', 'info');
+    avatarOnboardingState.luckyIntervalId = setInterval(() => {
+        stepAvatarOnboardingSlot(1, { animate: true });
+    }, 90);
+
+    avatarOnboardingState.luckyTimeoutId = setTimeout(() => {
+        stopAvatarOnboardingLuckySpin();
+        const randomOffset = 1 + Math.floor(Math.random() * Math.max(1, AVATAR_SLOT_OPTIONS.length));
+        stepAvatarOnboardingSlot(randomOffset, { animate: true });
+        setAvatarOnboardingMessage('Nice pick. Save to continue.', 'muted');
+    }, 1500);
+}
+
+async function saveAvatarFromOnboarding() {
+    if (!currentUser?.uid || avatarOnboardingState.syncing) return;
+
+    const emoji = sanitizeAvatarEmojiInput(getAvatarSlotOption(avatarOnboardingState.selectedIndex));
+    if (!emoji) {
+        setAvatarOnboardingMessage('Pick an avatar first.', 'error');
+        return;
+    }
+
+    avatarOnboardingState.syncing = true;
+    setAvatarOnboardingMessage('Saving avatar...', 'info');
+
+    try {
+        await db.collection('users').doc(currentUser.uid).set({
+            avatarEmoji: emoji,
+            avatarUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            avatarOnboardingCompletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        currentUser.avatarEmoji = emoji;
+        const userEmojiInput = document.getElementById('user-avatar-emoji');
+        if (userEmojiInput) userEmojiInput.value = emoji;
+        const adminEmojiInput = document.getElementById('admin-avatar-emoji');
+        if (adminEmojiInput) adminEmojiInput.value = emoji;
+
+        updateWelcomeMessage();
+        try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+        renderDashboardStreakLeaderboard();
+        setAvatarOnboardingVisible(false);
+        setAvatarOnboardingMessage('');
+    } catch (error) {
+        console.error('Failed to save avatar from onboarding:', error);
+        setAvatarOnboardingMessage('Could not save avatar. Try again.', 'error');
+    } finally {
+        avatarOnboardingState.syncing = false;
+    }
+}
+
+function initializeAvatarOnboardingControls() {
+    if (avatarOnboardingState.initialized) return;
+
+    const upBtn = document.getElementById('avatar-slot-up');
+    const downBtn = document.getElementById('avatar-slot-down');
+    const luckyBtn = document.getElementById('avatar-slot-lucky');
+    const saveBtn = document.getElementById('avatar-slot-save');
+    const slotWindow = document.getElementById('avatar-slot-window');
+
+    upBtn?.addEventListener('click', () => {
+        stopAvatarOnboardingLuckySpin();
+        stepAvatarOnboardingSlot(-1, { animate: true });
+    });
+
+    downBtn?.addEventListener('click', () => {
+        stopAvatarOnboardingLuckySpin();
+        stepAvatarOnboardingSlot(1, { animate: true });
+    });
+
+    luckyBtn?.addEventListener('click', () => {
+        startAvatarOnboardingLuckySpin();
+    });
+
+    saveBtn?.addEventListener('click', () => {
+        saveAvatarFromOnboarding();
+    });
+
+    slotWindow?.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        stopAvatarOnboardingLuckySpin();
+        stepAvatarOnboardingSlot(event.deltaY > 0 ? 1 : -1, { animate: true });
+    }, { passive: false });
+
+    slotWindow?.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+            event.preventDefault();
+            stopAvatarOnboardingLuckySpin();
+            stepAvatarOnboardingSlot(-1, { animate: true });
+            return;
+        }
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            stopAvatarOnboardingLuckySpin();
+            stepAvatarOnboardingSlot(1, { animate: true });
+            return;
+        }
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            saveAvatarFromOnboarding();
+        }
+    });
+
+    if (slotWindow && !slotWindow.hasAttribute('tabindex')) {
+        slotWindow.setAttribute('tabindex', '0');
+    }
+
+    avatarOnboardingState.initialized = true;
+}
+
+function syncAvatarOnboardingPrompt() {
+    if (!currentUser) {
+        stopAvatarOnboardingLuckySpin();
+        setAvatarOnboardingVisible(false);
+        return;
+    }
+
+    if (currentUserHasAvatar(currentUser)) {
+        stopAvatarOnboardingLuckySpin();
+        setAvatarOnboardingVisible(false);
+        return;
+    }
+
+    initializeAvatarOnboardingControls();
+
+    const currentAvatarIndex = getAvatarSlotIndexForEmoji(getUserAvatarEmoji(currentUser));
+    if (currentAvatarIndex >= 0) {
+        avatarOnboardingState.selectedIndex = currentAvatarIndex;
+    } else if (!avatarOnboardingState.visible) {
+        avatarOnboardingState.selectedIndex = Math.floor(Math.random() * Math.max(1, AVATAR_SLOT_OPTIONS.length));
+    }
+
+    renderAvatarOnboardingSlotWindow(avatarOnboardingState.selectedIndex, { animate: false });
+    setAvatarOnboardingMessage('Choose an avatar to continue.', 'muted');
+    setAvatarOnboardingVisible(true);
 }
 
 async function upsertStreakLeaderboardEntry({
@@ -4974,6 +5244,10 @@ auth.onAuthStateChanged(async (user) => {
         // User is signed out.
         isResolvingAuthenticatedSession = false;
         currentUser = null;
+        stopAvatarOnboardingLuckySpin();
+        avatarOnboardingState.syncing = false;
+        setAvatarOnboardingVisible(false);
+        setAvatarOnboardingMessage('');
         lastAutoOpenedFreeTrialSubjectKey = null;
         freeTrialSubjectOverride = null;
         try { clearAccentCSSVars(); } catch (_) {}
@@ -8257,10 +8531,14 @@ function updateProfilePictureInUI(imageURL) {
     }
 
     renderCurrentUserAvatars();
+    syncAvatarOnboardingPrompt();
 
-    // Keep quick-upload click target in the header image
-    const profilePic = document.getElementById('profile-picture');
-    const profileEmoji = document.getElementById('profile-picture-emoji');
+    bindAvatarUploadClickTargets();
+}
+
+function bindAvatarUploadClickTargets() {
+    if (typeof uploadProfilePicture !== 'function') return;
+
     const triggerUpload = () => {
         if (!currentUser) return;
         const input = document.createElement('input');
@@ -8275,17 +8553,23 @@ function updateProfilePictureInUI(imageURL) {
         input.click();
     };
 
-    if (profilePic && !profilePic.dataset.clickHandlerAdded) {
-        profilePic.style.cursor = 'pointer';
-        profilePic.addEventListener('click', triggerUpload);
-        profilePic.dataset.clickHandlerAdded = 'true';
-    }
+    const bindUploadTrigger = (elementId) => {
+        const element = document.getElementById(elementId);
+        if (!element || element.dataset.clickHandlerAdded === 'true') return;
+        element.style.cursor = 'pointer';
+        element.addEventListener('click', triggerUpload);
+        element.dataset.clickHandlerAdded = 'true';
+    };
 
-    if (profileEmoji && !profileEmoji.dataset.clickHandlerAdded) {
-        profileEmoji.style.cursor = 'pointer';
-        profileEmoji.addEventListener('click', triggerUpload);
-        profileEmoji.dataset.clickHandlerAdded = 'true';
-    }
+    // Keep quick-upload click targets in header, user settings, and admin settings previews.
+    [
+        'profile-picture',
+        'profile-picture-emoji',
+        'account-profile-picture',
+        'account-profile-picture-emoji',
+        'admin-account-profile-picture',
+        'admin-account-profile-picture-emoji'
+    ].forEach(bindUploadTrigger);
 }
 
 function showProfilePictureUploadModal() {
@@ -11490,6 +11774,96 @@ async function handleUpdateUserSettings() {
     }
 }
 
+async function handleUpdateAdminSettings() {
+    if (!currentUser || !isAdminUser()) {
+        showToast('Admin access required.', 'error');
+        return;
+    }
+
+    const displayNameInput = document.getElementById('admin-displayname');
+    const passwordInput = document.getElementById('admin-password');
+    const avatarEmojiInput = document.getElementById('admin-avatar-emoji');
+    const messageEl = document.getElementById('admin-settings-message');
+
+    if (!displayNameInput || !passwordInput || !messageEl) return;
+
+    const displayName = displayNameInput.value.trim();
+    const newPassword = passwordInput.value;
+    const avatarEmoji = sanitizeAvatarEmojiInput(avatarEmojiInput?.value || '');
+
+    messageEl.textContent = '';
+    messageEl.className = 'text-sm text-center h-4';
+
+    const nameValidation = Validator.displayName(displayName);
+    if (!nameValidation.valid) {
+        displayNameInput.classList.add('border-red-500', 'bg-red-50');
+        messageEl.textContent = nameValidation.error;
+        messageEl.className = 'text-red-600 text-sm text-center h-4';
+        displayNameInput.focus();
+        return;
+    }
+
+    if (newPassword) {
+        const passwordValidation = Validator.password(newPassword, true);
+        if (!passwordValidation.valid) {
+            passwordInput.classList.add('border-red-500', 'bg-red-50');
+            messageEl.textContent = passwordValidation.error;
+            messageEl.className = 'text-red-600 text-sm text-center h-4';
+            passwordInput.focus();
+            return;
+        }
+    }
+
+    try {
+        const profilePayload = {
+            displayName,
+            avatarUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (avatarEmoji) {
+            profilePayload.avatarEmoji = avatarEmoji;
+        } else {
+            profilePayload.avatarEmoji = firebase.firestore.FieldValue.delete();
+        }
+
+        await db.collection('users').doc(currentUser.uid).set(profilePayload, { merge: true });
+        await auth.currentUser.updateProfile({ displayName });
+
+        if (newPassword) {
+            await auth.currentUser.updatePassword(newPassword);
+            passwordInput.value = '';
+        }
+
+        currentUser.displayName = displayName;
+        if (avatarEmoji) {
+            currentUser.avatarEmoji = avatarEmoji;
+        } else {
+            delete currentUser.avatarEmoji;
+        }
+
+        updateWelcomeMessage();
+        try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+        renderDashboardStreakLeaderboard();
+
+        messageEl.textContent = 'Admin account settings saved.';
+        messageEl.className = 'text-green-600 text-sm text-center h-4';
+        displayNameInput.classList.remove('border-red-500', 'bg-red-50');
+        passwordInput.classList.remove('border-red-500', 'bg-red-50');
+        setTimeout(() => {
+            if (messageEl.textContent === 'Admin account settings saved.') {
+                messageEl.textContent = '';
+            }
+        }, 3000);
+    } catch (error) {
+        console.error('Error updating admin settings:', error);
+        const friendlyMessage = handleAPIError(error, 'updating admin settings');
+        messageEl.textContent = friendlyMessage;
+        messageEl.className = 'text-red-600 text-sm text-center h-4';
+        if (error.code === 'auth/requires-recent-login') {
+            messageEl.textContent = 'For security, log out and back in before changing your password.';
+        }
+    }
+}
+
 // Enhanced error handling and user feedback system
 function showErrorMessage(inputElement, message) {
     const messageEl = inputElement.parentElement.querySelector('.error-message') || inputElement.nextElementSibling;
@@ -11700,33 +12074,66 @@ function renderCurrentUserAvatars() {
         emojiElement: document.getElementById('account-profile-picture-emoji'),
         user: currentUser
     });
+    renderAvatarSlot({
+        imageElement: document.getElementById('admin-account-profile-picture'),
+        emojiElement: document.getElementById('admin-account-profile-picture-emoji'),
+        user: currentUser
+    });
 }
 
-function renderAccountAvatarPreviewFromInput() {
+function renderAvatarPreviewFromInput({ inputId, imageId, emojiId }) {
     if (!currentUser) return;
-    const input = document.getElementById('user-avatar-emoji');
+    const input = document.getElementById(inputId);
     if (!input) return;
     const previewEmoji = sanitizeAvatarEmojiInput(input.value || '');
     input.value = previewEmoji;
     renderAvatarSlot({
-        imageElement: document.getElementById('account-profile-picture'),
-        emojiElement: document.getElementById('account-profile-picture-emoji'),
+        imageElement: document.getElementById(imageId),
+        emojiElement: document.getElementById(emojiId),
         user: { ...currentUser, avatarEmoji: previewEmoji }
     });
 }
 
-function setAvatarEmojiPreset(emoji) {
-    const input = document.getElementById('user-avatar-emoji');
-    if (!input) return;
-    input.value = sanitizeAvatarEmojiInput(emoji || '');
+function renderAccountAvatarPreviewFromInput() {
+    renderAvatarPreviewFromInput({
+        inputId: 'user-avatar-emoji',
+        imageId: 'account-profile-picture',
+        emojiId: 'account-profile-picture-emoji'
+    });
+}
+
+function renderAdminAvatarPreviewFromInput() {
+    renderAvatarPreviewFromInput({
+        inputId: 'admin-avatar-emoji',
+        imageId: 'admin-account-profile-picture',
+        emojiId: 'admin-account-profile-picture-emoji'
+    });
+}
+
+function syncAvatarPreviewByInputId(inputId = 'user-avatar-emoji') {
+    if (inputId === 'admin-avatar-emoji') {
+        renderAdminAvatarPreviewFromInput();
+        return;
+    }
     renderAccountAvatarPreviewFromInput();
 }
 
-function clearAvatarEmojiSelection() {
-    const input = document.getElementById('user-avatar-emoji');
+function setAvatarEmojiPresetForInput(inputId = 'user-avatar-emoji', emoji = '') {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.value = sanitizeAvatarEmojiInput(emoji || '');
+    syncAvatarPreviewByInputId(inputId);
+}
+
+function setAvatarEmojiPreset(emoji) {
+    setAvatarEmojiPresetForInput('user-avatar-emoji', emoji);
+}
+
+function clearAvatarEmojiSelection(inputId = 'user-avatar-emoji') {
+    const input = document.getElementById(inputId);
     if (!input) return;
     input.value = '';
-    renderAccountAvatarPreviewFromInput();
+    syncAvatarPreviewByInputId(inputId);
 }
 
 function updateWelcomeMessage() {
@@ -11740,9 +12147,12 @@ function updateWelcomeMessage() {
     }
 
     renderCurrentUserAvatars();
+    bindAvatarUploadClickTargets();
 
     const displayNameInput = document.getElementById('user-displayname');
-    if (displayNameInput) displayNameInput.value = currentUser.displayName;
+    if (displayNameInput) displayNameInput.value = currentUser.displayName || '';
+    const adminDisplayNameInput = document.getElementById('admin-displayname');
+    if (adminDisplayNameInput) adminDisplayNameInput.value = currentUser.displayName || '';
     if (document.getElementById('user-email')) document.getElementById('user-email').value = currentUser.email;
     const avatarInput = document.getElementById('user-avatar-emoji');
     if (avatarInput) {
@@ -11752,7 +12162,16 @@ function updateWelcomeMessage() {
             avatarInput.dataset.listenerBound = 'true';
         }
     }
+    const adminAvatarInput = document.getElementById('admin-avatar-emoji');
+    if (adminAvatarInput) {
+        adminAvatarInput.value = getUserAvatarEmoji(currentUser);
+        if (!adminAvatarInput.dataset.listenerBound) {
+            adminAvatarInput.addEventListener('input', renderAdminAvatarPreviewFromInput);
+            adminAvatarInput.dataset.listenerBound = 'true';
+        }
+    }
     renderSubscriptionStatusPanel(currentUser);
+    syncAvatarOnboardingPrompt();
 }
 function renderError(container, message) {
     if (container) {
@@ -12714,16 +13133,82 @@ function getDashboardStreakSparklineMarkup(currentStreak, bestStreak) {
     }).join('');
 }
 
+function getDashboardStreakFreezeCount(currentStreak, bestStreak) {
+    const explicitFreezes = Number(currentUser?.streakFreezes || 0);
+    if (Number.isFinite(explicitFreezes) && explicitFreezes > 0) {
+        return Math.max(0, Math.floor(explicitFreezes));
+    }
+    const earned = Math.floor(Math.max(0, Number(bestStreak || 0)) / 10);
+    const activeBonus = Math.floor(Math.max(0, Number(currentStreak || 0)) / 21);
+    return Math.max(0, Math.min(5, earned + activeBonus));
+}
+
+function getDashboardStreakAchievements(currentStreak, bestStreak, myRank) {
+    const focusedToday = Math.max(0, Number(toolsTimerState?.todayFocusedSeconds || 0));
+    const hasSessionToday = currentStreak > 0;
+    const hasDeepFocus = focusedToday >= (30 * 60);
+    const hasWeekStreak = bestStreak >= 7;
+    const hasPodium = Number.isFinite(myRank) && myRank > 0 && myRank <= 3;
+
+    return [
+        { label: 'Daily check-in', unlocked: hasSessionToday },
+        { label: '30m focus', unlocked: hasDeepFocus },
+        { label: 'Week warrior', unlocked: hasWeekStreak },
+        { label: 'Podium spot', unlocked: hasPodium }
+    ];
+}
+
+function getDashboardStreakAchievementsMarkup(achievements = []) {
+    return achievements.map((achievement) => {
+        const safeLabel = escapeHTML(achievement?.label || 'Achievement');
+        const unlocked = !!achievement?.unlocked;
+        return `<span class="dashboard-streak-achievement${unlocked ? ' is-earned' : ''}">${safeLabel}</span>`;
+    }).join('');
+}
+
+function getDashboardStreakPodiumMarkup(rows = []) {
+    const podiumRows = Array.isArray(rows) ? rows.slice(0, 3) : [];
+    if (!podiumRows.length) {
+        return '<p class="dashboard-streak-podium-empty">Podium unlocks once streaks are active.</p>';
+    }
+
+    const order = [1, 0, 2];
+    return order
+        .filter((entryIndex) => entryIndex < podiumRows.length)
+        .map((entryIndex) => {
+            const entry = podiumRows[entryIndex];
+            const rank = entryIndex + 1;
+            const safeName = escapeHTML(entry?.displayName || 'Learner');
+            const pillarHeight = rank === 1 ? 4.8 : (rank === 2 ? 3.9 : 3.45);
+            const isCurrentUser = entry?.userId === currentUser?.uid;
+            return `
+                <article class="dashboard-streak-podium-item rank-${rank}${isCurrentUser ? ' is-current' : ''}">
+                    <span class="dashboard-streak-podium-rank">#${rank}</span>
+                    <span class="dashboard-streak-podium-avatar">${getStreakLeaderboardAvatarMarkup(entry)}</span>
+                    <p class="dashboard-streak-podium-name">${safeName}${isCurrentUser ? ' (You)' : ''}</p>
+                    <div class="dashboard-streak-podium-pillar" style="--podium-height:${pillarHeight}rem">
+                        <strong>${Math.max(0, Number(entry?.studyStreak || 0))}d</strong>
+                    </div>
+                </article>
+            `;
+        })
+        .join('');
+}
+
 function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     const listEl = document.getElementById('dashboard-streak-leaderboard-list');
     const currentEl = document.getElementById('dashboard-streak-current');
     const bestEl = document.getElementById('dashboard-streak-best');
     const rankEl = document.getElementById('dashboard-streak-rank');
     const cardEl = document.getElementById('dashboard-streak-leaderboard-card');
+    const newTagEl = document.getElementById('dashboard-streak-new-tag');
     const flameValueEl = document.getElementById('dashboard-streak-flame-value');
     const heatFillEl = document.getElementById('dashboard-streak-heat-fill');
     const heatLabelEl = document.getElementById('dashboard-streak-heat-label');
     const sparklineEl = document.getElementById('dashboard-streak-sparkline');
+    const freezeCountEl = document.getElementById('dashboard-streak-freeze-count');
+    const achievementsEl = document.getElementById('dashboard-streak-achievements');
+    const podiumEl = document.getElementById('dashboard-streak-podium');
     const challengeEl = document.getElementById('dashboard-streak-challenge');
     if (!listEl || !currentEl || !bestEl || !rankEl) return;
 
@@ -12742,24 +13227,32 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     const topRows = normalizedRows.slice(0, 10);
     const myIndex = normalizedRows.findIndex((entry) => entry.userId === currentUser?.uid);
     const myRow = myIndex >= 0 ? normalizedRows[myIndex] : null;
+    const myRank = myIndex >= 0 ? myIndex + 1 : null;
 
     const currentStreak = Math.max(0, Number(myRow?.studyStreak || currentUser?.studyStreakCurrent || userActivityTracker?.dailyStats?.studyStreak || 0));
     const bestStreak = Math.max(currentStreak, Number(myRow?.bestStudyStreak || currentUser?.studyStreakBest || 0));
     const heatTier = getDashboardStreakHeatTier(currentStreak);
+    const freezeCount = getDashboardStreakFreezeCount(currentStreak, bestStreak);
+    const achievements = getDashboardStreakAchievements(currentStreak, bestStreak, myRank);
 
     animateDashboardStreakMetric(currentEl, currentStreak);
     animateDashboardStreakMetric(bestEl, bestStreak);
-    if (myIndex >= 0) {
-        rankEl.textContent = `#${myIndex + 1}`;
+    if (myRank) {
+        rankEl.textContent = `#${myRank}`;
     } else if (currentStreak > 0) {
         rankEl.textContent = 'Outside Top 25';
     } else {
         rankEl.textContent = 'Unranked';
     }
 
+    if (newTagEl) {
+        newTagEl.classList.toggle('hidden', !shouldShowDashboardStreakNewTag());
+    }
+
     if (cardEl) {
         cardEl.dataset.streakTier = heatTier.key;
         cardEl.style.setProperty('--streak-heat', `${heatTier.percent}%`);
+        cardEl.dataset.streakIntensity = currentStreak >= 14 ? 'hot' : (currentStreak > 0 ? 'warm' : 'cold');
     }
     if (flameValueEl) {
         flameValueEl.textContent = `${currentStreak}d`;
@@ -12773,6 +13266,15 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     if (sparklineEl) {
         sparklineEl.innerHTML = getDashboardStreakSparklineMarkup(currentStreak, bestStreak);
     }
+    if (freezeCountEl) {
+        freezeCountEl.textContent = String(freezeCount);
+    }
+    if (achievementsEl) {
+        achievementsEl.innerHTML = getDashboardStreakAchievementsMarkup(achievements);
+    }
+    if (podiumEl) {
+        podiumEl.innerHTML = getDashboardStreakPodiumMarkup(normalizedRows);
+    }
 
     if (challengeEl) {
         if (myIndex === 0 && currentStreak > 0) {
@@ -12785,6 +13287,9 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
             challengeEl.textContent = 'You are outside the top 25. Keep stacking sessions to break in.';
         } else {
             challengeEl.textContent = 'Complete one focus session today to ignite your streak.';
+        }
+        if (freezeCount > 0 && currentStreak > 0) {
+            challengeEl.textContent += ` ${freezeCount} freeze${freezeCount === 1 ? '' : 's'} available.`;
         }
     }
 
@@ -21877,14 +22382,27 @@ function updateToolsTimerPipUI() {
     const playPauseBtn = document.getElementById('tools-timer-pip-playpause');
     const toggleBtn = document.getElementById('tools-timer-pip-toggle');
 
+    const isStopwatch = toolsTimerState.mode === 'stopwatch';
+    const plannedSeconds = isStopwatch ? 0 : Math.max(1, getToolsTimerPlannedDurationSeconds());
+    const remainingRatio = (!isStopwatch && plannedSeconds > 0)
+        ? Math.max(0, toolsTimerState.remainingSeconds / plannedSeconds)
+        : 1;
+    const urgency = isStopwatch
+        ? 'tracking'
+        : (remainingRatio <= 0.1 ? 'critical' : (remainingRatio <= 0.25 ? 'rush' : (remainingRatio <= 0.5 ? 'focus' : 'calm')));
+
     if (timeEl) timeEl.textContent = formatClock(toolsTimerState.remainingSeconds);
     if (statusEl) statusEl.textContent = getToolsTimerStatusText();
     if (playPauseBtn) playPauseBtn.textContent = toolsTimerState.isRunning ? 'Pause' : 'Start';
     if (toggleBtn) toggleBtn.textContent = toolsTimerState.pipVisible ? 'Hide Mini Timer' : 'Open Mini Timer';
 
+    if (timeEl) timeEl.dataset.timerUrgency = urgency;
+    if (statusEl) statusEl.dataset.timerUrgency = urgency;
+
     if (pip) {
         pip.classList.toggle('hidden', !toolsTimerState.pipVisible);
         pip.classList.toggle('is-running', !!toolsTimerState.isRunning);
+        pip.dataset.timerUrgency = urgency;
     }
 }
 
@@ -22152,6 +22670,7 @@ function updateToolsTimerUI() {
     const stopwatchToggle = document.getElementById('tools-stopwatch-toggle');
     const displayEl = document.getElementById('tools-timer-display');
     const progressEl = document.getElementById('tools-timer-progress');
+    const progressShellEl = progressEl?.parentElement || null;
     const progressLabelEl = document.getElementById('tools-timer-progress-label');
     const statusEl = document.getElementById('tools-timer-status');
     const todayEl = document.getElementById('tools-tracker-today');
@@ -22189,24 +22708,40 @@ function updateToolsTimerUI() {
     if (customWrapEl) customWrapEl.classList.remove('hidden');
 
     let progress = 0;
+    let fullDurationSeconds = 0;
     if (isStopwatch) {
         progress = ((toolsTimerState.remainingSeconds % 60) / 60) * 100;
     } else {
-        const full = getTimerModeFromState() === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds;
-        const completed = Math.max(0, full - toolsTimerState.remainingSeconds);
-        progress = full > 0 ? Math.min(100, (completed / full) * 100) : 0;
+        fullDurationSeconds = getTimerModeFromState() === 'custom' ? toolsTimerState.customDurationSeconds : modeConfig.durationSeconds;
+        const completed = Math.max(0, fullDurationSeconds - toolsTimerState.remainingSeconds);
+        progress = fullDurationSeconds > 0 ? Math.min(100, (completed / fullDurationSeconds) * 100) : 0;
     }
 
+    const clampedProgress = Math.max(0, Math.min(100, progress));
+    const remainingRatio = (!isStopwatch && fullDurationSeconds > 0)
+        ? Math.max(0, toolsTimerState.remainingSeconds / fullDurationSeconds)
+        : 1;
+    const urgency = isStopwatch
+        ? 'tracking'
+        : (remainingRatio <= 0.1 ? 'critical' : (remainingRatio <= 0.25 ? 'rush' : (remainingRatio <= 0.5 ? 'focus' : 'calm')));
+
     displayEl.textContent = formatClock(toolsTimerState.remainingSeconds);
-    progressEl.style.width = `${progress}%`;
+    progressEl.style.width = `${clampedProgress}%`;
+    progressEl.classList.toggle('is-running', !!toolsTimerState.isRunning);
     todayEl.textContent = formatDurationShort(toolsTimerState.todayFocusedSeconds);
     sessionEl.textContent = formatDurationShort(toolsTimerState.sessionFocusedSeconds);
     if (progressLabelEl) {
+        progressLabelEl.dataset.timerUrgency = urgency;
         progressLabelEl.textContent = isStopwatch
             ? `${formatClock(toolsTimerState.remainingSeconds)} elapsed`
-            : `${Math.round(progress)}% complete`;
+            : `${Math.round(clampedProgress)}% complete`;
     }
-    statusEl.textContent = getToolsTimerStatusText();
+    const baseStatus = getToolsTimerStatusText();
+    statusEl.textContent = (!isStopwatch && toolsTimerState.isRunning && urgency === 'critical')
+        ? `${baseStatus} • Final sprint`
+        : baseStatus;
+    statusEl.dataset.timerUrgency = urgency;
+    displayEl.dataset.timerUrgency = urgency;
 
     if (completedEl) completedEl.textContent = String(toolsTimerState.completedSessions || 0);
     if (breakStateEl) breakStateEl.textContent = toolsTimerState.isBreakMode ? `${toolsTimerState.breakDurationMinutes}m` : 'Off';
@@ -22214,7 +22749,13 @@ function updateToolsTimerUI() {
     if (focusScoreEl) focusScoreEl.textContent = formatDurationShort(toolsTimerState.todayFocusedSeconds);
     if (timerCard) {
         timerCard.dataset.timerTheme = toolsTimerState.timerTheme || 'blue';
+        timerCard.dataset.timerUrgency = urgency;
+        timerCard.style.setProperty('--timer-progress', `${clampedProgress}%`);
         timerCard.classList.toggle('is-break-mode', !!toolsTimerState.isBreakMode);
+    }
+    if (progressShellEl) {
+        progressShellEl.dataset.timerUrgency = urgency;
+        progressShellEl.style.setProperty('--timer-progress', `${clampedProgress}%`);
     }
 
     const defaultDuration = toolsTimerState.mode === 'stopwatch'
