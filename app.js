@@ -249,13 +249,16 @@ let toolsTimerPipDrag = {
 };
 const STREAK_NEW_TAG_END_DATE_UTC = Date.UTC(2026, 3, 12, 0, 0, 0, 0); // Show through Apr 11, 2026
 const AVATAR_SLOT_OPTIONS = ['🔥', '🚀', '🧠', '📚', '⚡', '🎯', '🦉', '🧪', '🧩', '🏆', '🌟', '💡'];
+const AVATAR_ONBOARDING_SNOOZE_KEY_PREFIX = 'gcsemate_avatar_onboarding_snooze_until:';
+const AVATAR_ONBOARDING_DEFAULT_SNOOZE_MS = 6 * 60 * 60 * 1000;
 let avatarOnboardingState = {
     visible: false,
     selectedIndex: 0,
     luckyIntervalId: null,
     luckyTimeoutId: null,
     syncing: false,
-    initialized: false
+    initialized: false,
+    escapeBound: false
 };
 let middleAutoScrollState = {
     active: false,
@@ -2853,6 +2856,39 @@ function getAvatarSlotIndexForEmoji(emoji = '') {
     return AVATAR_SLOT_OPTIONS.findIndex((option) => option === normalized);
 }
 
+function getAvatarOnboardingSnoozeKey(uid = currentUser?.uid) {
+    const safeUid = String(uid || 'anonymous').trim() || 'anonymous';
+    return `${AVATAR_ONBOARDING_SNOOZE_KEY_PREFIX}${safeUid}`;
+}
+
+function getAvatarOnboardingSnoozeUntil(uid = currentUser?.uid) {
+    try {
+        const raw = localStorage.getItem(getAvatarOnboardingSnoozeKey(uid));
+        const value = Number(raw || 0);
+        return Number.isFinite(value) && value > 0 ? value : 0;
+    } catch (_) {
+        return 0;
+    }
+}
+
+function isAvatarOnboardingSnoozed(uid = currentUser?.uid) {
+    return Date.now() < getAvatarOnboardingSnoozeUntil(uid);
+}
+
+function setAvatarOnboardingSnooze(ms = AVATAR_ONBOARDING_DEFAULT_SNOOZE_MS, uid = currentUser?.uid) {
+    try {
+        const durationMs = Math.max(60 * 1000, Number(ms || 0));
+        const until = Date.now() + durationMs;
+        localStorage.setItem(getAvatarOnboardingSnoozeKey(uid), String(until));
+    } catch (_) {}
+}
+
+function clearAvatarOnboardingSnooze(uid = currentUser?.uid) {
+    try {
+        localStorage.removeItem(getAvatarOnboardingSnoozeKey(uid));
+    } catch (_) {}
+}
+
 function clearAvatarOnboardingTimers() {
     if (avatarOnboardingState.luckyIntervalId) {
         clearInterval(avatarOnboardingState.luckyIntervalId);
@@ -2871,6 +2907,11 @@ function setAvatarOnboardingVisible(visible) {
     overlay.classList.toggle('hidden', !shouldShow);
     overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
     document.body.classList.toggle('avatar-onboarding-active', shouldShow);
+    if (!shouldShow) {
+        overlay.classList.remove('is-visible');
+    } else {
+        overlay.classList.add('is-visible');
+    }
     avatarOnboardingState.visible = shouldShow;
 }
 
@@ -2911,6 +2952,19 @@ function stopAvatarOnboardingLuckySpin() {
     clearAvatarOnboardingTimers();
     const slotWindow = document.getElementById('avatar-slot-window');
     if (slotWindow) slotWindow.classList.remove('is-spinning');
+}
+
+function dismissAvatarOnboarding({
+    snoozeMs = AVATAR_ONBOARDING_DEFAULT_SNOOZE_MS,
+    feedback = 'Avatar picker closed for now. You can set one later in Account Settings.'
+} = {}) {
+    stopAvatarOnboardingLuckySpin();
+    avatarOnboardingState.syncing = false;
+    setAvatarOnboardingVisible(false);
+    if (snoozeMs > 0 && currentUser?.uid) {
+        setAvatarOnboardingSnooze(snoozeMs, currentUser.uid);
+    }
+    setAvatarOnboardingMessage(feedback, 'muted');
 }
 
 function startAvatarOnboardingLuckySpin() {
@@ -2955,6 +3009,7 @@ async function saveAvatarFromOnboarding() {
         const adminEmojiInput = document.getElementById('admin-avatar-emoji');
         if (adminEmojiInput) adminEmojiInput.value = emoji;
 
+        clearAvatarOnboardingSnooze(currentUser.uid);
         updateWelcomeMessage();
         try { await upsertStreakLeaderboardEntry(); } catch (_) {}
         renderDashboardStreakLeaderboard();
@@ -2969,39 +3024,62 @@ async function saveAvatarFromOnboarding() {
 }
 
 function initializeAvatarOnboardingControls() {
-    if (avatarOnboardingState.initialized) return;
+    if (avatarOnboardingState.initialized) return true;
 
     const upBtn = document.getElementById('avatar-slot-up');
     const downBtn = document.getElementById('avatar-slot-down');
+    const closeBtn = document.getElementById('avatar-onboarding-close');
+    const skipBtn = document.getElementById('avatar-slot-skip');
     const luckyBtn = document.getElementById('avatar-slot-lucky');
     const saveBtn = document.getElementById('avatar-slot-save');
     const slotWindow = document.getElementById('avatar-slot-window');
+    const overlay = document.getElementById('avatar-onboarding-overlay');
 
-    upBtn?.addEventListener('click', () => {
+    if (!upBtn || !downBtn || !luckyBtn || !saveBtn || !slotWindow || !closeBtn || !skipBtn || !overlay) {
+        return false;
+    }
+
+    upBtn.addEventListener('click', () => {
         stopAvatarOnboardingLuckySpin();
         stepAvatarOnboardingSlot(-1, { animate: true });
     });
 
-    downBtn?.addEventListener('click', () => {
+    downBtn.addEventListener('click', () => {
         stopAvatarOnboardingLuckySpin();
         stepAvatarOnboardingSlot(1, { animate: true });
     });
 
-    luckyBtn?.addEventListener('click', () => {
+    closeBtn.addEventListener('click', () => {
+        dismissAvatarOnboarding();
+    });
+
+    skipBtn.addEventListener('click', () => {
+        dismissAvatarOnboarding();
+    });
+
+    luckyBtn.addEventListener('click', () => {
         startAvatarOnboardingLuckySpin();
     });
 
-    saveBtn?.addEventListener('click', () => {
+    saveBtn.addEventListener('click', () => {
         saveAvatarFromOnboarding();
     });
 
-    slotWindow?.addEventListener('wheel', (event) => {
+    slotWindow.addEventListener('wheel', (event) => {
         event.preventDefault();
         stopAvatarOnboardingLuckySpin();
         stepAvatarOnboardingSlot(event.deltaY > 0 ? 1 : -1, { animate: true });
     }, { passive: false });
 
-    slotWindow?.addEventListener('keydown', (event) => {
+    slotWindow.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
+        stopAvatarOnboardingLuckySpin();
+        const rect = slotWindow.getBoundingClientRect();
+        const midpoint = rect.top + (rect.height / 2);
+        stepAvatarOnboardingSlot(event.clientY < midpoint ? -1 : 1, { animate: true });
+    });
+
+    slotWindow.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
             event.preventDefault();
             stopAvatarOnboardingLuckySpin();
@@ -3024,23 +3102,48 @@ function initializeAvatarOnboardingControls() {
         slotWindow.setAttribute('tabindex', '0');
     }
 
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+            dismissAvatarOnboarding();
+        }
+    });
+
+    if (!avatarOnboardingState.escapeBound) {
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            if (!avatarOnboardingState.visible) return;
+            dismissAvatarOnboarding();
+        });
+        avatarOnboardingState.escapeBound = true;
+    }
+
     avatarOnboardingState.initialized = true;
+    return true;
 }
 
 function syncAvatarOnboardingPrompt() {
     if (!currentUser) {
         stopAvatarOnboardingLuckySpin();
         setAvatarOnboardingVisible(false);
+        setAvatarOnboardingMessage('');
         return;
     }
 
     if (currentUserHasAvatar(currentUser)) {
+        clearAvatarOnboardingSnooze(currentUser.uid);
         stopAvatarOnboardingLuckySpin();
+        setAvatarOnboardingVisible(false);
+        setAvatarOnboardingMessage('');
+        return;
+    }
+
+    if (isAvatarOnboardingSnoozed(currentUser.uid)) {
         setAvatarOnboardingVisible(false);
         return;
     }
 
-    initializeAvatarOnboardingControls();
+    const controlsReady = initializeAvatarOnboardingControls();
+    if (!controlsReady) return;
 
     const currentAvatarIndex = getAvatarSlotIndexForEmoji(getUserAvatarEmoji(currentUser));
     if (currentAvatarIndex >= 0) {

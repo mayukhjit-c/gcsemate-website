@@ -3577,7 +3577,10 @@
     </div>
     <div id="avatar-onboarding-overlay" class="avatar-onboarding-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="avatar-onboarding-title" aria-describedby="avatar-onboarding-help">
         <div class="avatar-onboarding-card">
-            <p class="avatar-onboarding-kicker">Account setup</p>
+            <div class="avatar-onboarding-head">
+                <p class="avatar-onboarding-kicker">Account setup</p>
+                <button type="button" id="avatar-onboarding-close" class="avatar-onboarding-close" aria-label="Close avatar chooser">&times;</button>
+            </div>
             <h3 id="avatar-onboarding-title" class="avatar-onboarding-title">Pick your avatar before continuing</h3>
             <p id="avatar-onboarding-help" class="avatar-onboarding-help">Choose your avatar with the slot controls or use Feeling Lucky. This helps personalize leaderboards and your account.</p>
 
@@ -3592,6 +3595,7 @@
             </div>
 
             <div class="avatar-onboarding-actions">
+                <button type="button" id="avatar-slot-skip" class="avatar-onboarding-btn ghost">Not now</button>
                 <button type="button" id="avatar-slot-lucky" class="avatar-onboarding-btn secondary">Feeling Lucky</button>
                 <button type="button" id="avatar-slot-save" class="avatar-onboarding-btn primary">Use this avatar</button>
             </div>

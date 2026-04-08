@@ -7408,6 +7408,13 @@ will-change: transform;
             padding: 1.25rem 1.2rem 1.1rem;
         }
 
+        .avatar-onboarding-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.7rem;
+        }
+
         .avatar-onboarding-kicker {
             margin: 0;
             font-size: 0.66rem;
@@ -7415,6 +7422,28 @@ will-change: transform;
             letter-spacing: 0.16em;
             text-transform: uppercase;
             color: #1d4ed8;
+        }
+
+        .avatar-onboarding-close {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(255, 255, 255, 0.84);
+            color: #475569;
+            font-size: 1.1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease, transform 140ms ease;
+        }
+
+        .avatar-onboarding-close:hover {
+            border-color: rgba(37, 99, 235, 0.38);
+            color: #1d4ed8;
+            background: rgba(239, 246, 255, 0.96);
+            transform: translateY(-1px);
         }
 
         .avatar-onboarding-title {
@@ -7474,6 +7503,7 @@ will-change: transform;
             align-content: center;
             gap: 0.3rem;
             outline: none;
+            cursor: ns-resize;
         }
 
         .avatar-slot-item {
@@ -7518,6 +7548,12 @@ will-change: transform;
             border-color: rgba(59, 130, 246, 0.28);
             background: rgba(239, 246, 255, 0.95);
             color: #1e40af;
+        }
+
+        .avatar-onboarding-btn.ghost {
+            border-color: rgba(148, 163, 184, 0.38);
+            background: rgba(255, 255, 255, 0.94);
+            color: #334155;
         }
 
         .avatar-onboarding-btn.primary {
@@ -9827,7 +9863,7 @@ will-change: transform;
             }
 
             .avatar-onboarding-btn {
-                flex: 1 1 calc(50% - 0.52rem);
+                flex: 1 1 100%;
                 justify-content: center;
                 text-align: center;
             }
