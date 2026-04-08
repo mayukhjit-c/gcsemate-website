@@ -1218,10 +1218,15 @@ transition: box-shadow 0.2s ease;
 
         .lesson-spotlight-shell {
             border-radius: 1.2rem;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            background: rgba(255, 255, 255, 0.96);
             padding: 0.75rem;
-            box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.9);
+            box-shadow: 0 24px 60px -34px rgba(15, 23, 42, 0.45);
+        }
+
+        #lesson-image-spotlight-modal {
+            background: rgba(248, 250, 252, 0.82);
+            backdrop-filter: blur(6px);
         }
 
         .lesson-spotlight-stage {
@@ -1230,8 +1235,15 @@ transition: box-shadow 0.2s ease;
             max-height: 72vh;
             overflow: auto;
             border-radius: 0.95rem;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            background: rgba(15, 23, 42, 0.58);
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background-color: #f8fafc;
+            background-image:
+                linear-gradient(45deg, rgba(203, 213, 225, 0.6) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(203, 213, 225, 0.6) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(203, 213, 225, 0.6) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(203, 213, 225, 0.6) 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1243,9 +1255,10 @@ transition: box-shadow 0.2s ease;
             max-height: 68vh;
             transform-origin: center center;
             border-radius: 0.9rem;
-            border: 1px solid rgba(203, 213, 225, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.45);
             transition: transform 180ms ease;
-            background: #0f172a;
+            background: #ffffff;
+            filter: drop-shadow(0 10px 20px rgba(15, 23, 42, 0.18));
         }
 
         .lesson-spotlight-toolbar {
@@ -1259,9 +1272,9 @@ transition: box-shadow 0.2s ease;
 
         .lesson-spotlight-btn {
             border-radius: 0.65rem;
-            border: 1px solid rgba(148, 163, 184, 0.32);
-            background: rgba(15, 23, 42, 0.72);
-            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.42);
+            background: rgba(255, 255, 255, 0.95);
+            color: #334155;
             font-size: 0.78rem;
             font-weight: 700;
             padding: 0.45rem 0.68rem;
@@ -1269,8 +1282,8 @@ transition: box-shadow 0.2s ease;
         }
 
         .lesson-spotlight-btn:hover {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: rgba(191, 219, 254, 0.5);
+            background: rgba(239, 246, 255, 0.95);
+            border-color: rgba(96, 165, 250, 0.6);
         }
 
         .lesson-spotlight-btn:disabled {
@@ -1279,7 +1292,7 @@ transition: box-shadow 0.2s ease;
         }
 
         .lesson-spotlight-counter {
-            color: #cbd5e1;
+            color: #334155;
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.05em;
@@ -1292,12 +1305,19 @@ transition: box-shadow 0.2s ease;
             width: 2rem;
             height: 2rem;
             border-radius: 9999px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(15, 23, 42, 0.72);
-            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(255, 255, 255, 0.95);
+            color: #334155;
             font-size: 1.2rem;
             font-weight: 700;
             line-height: 1;
+        }
+
+        #tools-planner-panel,
+        #tools-notes-panel,
+        #tools-wheel-panel,
+        #tools-flashcards-panel {
+            scroll-margin-top: 0.85rem;
         }
 
         @media (max-width: 768px) {
@@ -8985,11 +9005,20 @@ will-change: transform;
             font-weight: 800;
         }
 
+        .countdown-banner-nav,
+        .countdown-banner-dismiss {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
         .countdown-banner-nav {
             width: 1.85rem;
             height: 1.85rem;
             line-height: 1;
-            font-size: 1rem;
+            font-size: 1.08rem;
             transition: background-color 120ms ease;
         }
 
@@ -9016,7 +9045,7 @@ will-change: transform;
             width: 1.9rem;
             height: 1.9rem;
             line-height: 1;
-            font-size: 1.18rem;
+            font-size: 1.04rem;
         }
 
         .site-announcement-nav {

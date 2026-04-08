@@ -22853,6 +22853,8 @@ function openDashboardToolsSection(section = 'planner') {
     const sectionTargetMap = {
         flashcards: 'tools-flashcards-panel',
         notes: 'tools-notes-panel',
+        wheel: 'tools-wheel-panel',
+        spin: 'tools-wheel-panel',
         planner: 'tools-planner-panel',
         organiser: 'tools-planner-panel',
         organizer: 'tools-planner-panel'
@@ -22860,6 +22862,8 @@ function openDashboardToolsSection(section = 'planner') {
     const focusTargetMap = {
         flashcards: 'tools-flashcards-deck-name',
         notes: 'tools-notes-input',
+        wheel: 'tools-wheel-spin',
+        spin: 'tools-wheel-spin',
         planner: 'tools-planner-input',
         organiser: 'tools-planner-input',
         organizer: 'tools-planner-input'
@@ -22895,7 +22899,7 @@ function openDashboardToolsSection(section = 'planner') {
         const viewportHeight = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
         const isAlreadyVisible = targetRect.top >= 84 && targetRect.bottom <= Math.max(84, viewportHeight - 28);
         if (!isAlreadyVisible) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
         }
         const focusTarget = document.getElementById(focusId);
         if (focusTarget && typeof focusTarget.focus === 'function') {
