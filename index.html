@@ -312,9 +312,9 @@
                 <div class="about-hero-card">
                     <div class="about-hero-grid">
                         <div class="relative z-10">
-                            <div class="about-chip">Updated for the 2025 specs</div>
+                            <div class="about-chip">Updated for the 2025 specs + new study suite</div>
                             <h1 id="hero-heading" class="about-title mt-5">Ace GCSEs with <span class="brand-text">Confidence + Consistency</span></h1>
-                            <p class="about-lead mt-5">Join <span data-user-count-display>200+</span> students already revising smarter. GCSE notes, past papers, mark schemes, videos and study tools in one clean, mobile-first workspace aligned to AQA, Edexcel and OCR.</p>
+                            <p class="about-lead mt-5">Join <span data-user-count-display>200+</span> students already revising smarter with subject hubs, interactive lessons, grade tracking, streaks, videos and focused study tools in one clean, mobile-first workspace aligned to AQA, Edexcel and OCR.</p>
                             <div class="text-sm font-semibold text-blue-700 mt-4">Pro is &pound;1/month + 20% VAT (typically &pound;1.20 total) &mdash; create an account in under a minute, no card required. Questions? <a href="mailto:admin@gcsemate.com" class="underline hover:text-blue-800">admin@gcsemate.com</a></div>
                             <div class="about-pill-row mt-6">
                                 <span class="about-pill"><i class="fas fa-award"></i>AQA, Edexcel &amp; OCR</span>
@@ -345,10 +345,11 @@
                             <div class="about-chip about-chip--soft mb-4">Everything organised for you</div>
                             <ul class="space-y-3 mt-2">
                                 <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-check-circle text-blue-500 flex-shrink-0"></i>Structured notes &amp; past papers by subject</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-book-open text-blue-500 flex-shrink-0"></i>Interactive lessons with guided templates and progress tracking</li>
                                 <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-cloud-download-alt text-blue-500 flex-shrink-0"></i>Instant file previews plus smart downloads</li>
                                 <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-calendar-alt text-blue-500 flex-shrink-0"></i>Calendar, reminders &amp; study streak tracking</li>
-                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-star text-blue-500 flex-shrink-0"></i>Guided playlists to keep revision on rails</li>
-                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-tools text-blue-500 flex-shrink-0"></i>Focus timer, flashcards &amp; study tools</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-fire text-blue-500 flex-shrink-0"></i>Streak league + grade tracker to stay consistent</li>
+                                <li class="flex items-center gap-3 text-sm font-semibold text-slate-700"><i class="fas fa-tools text-blue-500 flex-shrink-0"></i>Focus timer, flashcards, planner, notes &amp; study tools</li>
                             </ul>
                             <div class="about-stat-grid mt-6">
                                 <div class="about-stat-card">
@@ -385,6 +386,25 @@
                     <div id="landing-subject-menu" class="landing-subject-grid" aria-live="polite"></div>
                 </section>
 
+                <section class="mt-8 rounded-2xl border border-blue-200/70 bg-gradient-to-r from-blue-50 via-white to-cyan-50 p-5 sm:p-6 shadow-sm" aria-labelledby="landing-whats-new-title">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.22em] text-blue-700">Now live on GCSEMate</p>
+                            <h2 id="landing-whats-new-title" class="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">New features built for faster revision wins</h2>
+                            <p class="mt-2 text-sm sm:text-base text-slate-600">Interactive lessons, streak league, grade tracking, and a stronger tools suite are now part of your daily workflow.</p>
+                        </div>
+                        <button onclick="showAuthPage(false)" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-rocket"></i>Try the latest features
+                        </button>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="rounded-xl border border-blue-100 bg-white/80 p-3 text-sm font-semibold text-slate-700"><i class="fas fa-book-open text-blue-600 mr-2"></i>Interactive lesson library</div>
+                        <div class="rounded-xl border border-blue-100 bg-white/80 p-3 text-sm font-semibold text-slate-700"><i class="fas fa-chart-line text-blue-600 mr-2"></i>Grade tracker insights</div>
+                        <div class="rounded-xl border border-blue-100 bg-white/80 p-3 text-sm font-semibold text-slate-700"><i class="fas fa-fire text-blue-600 mr-2"></i>Daily streak league</div>
+                        <div class="rounded-xl border border-blue-100 bg-white/80 p-3 text-sm font-semibold text-slate-700"><i class="fas fa-layer-group text-blue-600 mr-2"></i>Flashcards + planner + notes</div>
+                    </div>
+                </section>
+
                 <!-- Benefits -->
                 <div class="mt-8" id="benefits">
                     <div class="text-center mb-6">
@@ -394,23 +414,23 @@
                     <div class="about-story-grid">
                         <article class="about-story-card about-story-card--blue sr sr--d1">
                             <div class="about-card-icon"><i class="fas fa-folder-open"></i></div>
-                            <h3>One-stop revision hub</h3>
-                            <p>Notes, past papers, mark schemes and resources for every subject, organised in one dashboard. No more hunting through folders or losing files before exam day.</p>
+                            <h3>One-stop subject hubs</h3>
+                            <p>Notes, past papers, mark schemes and key resources are organised per subject so you can revise faster and stop bouncing between tabs.</p>
                         </article>
                         <article class="about-story-card about-story-card--emerald sr sr--d2">
-                            <div class="about-card-icon"><i class="fas fa-eye"></i></div>
-                            <h3>Instant file previews</h3>
-                            <p>Preview PDFs and documents directly inside the app with no downloading needed. Save time and storage space while studying more efficiently.</p>
+                            <div class="about-card-icon"><i class="fas fa-book-open"></i></div>
+                            <h3>Interactive lessons</h3>
+                            <p>Open structured lessons by subject, topic, and subtopic with guided content blocks that keep your revision focused and exam-relevant.</p>
                         </article>
                         <article class="about-story-card about-story-card--violet sr sr--d3">
-                            <div class="about-card-icon"><i class="fas fa-calendar-alt"></i></div>
-                            <h3>Smart calendar system</h3>
-                            <p>Never miss a deadline. Track exam dates, revision milestones and study streaks with an intelligent calendar that keeps you organised and on track.</p>
+                            <div class="about-card-icon"><i class="fas fa-chart-line"></i></div>
+                            <h3>Progress that is visible</h3>
+                            <p>Track your grades, build daily streaks, and monitor your consistency so you can spot progress early and fix weak topics sooner.</p>
                         </article>
                         <article class="about-story-card about-story-card--amber sr sr--d4">
                             <div class="about-card-icon"><i class="fas fa-tools"></i></div>
                             <h3>Built-in study tools</h3>
-                            <p>A Pomodoro focus timer, flashcard builder, formula sheets and more &mdash; everything for focused, session-based revision without ever leaving this tab.</p>
+                            <p>Use flashcards, planner tasks, quick notes, focus timers, and random revision prompts without ever leaving your workspace.</p>
                         </article>
                     </div>
                 </div>
@@ -3111,6 +3131,31 @@
                         </div>
                     </div>
 
+                    <div class="mb-8 rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50 via-white to-cyan-50 shadow-lg p-6">
+                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.22em] text-indigo-700">Fresh updates</p>
+                                <h3 class="text-2xl font-black text-slate-900 mt-2">What is new in GCSEMate right now</h3>
+                                <p class="text-slate-600 mt-2 max-w-3xl">We have expanded the revision workflow: richer lessons, better study tools, and stronger progress tracking so the app helps you stay consistent every day, not just during cramming week.</p>
+                            </div>
+                            <div class="inline-flex items-center gap-2 rounded-full bg-indigo-100 text-indigo-700 px-4 py-2 text-sm font-semibold self-start"><i class="fas fa-rocket"></i>Built and shipped with student feedback</div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                            <div class="rounded-xl bg-white/90 border border-indigo-100 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wider text-indigo-600">Lessons</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-800">Structured lesson library by subject, topic, and subtopic.</p>
+                            </div>
+                            <div class="rounded-xl bg-white/90 border border-indigo-100 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wider text-indigo-600">Tools</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-800">Flashcards, planner, notes, and focus timers in one place.</p>
+                            </div>
+                            <div class="rounded-xl bg-white/90 border border-indigo-100 p-4">
+                                <p class="text-xs font-bold uppercase tracking-wider text-indigo-600">Progress</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-800">Grade tracker + streak league for daily accountability.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
                         <div class="lg:col-span-2 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl shadow-xl p-6">
                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -3128,10 +3173,12 @@
                                         <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">Start now</span>
                                     </div>
                                     <p class="text-3xl font-extrabold text-gray-900">£0</p>
-                                    <p class="text-sm text-gray-600 mb-3">Core GCSE navigation, blog, videos, and study reminders.</p>
+                                    <p class="text-sm text-gray-600 mb-3">Core GCSE navigation, study tools, and progress tracking.</p>
                                     <ul class="space-y-1 text-sm text-gray-700">
                                         <li>• Access to free subjects that rotate monthly</li>
+                                        <li>• One lesson open per day from the lesson library</li>
                                         <li>• Blog, videos, and calendar basics</li>
+                                        <li>• Flashcards, planner, and quick notes</li>
                                         <li>• File previews (where enabled by admins)</li>
                                         <li>• 2-minute in-app tutorial</li>
                                     </ul>
@@ -3145,7 +3192,9 @@
                                     <p class="text-sm text-gray-700 mb-3">Unlimited subjects, full file browser, downloads, and premium support. Base price is £1 and 20% VAT makes the total £1.20.</p>
                                     <ul class="space-y-1 text-sm text-gray-700">
                                         <li>• Unlimited subject hubs & starred files</li>
+                                        <li>• Unlimited lesson library access</li>
                                         <li>• Full previews + one-click downloads</li>
+                                        <li>• Grade tracker and streak league with all Pro content unlocked</li>
                                         <li>• Global events, countdowns, and admin support</li>
                                         <li>• Instant upgrade, with your free data kept in place</li>
                                     </ul>
@@ -3187,8 +3236,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                                     </svg>
                                 </div>
-                                <h3 class="text-xl font-bold text-gray-900 mb-2">File Starring & Download</h3>
-                                <p class="text-gray-600">Pin your most important files to the top of any folder and download them with a single click.</p>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">File Starring & Fast Downloads</h3>
+                                <p class="text-gray-600">Pin high-priority resources, preview quickly, and download in one click when you are ready to revise offline.</p>
                             </div>
                         </div>
                         
@@ -3204,11 +3253,41 @@
                                 <p class="text-gray-600">Preview documents, images, and PDFs directly within the app without needing to download them first.</p>
                             </div>
                         </div>
+
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                                    <i class="fas fa-book-open text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Interactive Lessons</h3>
+                                <p class="text-gray-600">Study structured lessons by subject, topic, and subtopic with a cleaner flow for understanding and retention.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 text-orange-600 mb-4">
+                                    <i class="fas fa-fire text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Streak League + Grade Tracker</h3>
+                                <p class="text-gray-600">Keep momentum with daily streak feedback and track grades over time so progress is always visible.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300">
+                            <div class="text-center mb-4">
+                                <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 mb-4">
+                                    <i class="fas fa-layer-group text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">All-in-One Study Toolkit</h3>
+                                <p class="text-gray-600">Flashcards, revision planner, quick notes, randomiser, and focus timer work together for stronger daily sessions.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="mt-12 bg-white/70 border border-white/30 rounded-2xl shadow-xl overflow-hidden">
                         <div class="p-6 border-b border-gray-200/60 text-center">
                             <h3 class="text-2xl font-bold text-gray-800">Free vs Pro Comparison</h3>
-                            <p class="text-gray-600">Choose the plan that supports your goals. Upgrade any time.</p>
+                            <p class="text-gray-600">Updated to reflect the latest GCSEMate features. Choose the plan that fits your revision goals.</p>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm" id="pricing-compare">
@@ -3222,16 +3301,36 @@
                                 <tbody id="pricing-compare-body" class="divide-y divide-gray-100">
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Subjects Dashboard</td>
-                                        <td class="px-4 py-3 text-gray-500">Limited</td>
+                                        <td class="px-4 py-3 text-gray-500">Rotating free subjects</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Unlimited</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Interactive Lessons</td>
+                                        <td class="px-4 py-3 text-gray-500">1 lesson per day</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Unlimited full lesson library</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">File Browser & Previews</td>
-                                        <td class="px-4 py-3 text-gray-500">Basic</td>
+                                        <td class="px-4 py-3 text-gray-500">Preview access</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Full access with Google Docs/Slides/Sheets preview</td>
                                     </tr>
                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Downloads & Starred Files</td>
+                                        <td class="px-4 py-3 text-gray-500">Limited</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">One-click downloads + full starred workflow</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
                                         <td class="px-4 py-3 font-medium text-gray-800">Videos & Playlists</td>
+                                        <td class="px-4 py-3 text-green-600">Included</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Flashcards + Planner + Notes</td>
+                                        <td class="px-4 py-3 text-green-600">Included</td>
+                                        <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
+                                    </tr>
+                                    <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                        <td class="px-4 py-3 font-medium text-gray-800">Grade Tracker & Streak League</td>
                                         <td class="px-4 py-3 text-green-600">Included</td>
                                         <td class="px-4 py-3 text-green-700 font-semibold">Included</td>
                                     </tr>
@@ -3249,6 +3348,11 @@
                                          <td class="px-4 py-3 font-medium text-gray-800">Accessibility</td>
                                          <td class="px-4 py-3 text-green-600">Semantic HTML, skip links, ARIA labels</td>
                                          <td class="px-4 py-3 text-green-700 font-semibold">Everything in Free + higher contrast presets and keyboard flows</td>
+                                     </tr>
+                                     <tr class="opacity-0 translate-y-2 transition-all duration-500">
+                                         <td class="px-4 py-3 font-medium text-gray-800">Support & New Feature Access</td>
+                                         <td class="px-4 py-3 text-gray-500">Standard support</td>
+                                         <td class="px-4 py-3 text-green-700 font-semibold">Priority support + first access to new releases</td>
                                      </tr>
                                 </tbody>
                             </table>
