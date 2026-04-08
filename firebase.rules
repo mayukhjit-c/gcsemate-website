@@ -35,7 +35,8 @@ service cloud.firestore {
     }
     function hasValidAvatarFields(data) {
       return (!data.keys().hasAny(['avatarEmoji']) || data.avatarEmoji == null || (data.avatarEmoji is string && data.avatarEmoji.size() <= 16)) &&
-        (!data.keys().hasAny(['profilePictureURL']) || data.profilePictureURL == null || data.profilePictureURL is string);
+        (!data.keys().hasAny(['profilePictureURL']) || data.profilePictureURL == null || data.profilePictureURL is string) &&
+        (!data.keys().hasAny(['avatarOnboardingCompletedAt']) || data.avatarOnboardingCompletedAt == null || data.avatarOnboardingCompletedAt is timestamp);
     }
     function hasValidStudyStreakFields(data) {
       return (!data.keys().hasAny(['studyStreakCurrent']) || (data.studyStreakCurrent is number && data.studyStreakCurrent >= 0 && data.studyStreakCurrent <= 36500)) &&
@@ -47,7 +48,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly([
           'displayName','email','tier','role','starredFiles','allowedSubjects','createdAt',
           'preferences','theme','profilePictureURL','profilePictureUpdatedAt',
-          'avatarEmoji','avatarUpdatedAt',
+          'avatarEmoji','avatarUpdatedAt','avatarOnboardingCompletedAt',
           'studyStreakCurrent','studyStreakBest','studyStreakLastActiveDate','studyStreakUpdatedAt'
         ]) &&
         hasValidAvatarFields(request.resource.data) &&
