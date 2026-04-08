@@ -2912,6 +2912,7 @@ function setAvatarOnboardingVisible(visible) {
     if (!overlay) return;
     const shouldShow = !!visible;
     overlay.classList.toggle('hidden', !shouldShow);
+    overlay.style.display = shouldShow ? 'flex' : 'none';
     overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
     document.body.classList.toggle('avatar-onboarding-active', shouldShow);
     if (!shouldShow) {

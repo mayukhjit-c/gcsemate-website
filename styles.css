@@ -7399,6 +7399,10 @@ will-change: transform;
             padding: 1.1rem;
         }
 
+        .avatar-onboarding-overlay.hidden {
+            display: none !important;
+        }
+
         .avatar-onboarding-card {
             width: min(100%, 30rem);
             border-radius: 1.15rem;
