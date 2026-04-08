@@ -247,6 +247,15 @@ let toolsTimerPipDrag = {
     offsetX: 0,
     offsetY: 0
 };
+let middleAutoScrollState = {
+    active: false,
+    anchorX: 0,
+    anchorY: 0,
+    pointerY: 0,
+    scrollHost: null,
+    rafId: null,
+    indicatorEl: null
+};
 let toolsPageInitialized = false;
 let toolsPlannerItems = [];
 let toolsWheelRotation = 0;
@@ -2068,6 +2077,132 @@ function getElementActivityLabel(target) {
     const labelled = target.closest('[data-page], [data-tools-planner-id], [data-grade-delete-id], button, input, select, textarea, a');
     if (!labelled) return target.tagName?.toLowerCase() || 'unknown';
     return labelled.id || labelled.name || labelled.dataset.page || labelled.dataset.toolsPlannerId || labelled.dataset.gradeDeleteId || labelled.getAttribute('aria-label') || labelled.textContent?.trim()?.slice(0, 60) || labelled.tagName?.toLowerCase() || 'unknown';
+}
+
+function shouldIgnoreMiddleAutoScrollTarget(target) {
+    if (!target) return false;
+    return !!target.closest('button, a, input, textarea, select, label, summary, details, [role="button"], [contenteditable="true"], iframe, canvas, video');
+}
+
+function removeMiddleAutoScrollIndicator() {
+    const indicator = middleAutoScrollState.indicatorEl;
+    if (!indicator) return;
+    middleAutoScrollState.indicatorEl = null;
+    indicator.remove();
+}
+
+function mountMiddleAutoScrollIndicator(x, y) {
+    let indicator = middleAutoScrollState.indicatorEl;
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'middle-autoscroll-indicator';
+        document.body.appendChild(indicator);
+        middleAutoScrollState.indicatorEl = indicator;
+    }
+    indicator.style.left = `${Math.round(x)}px`;
+    indicator.style.top = `${Math.round(y)}px`;
+    indicator.classList.toggle('is-active', middleAutoScrollState.active);
+}
+
+function runMiddleAutoScrollFrame() {
+    const state = middleAutoScrollState;
+    if (!state.active || !state.scrollHost) return;
+
+    const deltaY = state.pointerY - state.anchorY;
+    const deadZone = 10;
+    let velocity = 0;
+    if (Math.abs(deltaY) > deadZone) {
+        const direction = deltaY > 0 ? 1 : -1;
+        const intensity = Math.min(34, (Math.abs(deltaY) - deadZone) / 5);
+        velocity = direction * intensity;
+    }
+
+    if (velocity !== 0) {
+        state.scrollHost.scrollTop += velocity;
+    }
+
+    state.rafId = requestAnimationFrame(runMiddleAutoScrollFrame);
+}
+
+function stopMiddleAutoScroll() {
+    const state = middleAutoScrollState;
+    if (state.rafId) {
+        cancelAnimationFrame(state.rafId);
+        state.rafId = null;
+    }
+    state.active = false;
+    state.scrollHost = null;
+
+    window.removeEventListener('mousemove', handleMiddleAutoScrollMove, true);
+    window.removeEventListener('mousedown', handleMiddleAutoScrollCancel, true);
+    window.removeEventListener('wheel', handleMiddleAutoScrollCancel, true);
+    window.removeEventListener('keydown', handleMiddleAutoScrollKeydown, true);
+    window.removeEventListener('blur', stopMiddleAutoScroll, true);
+
+    removeMiddleAutoScrollIndicator();
+}
+
+function handleMiddleAutoScrollMove(event) {
+    if (!middleAutoScrollState.active) return;
+    middleAutoScrollState.pointerY = event.clientY;
+}
+
+function handleMiddleAutoScrollCancel(event) {
+    if (!middleAutoScrollState.active) return;
+
+    if (event.type === 'mousedown') {
+        const button = Number(event.button);
+        if (![0, 1, 2].includes(button)) return;
+        if (button === 1) event.preventDefault();
+    }
+
+    stopMiddleAutoScroll();
+}
+
+function handleMiddleAutoScrollKeydown(event) {
+    if (!middleAutoScrollState.active) return;
+    if (event.key === 'Escape') stopMiddleAutoScroll();
+}
+
+function startMiddleAutoScroll(event, scrollHost) {
+    const state = middleAutoScrollState;
+    stopMiddleAutoScroll();
+
+    state.active = true;
+    state.anchorX = event.clientX;
+    state.anchorY = event.clientY;
+    state.pointerY = event.clientY;
+    state.scrollHost = scrollHost;
+
+    mountMiddleAutoScrollIndicator(state.anchorX, state.anchorY);
+
+    window.addEventListener('mousemove', handleMiddleAutoScrollMove, true);
+    window.addEventListener('mousedown', handleMiddleAutoScrollCancel, true);
+    window.addEventListener('wheel', handleMiddleAutoScrollCancel, true);
+    window.addEventListener('keydown', handleMiddleAutoScrollKeydown, true);
+    window.addEventListener('blur', stopMiddleAutoScroll, true);
+
+    state.rafId = requestAnimationFrame(runMiddleAutoScrollFrame);
+}
+
+function handlePageMiddleMouseDown(event) {
+    if (event.button !== 1) return;
+
+    const scrollHost = document.getElementById('page-content');
+    if (!scrollHost) return;
+    if (scrollHost.scrollHeight <= scrollHost.clientHeight + 2) return;
+    if (shouldIgnoreMiddleAutoScrollTarget(event.target)) return;
+
+    event.preventDefault();
+    startMiddleAutoScroll(event, scrollHost);
+}
+
+function initializeMiddleAutoScroll() {
+    const scrollHost = document.getElementById('page-content');
+    if (!scrollHost || scrollHost.dataset.middleAutoscrollBound === 'true') return;
+
+    scrollHost.addEventListener('mousedown', handlePageMiddleMouseDown);
+    scrollHost.dataset.middleAutoscrollBound = 'true';
 }
 
 function flushInteractionBatch({ immediate = false } = {}) {
@@ -11706,6 +11841,22 @@ function showPage(pageId) {
         return;
     }
 
+    const leavingToolsPage = currentId === 'tools-page' && pageId !== 'tools-page';
+    const enteringToolsPage = currentId !== 'tools-page' && pageId === 'tools-page';
+
+    if (leavingToolsPage && toolsTimerState?.isRunning) {
+        try {
+            initializeToolsTimerPip();
+            setToolsTimerPipVisible(true);
+        } catch (_) {}
+    }
+
+    if (enteringToolsPage && toolsTimerState?.pipVisible) {
+        try {
+            setToolsTimerPipVisible(false);
+        } catch (_) {}
+    }
+
     ensureDeferredAssetsForPage(pageId);
 
     // Setup paste handler when blog page is shown
@@ -12513,11 +12664,67 @@ function getStreakLeaderboardAvatarMarkup(entry) {
     return `<span class="dashboard-streak-avatar-fallback">${escapeHTML(fallbackInitial)}</span>`;
 }
 
+function getDashboardStreakHeatTier(streakDays) {
+    const safeDays = Math.max(0, Number(streakDays || 0));
+    if (safeDays >= 45) return { key: 'inferno', label: 'Inferno', percent: 100 };
+    if (safeDays >= 21) return { key: 'blaze', label: 'Blazing', percent: Math.min(100, 62 + Math.round(((safeDays - 21) / 24) * 38)) };
+    if (safeDays >= 10) return { key: 'surge', label: 'Surging', percent: Math.min(100, 34 + Math.round(((safeDays - 10) / 11) * 28)) };
+    if (safeDays >= 4) return { key: 'warm', label: 'Warming up', percent: Math.min(100, 12 + Math.round(((safeDays - 4) / 6) * 20)) };
+    return { key: 'ignite', label: safeDays > 0 ? 'Igniting' : 'Cold start', percent: Math.min(100, safeDays * 3) };
+}
+
+function animateDashboardStreakMetric(element, nextValue) {
+    if (!element) return;
+    const target = Math.max(0, Math.floor(Number(nextValue || 0)));
+    const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const previous = Number(element.dataset.metricValue || element.textContent || 0);
+    if (!Number.isFinite(previous) || reducedMotion || Math.abs(target - previous) > 140) {
+        element.textContent = String(target);
+        element.dataset.metricValue = String(target);
+        return;
+    }
+
+    const start = previous;
+    const durationMs = 520;
+    const startAt = performance.now();
+    const run = (now) => {
+        const progress = Math.min(1, (now - startAt) / durationMs);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(start + ((target - start) * eased));
+        element.textContent = String(value);
+        if (progress < 1) {
+            requestAnimationFrame(run);
+            return;
+        }
+        element.dataset.metricValue = String(target);
+    };
+    requestAnimationFrame(run);
+}
+
+function getDashboardStreakSparklineMarkup(currentStreak, bestStreak) {
+    const activeBars = Math.max(0, Math.min(14, Number(currentStreak || 0)));
+    const streakSeed = Math.max(1, Number(currentStreak || 0) + Number(bestStreak || 0));
+    return Array.from({ length: 14 }).map((_, index) => {
+        const active = index >= (14 - activeBars);
+        const seed = ((index + 1) * 17) + (streakSeed * 13);
+        const height = active
+            ? 52 + (seed % 42)
+            : 18 + (seed % 14);
+        return `<span class="dashboard-streak-spark${active ? ' is-active' : ''}" style="--spark-h:${height}%"></span>`;
+    }).join('');
+}
+
 function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     const listEl = document.getElementById('dashboard-streak-leaderboard-list');
     const currentEl = document.getElementById('dashboard-streak-current');
     const bestEl = document.getElementById('dashboard-streak-best');
     const rankEl = document.getElementById('dashboard-streak-rank');
+    const cardEl = document.getElementById('dashboard-streak-leaderboard-card');
+    const flameValueEl = document.getElementById('dashboard-streak-flame-value');
+    const heatFillEl = document.getElementById('dashboard-streak-heat-fill');
+    const heatLabelEl = document.getElementById('dashboard-streak-heat-label');
+    const sparklineEl = document.getElementById('dashboard-streak-sparkline');
+    const challengeEl = document.getElementById('dashboard-streak-challenge');
     if (!listEl || !currentEl || !bestEl || !rankEl) return;
 
     const normalizedRows = Array.isArray(rows)
@@ -12538,15 +12745,47 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
 
     const currentStreak = Math.max(0, Number(myRow?.studyStreak || currentUser?.studyStreakCurrent || userActivityTracker?.dailyStats?.studyStreak || 0));
     const bestStreak = Math.max(currentStreak, Number(myRow?.bestStudyStreak || currentUser?.studyStreakBest || 0));
+    const heatTier = getDashboardStreakHeatTier(currentStreak);
 
-    currentEl.textContent = String(currentStreak);
-    bestEl.textContent = String(bestStreak);
+    animateDashboardStreakMetric(currentEl, currentStreak);
+    animateDashboardStreakMetric(bestEl, bestStreak);
     if (myIndex >= 0) {
         rankEl.textContent = `#${myIndex + 1}`;
     } else if (currentStreak > 0) {
         rankEl.textContent = 'Outside Top 25';
     } else {
         rankEl.textContent = 'Unranked';
+    }
+
+    if (cardEl) {
+        cardEl.dataset.streakTier = heatTier.key;
+        cardEl.style.setProperty('--streak-heat', `${heatTier.percent}%`);
+    }
+    if (flameValueEl) {
+        flameValueEl.textContent = `${currentStreak}d`;
+    }
+    if (heatFillEl) {
+        heatFillEl.style.width = `${heatTier.percent}%`;
+    }
+    if (heatLabelEl) {
+        heatLabelEl.textContent = `${heatTier.label} | ${heatTier.percent}%`;
+    }
+    if (sparklineEl) {
+        sparklineEl.innerHTML = getDashboardStreakSparklineMarkup(currentStreak, bestStreak);
+    }
+
+    if (challengeEl) {
+        if (myIndex === 0 && currentStreak > 0) {
+            challengeEl.textContent = 'You are leading the streak league. Keep momentum today.';
+        } else if (myIndex > 0) {
+            const nextRow = normalizedRows[myIndex - 1];
+            const gap = Math.max(1, Number(nextRow?.studyStreak || 0) - currentStreak);
+            challengeEl.textContent = `${gap} day${gap === 1 ? '' : 's'} to climb to #${myIndex}.`;
+        } else if (currentStreak > 0) {
+            challengeEl.textContent = 'You are outside the top 25. Keep stacking sessions to break in.';
+        } else {
+            challengeEl.textContent = 'Complete one focus session today to ignite your streak.';
+        }
     }
 
     if (!topRows.length) {
@@ -12558,9 +12797,10 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
         const isCurrentUser = entry.userId === currentUser?.uid;
         const safeName = escapeHTML(entry.displayName || 'Learner');
         const streakLabel = `${entry.studyStreak} day${entry.studyStreak === 1 ? '' : 's'}`;
+        const rankBadge = index < 3 ? `T${index + 1}` : String(index + 1);
         return `
-            <div class="dashboard-streak-row${isCurrentUser ? ' is-current' : ''}">
-                <span class="dashboard-streak-rank-badge">${index + 1}</span>
+            <div class="dashboard-streak-row${isCurrentUser ? ' is-current' : ''}" style="--streak-row-delay:${index * 70}ms">
+                <span class="dashboard-streak-rank-badge${index < 3 ? ' has-medal' : ''}">${rankBadge}</span>
                 <span class="dashboard-streak-avatar">${getStreakLeaderboardAvatarMarkup(entry)}</span>
                 <span class="dashboard-streak-name">${safeName}${isCurrentUser ? ' (You)' : ''}</span>
                 <span class="dashboard-streak-value">${escapeHTML(streakLabel)}</span>
@@ -21290,7 +21530,14 @@ function updateToolsTimerFullscreenButton() {
     const btn = document.getElementById('tools-timer-fullscreen');
     const card = document.getElementById('tools-timer-card');
     if (!btn || !card) return;
-    btn.textContent = document.fullscreenElement === card ? 'Exit Fullscreen' : 'Fullscreen';
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || null;
+    const isFullscreen = fullscreenElement === card;
+    btn.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+    card.classList.toggle('is-fullscreen-active', isFullscreen);
+
+    if (isFullscreen && toolsTimerState?.pipVisible) {
+        setToolsTimerPipVisible(false);
+    }
 }
 
 function saveToolsState() {
@@ -24483,6 +24730,7 @@ function initializeToolsPage() {
             pipToggleBtn.dataset.boundPipToggle = 'true';
         }
         document.addEventListener('fullscreenchange', updateToolsTimerFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateToolsTimerFullscreenButton);
 
         if (customHoursInput) customHoursInput.addEventListener('input', () => updateCustomTimerInputs(getCustomTimerDurationFromInputs()));
         if (customMinutesInput) customMinutesInput.addEventListener('input', () => updateCustomTimerInputs(getCustomTimerDurationFromInputs()));
@@ -24968,6 +25216,8 @@ document.addEventListener('DOMContentLoaded', () => {
             contentArea.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
+
+    initializeMiddleAutoScroll();
 
     // Animate pricing table rows on intersection
     try {
