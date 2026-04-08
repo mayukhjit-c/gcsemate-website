@@ -723,7 +723,7 @@
                 </div>
                 <span id="welcome-message" class="text-xs xl:text-sm font-semibold text-gray-700 truncate max-w-[14ch] xl:max-w-[24ch]"></span>
                 <div id="profile-avatar-shell" class="relative mr-4 flex-shrink-0 w-8 h-8">
-                    <img id="profile-picture" src="" alt="User Profile Picture" class="w-8 h-8 rounded-full border-2 border-white shadow-sm transition-transform duration-200 hover:scale-110" loading="lazy" decoding="async">
+                    <img id="profile-picture" src="" alt="User avatar" class="w-8 h-8 rounded-full border-2 border-white shadow-sm transition-transform duration-200 hover:scale-110" loading="lazy" decoding="async">
                     <span id="profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-header hidden" aria-hidden="true"></span>
                 </div>
                 <a href="/account" class="nav-link text-sm font-semibold py-2 px-3 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex-shrink-0" data-page="account-settings-page" data-tooltip="Manage your account">Account</a>
@@ -2764,15 +2764,12 @@
                             <div class="admin-account-settings-grid">
                                 <div class="admin-account-avatar-card">
                                     <div class="relative w-20 h-20 mx-auto mb-3">
-                                        <img id="admin-account-profile-picture" src="" alt="Admin profile picture" class="w-20 h-20 rounded-full border-2 border-gray-300 shadow-sm">
+                                        <img id="admin-account-profile-picture" src="" alt="Admin avatar" class="w-20 h-20 rounded-full border-2 border-gray-300 shadow-sm">
                                         <span id="admin-account-profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-account hidden" aria-hidden="true"></span>
                                     </div>
-                                    <div class="flex gap-2 justify-center mb-3">
-                                        <button onclick="showProfilePictureUploadModal()" class="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">Upload Photo</button>
-                                        <button onclick="removeProfilePicture()" class="px-3 py-2 bg-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors">Remove</button>
-                                    </div>
+                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'admin-settings-avatar', preferAdmin: true })" class="w-full px-3 py-2 mb-3 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">Choose Avatar</button>
                                     <div class="rounded-lg border border-gray-200 bg-white/80 p-3">
-                                        <label for="admin-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Emoji Avatar</label>
+                                        <label for="admin-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Avatar Emoji</label>
                                         <div class="flex flex-wrap items-center gap-2 mb-2">
                                             <button type="button" onclick="setAvatarEmojiPresetForInput('admin-avatar-emoji','🔥')" class="emoji-avatar-preset-btn">🔥</button>
                                             <button type="button" onclick="setAvatarEmojiPresetForInput('admin-avatar-emoji','🚀')" class="emoji-avatar-preset-btn">🚀</button>
@@ -2808,12 +2805,12 @@
                         <h3 class="text-2xl font-bold mb-6 text-gray-800">Your Account</h3>
                         <div class="user-settings-primary-grid">
                         
-                        <!-- Profile Picture Section -->
+                        <!-- Avatar Section -->
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg user-settings-profile-card">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-3">Profile Picture</h4>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-3">Avatar</h4>
                             <div class="flex items-center gap-4">
                                 <div class="relative w-16 h-16">
-                                    <img id="account-profile-picture" src="" alt="Profile Picture" class="w-16 h-16 rounded-full border-2 border-gray-300 shadow-sm">
+                                    <img id="account-profile-picture" src="" alt="Account avatar" class="w-16 h-16 rounded-full border-2 border-gray-300 shadow-sm">
                                     <span id="account-profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-account hidden" aria-hidden="true"></span>
                                     <div class="absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
                                         <svg class="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2822,19 +2819,14 @@
                                     </div>
                                 </div>
                                 <div class="flex-1">
-                                    <div class="flex gap-2">
-                                        <button onclick="showProfilePictureUploadModal()" class="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                                            Upload Photo
-                                        </button>
-                                        <button onclick="removeProfilePicture()" class="px-3 py-2 bg-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors">
-                                            Remove
-                                        </button>
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Use either a photo or an emoji avatar.</p>
+                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'user-settings-avatar' })" class="px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                                        Choose Avatar
+                                    </button>
+                                    <p class="text-xs text-gray-500 mt-1">Your avatar icon appears in the header and leaderboard.</p>
                                 </div>
                             </div>
                             <div class="mt-4 rounded-lg border border-gray-200 bg-white/80 p-3">
-                                <label for="user-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Emoji Avatar</label>
+                                <label for="user-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Avatar Emoji</label>
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
                                     <button type="button" onclick="setAvatarEmojiPreset('🔥')" class="emoji-avatar-preset-btn">🔥</button>
                                     <button type="button" onclick="setAvatarEmojiPreset('🚀')" class="emoji-avatar-preset-btn">🚀</button>
@@ -3709,45 +3701,6 @@
                     <button onclick="closeUpgradeModal()" class="flex-1 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors text-sm">Not now</button>
                     <button onclick="showPage('features-page'); closeUpgradeModal();" class="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 text-sm flex items-center justify-center gap-2">
                         Upgrade Now <i class="fas fa-arrow-right text-xs"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="profile-picture-crop-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10003]">
-        <div class="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Crop & Edit Profile Picture</h3>
-                <button onclick="closeProfilePictureCropModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Close">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="space-y-4">
-                <div class="relative bg-gray-100 rounded-lg overflow-hidden" style="min-height: 400px;">
-                    <canvas id="profile-crop-canvas" class="max-w-full h-auto mx-auto block"></canvas>
-                    <div id="profile-crop-overlay" class="absolute inset-0 pointer-events-none">
-                        <div id="profile-crop-box" class="absolute border-2 border-blue-500 bg-blue-500/10 cursor-move">
-                            <div class="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="nw"></div>
-                            <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="ne"></div>
-                            <div class="absolute -bottom-1 -left-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nesw-resize" data-handle="sw"></div>
-                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize" data-handle="se"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Zoom</label>
-                        <input type="range" id="profile-zoom-slider" min="0.5" max="3" step="0.1" value="1" class="w-full">
-                        <div class="text-xs text-gray-500 mt-1 text-center"><span id="profile-zoom-value">100%</span></div>
-                    </div>
-                    <div class="flex items-end">
-                        <p class="text-sm text-gray-600">Profile pictures are automatically compressed to save storage. Drag to reposition, use handles to resize.</p>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 pt-2 border-t border-gray-200">
-                    <button onclick="closeProfilePictureCropModal()" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                    <button onclick="applyProfilePictureCrop()" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-                        <i class="fas fa-check mr-2"></i>Apply & Upload
                     </button>
                 </div>
             </div>

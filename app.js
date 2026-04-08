@@ -2828,12 +2828,8 @@ function getUserAvatarEmoji(user = currentUser) {
     return sanitizeAvatarEmojiInput(user?.avatarEmoji || '');
 }
 
-function hasUserProfilePicture(user = currentUser) {
-    return !!String(user?.profilePictureURL || '').trim();
-}
-
 function currentUserHasAvatar(user = currentUser) {
-    return !!(getUserAvatarEmoji(user) || hasUserProfilePicture(user));
+    return !!getUserAvatarEmoji(user);
 }
 
 function shouldShowDashboardStreakNewTag(now = Date.now()) {
@@ -8171,6 +8167,9 @@ function renderUserManagementPanel(allUsers) {
         const gradesActionMarkup = hasSavedGrades
             ? `<button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>`
             : '<span class="px-3 py-2 bg-gray-100 text-gray-500 font-semibold rounded-lg text-sm text-center border border-gray-200" title="No saved grades for this user">No Grades</span>';
+        const sharingActionMarkup = sharingInstances > 0
+            ? `<button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing</button>`
+            : '<span class="px-3 py-2 bg-gray-100 text-gray-500 font-semibold rounded-lg text-sm text-center border border-gray-200" title="No account sharing instances for this user">No Sharing</span>';
         const card = document.createElement('div');
         card.className = 'admin-user-card bg-white/85 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-200/70 flex flex-col gap-3 hover:shadow-md transition-all duration-200';
         card.innerHTML = `
@@ -8224,7 +8223,7 @@ function renderUserManagementPanel(allUsers) {
                 <button data-user-action="edit" data-user-id="${user.id}" class="px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm" data-tooltip="Edit user settings">Edit</button>
                 <button data-user-action="activity" data-user-id="${user.id}" class="px-3 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors text-sm" data-tooltip="View user activity">Activity</button>
                 ${gradesActionMarkup}
-                <button data-user-action="sharing-log" data-user-id="${user.id}" class="px-3 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-sm" data-tooltip="View account sharing history">Sharing</button>
+                ${sharingActionMarkup}
                 <button data-user-action="force-logout" data-user-id="${user.id}" class="px-3 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm" data-tooltip="Force logout on next sync">Logout</button>
                 ${hasSharingFlag ? `<button data-user-action="restore-access" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="Restore access after account sharing review">Restore</button>` : '<div class="hidden sm:block"></div>'}
             </div>
@@ -8591,26 +8590,71 @@ async function viewUserTracking(userId) {
 
 // Profile Picture Upload Functions
 async function uploadProfilePicture(file) {
-    if (!currentUser) {
-        showToast('Please log in to upload a profile picture', 'error');
-        return;
-    }
-    
-    // Profile pictures are now available to all users
-    // Validate file using Validator
-    const validation = Validator.file(file, {
-        maxSize: 5 * 1024 * 1024, // 5MB
-        allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    });
-    
-    if (!validation.valid) {
-        showToast(validation.error, 'error');
-        return;
-    }
-    
-    // Open profile picture crop modal
-    openProfilePictureCropModal(file);
+    showToast('Profile photo uploads have been removed. Use avatar picker instead.', 'info');
+    openAvatarPickerFromProfile({ source: 'legacy-profile-upload' });
 }
+
+function openAvatarPickerFromProfile({ source = 'profile', preferAdmin = false } = {}) {
+    if (!currentUser) {
+        showToast('Please log in to change your avatar.', 'error');
+        return;
+    }
+
+    const targetInputId = (preferAdmin || isAdminUser(currentUser)) ? 'admin-avatar-emoji' : 'user-avatar-emoji';
+
+    const openAccountAvatarInput = () => {
+        try {
+            navigateToPageId('account-settings-page');
+        } catch (_) {
+            showPage('account-settings-page');
+        }
+
+        let attempts = 0;
+        const maxAttempts = 8;
+        const focusInput = () => {
+            const page = document.getElementById('account-settings-page');
+            const input = document.getElementById(targetInputId) || document.getElementById('user-avatar-emoji') || document.getElementById('admin-avatar-emoji');
+            if (!page || page.classList.contains('hidden') || !input) {
+                if (attempts < maxAttempts) {
+                    attempts += 1;
+                    setTimeout(focusInput, 110);
+                }
+                return;
+            }
+            try {
+                input.focus({ preventScroll: true });
+                if (typeof input.select === 'function') input.select();
+            } catch (_) {
+                input.focus();
+            }
+        };
+        setTimeout(focusInput, 140);
+    };
+
+    try {
+        const controlsReady = initializeAvatarOnboardingControls();
+        if (controlsReady) {
+            const avatarIndex = getAvatarSlotIndexForEmoji(getUserAvatarEmoji(currentUser));
+            if (avatarIndex >= 0) {
+                avatarOnboardingState.selectedIndex = avatarIndex;
+            }
+            renderAvatarOnboardingSlotWindow(avatarOnboardingState.selectedIndex, { animate: false });
+            setAvatarOnboardingMessage('Pick your avatar and save to update everywhere.', 'muted');
+            setAvatarOnboardingVisible(true);
+            try {
+                recordUserInteraction('open_avatar_picker', { source, important: false });
+            } catch (_) {}
+            return;
+        }
+    } catch (_) {
+        // Fall through to account settings focus fallback.
+    }
+
+    openAccountAvatarInput();
+    showToast('Use the avatar field to update your profile icon.', 'info');
+}
+
+window.openAvatarPickerFromProfile = openAvatarPickerFromProfile;
 
 // Profile picture crop modal with zoom functionality
 let profileCropState = {
@@ -8629,6 +8673,10 @@ let profileCropState = {
 };
 
 window.openProfilePictureCropModal = function(file) {
+    showToast('Profile photo uploads have been removed. Use avatar picker instead.', 'info');
+    openAvatarPickerFromProfile({ source: 'legacy-crop-modal' });
+    return;
+
     profileCropState.originalFile = file;
     const modal = document.getElementById('profile-picture-crop-modal');
     const canvas = document.getElementById('profile-crop-canvas');
@@ -8852,6 +8900,10 @@ function redrawProfileCanvas() {
 }
 
 window.applyProfilePictureCrop = async function() {
+    showToast('Profile photo uploads have been removed. Use avatar picker instead.', 'info');
+    openAvatarPickerFromProfile({ source: 'legacy-apply-crop' });
+    return;
+
     if (!profileCropState.canvas || !profileCropState.originalFile) return;
     
     const { x, y, width, height } = profileCropState.cropBox;
@@ -8990,10 +9042,6 @@ window.closeProfilePictureCropModal = function() {
 };
 
 function updateProfilePictureInUI(imageURL) {
-    if (currentUser) {
-        currentUser.profilePictureURL = imageURL || '';
-    }
-
     renderCurrentUserAvatars();
     syncAvatarOnboardingPrompt();
 
@@ -9001,31 +9049,24 @@ function updateProfilePictureInUI(imageURL) {
 }
 
 function bindAvatarUploadClickTargets() {
-    if (typeof uploadProfilePicture !== 'function') return;
-
-    const triggerUpload = () => {
+    const triggerAvatarEditor = (event) => {
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
         if (!currentUser) return;
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = (e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-                uploadProfilePicture(file);
-            }
-        };
-        input.click();
+        openAvatarPickerFromProfile({ source: 'avatar-slot-click' });
     };
 
-    const bindUploadTrigger = (elementId) => {
+    const bindAvatarTrigger = (elementId) => {
         const element = document.getElementById(elementId);
-        if (!element || element.dataset.clickHandlerAdded === 'true') return;
+        if (!element || element.dataset.avatarClickHandlerAdded === 'true') return;
         element.style.cursor = 'pointer';
-        element.addEventListener('click', triggerUpload);
-        element.dataset.clickHandlerAdded = 'true';
+        element.title = 'Click to change avatar';
+        element.addEventListener('click', triggerAvatarEditor);
+        element.dataset.avatarClickHandlerAdded = 'true';
     };
 
-    // Keep quick-upload click targets in header, user settings, and admin settings previews.
+    // Keep avatar edit click targets in header, user settings, and admin settings previews.
     [
         'profile-picture',
         'profile-picture-emoji',
@@ -9033,10 +9074,13 @@ function bindAvatarUploadClickTargets() {
         'account-profile-picture-emoji',
         'admin-account-profile-picture',
         'admin-account-profile-picture-emoji'
-    ].forEach(bindUploadTrigger);
+    ].forEach(bindAvatarTrigger);
 }
 
 function showProfilePictureUploadModal() {
+    openAvatarPickerFromProfile({ source: 'legacy-profile-upload-modal' });
+    return;
+
     if (!currentUser) {
         showToast('Please log in to upload a profile picture', 'error');
         return;
@@ -9112,6 +9156,9 @@ function showProfilePictureUploadModal() {
 }
 
 async function handleProfilePictureUpload() {
+    openAvatarPickerFromProfile({ source: 'legacy-handle-profile-upload' });
+    return;
+
     const fileInput = document.getElementById('profile-picture-input');
     const file = fileInput.files[0];
     
@@ -9123,6 +9170,27 @@ async function handleProfilePictureUpload() {
 }
 
 async function removeProfilePicture() {
+    if (!currentUser) return;
+
+    const targetInputId = isAdminUser(currentUser) ? 'admin-avatar-emoji' : 'user-avatar-emoji';
+    try {
+        await db.collection('users').doc(currentUser.uid).update({
+            avatarEmoji: firebase.firestore.FieldValue.delete(),
+            avatarUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        delete currentUser.avatarEmoji;
+        clearAvatarEmojiSelection(targetInputId);
+        updateWelcomeMessage();
+        try { await upsertStreakLeaderboardEntry(); } catch (_) {}
+        renderDashboardStreakLeaderboard();
+        showToast('Avatar removed. Pick a new one anytime.', 'success');
+    } catch (error) {
+        logError(error, 'Remove Avatar Emoji');
+        showToast('Failed to remove avatar', 'error');
+    }
+    return;
+
     if (!currentUser) return;
     
     try {
@@ -9206,6 +9274,9 @@ async function openEditUserModal(userId) {
         const topSubject = getTopSubjectFromTotals(user.lastSessionTotalSubjectTime);
         const sharingInstances = Math.max(0, Number(user.accountSharingInstances || 0));
         const hasSharingFlag = !!user.accountSharingDetected;
+        const sharingLogActionMarkup = sharingInstances > 0
+            ? `<button type="button" onclick="viewAccountSharingHistory('${user.id}')" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">View Sharing Log</button>`
+            : '<span class="px-3 py-2 bg-gray-100 text-gray-500 text-xs font-semibold rounded-md border border-gray-200">No Sharing Logs</span>';
         const modal = document.getElementById('edit-user-modal');
         if (!modal) return;
         modal.innerHTML = `
@@ -9236,7 +9307,7 @@ async function openEditUserModal(userId) {
                              <div><span class="font-semibold">Restored By:</span> ${escapeHTML(user.accountSharingRestoredBy || 'N/A')}</div>
                          </div>
                          <div class="mt-3 flex flex-wrap gap-2">
-                             <button type="button" onclick="viewAccountSharingHistory('${user.id}')" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">View Sharing Log</button>
+                             ${sharingLogActionMarkup}
                              ${hasSharingFlag ? `<button type="button" onclick="adminRestoreAccountAccess('${user.id}')" class="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-md hover:bg-emerald-700">Restore Access</button>` : ''}
                          </div>
                      </div>
@@ -12530,37 +12601,20 @@ function getUserDisplayInitial(user = currentUser) {
 function renderAvatarSlot({ imageElement, emojiElement, user = currentUser }) {
     if (!imageElement && !emojiElement) return;
     const avatarEmoji = getUserAvatarEmoji(user);
-    const fallbackUrl = generatePfpUrl(user?.email || '');
-    const imageUrl = user?.profilePictureURL || fallbackUrl;
-
-    if (avatarEmoji) {
-        if (emojiElement) {
-            emojiElement.textContent = avatarEmoji;
-            emojiElement.classList.remove('hidden');
-            emojiElement.setAttribute('title', `${user?.displayName || 'User'} avatar`);
-            emojiElement.setAttribute('aria-hidden', 'false');
-        }
-        if (imageElement) {
-            imageElement.classList.add('hidden');
-            imageElement.setAttribute('aria-hidden', 'true');
-        }
-        return;
-    }
+    const fallbackInitial = getUserDisplayInitial(user);
+    const visibleToken = avatarEmoji || fallbackInitial;
 
     if (emojiElement) {
-        emojiElement.textContent = '';
-        emojiElement.classList.add('hidden');
-        emojiElement.setAttribute('aria-hidden', 'true');
+        emojiElement.textContent = visibleToken;
+        emojiElement.classList.remove('hidden');
+        emojiElement.setAttribute('title', `${user?.displayName || 'User'} avatar`);
+        emojiElement.setAttribute('aria-hidden', 'false');
     }
 
     if (imageElement) {
-        imageElement.classList.remove('hidden');
-        imageElement.removeAttribute('aria-hidden');
-        imageElement.src = imageUrl;
-        imageElement.onerror = function() {
-            this.onerror = null;
-            this.src = fallbackUrl;
-        };
+        imageElement.classList.add('hidden');
+        imageElement.setAttribute('aria-hidden', 'true');
+        imageElement.removeAttribute('src');
     }
 }
 
@@ -13577,10 +13631,6 @@ function getStreakLeaderboardAvatarMarkup(entry) {
         displayName: entry?.displayName,
         email: entry?.userId || ''
     });
-    const photoUrl = String(entry?.profilePictureURL || '').trim();
-    if (photoUrl) {
-        return `<img class="dashboard-streak-avatar-image" src="${escapeHTML(photoUrl)}" alt="${escapeHTML(entry?.displayName || 'Learner')} avatar" loading="lazy" decoding="async">`;
-    }
     return `<span class="dashboard-streak-avatar-fallback">${escapeHTML(fallbackInitial)}</span>`;
 }
 
@@ -22589,7 +22639,12 @@ function openDashboardToolsSection(section = 'planner') {
             return;
         }
 
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const targetRect = target.getBoundingClientRect();
+        const viewportHeight = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
+        const isAlreadyVisible = targetRect.top >= 84 && targetRect.bottom <= Math.max(84, viewportHeight - 28);
+        if (!isAlreadyVisible) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
         const focusTarget = document.getElementById(focusId);
         if (focusTarget && typeof focusTarget.focus === 'function') {
             try {
