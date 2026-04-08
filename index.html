@@ -509,6 +509,94 @@
                     </div>
                 </div>
 
+                <section class="landing-conversion-lab mt-8" id="revision-plan-preview" aria-labelledby="revision-plan-preview-title">
+                    <div class="landing-conversion-grid">
+                        <article class="landing-conversion-card">
+                            <div class="about-chip about-chip--soft">Plan your upgrade</div>
+                            <h3 id="revision-plan-preview-title" class="about-section-title mt-4">Build your GCSE sprint plan in 10 seconds</h3>
+                            <p class="about-body mt-3">Choose your current grade and target. GCSEMate gives you a realistic daily revision plan so your upgrade feels practical, not just motivational.</p>
+                            <div class="landing-plan-controls mt-5">
+                                <label class="landing-plan-field" for="landing-grade-current">
+                                    <span>Current working grade</span>
+                                    <div class="landing-plan-input-row">
+                                        <input id="landing-grade-current" type="range" min="1" max="9" step="1" value="5" aria-describedby="landing-plan-summary">
+                                        <strong id="landing-grade-current-value" class="landing-plan-value">5</strong>
+                                    </div>
+                                </label>
+                                <label class="landing-plan-field" for="landing-grade-target">
+                                    <span>Target grade</span>
+                                    <div class="landing-plan-input-row">
+                                        <input id="landing-grade-target" type="range" min="1" max="9" step="1" value="7" aria-describedby="landing-plan-summary">
+                                        <strong id="landing-grade-target-value" class="landing-plan-value">7</strong>
+                                    </div>
+                                </label>
+                                <label class="landing-plan-field" for="landing-study-weeks">
+                                    <span>Weeks until exams</span>
+                                    <div class="landing-plan-input-row">
+                                        <input id="landing-study-weeks" type="number" min="2" max="52" step="1" value="14" inputmode="numeric" aria-describedby="landing-plan-summary">
+                                        <strong class="landing-plan-value">weeks</strong>
+                                    </div>
+                                </label>
+                            </div>
+                            <div id="landing-plan-summary" class="landing-plan-summary mt-4" aria-live="polite">Loading your plan...</div>
+                            <div class="landing-plan-results mt-4">
+                                <div class="landing-plan-result-item">
+                                    <span>Daily focus time</span>
+                                    <strong id="landing-plan-daily-minutes">--</strong>
+                                </div>
+                                <div class="landing-plan-result-item">
+                                    <span>Recommended focus</span>
+                                    <strong id="landing-plan-focus-track">--</strong>
+                                </div>
+                            </div>
+                            <div class="mt-5">
+                                <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary flex items-center justify-center gap-2 w-full">
+                                    <i class="fas fa-rocket"></i>Start this plan for free
+                                </button>
+                            </div>
+                        </article>
+
+                        <article class="landing-conversion-card landing-conversion-card--spotlight">
+                            <p class="landing-countdown-kicker">Exam runway</p>
+                            <div class="landing-countdown-number"><span id="landing-exam-countdown-days">--</span> days</div>
+                            <p id="landing-exam-countdown-label" class="landing-countdown-copy">until the main GCSE exam window begins</p>
+
+                            <div class="landing-pro-value-grid mt-4">
+                                <div class="landing-pro-value-item">
+                                    <span class="landing-pro-value-label">Pro cost per day</span>
+                                    <strong class="landing-pro-value-strong">~&pound;0.04/day</strong>
+                                </div>
+                                <div class="landing-pro-value-item">
+                                    <span class="landing-pro-value-label">Sign-up friction</span>
+                                    <strong class="landing-pro-value-strong">No card needed</strong>
+                                </div>
+                                <div class="landing-pro-value-item">
+                                    <span class="landing-pro-value-label">Data safety</span>
+                                    <strong class="landing-pro-value-strong">Progress saved</strong>
+                                </div>
+                            </div>
+
+                            <label class="landing-plan-field mt-5" for="landing-time-lost-minutes">
+                                <span>Minutes lost each study day searching for resources</span>
+                                <div class="landing-plan-input-row">
+                                    <input id="landing-time-lost-minutes" type="range" min="5" max="60" step="5" value="20">
+                                    <strong id="landing-time-lost-minutes-value" class="landing-plan-value">20m</strong>
+                                </div>
+                            </label>
+                            <p class="landing-time-saved-copy mt-3">That can cost around <strong id="landing-time-saved-monthly">7.2</strong> hours every month. GCSEMate brings your notes, papers, lessons, and tools into one place.</p>
+
+                            <div class="mt-5 flex flex-col gap-3">
+                                <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary flex items-center justify-center gap-2">
+                                    <i class="fas fa-bolt"></i>Start free and keep your momentum
+                                </button>
+                                <button onclick="showAuthPage(true)" class="about-cta-button about-cta-button--secondary flex items-center justify-center gap-2">
+                                    <i class="fas fa-user-check"></i>I already have an account
+                                </button>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
                 <!-- Final CTA -->
                 <div class="about-cta-card mt-8">
                     <div>
@@ -527,6 +615,18 @@
                 </div>
             </section>
         </main>
+        <div id="landing-desktop-cta-bar" class="landing-desktop-cta-bar" role="region" aria-label="Quick GCSEMate sign-up prompt">
+            <div class="landing-desktop-cta-inner">
+                <div>
+                    <p class="landing-desktop-cta-kicker">Exam season is getting close</p>
+                    <p class="landing-desktop-cta-copy">Start free in under a minute, then upgrade to Pro for &pound;1 + VAT when you are ready for unlimited access.</p>
+                </div>
+                <div class="landing-desktop-cta-actions">
+                    <button onclick="showAuthPage(false)" class="about-cta-button about-cta-button--primary">Start free</button>
+                    <a href="#revision-plan-preview" class="about-cta-button about-cta-button--secondary">See sprint plan</a>
+                </div>
+            </div>
+        </div>
            <footer class="mt-24 py-12 bg-gray-50 border-t border-gray-200">
                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">

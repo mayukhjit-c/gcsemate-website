@@ -33,6 +33,11 @@ const TOOLS_NOTES_DOC_ID = 'quick-notes';
 const TOOLS_DAILY_JOKE_CACHE_KEY = 'gcsemate_daily_joke';
 const PUBLIC_SITE_STATS_DOC_ID = 'siteStats';
 const PUBLIC_SITE_TOTAL_USERS_CACHE_KEY = 'gcsemate_public_total_users';
+const LANDING_EXAM_WINDOW_MONTH_INDEX = 4; // May (0-indexed)
+const LANDING_EXAM_WINDOW_DAY = 12;
+const LANDING_EXAM_WINDOW_HOUR_UTC = 8;
+let landingConversionWidgetsInitialized = false;
+let landingCountdownInterval = null;
 const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
@@ -4853,6 +4858,137 @@ function renderLandingSubjectExplorer() {
 
     renderCards();
 }
+
+function clampLandingNumber(value, min, max, fallback) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.min(max, Math.max(min, numeric));
+}
+
+function getUpcomingLandingExamWindowDate(referenceDate = new Date()) {
+    const year = referenceDate.getUTCFullYear();
+    const thisYearWindow = new Date(Date.UTC(year, LANDING_EXAM_WINDOW_MONTH_INDEX, LANDING_EXAM_WINDOW_DAY, LANDING_EXAM_WINDOW_HOUR_UTC, 0, 0, 0));
+    if (referenceDate.getTime() <= thisYearWindow.getTime()) return thisYearWindow;
+    return new Date(Date.UTC(year + 1, LANDING_EXAM_WINDOW_MONTH_INDEX, LANDING_EXAM_WINDOW_DAY, LANDING_EXAM_WINDOW_HOUR_UTC, 0, 0, 0));
+}
+
+function getLandingSprintFocusLabel(gradeGap = 0) {
+    if (gradeGap >= 3) return 'Past papers + mark scheme review + weak-topic repair';
+    if (gradeGap === 2) return 'Mixed lessons + timed questions + tracker checks';
+    if (gradeGap === 1) return 'Consistency, retrieval practice, and exam technique';
+    return 'Maintenance mode: keep streaks, precision, and confidence high';
+}
+
+function initializeLandingConversionWidgets() {
+    if (landingConversionWidgetsInitialized) return;
+
+    const landingRoot = document.getElementById('landing-page');
+    if (!landingRoot) return;
+
+    const currentInput = document.getElementById('landing-grade-current');
+    const targetInput = document.getElementById('landing-grade-target');
+    const weeksInput = document.getElementById('landing-study-weeks');
+    const timeLostInput = document.getElementById('landing-time-lost-minutes');
+
+    const currentValue = document.getElementById('landing-grade-current-value');
+    const targetValue = document.getElementById('landing-grade-target-value');
+    const timeLostValue = document.getElementById('landing-time-lost-minutes-value');
+    const planSummary = document.getElementById('landing-plan-summary');
+    const dailyMinutes = document.getElementById('landing-plan-daily-minutes');
+    const focusTrack = document.getElementById('landing-plan-focus-track');
+    const timeSavedMonthly = document.getElementById('landing-time-saved-monthly');
+    const countdownDays = document.getElementById('landing-exam-countdown-days');
+    const countdownLabel = document.getElementById('landing-exam-countdown-label');
+    const stickyBar = document.getElementById('landing-desktop-cta-bar');
+
+    if (!currentInput || !targetInput || !weeksInput) return;
+
+    const updatePlanPreview = () => {
+        const current = Math.round(clampLandingNumber(currentInput.value, 1, 9, 5));
+        let target = Math.round(clampLandingNumber(targetInput.value, 1, 9, 7));
+        const weeks = Math.round(clampLandingNumber(weeksInput.value, 2, 52, 14));
+        const timeLost = Math.round(clampLandingNumber(timeLostInput?.value, 5, 60, 20));
+
+        if (target < current) {
+            target = current;
+            targetInput.value = String(target);
+        }
+
+        weeksInput.value = String(weeks);
+        if (timeLostInput) timeLostInput.value = String(timeLost);
+
+        const gradeGap = Math.max(0, target - current);
+        const urgencyBoost = Math.max(0, 18 - weeks);
+        const dailyTargetMinutes = Math.round(
+            Math.min(180, Math.max(25, 25 + (gradeGap * 18) + (urgencyBoost * 2)))
+        );
+        const weeklyHours = (dailyTargetMinutes * 6) / 60;
+        const focusLabel = getLandingSprintFocusLabel(gradeGap);
+        const monthlySavedHours = (timeLost * 5 * 4.3) / 60;
+
+        if (currentValue) currentValue.textContent = String(current);
+        if (targetValue) targetValue.textContent = String(target);
+        if (timeLostValue) timeLostValue.textContent = `${timeLost}m`;
+        if (dailyMinutes) dailyMinutes.textContent = `${dailyTargetMinutes} min/day (~${weeklyHours.toFixed(1)} hrs/week)`;
+        if (focusTrack) focusTrack.textContent = focusLabel;
+        if (timeSavedMonthly) {
+            timeSavedMonthly.textContent = monthlySavedHours >= 10
+                ? monthlySavedHours.toFixed(0)
+                : monthlySavedHours.toFixed(1);
+        }
+        if (planSummary) {
+            planSummary.textContent = `To move from grade ${current} to grade ${target} in ${weeks} weeks, aim for around ${dailyTargetMinutes} focused minutes per day.`;
+        }
+    };
+
+    const updateExamCountdown = () => {
+        const now = new Date();
+        const examWindowDate = getUpcomingLandingExamWindowDate(now);
+        const millisLeft = examWindowDate.getTime() - now.getTime();
+        const daysLeft = Math.max(0, Math.ceil(millisLeft / 86400000));
+        const labelDate = examWindowDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        if (countdownDays) countdownDays.textContent = String(daysLeft);
+        if (countdownLabel) {
+            countdownLabel.textContent = daysLeft === 0
+                ? 'The exam window is open. Lock in your revision routine now.'
+                : `until the main GCSE exam window begins (${labelDate})`;
+        }
+    };
+
+    const updateStickyCta = () => {
+        if (!stickyBar) return;
+        const landingVisible = !landingRoot.classList.contains('hidden');
+        const wideViewport = window.matchMedia('(min-width: 1024px)').matches;
+        const shouldShow = landingVisible && wideViewport && window.scrollY > 540;
+        stickyBar.classList.toggle('is-visible', shouldShow);
+    };
+
+    [currentInput, targetInput, weeksInput].forEach((input) => {
+        input.addEventListener('input', updatePlanPreview);
+        input.addEventListener('change', updatePlanPreview);
+    });
+
+    if (timeLostInput) {
+        timeLostInput.addEventListener('input', updatePlanPreview);
+        timeLostInput.addEventListener('change', updatePlanPreview);
+    }
+
+    if (stickyBar && stickyBar.dataset.behaviorBound !== 'true') {
+        window.addEventListener('scroll', updateStickyCta, { passive: true });
+        window.addEventListener('resize', updateStickyCta);
+        document.addEventListener('visibilitychange', updateStickyCta);
+        stickyBar.dataset.behaviorBound = 'true';
+    }
+
+    updatePlanPreview();
+    updateExamCountdown();
+    updateStickyCta();
+
+    if (landingCountdownInterval) clearInterval(landingCountdownInterval);
+    landingCountdownInterval = setInterval(updateExamCountdown, 60000);
+    landingConversionWidgetsInitialized = true;
+}
 // =================================================================================
 // CORE INITIALIZATION & AUTHENTICATION
 // =================================================================================
@@ -4969,22 +5105,13 @@ function initializeSecurityFeatures() {
             -ms-user-select: text;
             user-select: text;
         }
-        
-        } catch (error) {
-            if (typeof error?.message === 'string' && error.message.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn('Firestore assertion during realtime analytics; pausing analytics updates and triggering recovery.');
-                clearInterval(realtimeTracker.analyticsInterval);
-                realtimeTracker.analyticsInterval = null;
-                recoverFirestoreSession();
-                return;
-            }
-            logError(error, 'Realtime Analytics');
+
+        img,
+        svg,
+        video,
+        canvas {
             -webkit-user-drag: none;
-            -khtml-user-drag: none;
-            -moz-user-drag: none;
-            -o-user-drag: none;
             user-drag: none;
-            pointer-events: auto;
         }
     `;
     document.head.appendChild(style);
@@ -5021,6 +5148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleAppLoadingFailsafe();
     renderLandingSubjectExplorer();
     applyCachedMarketingUserCountDisplay();
+    initializeLandingConversionWidgets();
 
     // Initialize security features
     initializeSecurityFeatures();
@@ -26975,9 +27103,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('gcsemate_accent');
             if (saved) {
                 const p = JSON.parse(saved);
-                const [r,g,b] = p.fiveHundred || p.fivehundred || p.fiveHundred || p.fiveHundred;
-                if (Array.isArray(p.fiveHundred)) {
-                    picker.value = '#' + p.fiveHundred.map(v => v.toString(16).padStart(2,'0')).join('');
+                const accent = Array.isArray(p.fiveHundred)
+                    ? p.fiveHundred
+                    : (Array.isArray(p.fivehundred) ? p.fivehundred : null);
+                if (accent && accent.length === 3) {
+                    picker.value = '#' + accent.map(v => v.toString(16).padStart(2, '0')).join('');
                 }
             }
         } catch {}

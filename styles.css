@@ -10875,6 +10875,229 @@ will-change: transform;
             box-shadow: 0 14px 30px -24px rgba(37, 99, 235, 0.34);
         }
 
+        .landing-conversion-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .landing-conversion-card {
+            border-radius: 1.65rem;
+            padding: clamp(1.1rem, 2.2vw, 1.55rem);
+            border: 1px solid rgba(191, 219, 254, 0.68);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(239, 246, 255, 0.76));
+            box-shadow: 0 24px 52px -38px rgba(37, 99, 235, 0.3);
+        }
+
+        .landing-conversion-card--spotlight {
+            background: linear-gradient(145deg, rgba(239, 246, 255, 0.94), rgba(224, 231, 255, 0.82));
+        }
+
+        .landing-plan-controls {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .landing-plan-field {
+            display: grid;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .landing-plan-input-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .landing-plan-input-row input[type="range"] {
+            width: 100%;
+            accent-color: #2563eb;
+        }
+
+        .landing-plan-input-row input[type="number"] {
+            width: 100%;
+            min-height: 2.45rem;
+            border-radius: 0.8rem;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: rgba(255, 255, 255, 0.92);
+            color: #0f172a;
+            font-weight: 700;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .landing-plan-value {
+            min-width: 3.4rem;
+            text-align: right;
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #1e3a8a;
+        }
+
+        .landing-plan-summary {
+            border-radius: 0.95rem;
+            border: 1px solid rgba(191, 219, 254, 0.75);
+            background: rgba(255, 255, 255, 0.78);
+            color: #1e293b;
+            font-size: 0.94rem;
+            line-height: 1.6;
+            padding: 0.8rem 0.95rem;
+        }
+
+        .landing-plan-results {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .landing-plan-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(191, 219, 254, 0.72);
+            background: rgba(255, 255, 255, 0.72);
+            color: #334155;
+            font-size: 0.86rem;
+            font-weight: 700;
+            padding: 0.7rem 0.85rem;
+        }
+
+        .landing-plan-result-item strong {
+            color: #0f172a;
+            font-size: 0.9rem;
+            font-weight: 900;
+            text-align: right;
+        }
+
+        .landing-countdown-kicker {
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #1d4ed8;
+        }
+
+        .landing-countdown-number {
+            margin-top: 0.35rem;
+            font-size: clamp(2rem, 4vw, 2.7rem);
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -0.045em;
+            color: #0f172a;
+        }
+
+        .landing-countdown-copy {
+            margin-top: 0.45rem;
+            color: #475569;
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .landing-pro-value-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .landing-pro-value-item {
+            border-radius: 0.9rem;
+            border: 1px solid rgba(191, 219, 254, 0.75);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.65rem;
+        }
+
+        .landing-pro-value-label {
+            display: block;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .landing-pro-value-strong {
+            display: block;
+            margin-top: 0.2rem;
+            color: #0f172a;
+            font-size: 0.83rem;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .landing-time-saved-copy {
+            color: #334155;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .landing-desktop-cta-bar {
+            position: fixed;
+            left: 50%;
+            bottom: 1rem;
+            width: min(1060px, calc(100% - 2rem));
+            z-index: 120;
+            transform: translate(-50%, 1rem);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 220ms ease, transform 220ms ease;
+        }
+
+        .landing-desktop-cta-bar.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+            pointer-events: auto;
+        }
+
+        .landing-desktop-cta-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(147, 197, 253, 0.84);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.9));
+            box-shadow: 0 24px 52px -36px rgba(15, 23, 42, 0.35);
+            padding: 0.85rem 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .landing-desktop-cta-kicker {
+            color: #1d4ed8;
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .landing-desktop-cta-copy {
+            margin-top: 0.22rem;
+            color: #1e293b;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            max-width: 56ch;
+        }
+
+        .landing-desktop-cta-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-shrink: 0;
+        }
+
+        .landing-desktop-cta-actions .about-cta-button {
+            min-height: 2.45rem;
+            padding: 0.62rem 0.95rem;
+            font-size: 0.84rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         body.dark-theme .about-hero-card,
         body.dark-theme .about-focus-panel,
         body.dark-theme .about-cta-card,
@@ -10918,6 +11141,52 @@ will-change: transform;
 
         body.dark-theme .about-orb-two {
             background: radial-gradient(circle, rgba(139, 92, 246, 0.22), rgba(59, 130, 246, 0));
+        }
+
+        body.dark-theme .landing-conversion-card {
+            border-color: rgba(96, 165, 250, 0.3);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.82), rgba(30, 41, 59, 0.72));
+            box-shadow: 0 28px 58px -42px rgba(2, 6, 23, 0.64);
+        }
+
+        body.dark-theme .landing-plan-field,
+        body.dark-theme .landing-plan-summary,
+        body.dark-theme .landing-countdown-copy,
+        body.dark-theme .landing-time-saved-copy,
+        body.dark-theme .landing-pro-value-label {
+            color: #cbd5e1;
+        }
+
+        body.dark-theme .landing-plan-result-item,
+        body.dark-theme .landing-pro-value-item,
+        body.dark-theme .landing-plan-summary,
+        body.dark-theme .landing-plan-input-row input[type="number"] {
+            border-color: rgba(96, 165, 250, 0.28);
+            background: rgba(15, 23, 42, 0.58);
+            color: #f8fafc;
+        }
+
+        body.dark-theme .landing-plan-result-item strong,
+        body.dark-theme .landing-pro-value-strong,
+        body.dark-theme .landing-countdown-number,
+        body.dark-theme .landing-plan-value {
+            color: #f8fafc;
+        }
+
+        body.dark-theme .landing-desktop-cta-inner {
+            border-color: rgba(96, 165, 250, 0.3);
+            background: linear-gradient(135deg, rgba(2, 6, 23, 0.94), rgba(15, 23, 42, 0.92));
+            box-shadow: 0 24px 52px -34px rgba(2, 6, 23, 0.85);
+        }
+
+        body.dark-theme .landing-desktop-cta-copy {
+            color: #dbeafe;
+        }
+
+        @media (max-width: 1023px) {
+            .landing-desktop-cta-bar {
+                display: none !important;
+            }
         }
 
         .admin-theme-preset {
@@ -11047,7 +11316,9 @@ will-change: transform;
             .about-hero-grid,
             .about-focus-panel,
             .about-cta-card,
-            .about-story-grid {
+            .about-story-grid,
+            .landing-conversion-grid,
+            .landing-pro-value-grid {
                 grid-template-columns: 1fr;
             }
 
