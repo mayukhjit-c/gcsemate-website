@@ -11114,3 +11114,26 @@ will-change: transform;
             pointer-events: none;
         }
 
+        /* Keep mobile drawer actions tappable above its dimmed backdrop. */
+        #mobile-menu {
+            z-index: 1201 !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #mobile-menu.hidden {
+            pointer-events: none !important;
+        }
+
+        #mobile-menu.menu-open,
+        #mobile-menu:not(.hidden) {
+            pointer-events: auto !important;
+        }
+
+        .mobile-menu-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            background: rgba(15, 23, 42, 0.45);
+            touch-action: none;
+        }
+

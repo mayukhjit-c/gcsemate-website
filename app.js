@@ -27027,6 +27027,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLogoutButton = document.getElementById('mobile-logout-button');
     const mobileMenuState = { isOpen: false, isAnimating: false };
+    const mobileMenuRoot = document.getElementById('main-app') || mobileMenu?.parentElement || document.body;
 
     if (hamburgerButton && mobileMenu && closeMenuButton) {
         const toggleButtons = [
@@ -27040,12 +27041,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!backdrop) {
                 backdrop = document.createElement('div');
                 backdrop.id = 'mobile-menu-backdrop';
-                backdrop.className = 'fixed inset-0 bg-black/40 z-40';
+                backdrop.className = 'mobile-menu-backdrop';
                 backdrop.style.opacity = '0';
                 backdrop.style.transition = 'opacity 200ms ease';
-                document.body.appendChild(backdrop);
+                backdrop.style.zIndex = '1200';
+                backdrop.setAttribute('aria-hidden', 'true');
                 backdrop.addEventListener('click', () => closeMobileMenu());
             }
+
+            if (backdrop.parentElement !== mobileMenuRoot) {
+                mobileMenuRoot.appendChild(backdrop);
+            }
+
             return backdrop;
         };
 
@@ -27058,6 +27065,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileMenu.style.display = 'block';
             mobileMenu.classList.remove('hidden');
             mobileMenu.classList.add('menu-open');
+            mobileMenu.style.zIndex = '1201';
             mobileMenu.style.transform = 'translateX(100%)';
             mobileMenu.style.opacity = '0';
             mobileMenu.setAttribute('aria-hidden', 'false');
