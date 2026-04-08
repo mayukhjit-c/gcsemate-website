@@ -5434,6 +5434,11 @@ auth.onAuthStateChanged(async (user) => {
         LESSON_PROGRESS_MAP.clear();
         LESSON_USER_COMPLETION_MAP.clear();
         streakLeaderboardRows = [];
+        const maintenanceOverlay = document.getElementById('maintenance-page');
+        if (maintenanceOverlay) maintenanceOverlay.remove();
+        if (maintenanceStateCache?.enabled) {
+            try { window.history.replaceState({}, '', '/'); } catch (_) {}
+        }
         const landingPage = document.getElementById('landing-page');
         if (landingPage) {
             landingPage.classList.remove('hidden');
@@ -5464,6 +5469,16 @@ function initializeAppState() {
             updateOnlineStatus(maintenanceData);
             renderSectionMaintenanceControls();
             initializeMaintenanceStatus(maintenanceData);
+
+            if (!currentUser) {
+                const guestMaintenancePage = document.getElementById('maintenance-page');
+                if (guestMaintenancePage) guestMaintenancePage.remove();
+                if (enabled) {
+                    try { window.history.replaceState({}, '', '/'); } catch (_) {}
+                    showLandingOnly();
+                }
+                return;
+            }
             
             if (enabled && currentUser?.role !== 'admin') {
                 showMaintenancePage(message);
@@ -7160,11 +7175,23 @@ async function checkMaintenanceMode() {
         const maintenanceData = normalizeMaintenanceState(maintenanceDoc.exists ? maintenanceDoc.data() : {});
         maintenanceStateCache = maintenanceData;
         updateOnlineStatus(maintenanceData);
-        if (maintenanceData.enabled) {
+        if (!currentUser) {
+            const guestMaintenancePage = document.getElementById('maintenance-page');
+            if (guestMaintenancePage) guestMaintenancePage.remove();
+            if (maintenanceData.enabled) {
+                try { window.history.replaceState({}, '', '/'); } catch (_) {}
+                showLandingOnly();
+            }
+            return;
+        }
+        if (maintenanceData.enabled && currentUser?.role !== 'admin') {
             const message = maintenanceData.message;
             
             // Show maintenance page
             showMaintenancePage(message);
+        } else {
+            const page = document.getElementById('maintenance-page');
+            if (page) page.remove();
         }
     } catch (error) {
         console.error('Error checking maintenance mode:', error);
@@ -7172,6 +7199,14 @@ async function checkMaintenanceMode() {
 }
 
 function showMaintenancePage(message) {
+    if (!currentUser) {
+        const guestMaintenancePage = document.getElementById('maintenance-page');
+        if (guestMaintenancePage) guestMaintenancePage.remove();
+        try { window.history.replaceState({}, '', '/'); } catch (_) {}
+        showLandingOnly();
+        return;
+    }
+
     const existing = document.getElementById('maintenance-page');
     if (existing) existing.remove();
 
@@ -7286,6 +7321,12 @@ function showMaintenancePage(message) {
                 border-color: rgba(148, 163, 184, 0.6);
             }
 
+            #maintenance-page .gcse-maint-btn.logout {
+                background: rgba(185, 28, 28, 0.08);
+                color: #991b1b;
+                border-color: rgba(239, 68, 68, 0.35);
+            }
+
             #maintenance-page .gcse-maint-panel {
                 margin-top: 12px;
                 background: linear-gradient(180deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
@@ -7395,6 +7436,7 @@ function showMaintenancePage(message) {
                 <p class="gcse-maint-copy">${safeMessage}</p>
                 <div class="gcse-maint-actions">
                     <button type="button" onclick="location.reload()" class="gcse-maint-btn primary">Refresh page</button>
+                    <button type="button" onclick="handleLogout()" class="gcse-maint-btn logout">Log out</button>
                     <a href="mailto:admin@gcsemate.com" class="gcse-maint-btn secondary">Contact support</a>
                 </div>
                 <div class="gcse-maint-panel">
