@@ -22461,13 +22461,26 @@ function openDashboardToolsSection(section = 'planner') {
         recordUserInteraction('dashboard_shortcut_tools', { target: normalized, important: true });
     } catch (_) {}
 
-    showPage('tools-page');
+    try {
+        navigateToPageId('tools-page');
+    } catch (_) {
+        showPage('tools-page');
+    }
 
-    setTimeout(() => {
-        const target = document.getElementById(targetId) || document.getElementById('tools-page');
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    let attempts = 0;
+    const maxAttempts = 8;
+    const focusSection = () => {
+        const toolsPage = document.getElementById('tools-page');
+        const target = document.getElementById(targetId) || toolsPage;
+        if (!toolsPage || toolsPage.classList.contains('hidden') || !target) {
+            if (attempts < maxAttempts) {
+                attempts += 1;
+                setTimeout(focusSection, 110);
+            }
+            return;
         }
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const focusTarget = document.getElementById(focusId);
         if (focusTarget && typeof focusTarget.focus === 'function') {
             try {
@@ -22476,7 +22489,9 @@ function openDashboardToolsSection(section = 'planner') {
                 focusTarget.focus();
             }
         }
-    }, 160);
+    };
+
+    setTimeout(focusSection, 170);
 }
 
 window.openDashboardToolsSection = openDashboardToolsSection;
@@ -26163,6 +26178,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     const mobileLogoutBtn = document.getElementById('mobile-logout-button');
     if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', handleLogout);
+    const dashboardShortcutButtons = Array.from(document.querySelectorAll('[data-dashboard-tools-target]'));
+    dashboardShortcutButtons.forEach((button) => {
+        if (button.dataset.dashboardShortcutBound === 'true') return;
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = button.getAttribute('data-dashboard-tools-target') || 'planner';
+            openDashboardToolsSection(target);
+        });
+        button.dataset.dashboardShortcutBound = 'true';
+    });
     const addLinkBtn = document.getElementById('add-link-btn');
     if (addLinkBtn) addLinkBtn.addEventListener('click', handleAddLink);
     const postAnnouncementBtn = document.getElementById('post-announcement-btn');
