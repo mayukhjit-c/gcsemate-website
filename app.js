@@ -28373,17 +28373,17 @@ function updateCountdownBanner() {
             countdownText = `${nextEvent?.title ? nextEvent.title : 'Upcoming event'}`;
         }
         const hasMultiple = activeCountdowns.length > 1;
-        const bannerNumber = hasMultiple ? `Banner ${currentCountdownIndex + 1}/${activeCountdowns.length}` : '';
-        banner.innerHTML = `<div class="bg-yellow-400 text-yellow-900 px-4 py-2 text-sm font-semibold flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-                ${hasMultiple ? '<button id="countdown-prev" class="px-2 py-0.5 rounded bg-yellow-500/40 hover:bg-yellow-500/60 text-yellow-950 text-xs" aria-label="Previous event">‹</button>' : ''}
-                <span class="truncate">${countdownText}</span>
+        const safeCountdownText = escapeHTML(countdownText);
+        banner.innerHTML = `<div class="countdown-banner-shell" role="status" aria-live="polite">
+            <div class="countdown-banner-main">
+                ${hasMultiple ? '<button id="countdown-prev" class="countdown-banner-nav" type="button" aria-label="Previous event">‹</button>' : ''}
+                <span class="countdown-banner-message">${safeCountdownText}</span>
             </div>
-            <div class="flex items-center gap-2">
-                ${hasMultiple ? `<span class="text-xs text-yellow-950">${currentCountdownIndex + 1}/${activeCountdowns.length}</span>` : ''}
-                ${hasMultiple ? '<button id="countdown-next" class="px-2 py-0.5 rounded bg-yellow-500/40 hover:bg-yellow-500/60 text-yellow-950 text-xs" aria-label="Next event">›</button>' : ''}
-                <button id="restore-countdowns" class="text-xs underline decoration-black/30 hover:decoration-black/60">Restore</button>
-                <button id="dismiss-countdown" class="font-bold text-xl leading-none px-2" aria-label="Dismiss">×</button>
+            <div class="countdown-banner-controls">
+                ${hasMultiple ? `<span class="countdown-banner-index">${currentCountdownIndex + 1}/${activeCountdowns.length}</span>` : ''}
+                ${hasMultiple ? '<button id="countdown-next" class="countdown-banner-nav" type="button" aria-label="Next event">›</button>' : ''}
+                <button id="restore-countdowns" class="countdown-banner-restore" type="button">Restore</button>
+                <button id="dismiss-countdown" class="countdown-banner-dismiss" type="button" aria-label="Dismiss">×</button>
             </div>
         </div>`;
         banner.classList.remove('hidden');
