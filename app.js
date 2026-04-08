@@ -31,6 +31,8 @@ const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
 const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
 const TOOLS_NOTES_DOC_ID = 'quick-notes';
 const TOOLS_DAILY_JOKE_CACHE_KEY = 'gcsemate_daily_joke';
+const PUBLIC_SITE_STATS_DOC_ID = 'siteStats';
+const PUBLIC_SITE_TOTAL_USERS_CACHE_KEY = 'gcsemate_public_total_users';
 const THEME_PRESETS = {
     classic: '#3b82f6',
     forest: '#15803d',
@@ -585,6 +587,7 @@ let lastForceLogoutAt = null;
 let unsubscribeUserManagement;
 let unsubscribeUsefulLinks;
 let unsubscribeMaintenance;
+let unsubscribeSiteStats;
 let userSortBy = 'recent';
 let maintenanceStateCache = {
     enabled: false,
@@ -639,6 +642,9 @@ let currentAnnouncementIndex = 0;
 let recaptchaVerifier;
 let freeTrialSubjectOverride = null;
 let lastAutoOpenedFreeTrialSubjectKey = null;
+let publicSiteStatsSyncTimeout = null;
+let pendingPublicSiteStatsCount = null;
+let lastPublishedPublicSiteStatsCount = null;
 const LESSON_METRICS_MAP = new Map();
 const LESSON_PROGRESS_MAP = new Map();
 const LESSON_USER_COMPLETION_MAP = new Map();
@@ -2067,6 +2073,107 @@ function toMillis(value) {
     if (typeof value?.toDate === 'function') return value.toDate().getTime();
     const parsed = new Date(value).getTime();
     return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeSiteStatsUserCount(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+    return Math.round(numeric);
+}
+
+function roundUsersToNearestHundred(value) {
+    const normalized = normalizeSiteStatsUserCount(value);
+    if (normalized <= 0) return 0;
+    return Math.max(100, Math.round(normalized / 100) * 100);
+}
+
+function formatRoundedUsersLabel(value) {
+    const rounded = roundUsersToNearestHundred(value);
+    return `${rounded.toLocaleString('en-GB')}+`;
+}
+
+function applyRoundedMarketingUserCount(totalUsers, options = {}) {
+    const normalized = normalizeSiteStatsUserCount(totalUsers);
+    if (normalized <= 0) return false;
+
+    const label = formatRoundedUsersLabel(normalized);
+    const targets = document.querySelectorAll('[data-user-count-display]');
+    if (!targets.length) return false;
+
+    targets.forEach((el) => {
+        el.textContent = label;
+    });
+
+    if (options.cache !== false) {
+        try {
+            localStorage.setItem(PUBLIC_SITE_TOTAL_USERS_CACHE_KEY, String(normalized));
+        } catch (_) {}
+    }
+
+    return true;
+}
+
+function applyCachedMarketingUserCountDisplay() {
+    try {
+        const cachedRaw = localStorage.getItem(PUBLIC_SITE_TOTAL_USERS_CACHE_KEY);
+        const cachedCount = normalizeSiteStatsUserCount(cachedRaw);
+        if (cachedCount > 0) {
+            applyRoundedMarketingUserCount(cachedCount, { cache: false });
+        }
+    } catch (_) {}
+}
+
+function subscribePublicSiteStats() {
+    if (!isFirestoreAvailable()) return;
+
+    if (unsubscribeSiteStats) {
+        try { unsubscribeSiteStats(); } catch (_) {}
+    }
+
+    unsubscribeSiteStats = db.collection('settings').doc(PUBLIC_SITE_STATS_DOC_ID)
+        .onSnapshot((doc) => {
+            const data = doc.data() || {};
+            const totalUsers = normalizeSiteStatsUserCount(data.totalUsers ?? data.userCount ?? data.usersCount);
+            if (totalUsers > 0) {
+                applyRoundedMarketingUserCount(totalUsers);
+                lastPublishedPublicSiteStatsCount = totalUsers;
+            }
+        }, (error) => logError(error, 'Public Site Stats'));
+}
+
+function schedulePublicSiteStatsSync(totalUsers) {
+    if (!isAdminUser(currentUser) || !isFirestoreAvailable()) return;
+
+    const normalized = normalizeSiteStatsUserCount(totalUsers);
+    if (normalized <= 0) return;
+    if (normalized === lastPublishedPublicSiteStatsCount && pendingPublicSiteStatsCount === null) return;
+
+    pendingPublicSiteStatsCount = normalized;
+
+    if (publicSiteStatsSyncTimeout) {
+        clearTimeout(publicSiteStatsSyncTimeout);
+    }
+
+    publicSiteStatsSyncTimeout = setTimeout(async () => {
+        const nextCount = pendingPublicSiteStatsCount;
+        pendingPublicSiteStatsCount = null;
+        publicSiteStatsSyncTimeout = null;
+
+        if (!isAdminUser(currentUser) || !isFirestoreAvailable()) return;
+        if (!Number.isFinite(nextCount) || nextCount <= 0) return;
+        if (nextCount === lastPublishedPublicSiteStatsCount) return;
+
+        try {
+            await db.collection('settings').doc(PUBLIC_SITE_STATS_DOC_ID).set({
+                totalUsers: nextCount,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentUser?.uid || null
+            }, { merge: true });
+            lastPublishedPublicSiteStatsCount = nextCount;
+        } catch (error) {
+            logError(error, 'Public Site Stats Sync');
+        }
+    }, 1200);
 }
 
 function setFlashcardsStatus(message, tone = 'info') {
@@ -4913,6 +5020,7 @@ function initializeSecurityFeatures() {
 document.addEventListener('DOMContentLoaded', () => {
     scheduleAppLoadingFailsafe();
     renderLandingSubjectExplorer();
+    applyCachedMarketingUserCountDisplay();
 
     // Initialize security features
     initializeSecurityFeatures();
@@ -5233,9 +5341,14 @@ auth.onAuthStateChanged(async (user) => {
     if (unsubscribeGlobalEvents) unsubscribeGlobalEvents();
     if (unsubscribeAnnouncement) unsubscribeAnnouncement();
     if (unsubscribeFreeTrialSettings) { try { unsubscribeFreeTrialSettings(); } catch(_){} unsubscribeFreeTrialSettings = null; }
+    if (unsubscribeSiteStats) { try { unsubscribeSiteStats(); } catch(_){} unsubscribeSiteStats = null; }
     if (unsubscribeCurrentUserDoc) { try { unsubscribeCurrentUserDoc(); } catch(_){} unsubscribeCurrentUserDoc = null; }
     if (unsubscribeStreakLeaderboard) { try { unsubscribeStreakLeaderboard(); } catch(_){} unsubscribeStreakLeaderboard = null; }
     if (unsubscribeToolsNotes) { try { unsubscribeToolsNotes(); } catch(_){} unsubscribeToolsNotes = null; }
+    if (publicSiteStatsSyncTimeout) { clearTimeout(publicSiteStatsSyncTimeout); publicSiteStatsSyncTimeout = null; }
+    pendingPublicSiteStatsCount = null;
+    applyCachedMarketingUserCountDisplay();
+    subscribePublicSiteStats();
     if (clockInterval) clearInterval(clockInterval);
     if (serverTimeInterval) stopServerTimeUpdates();
     if (user && user.emailVerified) {
@@ -6841,6 +6954,9 @@ function setupRealtimeListeners() {
             snapshot.forEach(doc => {
                 allUsers[doc.id] = { id: doc.id, ...doc.data() };
             });
+            const totalUsers = Object.keys(allUsers).length;
+            applyRoundedMarketingUserCount(totalUsers);
+            schedulePublicSiteStatsSync(totalUsers);
             renderUserManagementPanel(allUsers);
             scheduleUpdateAnalytics(); // Update analytics when user data changes (debounced)
         }, err => logError(err, "User Management"));
