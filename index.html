@@ -3579,25 +3579,40 @@
         <div class="avatar-onboarding-card">
             <div class="avatar-onboarding-head">
                 <p class="avatar-onboarding-kicker">Account setup</p>
-                <button type="button" id="avatar-onboarding-close" class="avatar-onboarding-close" aria-label="Close avatar chooser">&times;</button>
+                <button type="button" id="avatar-onboarding-close" class="avatar-onboarding-close" aria-label="Close avatar chooser" onclick="dismissAvatarOnboarding()">&times;</button>
             </div>
             <h3 id="avatar-onboarding-title" class="avatar-onboarding-title">Pick your avatar before continuing</h3>
             <p id="avatar-onboarding-help" class="avatar-onboarding-help">Choose your avatar with the slot controls or use Feeling Lucky. This helps personalize leaderboards and your account.</p>
 
             <div class="avatar-slot-shell" id="avatar-slot-shell">
-                <button type="button" id="avatar-slot-up" class="avatar-slot-step" aria-label="Previous avatar">▲</button>
+                <button type="button" id="avatar-slot-up" class="avatar-slot-step" aria-label="Previous avatar" onclick="stepAvatarOnboardingSlot(-1)">▲</button>
                 <div id="avatar-slot-window" class="avatar-slot-window" aria-live="polite">
                     <span id="avatar-slot-upper" class="avatar-slot-item is-faded">🙂</span>
                     <span id="avatar-slot-current" class="avatar-slot-item is-active">🙂</span>
                     <span id="avatar-slot-lower" class="avatar-slot-item is-faded">🙂</span>
                 </div>
-                <button type="button" id="avatar-slot-down" class="avatar-slot-step" aria-label="Next avatar">▼</button>
+                <button type="button" id="avatar-slot-down" class="avatar-slot-step" aria-label="Next avatar" onclick="stepAvatarOnboardingSlot(1)">▼</button>
+            </div>
+
+            <div class="avatar-slot-grid" aria-label="Choose from all avatar emojis">
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="0" aria-pressed="false" aria-label="Pick fire" onclick="selectAvatarOnboardingOption(0)">🔥</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="1" aria-pressed="false" aria-label="Pick rocket" onclick="selectAvatarOnboardingOption(1)">🚀</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="2" aria-pressed="false" aria-label="Pick brain" onclick="selectAvatarOnboardingOption(2)">🧠</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="3" aria-pressed="false" aria-label="Pick books" onclick="selectAvatarOnboardingOption(3)">📚</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="4" aria-pressed="false" aria-label="Pick bolt" onclick="selectAvatarOnboardingOption(4)">⚡</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="5" aria-pressed="false" aria-label="Pick target" onclick="selectAvatarOnboardingOption(5)">🎯</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="6" aria-pressed="false" aria-label="Pick owl" onclick="selectAvatarOnboardingOption(6)">🦉</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="7" aria-pressed="false" aria-label="Pick lab" onclick="selectAvatarOnboardingOption(7)">🧪</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="8" aria-pressed="false" aria-label="Pick puzzle" onclick="selectAvatarOnboardingOption(8)">🧩</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="9" aria-pressed="false" aria-label="Pick trophy" onclick="selectAvatarOnboardingOption(9)">🏆</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="10" aria-pressed="false" aria-label="Pick star" onclick="selectAvatarOnboardingOption(10)">🌟</button>
+                <button type="button" class="avatar-slot-chip" data-avatar-slot-index="11" aria-pressed="false" aria-label="Pick bulb" onclick="selectAvatarOnboardingOption(11)">💡</button>
             </div>
 
             <div class="avatar-onboarding-actions">
-                <button type="button" id="avatar-slot-skip" class="avatar-onboarding-btn ghost">Not now</button>
-                <button type="button" id="avatar-slot-lucky" class="avatar-onboarding-btn secondary">Feeling Lucky</button>
-                <button type="button" id="avatar-slot-save" class="avatar-onboarding-btn primary">Use this avatar</button>
+                <button type="button" id="avatar-slot-skip" class="avatar-onboarding-btn ghost" onclick="dismissAvatarOnboarding()">Not now</button>
+                <button type="button" id="avatar-slot-lucky" class="avatar-onboarding-btn secondary" onclick="startAvatarOnboardingLuckySpin()">Feeling Lucky</button>
+                <button type="button" id="avatar-slot-save" class="avatar-onboarding-btn primary" onclick="saveAvatarFromOnboarding()">Use this avatar</button>
             </div>
             <p id="avatar-onboarding-message" class="avatar-onboarding-message" aria-live="polite"></p>
         </div>
