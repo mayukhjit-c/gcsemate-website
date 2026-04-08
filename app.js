@@ -7036,27 +7036,251 @@ function showMaintenancePage(message) {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('email-verify-page').classList.add('hidden');
     document.getElementById('main-app').classList.add('hidden');
+
+    const safeMessage = escapeHTML(message || maintenanceStateCache?.message || 'System is currently under maintenance. Please check back later.');
+    const etaText = maintenanceStateCache?.eta ? formatDateMaybe(maintenanceStateCache.eta) : '';
+    const safeEta = etaText ? escapeHTML(etaText) : 'Updating soon';
+    const etaFaqAnswer = etaText
+        ? `We expect the website to be back by ${safeEta}. If this changes, this page will be updated straight away.`
+        : 'We are still confirming the exact return time. This page will be updated as soon as ETA is locked in.';
     
     // Create maintenance page
     const maintenancePage = document.createElement('div');
     maintenancePage.id = 'maintenance-page';
-    maintenancePage.className = 'fixed inset-0 bg-blue-50 flex items-center justify-center p-4 z-[20000]';
+    maintenancePage.className = 'fixed inset-0 flex items-center justify-center p-4 z-[20000]';
     maintenancePage.innerHTML = `
-        <div class="bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl p-8 max-w-md text-center">
-            <div class="mb-6">
-                <svg class="h-16 w-16 mx-auto text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <h1 class="text-2xl font-bold text-gray-800 mb-2">Under Maintenance</h1>
-                <p class="text-gray-600 mb-6">${message}</p>
-                ${maintenanceStateCache?.eta ? `<p class="text-sm text-blue-700 mb-4"><strong>Expected back:</strong> ${formatDateMaybe(maintenanceStateCache.eta)}</p>` : ''}
-                <div class="flex justify-center">
-                    <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-12 w-auto" onerror="this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
+        <style>
+            #maintenance-page {
+                background:
+                    radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.18), transparent 28%),
+                    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.18), transparent 32%),
+                    linear-gradient(135deg, #f8fafc 0%, #e0f2fe 35%, #f5f3ff 100%);
+                font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            }
+
+            #maintenance-page * {
+                box-sizing: border-box;
+            }
+
+            #maintenance-page .gcse-maint-shell {
+                width: min(960px, 100%);
+                background: rgba(255, 255, 255, 0.84);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.56);
+                border-radius: 24px;
+                box-shadow: 0 28px 80px -32px rgba(15, 23, 42, 0.25);
+                padding: clamp(20px, 4vw, 32px);
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 24px;
+                color: #0f172a;
+            }
+
+            #maintenance-page .gcse-maint-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                border-radius: 999px;
+                background: #eef2ff;
+                color: #4338ca;
+                font-size: 13px;
+                font-weight: 800;
+                letter-spacing: -0.01em;
+                width: fit-content;
+            }
+
+            #maintenance-page .gcse-maint-title {
+                margin: 10px 0 0;
+                font-size: clamp(28px, 4vw, 44px);
+                line-height: 1.1;
+                letter-spacing: -0.02em;
+                font-weight: 800;
+            }
+
+            #maintenance-page .gcse-maint-copy {
+                margin: 12px 0 0;
+                color: #475569;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+
+            #maintenance-page .gcse-maint-actions {
+                margin-top: 14px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            #maintenance-page .gcse-maint-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 14px 18px;
+                border-radius: 14px;
+                border: 1px solid transparent;
+                font-weight: 700;
+                text-decoration: none;
+                transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+                cursor: pointer;
+            }
+
+            #maintenance-page .gcse-maint-btn:hover {
+                transform: translateY(-1px);
+            }
+
+            #maintenance-page .gcse-maint-btn.primary {
+                background: linear-gradient(135deg, #2563eb, #4f46e5);
+                color: #ffffff;
+                box-shadow: 0 18px 40px -20px rgba(59, 130, 246, 0.7);
+            }
+
+            #maintenance-page .gcse-maint-btn.secondary {
+                background: #ffffff;
+                color: #1e293b;
+                border-color: rgba(148, 163, 184, 0.6);
+            }
+
+            #maintenance-page .gcse-maint-panel {
+                margin-top: 12px;
+                background: linear-gradient(180deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
+                border: 1px solid rgba(255,255,255,0.7);
+                border-radius: 18px;
+                padding: 18px;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+            }
+
+            #maintenance-page .gcse-maint-panel h3 {
+                margin: 0;
+                color: #1f2937;
+                font-size: 16px;
+            }
+
+            #maintenance-page .gcse-maint-faq-list {
+                margin-top: 10px;
+                display: grid;
+                gap: 10px;
+            }
+
+            #maintenance-page .gcse-maint-faq-item {
+                padding: 10px 12px;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.92);
+                border: 1px solid rgba(226, 232, 240, 0.84);
+            }
+
+            #maintenance-page .gcse-maint-faq-item strong {
+                display: block;
+                color: #1f2937;
+                font-size: 13px;
+            }
+
+            #maintenance-page .gcse-maint-faq-item p {
+                margin: 4px 0 0;
+                color: #475569;
+                font-size: 13px;
+                line-height: 1.55;
+            }
+
+            #maintenance-page .gcse-maint-visual {
+                position: relative;
+                padding: 18px;
+                border-radius: 18px;
+                background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(99, 102, 241, 0.14));
+                border: 1px solid rgba(255, 255, 255, 0.6);
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+                overflow: hidden;
+            }
+
+            #maintenance-page .gcse-maint-visual::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.6), transparent 45%),
+                    radial-gradient(circle at 70% 80%, rgba(255,255,255,0.4), transparent 55%);
+                opacity: 0.8;
+                pointer-events: none;
+            }
+
+            #maintenance-page .gcse-maint-stat {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-top: 10px;
+                padding: 10px 12px;
+                border-radius: 12px;
+                background: rgba(255,255,255,0.9);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                color: #1f2937;
+                font-weight: 700;
+            }
+
+            #maintenance-page .gcse-maint-stat small {
+                color: #475569;
+                font-weight: 600;
+            }
+
+            #maintenance-page .gcse-maint-logo {
+                margin-top: 12px;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: #334155;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            #maintenance-page .gcse-maint-logo img {
+                width: auto;
+                height: 28px;
+            }
+
+            @media (max-width: 720px) {
+                #maintenance-page .gcse-maint-shell {
+                    border-radius: 20px;
+                    padding: 18px;
+                }
+            }
+        </style>
+        <div class="gcse-maint-shell" role="dialog" aria-modal="true" aria-labelledby="maintenance-title">
+            <div>
+                <span class="gcse-maint-tag">Maintenance · Live updates enabled</span>
+                <h1 id="maintenance-title" class="gcse-maint-title">We are tuning GCSEMate to keep revision smooth and reliable.</h1>
+                <p class="gcse-maint-copy">${safeMessage}</p>
+                <div class="gcse-maint-actions">
+                    <button type="button" onclick="location.reload()" class="gcse-maint-btn primary">Refresh page</button>
+                    <a href="mailto:admin@gcsemate.com" class="gcse-maint-btn secondary">Contact support</a>
+                </div>
+                <div class="gcse-maint-panel">
+                    <h3>Frequently asked questions</h3>
+                    <div class="gcse-maint-faq-list">
+                        <div class="gcse-maint-faq-item">
+                            <strong>When is the website expected to be back?</strong>
+                            <p>${etaFaqAnswer}</p>
+                        </div>
+                        <div class="gcse-maint-faq-item">
+                            <strong>Will paid users lose subscription time?</strong>
+                            <p>No. Paid users are automatically compensated for maintenance downtime, so no paid time is lost.</p>
+                        </div>
+                        <div class="gcse-maint-faq-item">
+                            <strong>What should I do while this is happening?</strong>
+                            <p>Please use the refresh button occasionally. If downtime extends beyond the ETA, email admin@gcsemate.com and we will respond quickly.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button onclick="location.reload()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                Refresh Page
-            </button>
+            <div class="gcse-maint-visual" aria-hidden="true">
+                <div class="gcse-maint-stat"><span>Current status</span><small>Maintenance active</small></div>
+                <div class="gcse-maint-stat"><span>Expected back</span><small>${safeEta}</small></div>
+                <div class="gcse-maint-stat"><span>Paid plan handling</span><small>Auto compensation enabled</small></div>
+                <div class="gcse-maint-stat"><span>Support</span><small>admin@gcsemate.com</small></div>
+                <div class="gcse-maint-logo">
+                    <img src="gcsemate%20new.png" alt="GCSEMate logo" onerror="this.onerror=null; this.src='https://placehold.co/120x36/3B82F6/FFFFFF?text=GCSEMate';">
+                    <span>GCSEMate Status</span>
+                </div>
+            </div>
         </div>
     `;
     
@@ -7865,6 +8089,12 @@ function renderUserManagementPanel(allUsers) {
         const userTier = String(user.tier || 'free').toLowerCase();
         const displayName = escapeHTML(user.displayName || 'Unnamed user');
         const emailText = escapeHTML(user.email || 'No email on file');
+        const userAvatarMarkup = getStreakLeaderboardAvatarMarkup({
+            avatarEmoji: user.avatarEmoji,
+            profilePictureURL: user.profilePictureURL,
+            displayName: user.displayName || user.email || 'User',
+            userId: user.email || user.id || ''
+        });
         const gradesActionMarkup = hasSavedGrades
             ? `<button data-user-action="grades" data-user-id="${user.id}" class="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors text-sm" data-tooltip="View user grade tracker data">Grades</button>`
             : '<span class="px-3 py-2 bg-gray-100 text-gray-500 font-semibold rounded-lg text-sm text-center border border-gray-200" title="No saved grades for this user">No Grades</span>';
@@ -7887,9 +8117,12 @@ function renderUserManagementPanel(allUsers) {
                 </div>
             </div>
             <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <h4 class="font-bold text-base text-gray-800 truncate">${displayName}</h4>
-                    <p class="text-xs text-gray-500 truncate">${emailText}</p>
+                <div class="admin-user-identity min-w-0">
+                    <span class="admin-user-avatar">${userAvatarMarkup}</span>
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-base text-gray-800 truncate">${displayName}</h4>
+                        <p class="text-xs text-gray-500 truncate">${emailText}</p>
+                    </div>
                 </div>
                 <div class="flex gap-1 items-center flex-wrap justify-end">
                         ${hasSharingFlag ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Sharing Flagged</span>' : ''}
@@ -8565,6 +8798,11 @@ window.applyProfilePictureCrop = async function() {
     const blob = await new Promise(resolve => {
         croppedCanvas.toBlob(resolve, 'image/jpeg', PROFILE_PICTURE_COMPRESSION.quality);
     });
+
+    if (!blob) {
+        showToast('Could not prepare profile picture. Please try a different image.', 'warning');
+        return;
+    }
     
     const croppedFile = new File([blob], profileCropState.originalFile.name, {
         type: 'image/jpeg',
@@ -8582,11 +8820,10 @@ window.applyProfilePictureCrop = async function() {
         
         try {
             const formData = new FormData();
-            formData.append('file', compressedFile);
+            const fileForUpload = compressedFile instanceof Blob ? compressedFile : croppedFile;
+            formData.append('file', fileForUpload);
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-            formData.append('folder', `profilePictures/${currentUser.uid}`);
             formData.append('tags', `profile,user-${currentUser.uid}`);
-            formData.append('transformation', 'f_auto,q_auto:low,w_400,h_400,c_fill');
             
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -8614,7 +8851,7 @@ window.applyProfilePictureCrop = async function() {
             await logUserActivity('profile_picture_upload', {
                 fileName: profileCropState.originalFile.name,
                 fileSize: profileCropState.originalFile.size,
-                compressedSize: compressedFile.size,
+                compressedSize: fileForUpload.size,
                 fileType: profileCropState.originalFile.type
             });
             
@@ -11939,11 +12176,17 @@ async function handleUpdateAdminSettings() {
     const avatarEmojiInput = document.getElementById('admin-avatar-emoji');
     const messageEl = document.getElementById('admin-settings-message');
 
-    if (!displayNameInput || !passwordInput || !messageEl) return;
+    if (!displayNameInput || !messageEl) return;
 
-    const displayName = displayNameInput.value.trim();
-    const newPassword = passwordInput.value;
+    const fallbackName = String(currentUser.displayName || currentUser.email || 'Admin').trim();
+    const rawDisplayName = displayNameInput.value.trim();
+    const displayName = rawDisplayName || fallbackName;
+    const newPassword = passwordInput?.value || '';
     const avatarEmoji = sanitizeAvatarEmojiInput(avatarEmojiInput?.value || '');
+
+    if (!rawDisplayName) {
+        displayNameInput.value = displayName;
+    }
 
     messageEl.textContent = '';
     messageEl.className = 'text-sm text-center h-4';
@@ -11960,10 +12203,10 @@ async function handleUpdateAdminSettings() {
     if (newPassword) {
         const passwordValidation = Validator.password(newPassword, true);
         if (!passwordValidation.valid) {
-            passwordInput.classList.add('border-red-500', 'bg-red-50');
+            passwordInput?.classList.add('border-red-500', 'bg-red-50');
             messageEl.textContent = passwordValidation.error;
             messageEl.className = 'text-red-600 text-sm text-center h-4';
-            passwordInput.focus();
+            passwordInput?.focus();
             return;
         }
     }
@@ -11984,7 +12227,7 @@ async function handleUpdateAdminSettings() {
 
         if (newPassword) {
             await auth.currentUser.updatePassword(newPassword);
-            passwordInput.value = '';
+            if (passwordInput) passwordInput.value = '';
         }
 
         currentUser.displayName = displayName;
@@ -12001,7 +12244,7 @@ async function handleUpdateAdminSettings() {
         messageEl.textContent = 'Admin account settings saved.';
         messageEl.className = 'text-green-600 text-sm text-center h-4';
         displayNameInput.classList.remove('border-red-500', 'bg-red-50');
-        passwordInput.classList.remove('border-red-500', 'bg-red-50');
+        passwordInput?.classList.remove('border-red-500', 'bg-red-50');
         setTimeout(() => {
             if (messageEl.textContent === 'Admin account settings saved.') {
                 messageEl.textContent = '';
@@ -12012,6 +12255,9 @@ async function handleUpdateAdminSettings() {
         const friendlyMessage = handleAPIError(error, 'updating admin settings');
         messageEl.textContent = friendlyMessage;
         messageEl.className = 'text-red-600 text-sm text-center h-4';
+        if (error.code === 'auth/weak-password') {
+            passwordInput?.classList.add('border-red-500', 'bg-red-50');
+        }
         if (error.code === 'auth/requires-recent-login') {
             messageEl.textContent = 'For security, log out and back in before changing your password.';
         }
@@ -12041,11 +12287,32 @@ function showErrorMessage(inputElement, message) {
 }
 
 // Enhanced toast notification system
-const toastLoopGuard = { renderFailures: 0, maxRenderFailures: 3 };
+const toastLoopGuard = {
+    renderFailures: 0,
+    maxRenderFailures: 3,
+    lastErrorMessage: '',
+    lastErrorAt: 0,
+    repeatedErrorCount: 0
+};
 function showToast(message, type = 'info', duration = 4000) {
     if (type === 'error') {
-        console.warn('[toast] Error toast suppressed to avoid loops:', message);
-        return;
+        const now = Date.now();
+        const normalizedMessage = String(message || '').trim();
+        const isSameError = normalizedMessage && normalizedMessage === toastLoopGuard.lastErrorMessage;
+        const isRapidRepeat = isSameError && (now - toastLoopGuard.lastErrorAt) < 1800;
+
+        if (isRapidRepeat) {
+            toastLoopGuard.repeatedErrorCount += 1;
+            if (toastLoopGuard.repeatedErrorCount >= 3) {
+                console.warn('[toast] Error toast suppressed to avoid loops:', normalizedMessage);
+                return;
+            }
+        } else {
+            toastLoopGuard.repeatedErrorCount = 0;
+        }
+
+        toastLoopGuard.lastErrorMessage = normalizedMessage;
+        toastLoopGuard.lastErrorAt = now;
     }
     if (toastLoopGuard.renderFailures >= toastLoopGuard.maxRenderFailures) {
         return;
@@ -21038,15 +21305,38 @@ async function logClientAccess() {
 }
 // Toast notifications (success, error, warning) rendered top-center
 function showToast(message, type = 'success', options = {}) {
-    if (type === 'error') {
-        console.warn('[toast] Error toast suppressed to avoid loops:', message);
-        return;
-    }
     if (toastLoopGuard.renderFailures >= toastLoopGuard.maxRenderFailures) {
         return;
     }
 
-    const { duration = 3500, title } = options;
+    const normalizedType = String(type || 'info');
+    const normalizedMessage = String(message || '').trim();
+    if (normalizedType === 'error') {
+        const now = Date.now();
+        const isSameError = normalizedMessage && normalizedMessage === toastLoopGuard.lastErrorMessage;
+        const isRapidRepeat = isSameError && (now - toastLoopGuard.lastErrorAt) < 1800;
+
+        if (isRapidRepeat) {
+            toastLoopGuard.repeatedErrorCount += 1;
+            if (toastLoopGuard.repeatedErrorCount >= 3) {
+                console.warn('[toast] Error toast suppressed to avoid loops:', normalizedMessage);
+                return;
+            }
+        } else {
+            toastLoopGuard.repeatedErrorCount = 0;
+        }
+
+        toastLoopGuard.lastErrorMessage = normalizedMessage;
+        toastLoopGuard.lastErrorAt = now;
+    }
+
+    const normalizedOptions = typeof options === 'number'
+        ? { duration: options }
+        : (options && typeof options === 'object' ? options : {});
+    const { title } = normalizedOptions;
+    const durationValue = Number(normalizedOptions.duration);
+    const duration = Number.isFinite(durationValue) && durationValue > 0 ? durationValue : 3500;
+
     const container = document.getElementById('toast-container');
     if (!container) {
         console.warn('[toast] Missing container; toast skipped.');
@@ -21055,10 +21345,10 @@ function showToast(message, type = 'success', options = {}) {
 
     try {
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+        toast.className = `toast ${normalizedType}`;
         toast.setAttribute('role', 'status');
         toast.setAttribute('aria-live', 'polite');
-        toast.innerHTML = title ? `<div class="font-bold mb-0.5">${title}</div><div>${message}</div>` : message;
+        toast.innerHTML = title ? `<div class="font-bold mb-0.5">${title}</div><div>${normalizedMessage}</div>` : normalizedMessage;
         container.appendChild(toast);
         const timeout = setTimeout(() => toast.remove(), duration);
         toast.addEventListener('click', () => { clearTimeout(timeout); toast.remove(); });
