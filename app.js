@@ -577,6 +577,7 @@ const ANNOUNCEMENT_TEMPLATES = {
 };
 const ANNOUNCEMENT_DISMISSED_KEY = 'gcsemate_dismissed_announcements';
 const DASHBOARD_PINNED_EXAM_KEY = 'gcsemate_dashboard_pinned_exam';
+const DASHBOARD_SELECTED_EXAM_KEY = 'gcsemate_dashboard_selected_exam';
 let clockInterval = null;
 let lastForceLogoutAt = null;
 let unsubscribeUserManagement;
@@ -16879,7 +16880,11 @@ function getUpcomingExamEvents(limit = 3) {
         });
     });
 
-    return events.sort((a, b) => a.dateObj - b.dateObj).slice(0, Math.max(1, limit));
+    const sorted = events.sort((a, b) => a.dateObj - b.dateObj);
+    const numericLimit = Number(limit);
+    const hasExplicitLimit = limit !== null && limit !== undefined && limit !== '' && Number.isFinite(numericLimit);
+    const safeLimit = hasExplicitLimit ? Math.max(1, Math.floor(numericLimit)) : null;
+    return safeLimit ? sorted.slice(0, safeLimit) : sorted;
 }
 
 function renderDashboardExamCalendarCard() {
@@ -16889,27 +16894,37 @@ function renderDashboardExamCalendarCard() {
     const pinEl = document.getElementById('dashboard-next-exam-pin');
     if (!titleEl || !metaEl || !listEl) return;
 
-    const upcoming = getUpcomingExamEvents(12);
+    const upcoming = getUpcomingExamEvents(null);
     const pinnedKey = getPinnedDashboardExamId();
+    const selectedKey = getSelectedDashboardExamId();
     const ordered = [...upcoming];
     const pinnedIndex = pinnedKey ? ordered.findIndex((event) => event.eventKey === pinnedKey) : -1;
+    const selectedIndex = selectedKey ? ordered.findIndex((event) => event.eventKey === selectedKey) : -1;
 
     if (pinnedKey && pinnedIndex === -1) {
         setPinnedDashboardExamId('');
+    }
+    if (selectedKey && selectedIndex === -1) {
+        setSelectedDashboardExamId('');
     }
 
     if (pinnedIndex > 0) {
         const [pinnedEvent] = ordered.splice(pinnedIndex, 1);
         ordered.unshift(pinnedEvent);
+    } else if (pinnedIndex === -1 && selectedIndex > 0) {
+        const [selectedEvent] = ordered.splice(selectedIndex, 1);
+        ordered.unshift(selectedEvent);
     }
 
     const primary = ordered[0];
-    const secondary = ordered.slice(1, 3);
+    const secondary = ordered.slice(1);
 
     if (!primary) {
         titleEl.textContent = 'No upcoming exams yet';
         metaEl.textContent = 'Add exam events in Calendar to see your next deadline here.';
         listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
+        setPinnedDashboardExamId('');
+        setSelectedDashboardExamId('');
         if (pinEl) {
             pinEl.classList.add('hidden');
             pinEl.setAttribute('aria-pressed', 'false');
@@ -16923,9 +16938,10 @@ function renderDashboardExamCalendarCard() {
     const days = Math.max(0, Math.ceil((primary.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     const dayText = days === 0 ? 'Today' : `${days} day${days === 1 ? '' : 's'} away`;
     const isPrimaryPinned = getPinnedDashboardExamId() === primary.eventKey;
+    const isPrimarySelected = getSelectedDashboardExamId() === primary.eventKey;
 
     titleEl.textContent = primary.title || 'Upcoming exam';
-    metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}${isPrimaryPinned ? ' • Pinned' : ''}`;
+    metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}${isPrimaryPinned ? ' • Pinned' : (isPrimarySelected ? ' • Selected' : '')}`;
 
     if (pinEl) {
         pinEl.classList.remove('hidden');
@@ -16940,15 +16956,22 @@ function renderDashboardExamCalendarCard() {
         return;
     }
 
-    listEl.innerHTML = secondary.map((event) => {
+    listEl.innerHTML = secondary.map((event, index) => {
         const diff = Math.max(0, Math.ceil((event.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         const isPinned = getPinnedDashboardExamId() === event.eventKey;
-        return `<div class="dashboard-exam-pill ${isPinned ? 'is-pinned' : ''}">
-            <button type="button" class="dashboard-exam-pill-open" onclick="showPage('calendar-page')">
-                <span class="dashboard-exam-pill-title">${escapeHTML(event.title || 'Exam')}</span>
-                <span class="dashboard-exam-pill-meta">${event.dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${diff === 0 ? 'Today' : `${diff}d`}${isPinned ? ' • Pinned' : ''}</span>
+        const isSelected = getSelectedDashboardExamId() === event.eventKey;
+        return `<div class="dashboard-exam-pill ${isPinned ? 'is-pinned' : ''} ${isSelected ? 'is-selected' : ''}">
+            <button type="button" class="dashboard-exam-pill-open" onclick="selectDashboardExamById('${escapeJS(event.eventKey)}')">
+                <span class="dashboard-exam-pill-order">${index + 1}</span>
+                <span class="dashboard-exam-pill-copy">
+                    <span class="dashboard-exam-pill-title">${escapeHTML(event.title || 'Exam')}</span>
+                    <span class="dashboard-exam-pill-meta">${event.dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${diff === 0 ? 'Today' : `${diff}d`}${event.isGlobal ? ' • Global' : ''}${isPinned ? ' • Pinned' : (isSelected ? ' • Selected' : '')}</span>
+                </span>
             </button>
-            <button type="button" class="dashboard-exam-pill-pin ${isPinned ? 'is-pinned' : ''}" onclick="event.stopPropagation(); toggleDashboardExamPinById('${escapeJS(event.eventKey)}')">${isPinned ? 'Pinned' : 'Pin'}</button>
+            <div class="dashboard-exam-pill-actions">
+                <button type="button" class="dashboard-exam-pill-calendar" onclick="event.stopPropagation(); showPage('calendar-page');">Calendar</button>
+                <button type="button" class="dashboard-exam-pill-pin ${isPinned ? 'is-pinned' : ''}" onclick="event.stopPropagation(); toggleDashboardExamPinById('${escapeJS(event.eventKey)}')">${isPinned ? 'Pinned' : 'Pin'}</button>
+            </div>
         </div>`;
     }).join('');
 }
@@ -22385,6 +22408,79 @@ function setPinnedDashboardExamId(eventKey = '') {
     } catch (_) {}
 }
 
+function getSelectedDashboardExamId() {
+    try {
+        return String(localStorage.getItem(DASHBOARD_SELECTED_EXAM_KEY) || '').trim();
+    } catch (_) {
+        return '';
+    }
+}
+
+function setSelectedDashboardExamId(eventKey = '') {
+    const safeKey = String(eventKey || '').trim();
+    try {
+        if (safeKey) localStorage.setItem(DASHBOARD_SELECTED_EXAM_KEY, safeKey);
+        else localStorage.removeItem(DASHBOARD_SELECTED_EXAM_KEY);
+    } catch (_) {}
+}
+
+function selectDashboardExamById(eventKey = '') {
+    const safeKey = String(eventKey || '').trim();
+    if (!safeKey) return;
+
+    setSelectedDashboardExamId(safeKey);
+    try {
+        showToast('Exam selected for the dashboard spotlight.', 'info');
+    } catch (_) {}
+    renderDashboardExamCalendarCard();
+}
+
+window.selectDashboardExamById = selectDashboardExamById;
+
+function openDashboardToolsSection(section = 'planner') {
+    const normalized = String(section || 'planner').trim().toLowerCase();
+    const sectionTargetMap = {
+        flashcards: 'tools-flashcards-panel',
+        notes: 'tools-notes-panel',
+        planner: 'tools-planner-panel',
+        organiser: 'tools-planner-panel',
+        organizer: 'tools-planner-panel'
+    };
+    const focusTargetMap = {
+        flashcards: 'tools-flashcards-deck-name',
+        notes: 'tools-notes-input',
+        planner: 'tools-planner-input',
+        organiser: 'tools-planner-input',
+        organizer: 'tools-planner-input'
+    };
+
+    const targetId = sectionTargetMap[normalized] || sectionTargetMap.planner;
+    const focusId = focusTargetMap[normalized] || focusTargetMap.planner;
+
+    try {
+        recordUserInteraction('dashboard_shortcut_tools', { target: normalized, important: true });
+    } catch (_) {}
+
+    showPage('tools-page');
+
+    setTimeout(() => {
+        const target = document.getElementById(targetId) || document.getElementById('tools-page');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        const focusTarget = document.getElementById(focusId);
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+            try {
+                focusTarget.focus({ preventScroll: true });
+            } catch (_) {
+                focusTarget.focus();
+            }
+        }
+    }, 160);
+}
+
+window.openDashboardToolsSection = openDashboardToolsSection;
+
 function toggleDashboardExamPinById(eventKey = '') {
     const safeKey = String(eventKey || '').trim();
     if (!safeKey) return;
@@ -22392,6 +22488,11 @@ function toggleDashboardExamPinById(eventKey = '') {
     const currentPinned = getPinnedDashboardExamId();
     const isPinned = currentPinned === safeKey;
     setPinnedDashboardExamId(isPinned ? '' : safeKey);
+    if (!isPinned) {
+        setSelectedDashboardExamId(safeKey);
+    } else if (getSelectedDashboardExamId() === safeKey) {
+        setSelectedDashboardExamId('');
+    }
 
     try {
         showToast(isPinned ? 'Pinned exam removed from dashboard.' : 'Exam pinned to dashboard.', isPinned ? 'info' : 'success');
