@@ -24,6 +24,8 @@ let allSubjectFolders = {};
 let allBlogPosts = [];
 let allLessons = [];
 const BLOG_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1600&auto=format&fit=crop';
+const WSRV_BASE_URL = 'https://wsrv.nl/';
+const WSRV_ALLOWED_OUTPUTS = new Set(['jpg', 'png', 'webp', 'gif', 'tiff', 'avif']);
 const BLOG_COMMENT_COUNTS = new Map();
 const UI_PREFS_STORAGE_KEY = 'gcsemate_ui_prefs';
 const TOOLS_NOTES_STORAGE_KEY = 'gcsemate_tools_notes';
@@ -6061,6 +6063,79 @@ function sanitizeUrlForDisplay(url) {
         return url;
     } catch (e) {
         return '';
+    }
+}
+
+function getWsrvImageUrl(url, options = {}) {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (/^(data|blob|javascript):/i.test(raw)) return '';
+    if (/^https?:\/\/wsrv\.nl\/?/i.test(raw)) return raw;
+
+    let absolute = raw;
+    if (/^\/\//.test(absolute)) {
+        absolute = `https:${absolute}`;
+    }
+
+    // Keep local relative URLs untouched.
+    if (!/^https?:\/\//i.test(absolute)) {
+        return raw;
+    }
+
+    let parsed;
+    try {
+        parsed = new URL(absolute);
+    } catch (_) {
+        return raw;
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) return raw;
+    // Skip same-origin assets to avoid proxying internal files.
+    if (parsed.origin === window.location.origin) return raw;
+
+    const params = new URLSearchParams();
+    params.set('url', parsed.toString());
+
+    const width = Number(options.w ?? options.width);
+    const height = Number(options.h ?? options.height);
+    const quality = Number(options.q ?? options.quality);
+    const fit = String(options.fit || '').trim().toLowerCase();
+    const output = String(options.output || options.format || '').trim().toLowerCase();
+
+    if (Number.isFinite(width) && width > 0) params.set('w', String(Math.round(width)));
+    if (Number.isFinite(height) && height > 0) params.set('h', String(Math.round(height)));
+    if (fit) params.set('fit', fit);
+    if (Number.isFinite(quality) && quality >= 1 && quality <= 100) params.set('q', String(Math.round(quality)));
+    if (WSRV_ALLOWED_OUTPUTS.has(output)) params.set('output', output);
+
+    return `${WSRV_BASE_URL}?${params.toString()}`;
+}
+
+function optimizeHtmlImageSources(html, options = {}) {
+    if (!html) return '';
+    try {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const images = temp.querySelectorAll('img[src]');
+        images.forEach(image => {
+            const originalSrc = image.getAttribute('src');
+            const optimized = getWsrvImageUrl(originalSrc, options);
+            if (optimized) {
+                image.setAttribute('src', optimized);
+            }
+            if (!image.getAttribute('loading')) {
+                image.setAttribute('loading', 'lazy');
+            }
+            if (!image.getAttribute('decoding')) {
+                image.setAttribute('decoding', 'async');
+            }
+            if (!image.getAttribute('referrerpolicy')) {
+                image.setAttribute('referrerpolicy', 'no-referrer');
+            }
+        });
+        return temp.innerHTML;
+    } catch (_) {
+        return html;
     }
 }
 
@@ -17544,7 +17619,8 @@ function renderBlogPage(posts) {
             `;
         }
         const tags = post.tags.slice(0, 3).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('');
-        const safeImage = escapeHTML(post.image || BLOG_DEFAULT_IMAGE);
+        const cardImageSource = post.image || BLOG_DEFAULT_IMAGE;
+        const safeImage = escapeHTML(getWsrvImageUrl(cardImageSource, { w: 960, h: 540, fit: 'cover', q: 80 }) || cardImageSource);
         card.innerHTML = `
             <div class="relative cursor-pointer" onclick="showBlogPostViewer('${escapeJS(post.id)}')">
                 <img src="${safeImage}" alt="${escapeHTML(post.title || 'Blog post')}" class="blog-card-image" loading="lazy" decoding="async">
@@ -17955,7 +18031,7 @@ function updateLessonCoverPreview() {
         previewImage.removeAttribute('src');
         return;
     }
-    previewImage.src = url;
+    previewImage.src = getWsrvImageUrl(url, { w: 1280, h: 720, fit: 'cover', q: 82 }) || url;
     previewWrap.classList.remove('hidden');
 }
 
@@ -18943,12 +19019,15 @@ function renderLessonMediaBlocks(lesson, options = {}) {
         .filter(isEmbeddableUrl)
         .map(url => `<div class="rounded-xl border border-gray-200 bg-white p-2 overflow-hidden"><iframe src="${escapeHTML(url)}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-64 rounded-lg border-0" allowfullscreen></iframe></div>`)
         .join('');
-    const images = (lesson.imageUrls || []).map((url, index) => `
+    const images = (lesson.imageUrls || []).map((url, index) => {
+        const optimizedUrl = escapeHTML(getWsrvImageUrl(url, { w: 1400, h: 1000, fit: 'inside', q: 82 }) || String(url || ''));
+        return `
         <button type="button" class="lesson-gallery-trigger group relative overflow-hidden rounded-xl border border-gray-200 bg-white" data-gallery-index="${galleryOffset + index}" aria-label="Open lesson image ${index + 1}">
-            <img src="${escapeHTML(url)}" alt="Lesson image ${index + 1}" class="w-full rounded-xl transition-transform duration-300 group-hover:scale-[1.02]" loading="lazy" decoding="async">
+            <img src="${optimizedUrl}" alt="Lesson image ${index + 1}" class="w-full rounded-xl transition-transform duration-300 group-hover:scale-[1.02]" loading="lazy" decoding="async">
             <span class="lesson-image-zoom-chip"><i class="fas fa-expand mr-1"></i>Open</span>
         </button>
-    `).join('');
+    `;
+    }).join('');
     const attachments = (lesson.attachments || []).map(url => `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 font-semibold hover:underline">${escapeHTML(url)}</a></li>`).join('');
     const normalizedQuestions = (lesson.questions || []).map((item, index) => normalizeLessonQuestionItem(item, index)).filter(item => item.question);
     const questionCards = normalizedQuestions.map((item, index) => {
@@ -19073,7 +19152,7 @@ function renderLessonImageSpotlight() {
     if (!imageEl || !counterEl || !Array.isArray(images) || !images.length) return;
     const boundedIndex = Math.max(0, Math.min(images.length - 1, index));
     lessonImageSpotlightState.index = boundedIndex;
-    imageEl.src = images[boundedIndex];
+    imageEl.src = getWsrvImageUrl(images[boundedIndex], { w: 2200, h: 2200, fit: 'inside', q: 90 }) || images[boundedIndex];
     imageEl.style.transform = `scale(${zoom})`;
     counterEl.textContent = `${boundedIndex + 1} / ${images.length}`;
     if (prevEl) prevEl.disabled = images.length <= 1;
@@ -19355,6 +19434,13 @@ function openLessonViewer(lessonId) {
     const canComment = isAdminUser() || currentUser?.tier === 'paid';
     const viewedLabel = progress?.viewedAt || progress?.lastOpenedAt ? 'Viewed' : 'Not viewed yet';
     const completedLabel = progress?.completedAt ? 'Completed' : 'Not completed';
+    const coverImageSrc = normalized.coverImage
+        ? escapeHTML(getWsrvImageUrl(normalized.coverImage, { w: 1500, h: 900, fit: 'cover', q: 84 }) || normalized.coverImage)
+        : '';
+    const lessonContentHtml = optimizeHtmlImageSources(
+        formatBlogLinks(sanitizeHTML(normalized.content || '')),
+        { w: 1600, q: 82 }
+    );
 
     modal.innerHTML = `
         <div class="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl w-full max-w-5xl flex flex-col fade-in max-h-[90vh]">
@@ -19367,14 +19453,14 @@ function openLessonViewer(lessonId) {
                 <button onclick="closeLessonViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" title="Close">×</button>
             </div>
             <div class="overflow-y-auto p-6 md:p-8">
-                ${normalized.coverImage ? `<button type="button" class="lesson-gallery-trigger block w-full text-left mb-6" data-gallery-index="0" aria-label="Open cover image in spotlight"><img src="${escapeHTML(normalized.coverImage)}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200" loading="lazy" decoding="async"><span class="lesson-image-open-chip-inline mt-2 inline-flex"><i class="fas fa-expand mr-1"></i>Open cover image</span></button>` : ''}
+                ${normalized.coverImage ? `<button type="button" class="lesson-gallery-trigger block w-full text-left mb-6" data-gallery-index="0" aria-label="Open cover image in spotlight"><img src="${coverImageSrc}" alt="Lesson cover" class="w-full max-h-72 object-cover rounded-xl border border-gray-200" loading="lazy" decoding="async"><span class="lesson-image-open-chip-inline mt-2 inline-flex"><i class="fas fa-expand mr-1"></i>Open cover image</span></button>` : ''}
                 ${normalized.summary ? `<p class="text-sm text-slate-600 mb-5">${escapeHTML(normalized.summary)}</p>` : ''}
                 <div class="mb-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><i class="fas fa-eye mr-1 text-slate-500"></i>${metrics.views} views</div>
                     <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"><i class="fas fa-check-circle mr-1"></i>${metrics.completions} completions</div>
                     <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">${escapeHTML(viewedLabel)} • ${escapeHTML(completedLabel)}</div>
                 </div>
-                <div class="prose prose-sm md:prose-base max-w-none lesson-rich-content">${formatBlogLinks(sanitizeHTML(normalized.content || ''))}</div>
+                <div class="prose prose-sm md:prose-base max-w-none lesson-rich-content">${lessonContentHtml}</div>
                 <div class="mt-5 flex flex-wrap gap-2">${tagChips}</div>
                 ${renderLessonMediaBlocks(normalized, { galleryOffset: normalized.coverImage ? 1 : 0 })}
                 <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-6">
@@ -21276,6 +21362,13 @@ function showBlogPostViewer(postId) {
     const modal = document.getElementById('blog-viewer-modal');
     const postDate = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
     const shareUrl = `${window.location.origin}/blog#${encodeURIComponent(post.id)}`;
+    const postImageSrc = post.image
+        ? escapeHTML(getWsrvImageUrl(post.image, { w: 1600, h: 900, fit: 'inside', q: 84 }) || post.image)
+        : '';
+    const postContentHtml = optimizeHtmlImageSources(
+        formatBlogLinks(sanitizeHTML(post.content)),
+        { w: 1600, q: 82 }
+    );
     modal.innerHTML = `
         <div class="bg-white/90 backdrop-blur-lg rounded-lg shadow-xl w-full max-w-4xl flex flex-col fade-in max-h-[90vh]">
             <div class="p-4 border-b border-gray-200/50 flex justify-between items-center">
@@ -21286,10 +21379,10 @@ function showBlogPostViewer(postId) {
                 <button onclick="handleCloseBlogViewer()" class="text-2xl font-bold text-gray-500 hover:text-gray-800 p-1 leading-none" data-tooltip="Close">×</button>
             </div>
             <div class="overflow-y-auto">
-                ${post.image ? `<img src="${escapeHTML(post.image)}" alt="${escapeHTML(post.title || 'Blog post')}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
+                ${post.image ? `<img src="${postImageSrc}" alt="${escapeHTML(post.title || 'Blog post')}" class="w-full h-72 object-cover" loading="lazy" decoding="async">` : ''}
                 <div class="p-8 prose prose-lg max-w-none">
                     <p class="text-sm text-gray-500">Posted on ${postDate} by ${escapeHTML(post.authorName || 'GCSEMate')}</p>
-                    <div class="blog-content">${formatBlogLinks(sanitizeHTML(post.content))}</div>
+                    <div class="blog-content">${postContentHtml}</div>
                     <div class="mt-6 flex items-center gap-2 flex-wrap">
                         ${post.subject ? `<span class="blog-tag-chip">${escapeHTML(post.subject)}</span>` : ''}
                         ${parseBlogTags(post.tags).slice(0, 5).map(tag => `<span class="blog-tag-chip">#${escapeHTML(tag)}</span>`).join('')}
@@ -22280,7 +22373,8 @@ function showPreview(file) {
     }
 
     const modal = document.getElementById('preview-modal');
-        const embedUrl = getPreviewEmbedUrl(file);
+    const embedUrl = getPreviewEmbedUrl(file);
+    const previewIcon = escapeHTML(getWsrvImageUrl(file.iconLink || '', { w: 128, h: 128, fit: 'contain', q: 80 }) || file.iconLink || '');
     let content = '';
     if (embedUrl) {
         const openUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
@@ -22329,7 +22423,7 @@ function showPreview(file) {
     } else {
         content = `
             <div class="text-center bg-gray-100 p-8 rounded-lg">
-                <img src="${file.iconLink}" class="w-16 h-16 mx-auto mb-4" alt="${file.name}">
+                <img src="${previewIcon}" class="w-16 h-16 mx-auto mb-4" alt="${escapeHTML(file.name || 'File icon')}">
                 <h4 class="text-xl font-bold text-gray-800 mb-2">Preview not available</h4>
                 <p class="text-gray-600 mb-6">This file type (${file.mimeType}) cannot be previewed directly in the app.</p>
                 <a href="${file.webViewLink}" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
@@ -24164,7 +24258,7 @@ async function fetchAndRenderDailyMeme(forceRefresh = false) {
             if (cachedRaw) {
                 const cached = JSON.parse(cachedRaw);
                 if (cached?.dayKey === todayKey && cached?.url) {
-                    imgEl.src = cached.url;
+                    imgEl.src = getWsrvImageUrl(cached.url, { w: 1200, h: 1200, fit: 'inside', q: 82 }) || cached.url;
                     imgEl.classList.remove('hidden');
                     nameEl.textContent = cached.name || '';
                     statusEl.textContent = 'Daily meme loaded';
@@ -24191,7 +24285,7 @@ async function fetchAndRenderDailyMeme(forceRefresh = false) {
         const selected = memes[Math.floor(Math.random() * memes.length)];
         if (!selected?.url) throw new Error('Invalid meme payload');
 
-        imgEl.src = selected.url;
+        imgEl.src = getWsrvImageUrl(selected.url, { w: 1200, h: 1200, fit: 'inside', q: 82 }) || selected.url;
         imgEl.classList.remove('hidden');
         nameEl.textContent = selected.name || '';
         statusEl.textContent = 'Fresh meme loaded';
@@ -28192,7 +28286,10 @@ const lazyLoadObserver = new IntersectionObserver((entries) => {
         if (entry.isIntersecting) {
             const element = entry.target;
             if (element.dataset.src) {
-                element.src = element.dataset.src;
+                const nextSrc = element.tagName === 'IMG'
+                    ? (getWsrvImageUrl(element.dataset.src, { w: 1600, q: 82 }) || element.dataset.src)
+                    : element.dataset.src;
+                element.src = nextSrc;
                 element.removeAttribute('data-src');
                 lazyLoadObserver.unobserve(element);
             }
