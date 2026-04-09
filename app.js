@@ -7123,8 +7123,11 @@ function setupRealtimeListeners() {
         }, err => logError(err, "Useful Links"));
         
     // Listen for video playlists
+    window.__videoPlaylistsLoading = true;
+    setVideosStatusMessage('Loading video playlists...');
     unsubscribeVideoPlaylists = db.collection('videoPlaylists').orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
+            window.__videoPlaylistsLoading = false;
             setVideosStatusMessage('');
             const playlists = [];
             snapshot.forEach(doc => {
@@ -7141,11 +7144,12 @@ function setupRealtimeListeners() {
                 fallbackSnapshot.forEach(doc => {
                     playlists.push({ id: doc.id, ...doc.data() });
                 });
-                playlists.sort((a, b) => new Date(b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (b.createdAt || 0)) - new Date(a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (a.createdAt || 0)));
-                renderVideosPage(playlists);
+                window.__videoPlaylistsLoading = false;
+                renderVideosPage(sortPlaylistsByNewest(playlists));
                 setVideosStatusMessage('Live updates for playlists are temporarily unavailable. Showing a fallback list.');
             } catch (fallbackErr) {
                 logError(fallbackErr, 'Video Playlists Fallback');
+                window.__videoPlaylistsLoading = false;
                 setVideosStatusMessage(getFirebaseFriendlyMessage(fallbackErr, 'Video playlists are temporarily unavailable. Please refresh in a moment.'));
                 renderVideosPage([]);
             }
@@ -14924,6 +14928,142 @@ function renderBreadcrumbs() {
 // =================================================================================
 // VIDEOS LOGIC
 // =================================================================================
+const VIDEO_PLAYLIST_STARS_STORAGE_PREFIX = 'gcsemate:video-playlist-stars';
+const VIDEO_ITEM_STARS_STORAGE_PREFIX = 'gcsemate:video-item-stars';
+let youtubeIframeApiReadyPromise = null;
+
+if (typeof window.__videoPlaylistsLoading === 'undefined') {
+    window.__videoPlaylistsLoading = true;
+}
+
+function getUserScopedStorageKey(prefix) {
+    const userId = (currentUser && currentUser.uid) ? currentUser.uid : 'anon';
+    return `${prefix}:${userId}`;
+}
+
+function readStarredSet(prefix) {
+    try {
+        const key = getUserScopedStorageKey(prefix);
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return new Set();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set();
+        return new Set(parsed.map(v => String(v || '').trim()).filter(Boolean));
+    } catch (_) {
+        return new Set();
+    }
+}
+
+function writeStarredSet(prefix, values) {
+    try {
+        const key = getUserScopedStorageKey(prefix);
+        const payload = Array.from(values || []).map(v => String(v || '').trim()).filter(Boolean);
+        window.localStorage.setItem(key, JSON.stringify(payload));
+    } catch (_) {}
+}
+
+function getStarredPlaylistsSet() {
+    return readStarredSet(VIDEO_PLAYLIST_STARS_STORAGE_PREFIX);
+}
+
+function getStarredVideoItemsSet() {
+    return readStarredSet(VIDEO_ITEM_STARS_STORAGE_PREFIX);
+}
+
+function getVideoItemStarKey(playlist, item, index = 0) {
+    const playlistKey = String(playlist?.id || 'playlist').trim() || 'playlist';
+    const sourceKey = String(item?.sourceUrl || item?.watchUrl || item?.videoId || index).trim();
+    return `${playlistKey}|${sourceKey}`;
+}
+
+function isPlaylistStarred(playlist) {
+    const playlistId = String(playlist?.id || '').trim();
+    if (!playlistId) return false;
+    return getStarredPlaylistsSet().has(playlistId);
+}
+
+function isVideoItemStarred(playlist, item, index = 0) {
+    return getStarredVideoItemsSet().has(getVideoItemStarKey(playlist, item, index));
+}
+
+function togglePlaylistStar(playlistId) {
+    const id = String(playlistId || '').trim();
+    if (!id) return false;
+    const starred = getStarredPlaylistsSet();
+    if (starred.has(id)) starred.delete(id);
+    else starred.add(id);
+    writeStarredSet(VIDEO_PLAYLIST_STARS_STORAGE_PREFIX, starred);
+    return starred.has(id);
+}
+
+function toggleVideoItemStar(playlist, item, index = 0) {
+    const key = getVideoItemStarKey(playlist, item, index);
+    const starred = getStarredVideoItemsSet();
+    if (starred.has(key)) starred.delete(key);
+    else starred.add(key);
+    writeStarredSet(VIDEO_ITEM_STARS_STORAGE_PREFIX, starred);
+    return starred.has(key);
+}
+
+function parseTimestampMs(value) {
+    if (!value) return 0;
+    if (value && typeof value.toDate === 'function') {
+        const date = value.toDate();
+        return date instanceof Date ? date.getTime() : 0;
+    }
+    if (typeof value === 'object' && typeof value.seconds === 'number') {
+        return value.seconds * 1000;
+    }
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sortPlaylistsByNewest(playlists = []) {
+    return (playlists || []).slice().sort((a, b) => parseTimestampMs(b?.createdAt || b?._ts) - parseTimestampMs(a?.createdAt || a?._ts));
+}
+
+function ensureYouTubeIframeApiReady() {
+    if (window.YT && typeof window.YT.Player === 'function') {
+        return Promise.resolve(window.YT);
+    }
+    if (youtubeIframeApiReadyPromise) return youtubeIframeApiReadyPromise;
+
+    youtubeIframeApiReadyPromise = new Promise((resolve, reject) => {
+        const existingReady = window.onYouTubeIframeAPIReady;
+        const timeoutId = window.setTimeout(() => {
+            reject(new Error('Timed out waiting for YouTube iframe API'));
+        }, 15000);
+
+        window.onYouTubeIframeAPIReady = function() {
+            try {
+                if (typeof existingReady === 'function') {
+                    existingReady();
+                }
+            } catch (_) {}
+            window.clearTimeout(timeoutId);
+            resolve(window.YT);
+        };
+
+        let script = document.getElementById('youtube-iframe-api-script');
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'youtube-iframe-api-script';
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.async = true;
+            script.onerror = () => {
+                window.clearTimeout(timeoutId);
+                reject(new Error('Failed to load YouTube iframe API'));
+            };
+            document.head.appendChild(script);
+        }
+    }).catch((error) => {
+        youtubeIframeApiReadyPromise = null;
+        throw error;
+    });
+
+    return youtubeIframeApiReadyPromise;
+}
+
 function renderVideosPage(playlists) {
     const grid = document.getElementById('playlist-grid');
     const adminForm = document.getElementById('add-playlist-form-container');
@@ -15033,6 +15173,7 @@ function setupPlaylistFilters() {
         const tagsRaw = (tagFilter?.value||'').toLowerCase().trim();
         const tags = tagsRaw ? tagsRaw.split(/[\s,]+/).filter(Boolean) : [];
         const sortBy = (sortSelect?.value||'newest');
+        const starredPlaylists = getStarredPlaylistsSet();
         let list = (window.allPlaylists||[]).slice();
         if (subject && subject !== 'all') list = list.filter(p => (p.subject||'').toLowerCase() === subject.toLowerCase());
         if (term) list = list.filter(p => (p.title||'').toLowerCase().includes(term) || (p.tags||[]).join(' ').toLowerCase().includes(term));
@@ -15040,12 +15181,32 @@ function setupPlaylistFilters() {
             const ptags = (p.tags||[]).map(t=>t.toLowerCase());
             return tags.every(t => ptags.includes(t));
         });
-        if (sortBy === 'title') list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
-        else list.sort((a,b)=> new Date(b.createdAt?.seconds?b.createdAt.seconds*1000:b.createdAt||b._ts||Date.now()) - new Date(a.createdAt?.seconds?a.createdAt.seconds*1000:a.createdAt||a._ts||Date.now()));
+        if (sortBy === 'title') {
+            list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+        } else if (sortBy === 'starred-first') {
+            list.sort((a, b) => {
+                const aStarred = starredPlaylists.has(String(a?.id || ''));
+                const bStarred = starredPlaylists.has(String(b?.id || ''));
+                if (aStarred !== bStarred) return aStarred ? -1 : 1;
+                return parseTimestampMs(b?.createdAt || b?._ts) - parseTimestampMs(a?.createdAt || a?._ts);
+            });
+        } else {
+            list.sort((a,b)=> parseTimestampMs(b?.createdAt || b?._ts) - parseTimestampMs(a?.createdAt || a?._ts));
+        }
         // re-render grid
         grid.innerHTML = '';
         if (list.length === 0) {
-            grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Found</h3></div>`;
+            if (window.__videoPlaylistsLoading) {
+                grid.innerHTML = `<div class="col-span-full rounded-[28px] border border-slate-200 bg-white/90 p-8 text-center shadow-[0_20px_60px_-35px_rgba(15,23,42,0.18)]">
+                    <div class="mx-auto mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600">
+                        <i class="fas fa-circle-notch animate-spin"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">Loading revision playlists...</h3>
+                    <p class="mt-2 text-sm text-slate-500">Fetching your videos now.</p>
+                </div>`;
+            } else {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 p-10"><h3 class="mt-4 text-lg font-bold text-gray-700">No Video Playlists Found</h3></div>`;
+            }
             return;
         }
         list.forEach(p => grid.appendChild(createPlaylistCard(p)));
@@ -15067,7 +15228,8 @@ function setupPlaylistFilters() {
 
 function createPlaylistCard(playlist) {
     const card = document.createElement('div');
-    card.className = 'video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(59,130,246,0.28)]';
+    const playlistStarred = isPlaylistStarred(playlist);
+    card.className = `video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(59,130,246,0.28)]${playlistStarred ? ' video-playlist-card-starred' : ''}`;
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const itemCount = Array.isArray(playlist?.items) ? playlist.items.length : (playlist?.url ? 1 : 0);
@@ -15088,9 +15250,15 @@ function createPlaylistCard(playlist) {
                     <h3 class="text-lg font-extrabold leading-snug text-slate-900 line-clamp-2">${escapeHTML(playlist.title)}</h3>
                     <p class="text-sm font-medium text-slate-500">${subjectLabel}</p>
                 </div>
-                <div class="flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-right shadow-sm">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Videos</p>
-                    <p class="text-base font-black leading-none text-slate-800">${itemCount || 1}</p>
+                <div class="flex shrink-0 flex-col items-end gap-2">
+                    <button type="button" data-playlist-star aria-label="Toggle playlist star" aria-pressed="${playlistStarred ? 'true' : 'false'}" class="video-playlist-star-btn ${playlistStarred ? 'video-playlist-star-btn-active' : ''}" data-tooltip="Star this playlist">
+                        <i class="${playlistStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                        <span class="video-playlist-star-label">${playlistStarred ? 'Starred' : 'Star'}</span>
+                    </button>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-right shadow-sm">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Videos</p>
+                        <p class="text-base font-black leading-none text-slate-800">${itemCount || 1}</p>
+                    </div>
                 </div>
             </div>
 
@@ -15132,6 +15300,28 @@ function createPlaylistCard(playlist) {
     openBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         handlePlaylistClick(playlist);
+    });
+
+    const starBtn = card.querySelector('[data-playlist-star]');
+    starBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nowStarred = togglePlaylistStar(playlist.id);
+        card.classList.toggle('video-playlist-card-starred', nowStarred);
+        starBtn.classList.toggle('video-playlist-star-btn-active', nowStarred);
+        starBtn.setAttribute('aria-pressed', nowStarred ? 'true' : 'false');
+
+        const icon = starBtn.querySelector('i');
+        if (icon) {
+            icon.className = `${nowStarred ? 'fas' : 'far'} fa-star text-xs`;
+        }
+        const label = starBtn.querySelector('.video-playlist-star-label');
+        if (label) label.textContent = nowStarred ? 'Starred' : 'Star';
+
+        const sortMode = document.getElementById('playlist-sort')?.value;
+        if (sortMode === 'starred-first' && typeof window.__applyPlaylistFilters === 'function') {
+            window.__applyPlaylistFilters();
+        }
     });
 
     return card;
@@ -16370,7 +16560,7 @@ async function expandLegacyYouTubePlaylistItems(playlist, items = []) {
     }
 }
 
-function showAbyssPreplayWarningModal(item, itemIndex, totalItems) {
+function showVideoPreplayWarningModal(item, itemIndex, totalItems) {
     return new Promise((resolve) => {
         const modal = document.getElementById('confirmation-modal');
         if (!modal) {
@@ -16378,23 +16568,30 @@ function showAbyssPreplayWarningModal(item, itemIndex, totalItems) {
             return;
         }
 
-        const label = escapeHTML(cleanPlaylistItemTitle(item?.title || 'Abyss video'));
+        const isAbyss = item?.provider === 'abyss';
+        const label = escapeHTML(cleanPlaylistItemTitle(item?.title || 'Video'));
         const indexText = `${itemIndex + 1} / ${totalItems}`;
+        const previousZIndex = modal.style.zIndex;
+
+        modal.style.zIndex = '20001';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         modal.innerHTML = `
             <div class="video-admin-delete-modal bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-xl p-6 fade-in">
                 <div class="flex items-center gap-3 mb-3">
                     <img src="gcsemate%20new.png" alt="GCSEMate" class="h-8 w-auto">
-                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Abyss playback warning</span>
+                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Playback warning</span>
                 </div>
                 <h3 class="text-xl font-black text-slate-900">Before playing this video</h3>
-                <p class="mt-2 text-sm text-slate-700">Video <span class="font-semibold">${label}</span> (${indexText}) may open advertisement tabs on the first 2 clicks.</p>
+                <p class="mt-2 text-sm text-slate-700">Video <span class="font-semibold">${label}</span> (${indexText}) is hosted by <span class="font-semibold">${isAbyss ? 'an external ad-supported source' : 'a third-party embed provider'}</span>.</p>
                 <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <p class="font-semibold">Safety reminder</p>
-                    <p class="mt-1">If a new tab opens, close it immediately. Do not download files, sign in, or click anything on ad pages.</p>
+                    <p class="mt-1">If a new tab opens, close it immediately. Do not download files, sign in, or enter personal details on ad pages.</p>
+                    ${isAbyss ? '<p class="mt-1 font-semibold">Abyss hosts can require initial ad interactions before playback starts.</p>' : ''}
                 </div>
                 <div class="mt-5 flex flex-wrap justify-end gap-2">
-                    <button id="abyss-warning-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
-                    <button id="abyss-warning-continue" class="px-4 py-2 rounded-md bg-amber-500 text-white font-semibold hover:bg-amber-600">I understand, play video</button>
+                    <button id="video-warning-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
+                    <button id="video-warning-continue" class="px-4 py-2 rounded-md bg-amber-500 text-white font-semibold hover:bg-amber-600">I understand, play video</button>
                 </div>
             </div>`;
         modal.style.display = 'flex';
@@ -16407,13 +16604,16 @@ function showAbyssPreplayWarningModal(item, itemIndex, totalItems) {
 
         const finish = (ok) => {
             modal.removeEventListener('click', onBackdropClick);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             modal.style.display = 'none';
             modal.innerHTML = '';
+            modal.style.zIndex = previousZIndex;
             resolve(!!ok);
         };
 
-        modal.querySelector('#abyss-warning-cancel')?.addEventListener('click', () => finish(false));
-        modal.querySelector('#abyss-warning-continue')?.addEventListener('click', () => finish(true));
+        modal.querySelector('#video-warning-cancel')?.addEventListener('click', () => finish(false));
+        modal.querySelector('#video-warning-continue')?.addEventListener('click', () => finish(true));
         modal.addEventListener('click', onBackdropClick);
     });
 }
@@ -16475,6 +16675,21 @@ function getItemEmbedUrl(item) {
     return candidate || null;
 }
 
+function ensureYouTubeEmbedApiParams(url) {
+    const raw = String(url || '').trim();
+    if (!raw) return raw;
+    if (!/youtube\.com\/embed|youtube-nocookie\.com\/embed/i.test(raw)) return raw;
+    const separator = raw.includes('?') ? '&' : '?';
+    let nextUrl = raw;
+    if (!/[?&]enablejsapi=1(?:&|$)/i.test(nextUrl)) {
+        nextUrl += `${separator}enablejsapi=1`;
+    }
+    if (!/[?&]origin=/i.test(nextUrl) && window.location?.origin) {
+        nextUrl += `${nextUrl.includes('?') ? '&' : '?'}origin=${encodeURIComponent(window.location.origin)}`;
+    }
+    return nextUrl;
+}
+
 function getAdFallbackUrl(item) {
     if (!item) return '';
     if (item.type === 'youtube_video' && item.videoId) {
@@ -16531,24 +16746,12 @@ async function getResolvedItemPlayback(item) {
 
     if (!item || item.provider !== 'abyss') return base;
 
-    const resolved = await resolveExternalVideoSource(item);
-    if (!resolved) return base;
-
-    if (resolved.youtube?.embedUrl) {
-        return {
-            embedUrl: resolved.youtube.embedUrl,
-            watchUrl: resolved.youtube.watchUrl || resolved.finalUrl || defaultWatch,
-            wasResolved: true,
-            mode: 'youtube_resolved'
-        };
-    }
-
-    // Keep source link available, but avoid claiming it's clean playback.
+    // Keep Abyss playback fully direct for host compatibility.
     return {
-        embedUrl: defaultEmbed,
-        watchUrl: resolved.finalUrl || defaultWatch,
+        embedUrl: item.embedUrl || item.sourceUrl || defaultEmbed,
+        watchUrl: item.watchUrl || item.sourceUrl || defaultWatch,
         wasResolved: false,
-        mode: 'external_unresolved'
+        mode: 'abyss_direct'
     };
 }
 
@@ -16590,54 +16793,214 @@ function openPlaylistViewerModal(playlist, items) {
     }
     let activeIndex = 0;
     let renderAttempt = 0;
+    let hasAcceptedPlaybackWarning = false;
+    let autoplayEnabled = true;
+    let theaterEnabled = false;
+    let sidebarSearchTerm = '';
+    let sidebarSortMode = 'default';
+    let youtubePlayerInstance = null;
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const maxIndex = Math.max(items.length - 1, 0);
+
+    const cleanupYouTubePlayer = () => {
+        if (youtubePlayerInstance && typeof youtubePlayerInstance.destroy === 'function') {
+            try {
+                youtubePlayerInstance.destroy();
+            } catch (_) {}
+        }
+        youtubePlayerInstance = null;
+    };
+
+    const updatePlaylistStarButton = () => {
+        const starButton = modal.querySelector('#playlist-viewer-star');
+        if (!starButton) return;
+        const starred = isPlaylistStarred(playlist);
+        starButton.classList.toggle('video-player-toggle-active', starred);
+        starButton.setAttribute('aria-pressed', starred ? 'true' : 'false');
+        const icon = starButton.querySelector('i');
+        if (icon) icon.className = `${starred ? 'fas' : 'far'} fa-star`;
+        const label = starButton.querySelector('span');
+        if (label) label.textContent = starred ? 'Playlist Starred' : 'Star Playlist';
+    };
+
+    const updateAutoplayButton = () => {
+        const autoplayButton = modal.querySelector('#playlist-viewer-autoplay');
+        if (!autoplayButton) return;
+        autoplayButton.classList.toggle('video-player-toggle-active', autoplayEnabled);
+        autoplayButton.setAttribute('aria-pressed', autoplayEnabled ? 'true' : 'false');
+        const icon = autoplayButton.querySelector('i');
+        if (icon) icon.className = autoplayEnabled ? 'fas fa-forward' : 'fas fa-pause';
+        const label = autoplayButton.querySelector('span');
+        if (label) label.textContent = autoplayEnabled ? 'Autoplay On' : 'Autoplay Off';
+    };
+
+    const updateTheaterButton = () => {
+        modal.classList.toggle('video-player-theater', theaterEnabled);
+        const theaterButton = modal.querySelector('#playlist-viewer-theater');
+        if (!theaterButton) return;
+        theaterButton.classList.toggle('video-player-toggle-active', theaterEnabled);
+        theaterButton.setAttribute('aria-pressed', theaterEnabled ? 'true' : 'false');
+        const icon = theaterButton.querySelector('i');
+        if (icon) icon.className = theaterEnabled ? 'fas fa-compress' : 'fas fa-expand';
+        const label = theaterButton.querySelector('span');
+        if (label) label.textContent = theaterEnabled ? 'Exit Theater' : 'Theater Mode';
+    };
+
+    const getSidebarIndexes = () => {
+        const term = sidebarSearchTerm.toLowerCase().trim();
+        const starredSet = getStarredVideoItemsSet();
+        let indexes = items.map((_, idx) => idx);
+
+        if (term) {
+            indexes = indexes.filter((idx) => {
+                const item = items[idx];
+                const title = cleanPlaylistItemTitle(item?.title || '') || (item?.provider === 'abyss' ? 'Abyss video' : 'YouTube video');
+                const provider = item?.provider || '';
+                const haystack = `${title} ${provider}`.toLowerCase();
+                return haystack.includes(term);
+            });
+        }
+
+        if (sidebarSortMode === 'starred-only') {
+            indexes = indexes.filter((idx) => starredSet.has(getVideoItemStarKey(playlist, items[idx], idx)));
+        } else if (sidebarSortMode === 'starred-first') {
+            indexes.sort((a, b) => {
+                const aStar = starredSet.has(getVideoItemStarKey(playlist, items[a], a));
+                const bStar = starredSet.has(getVideoItemStarKey(playlist, items[b], b));
+                if (aStar !== bStar) return aStar ? -1 : 1;
+                return a - b;
+            });
+        }
+
+        return indexes;
+    };
+
+    const renderSidebarItems = () => {
+        const container = modal.querySelector('#playlist-viewer-items');
+        const count = modal.querySelector('#playlist-viewer-filter-count');
+        if (!container) return;
+
+        const indexes = getSidebarIndexes();
+        if (count) {
+            count.textContent = `${indexes.length} of ${items.length} videos shown`;
+        }
+
+        if (!indexes.length) {
+            container.innerHTML = '<div class="video-player-sidebar-empty">No matching videos. Adjust your search or sort.</div>';
+            return;
+        }
+
+        const starredSet = getStarredVideoItemsSet();
+        container.innerHTML = indexes.map((idx) => {
+            const item = items[idx];
+            const label = cleanPlaylistItemTitle(item?.title || '') || (item?.provider === 'abyss' ? 'Abyss' : (item?.type === 'youtube_playlist' ? 'YouTube playlist' : 'YouTube video'));
+            const badge = item?.type === 'youtube_playlist' ? 'Playlist' : (item?.provider === 'abyss' ? 'External' : 'Video');
+            const isStarred = starredSet.has(getVideoItemStarKey(playlist, item, idx));
+            const rowClass = `video-player-item ${idx === activeIndex ? 'video-player-item-active' : 'video-player-item-inactive'}${isStarred ? ' video-player-item-starred' : ''}`;
+
+            return `<div data-item-row="${idx}" class="${rowClass}">
+                <button type="button" data-item-index="${idx}" class="video-player-item-main">
+                    <span class="video-player-item-index">${idx + 1}</span>
+                    <span class="video-player-item-copy">
+                        <span class="video-player-item-label">${escapeHTML(label)}</span>
+                        <span class="video-player-item-badge">${badge}</span>
+                    </span>
+                </button>
+                <button type="button" data-item-star="${idx}" class="video-player-item-star-btn ${isStarred ? 'video-player-item-star-btn-active' : ''}" aria-label="Toggle star for this video" aria-pressed="${isStarred ? 'true' : 'false'}">
+                    <i class="${isStarred ? 'fas' : 'far'} fa-star"></i>
+                </button>
+            </div>`;
+        }).join('');
+
+        container.querySelectorAll('[data-item-index]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeIndex = Number(btn.getAttribute('data-item-index'));
+                renderActive();
+            });
+        });
+
+        container.querySelectorAll('[data-item-star]').forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const idx = Number(btn.getAttribute('data-item-star'));
+                const nowStarred = toggleVideoItemStar(playlist, items[idx], idx);
+                btn.classList.toggle('video-player-item-star-btn-active', nowStarred);
+                btn.setAttribute('aria-pressed', nowStarred ? 'true' : 'false');
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = `${nowStarred ? 'fas' : 'far'} fa-star`;
+                renderSidebarItems();
+            });
+        });
+    };
+
+    const attachYouTubeAutoAdvance = async (frame, attemptId) => {
+        const src = String(frame?.src || '');
+        const isYouTubeEmbed = /youtube\.com\/embed|youtube-nocookie\.com\/embed/i.test(src);
+        if (!isYouTubeEmbed || !frame?.id) return;
+
+        try {
+            const YT = await ensureYouTubeIframeApiReady();
+            if (!YT || !YT.Player || attemptId !== renderAttempt) return;
+            cleanupYouTubePlayer();
+
+            youtubePlayerInstance = new YT.Player(frame.id, {
+                events: {
+                    onStateChange: (event) => {
+                        if (!autoplayEnabled) return;
+                        if (attemptId !== renderAttempt) return;
+                        if (event?.data === YT.PlayerState.ENDED && activeIndex < maxIndex) {
+                            activeIndex += 1;
+                            renderActive();
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.warn('YouTube autoplay-next integration unavailable', error);
+        }
+    };
 
     const renderActive = async () => {
         renderAttempt += 1;
         const attemptId = renderAttempt;
         const current = items[activeIndex];
-        if (current?.provider === 'abyss') {
-            const proceed = await showAbyssPreplayWarningModal(current, activeIndex, items.length);
+        if (!hasAcceptedPlaybackWarning) {
+            const proceed = await showVideoPreplayWarningModal(current, activeIndex, items.length);
             if (!proceed || attemptId !== renderAttempt) return;
+            hasAcceptedPlaybackWarning = true;
         }
+
+        cleanupYouTubePlayer();
         const playback = await getResolvedItemPlayback(current);
         if (attemptId !== renderAttempt) return;
         const embedUrl = playback.embedUrl;
         if (!embedUrl) return;
         const frame = modal.querySelector('#playlist-viewer-frame');
         const title = modal.querySelector('#playlist-viewer-item-title');
-        const sourceLink = modal.querySelector('#playlist-viewer-open-source');
         const stageNote = modal.querySelector('.video-player-stage-note');
         const prevButton = modal.querySelector('#playlist-viewer-prev');
         const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) {
-            frame.src = embedUrl;
+            frame.src = ensureYouTubeEmbedApiParams(embedUrl);
             frame.removeAttribute('sandbox');
             frame.dataset.fallbackHandled = '0';
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
         if (title) title.textContent = `Video ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
-        if (sourceLink) sourceLink.href = playback.watchUrl || current.watchUrl || current.sourceUrl || '#';
         if (stageNote) {
-            if (playback.mode === 'youtube_resolved') {
-                stageNote.textContent = 'Resolved from external host to a direct YouTube embed to avoid popup-ad redirects.';
-            } else if (playback.mode === 'external_unresolved') {
-                stageNote.textContent = 'This source is external. If ads open new tabs, close them immediately and return here.';
-            } else if (current?.provider === 'abyss') {
-                stageNote.textContent = 'Abyss ad popups are enabled for playback compatibility. Close any ad tabs instantly.';
+            if (current?.provider === 'abyss' || playback.mode === 'abyss_direct') {
+                stageNote.textContent = 'Abyss source loaded directly for compatibility. If ad tabs open, close them immediately and return here.';
+            } else if (autoplayEnabled) {
+                stageNote.textContent = 'Autoplay is enabled: YouTube videos will automatically advance to the next item when playback ends.';
             } else {
-                stageNote.textContent = 'Embedded natively inside GCSEMate. Popups are blocked in the viewer.';
+                stageNote.textContent = 'Autoplay is disabled. Use the Next button or the sidebar list to continue.';
             }
         }
         if (prevButton) prevButton.disabled = activeIndex === 0;
         if (nextButton) nextButton.disabled = activeIndex >= maxIndex;
         trackVideoView(playlist, current, activeIndex);
-        modal.querySelectorAll('[data-item-index]').forEach(btn => {
-            const isActive = Number(btn.getAttribute('data-item-index')) === activeIndex;
-            btn.classList.toggle('video-player-item-active', isActive);
-            btn.classList.toggle('video-player-item-inactive', !isActive);
-        });
+        renderSidebarItems();
 
         if (frame) {
             const fallbackUrl = playback.watchUrl || getAdFallbackUrl(current);
@@ -16659,21 +17022,10 @@ function openPlaylistViewerModal(playlist, items) {
             frame.onload = () => {
                 if (attemptId !== renderAttempt) return;
                 if (timeoutId != null) window.clearTimeout(timeoutId);
+                attachYouTubeAutoAdvance(frame, attemptId);
             };
         }
     };
-
-    const itemsHtml = items.map((item, idx) => {
-        const label = cleanPlaylistItemTitle(item.title || '') || (item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YouTube playlist' : 'YouTube video'));
-        const badge = item.type === 'youtube_playlist' ? 'Playlist' : (item.provider === 'abyss' ? 'External' : 'Video');
-        return `<button type="button" data-item-index="${idx}" class="video-player-item w-full text-left">
-            <span class="video-player-item-index">${idx + 1}</span>
-            <span class="video-player-item-copy">
-                <span class="video-player-item-label">${escapeHTML(label)}</span>
-                <span class="video-player-item-badge">${badge}</span>
-            </span>
-        </button>`;
-    }).join('');
 
     modal.innerHTML = `
         <div class="video-player-modal-shell">
@@ -16698,6 +17050,9 @@ function openPlaylistViewerModal(playlist, items) {
                         </div>
                     </div>
                     <div class="video-player-actions">
+                        <button id="playlist-viewer-star" type="button" class="video-player-nav-btn" aria-pressed="false"><i class="far fa-star"></i><span>Star Playlist</span></button>
+                        <button id="playlist-viewer-autoplay" type="button" class="video-player-nav-btn" aria-pressed="true"><i class="fas fa-forward"></i><span>Autoplay On</span></button>
+                        <button id="playlist-viewer-theater" type="button" class="video-player-nav-btn" aria-pressed="false"><i class="fas fa-expand"></i><span>Theater Mode</span></button>
                         ${isAdminUser() ? `<button id="playlist-viewer-edit" type="button" class="video-player-nav-btn"><i class="fas fa-pen"></i><span>Edit</span></button>` : ''}
                         ${isAdminUser() ? `<button id="playlist-viewer-delete" type="button" class="video-player-nav-btn"><i class="fas fa-trash"></i><span>Delete</span></button>` : ''}
                         <button id="playlist-viewer-prev" type="button" class="video-player-nav-btn"><i class="fas fa-chevron-left"></i><span>Prev</span></button>
@@ -16712,9 +17067,8 @@ function openPlaylistViewerModal(playlist, items) {
                         </div>
                         <div class="video-player-stage-footer">
                             <div class="min-w-0">
-                                <p class="video-player-stage-note">Embedded natively inside GCSEMate. Popups are blocked in the viewer.</p>
+                                <p class="video-player-stage-note">Preparing video playback...</p>
                             </div>
-                            <a id="playlist-viewer-open-source" href="${escapeHTML(items[0]?.watchUrl || items[0]?.sourceUrl || '#')}" target="_blank" rel="noopener noreferrer" class="video-player-source-link">Open source</a>
                         </div>
                     </section>
                     <aside class="video-player-sidebar">
@@ -16722,7 +17076,16 @@ function openPlaylistViewerModal(playlist, items) {
                             <p class="video-player-sidebar-title">Playlist videos</p>
                             <p class="video-player-sidebar-copy">Choose a lesson or episode without leaving this page.</p>
                         </div>
-                        <div class="video-player-items-scroll" id="playlist-viewer-items">${itemsHtml}</div>
+                        <div class="video-player-sidebar-controls">
+                            <input id="playlist-viewer-search" type="search" class="video-player-sidebar-search" placeholder="Search videos in this playlist" aria-label="Search playlist videos">
+                            <select id="playlist-viewer-sort" class="video-player-sidebar-sort" aria-label="Sort videos in this playlist">
+                                <option value="default">Default order</option>
+                                <option value="starred-first">Starred first</option>
+                                <option value="starred-only">Starred only</option>
+                            </select>
+                            <p id="playlist-viewer-filter-count" class="video-player-sidebar-count">${items.length} of ${items.length} videos shown</p>
+                        </div>
+                        <div class="video-player-items-scroll" id="playlist-viewer-items"></div>
                     </aside>
                 </div>
             </div>
@@ -16754,9 +17117,33 @@ function openPlaylistViewerModal(playlist, items) {
     modal.__playlistModalCleanup = () => {
         modal.removeEventListener('click', onModalBackdropClick);
         document.removeEventListener('keydown', onModalEscape);
+        cleanupYouTubePlayer();
+        modal.classList.remove('video-player-theater');
         modal.__playlistModalCleanup = null;
     };
 
+    modal.querySelector('#playlist-viewer-star')?.addEventListener('click', () => {
+        togglePlaylistStar(playlist.id);
+        updatePlaylistStarButton();
+        if (typeof window.__applyPlaylistFilters === 'function') {
+            window.__applyPlaylistFilters();
+        }
+    });
+    modal.querySelector('#playlist-viewer-autoplay')?.addEventListener('click', () => {
+        autoplayEnabled = !autoplayEnabled;
+        updateAutoplayButton();
+        const current = items[activeIndex];
+        const stageNote = modal.querySelector('.video-player-stage-note');
+        if (stageNote && current?.provider !== 'abyss') {
+            stageNote.textContent = autoplayEnabled
+                ? 'Autoplay is enabled: YouTube videos will automatically advance to the next item when playback ends.'
+                : 'Autoplay is disabled. Use the Next button or the sidebar list to continue.';
+        }
+    });
+    modal.querySelector('#playlist-viewer-theater')?.addEventListener('click', () => {
+        theaterEnabled = !theaterEnabled;
+        updateTheaterButton();
+    });
     modal.querySelector('#playlist-viewer-close')?.addEventListener('click', () => {
         closePlaylistViewerModal(modal);
     });
@@ -16780,12 +17167,19 @@ function openPlaylistViewerModal(playlist, items) {
             renderActive();
         }
     });
-    modal.querySelectorAll('[data-item-index]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            activeIndex = Number(btn.getAttribute('data-item-index'));
-            renderActive();
-        });
+    modal.querySelector('#playlist-viewer-search')?.addEventListener('input', (event) => {
+        sidebarSearchTerm = String(event.target?.value || '');
+        renderSidebarItems();
     });
+    modal.querySelector('#playlist-viewer-sort')?.addEventListener('change', (event) => {
+        sidebarSortMode = String(event.target?.value || 'default');
+        renderSidebarItems();
+    });
+
+    updatePlaylistStarButton();
+    updateAutoplayButton();
+    updateTheaterButton();
+    renderSidebarItems();
     renderActive();
 }
 

@@ -1081,7 +1081,7 @@
                     <div id="videos-status-message" class="hidden mb-4 rounded-lg border border-red-200/60 bg-red-50/60 px-4 py-3 text-sm text-red-700" role="alert" aria-live="polite"></div>
                     <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-amber-900 video-playlist-hero">
                         <p class="text-sm font-semibold">Video Host Disclaimer</p>
-                        <p class="mt-1 text-sm">Some embeds come from third-party hosts. GCSEMate now keeps YouTube and playlist navigation inside the page whenever possible and blocks popup windows inside the embedded viewer.</p>
+                        <p class="mt-1 text-sm">Some embeds come from third-party hosts. GCSEMate now warns you before playback and keeps navigation in-page where possible, but external hosts can still open ad tabs.</p>
                     </div>
                      <div id="add-playlist-form-container" class="hidden bg-white/50 p-6 rounded-xl shadow-md border border-white/30 mb-8 video-playlist-form-shell">
                          <h3 class="text-xl font-semibold mb-4">Add New Video Playlist</h3>
@@ -1154,6 +1154,7 @@
                             <select id="playlist-sort" class="rounded-lg border-gray-300/60 bg-white/70 px-2 py-2 text-sm">
                                 <option value="newest">Newest</option>
                                 <option value="title">Title</option>
+                                <option value="starred-first">Starred First</option>
                             </select>
                         </div>
                     </div>
@@ -3741,7 +3742,7 @@
     <div id="legal-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
     <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[9998]"></div>
-    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[10000]"></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm hidden items-center justify-center p-4 z-[20001]"></div>
     <div id="checkout-success-modal" class="fixed inset-0 bg-slate-950/78 backdrop-blur-md hidden items-center justify-center p-4 z-[10003]" role="dialog" aria-modal="true" aria-labelledby="checkout-success-title" aria-describedby="checkout-success-message">
         <div class="checkout-success-card relative w-full max-w-xl overflow-hidden rounded-[28px] border border-white/60 bg-white/96 p-8 text-center shadow-2xl">
             <button type="button" onclick="closeCheckoutSuccessModal()" class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800" aria-label="Close success message">
