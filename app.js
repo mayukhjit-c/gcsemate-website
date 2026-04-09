@@ -14118,6 +14118,93 @@ function getDashboardStreakPodiumMarkup(rows = []) {
         .join('');
 }
 
+function pickDashboardStreakMessageVariant(seedText, variants = []) {
+    const safeVariants = Array.isArray(variants) ? variants.filter(Boolean) : [];
+    if (!safeVariants.length) return '';
+    const text = String(seedText || 'gcsemate-streak');
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash * 31) + text.charCodeAt(i)) % 2147483647;
+    }
+    const index = Math.abs(hash) % safeVariants.length;
+    return safeVariants[index];
+}
+
+function getDashboardStreakChallengeMessage({
+    currentStreak = 0,
+    bestStreak = 0,
+    myIndex = -1,
+    myRank = null,
+    normalizedRows = [],
+    freezeCount = 0
+} = {}) {
+    const safeCurrent = Math.max(0, Number(currentStreak || 0));
+    const safeBest = Math.max(safeCurrent, Number(bestStreak || 0));
+    const safeFreezeCount = Math.max(0, Number(freezeCount || 0));
+    const focusedMinutes = Math.round(Math.max(0, Number(toolsTimerState?.todayFocusedSeconds || 0)) / 60);
+    const todayKey = getLocalDateKey();
+    const nextRow = myIndex > 0 ? normalizedRows[myIndex - 1] : null;
+    const gapToNext = nextRow ? Math.max(1, Number(nextRow?.studyStreak || 0) - safeCurrent) : null;
+
+    let primaryVariants = [];
+    if (safeCurrent <= 0) {
+        primaryVariants = safeBest >= 5
+            ? [
+                `You already proved you can hit ${safeBest} days. Start again today and rebuild that streak.`,
+                `Your best streak is ${safeBest} days. One focused session today restarts your momentum.`,
+                `${safeBest} days is your benchmark. Show up today and reignite the run.`
+            ]
+            : [
+                'Complete one focused session today to ignite your streak.',
+                'Start small: one study session today is enough to launch your streak.',
+                'Today is your reset point. Lock in one session and begin the climb.'
+            ];
+    } else if (myIndex === 0) {
+        primaryVariants = [
+            'You are leading the streak league. Keep your edge with a focused session today.',
+            'League leader status unlocked. Protect #1 by showing up again today.',
+            'You set the pace for everyone else. Keep the streak alive and defend the crown.'
+        ];
+    } else if (myIndex > 0 && gapToNext != null) {
+        primaryVariants = [
+            `${gapToNext} day${gapToNext === 1 ? '' : 's'} to climb to #${myIndex}. You are within striking distance.`,
+            `Close the ${gapToNext}-day gap to #${myIndex} with steady daily sessions.`,
+            `You are chasing #${myIndex} by ${gapToNext} day${gapToNext === 1 ? '' : 's'}. Consistency wins this race.`
+        ];
+    } else {
+        primaryVariants = [
+            'You are outside the top 25. Keep stacking sessions and break into the league.',
+            'Momentum is building. Keep your daily streak alive to enter the top 25.',
+            'Stay consistent this week and push your way into the leaderboard.'
+        ];
+    }
+
+    const seedBase = `${todayKey}|${safeCurrent}|${safeBest}|${myRank || 0}|${focusedMinutes}|${safeFreezeCount}`;
+    let message = pickDashboardStreakMessageVariant(`${seedBase}|primary`, primaryVariants);
+
+    const secondaryVariants = [];
+    if (safeCurrent > 0 && safeBest >= 14) {
+        secondaryVariants.push(`Two-week discipline unlocked. Target ${safeBest + 1} days next.`);
+    }
+    if (safeCurrent > 0 && safeBest >= 30) {
+        secondaryVariants.push(`Your ${safeBest}-day best shows real consistency. Keep extending it.`);
+    }
+    if (focusedMinutes >= 45) {
+        secondaryVariants.push(`Strong start today: ${focusedMinutes} focused minutes logged.`);
+    } else if (safeCurrent > 0 && focusedMinutes < 20) {
+        secondaryVariants.push('Aim for 20 focused minutes today to bank this streak day confidently.');
+    }
+    if (safeFreezeCount > 0 && safeCurrent > 0) {
+        secondaryVariants.push(`${safeFreezeCount} freeze${safeFreezeCount === 1 ? '' : 's'} ready as backup if life gets busy.`);
+    }
+
+    const secondary = pickDashboardStreakMessageVariant(`${seedBase}|secondary`, secondaryVariants);
+    if (secondary) {
+        message = `${message} ${secondary}`;
+    }
+    return message.trim() || 'Complete one focus session today to ignite your streak.';
+}
+
 function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     const listEl = document.getElementById('dashboard-streak-leaderboard-list');
     const currentEl = document.getElementById('dashboard-streak-current');
@@ -14220,21 +14307,14 @@ function renderDashboardStreakLeaderboard(rows = streakLeaderboardRows) {
     }
 
     if (challengeEl) {
-        let challengeText = '';
-        if (myIndex === 0 && currentStreak > 0) {
-            challengeText = 'You are leading the streak league. Keep momentum today.';
-        } else if (myIndex > 0) {
-            const nextRow = normalizedRows[myIndex - 1];
-            const gap = Math.max(1, Number(nextRow?.studyStreak || 0) - currentStreak);
-            challengeText = `${gap} day${gap === 1 ? '' : 's'} to climb to #${myIndex}.`;
-        } else if (currentStreak > 0) {
-            challengeText = 'You are outside the top 25. Keep stacking sessions to break in.';
-        } else {
-            challengeText = 'Complete one focus session today to ignite your streak.';
-        }
-        if (freezeCount > 0 && currentStreak > 0) {
-            challengeText += ` ${freezeCount} freeze${freezeCount === 1 ? '' : 's'} available.`;
-        }
+        const challengeText = getDashboardStreakChallengeMessage({
+            currentStreak,
+            bestStreak,
+            myIndex,
+            myRank,
+            normalizedRows,
+            freezeCount
+        });
         if (challengeEl.textContent !== challengeText) {
             challengeEl.textContent = challengeText;
         }
@@ -14930,6 +15010,8 @@ function renderBreadcrumbs() {
 // =================================================================================
 const VIDEO_PLAYLIST_STARS_STORAGE_PREFIX = 'gcsemate:video-playlist-stars';
 const VIDEO_ITEM_STARS_STORAGE_PREFIX = 'gcsemate:video-item-stars';
+const VIDEO_VIEWER_AUTOPLAY_STORAGE_PREFIX = 'gcsemate:video-viewer-autoplay';
+const VIDEO_VIEWER_THEATER_STORAGE_PREFIX = 'gcsemate:video-viewer-theater';
 let youtubeIframeApiReadyPromise = null;
 
 if (typeof window.__videoPlaylistsLoading === 'undefined') {
@@ -14959,6 +15041,24 @@ function writeStarredSet(prefix, values) {
         const key = getUserScopedStorageKey(prefix);
         const payload = Array.from(values || []).map(v => String(v || '').trim()).filter(Boolean);
         window.localStorage.setItem(key, JSON.stringify(payload));
+    } catch (_) {}
+}
+
+function readViewerTogglePreference(prefix, fallbackValue = false) {
+    try {
+        const key = getUserScopedStorageKey(prefix);
+        const raw = window.localStorage.getItem(key);
+        if (raw == null) return !!fallbackValue;
+        return raw === '1' || raw === 'true';
+    } catch (_) {
+        return !!fallbackValue;
+    }
+}
+
+function writeViewerTogglePreference(prefix, value) {
+    try {
+        const key = getUserScopedStorageKey(prefix);
+        window.localStorage.setItem(key, value ? '1' : '0');
     } catch (_) {}
 }
 
@@ -16861,8 +16961,8 @@ function openPlaylistViewerModal(playlist, items) {
     let activeIndex = 0;
     let renderAttempt = 0;
     let hasAcceptedPlaybackWarning = false;
-    let autoplayEnabled = true;
-    let theaterEnabled = false;
+    let autoplayEnabled = readViewerTogglePreference(VIDEO_VIEWER_AUTOPLAY_STORAGE_PREFIX, true);
+    let theaterEnabled = readViewerTogglePreference(VIDEO_VIEWER_THEATER_STORAGE_PREFIX, false);
     let sidebarSearchTerm = '';
     let sidebarSortMode = 'default';
     let youtubePlayerInstance = null;
@@ -16899,7 +16999,26 @@ function openPlaylistViewerModal(playlist, items) {
         if (label) label.textContent = starred ? 'Playlist Starred' : 'Star Playlist';
     };
 
+    const updateStageNote = (item = items[activeIndex], playbackMode = '') => {
+        const stageNote = modal.querySelector('.video-player-stage-note');
+        if (!stageNote) return;
+        const isAbyssPlayback = item?.provider === 'abyss' || playbackMode === 'abyss_direct';
+        let text = '';
+        if (isAbyssPlayback) {
+            text = 'Abyss source loaded directly for compatibility. If ad tabs open, close them and return here.';
+        } else if (autoplayEnabled) {
+            text = 'Auto-next is enabled: YouTube videos move to the next item when playback ends.';
+        } else {
+            text = 'Auto-next is disabled. Use Next or select another item in the playlist list.';
+        }
+        if (theaterEnabled) {
+            text += ' Theater mode is active for a larger viewing area.';
+        }
+        stageNote.textContent = text;
+    };
+
     const updateAutoplayButton = () => {
+        writeViewerTogglePreference(VIDEO_VIEWER_AUTOPLAY_STORAGE_PREFIX, autoplayEnabled);
         const autoplayButton = modal.querySelector('#playlist-viewer-autoplay');
         if (!autoplayButton) return;
         autoplayButton.classList.toggle('video-player-toggle-active', autoplayEnabled);
@@ -16907,10 +17026,11 @@ function openPlaylistViewerModal(playlist, items) {
         const icon = autoplayButton.querySelector('i');
         if (icon) icon.className = autoplayEnabled ? 'fas fa-forward' : 'fas fa-pause';
         const label = autoplayButton.querySelector('span');
-        if (label) label.textContent = autoplayEnabled ? 'Autoplay On' : 'Autoplay Off';
+        if (label) label.textContent = autoplayEnabled ? 'Auto-next On' : 'Auto-next Off';
     };
 
     const updateTheaterButton = () => {
+        writeViewerTogglePreference(VIDEO_VIEWER_THEATER_STORAGE_PREFIX, theaterEnabled);
         modal.classList.toggle('video-player-theater', theaterEnabled);
         const theaterButton = modal.querySelector('#playlist-viewer-theater');
         if (!theaterButton) return;
@@ -16920,6 +17040,7 @@ function openPlaylistViewerModal(playlist, items) {
         if (icon) icon.className = theaterEnabled ? 'fas fa-compress' : 'fas fa-expand';
         const label = theaterButton.querySelector('span');
         if (label) label.textContent = theaterEnabled ? 'Exit Theater' : 'Theater Mode';
+        updateStageNote();
     };
 
     const getSidebarIndexes = () => {
@@ -17078,7 +17199,6 @@ function openPlaylistViewerModal(playlist, items) {
         if (!embedUrl) return;
         const frame = modal.querySelector('#playlist-viewer-frame');
         const title = modal.querySelector('#playlist-viewer-item-title');
-        const stageNote = modal.querySelector('.video-player-stage-note');
         const prevButton = modal.querySelector('#playlist-viewer-prev');
         const nextButton = modal.querySelector('#playlist-viewer-next');
         if (frame) {
@@ -17088,15 +17208,7 @@ function openPlaylistViewerModal(playlist, items) {
         }
         const itemLabel = cleanPlaylistItemTitle(current?.title || '') || (current.provider || 'source').toUpperCase();
         if (title) title.textContent = `Video ${activeIndex + 1} of ${items.length} • ${itemLabel}`;
-        if (stageNote) {
-            if (current?.provider === 'abyss' || playback.mode === 'abyss_direct') {
-                stageNote.textContent = 'Abyss source loaded directly for compatibility. If ad tabs open, close them immediately and return here.';
-            } else if (autoplayEnabled) {
-                stageNote.textContent = 'Autoplay is enabled: YouTube videos will automatically advance to the next item when playback ends.';
-            } else {
-                stageNote.textContent = 'Autoplay is disabled. Use the Next button or the sidebar list to continue.';
-            }
-        }
+        updateStageNote(current, playback.mode);
         if (prevButton) prevButton.disabled = activeIndex === 0;
         if (nextButton) nextButton.disabled = activeIndex >= maxIndex;
         trackVideoView(playlist, current, activeIndex);
@@ -17131,7 +17243,7 @@ function openPlaylistViewerModal(playlist, items) {
         <div class="video-player-modal-shell">
             <div class="video-player-modal-card">
                 <div class="video-player-header">
-                    <div class="min-w-0 space-y-2">
+                    <div class="video-player-header-main min-w-0 space-y-2">
                         <div class="video-player-brand-row">
                             <img src="gcsemate%20new.png" alt="GCSEMate" class="video-player-brand-logo">
                             <span class="video-player-brand-copy">GCSEMate Video Player</span>
@@ -17151,7 +17263,7 @@ function openPlaylistViewerModal(playlist, items) {
                     </div>
                     <div class="video-player-actions">
                         <button id="playlist-viewer-star" type="button" class="video-player-nav-btn" aria-pressed="false"><i class="far fa-star"></i><span>Star Playlist</span></button>
-                        <button id="playlist-viewer-autoplay" type="button" class="video-player-nav-btn" aria-pressed="true"><i class="fas fa-forward"></i><span>Autoplay On</span></button>
+                        <button id="playlist-viewer-autoplay" type="button" class="video-player-nav-btn" aria-pressed="true"><i class="fas fa-forward"></i><span>Auto-next On</span></button>
                         <button id="playlist-viewer-theater" type="button" class="video-player-nav-btn" aria-pressed="false"><i class="fas fa-expand"></i><span>Theater Mode</span></button>
                         ${isAdminUser() ? `<button id="playlist-viewer-edit" type="button" class="video-player-nav-btn"><i class="fas fa-pen"></i><span>Edit</span></button>` : ''}
                         ${isAdminUser() ? `<button id="playlist-viewer-delete" type="button" class="video-player-nav-btn"><i class="fas fa-trash"></i><span>Delete</span></button>` : ''}
@@ -17232,13 +17344,7 @@ function openPlaylistViewerModal(playlist, items) {
     modal.querySelector('#playlist-viewer-autoplay')?.addEventListener('click', () => {
         autoplayEnabled = !autoplayEnabled;
         updateAutoplayButton();
-        const current = items[activeIndex];
-        const stageNote = modal.querySelector('.video-player-stage-note');
-        if (stageNote && current?.provider !== 'abyss') {
-            stageNote.textContent = autoplayEnabled
-                ? 'Autoplay is enabled: YouTube videos will automatically advance to the next item when playback ends.'
-                : 'Autoplay is disabled. Use the Next button or the sidebar list to continue.';
-        }
+        updateStageNote();
     });
     modal.querySelector('#playlist-viewer-theater')?.addEventListener('click', () => {
         theaterEnabled = !theaterEnabled;
