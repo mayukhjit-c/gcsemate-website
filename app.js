@@ -15634,22 +15634,33 @@ function setupPlaylistSourceBuilder(options = {}) {
         listeners.push(() => el.removeEventListener(type, handler));
     };
 
-    const syncTextArea = () => {
+    const syncTextArea = (syncOptions = {}) => {
+        const forceSync = !!syncOptions.forceSync;
         const serialized = serializePlaylistItems(items);
+        const isEditingRawText = document.activeElement === textarea;
+        if (isEditingRawText && !forceSync) {
+            return;
+        }
         if (textarea.value !== serialized) textarea.value = serialized;
     };
 
-    const refresh = () => {
+    const refresh = (refreshOptions = {}) => {
         items = ensureOrderedPlaylistItems(items);
-        syncTextArea();
-        renderPlaylistSourcePreview(textarea.value || '', preview);
+        syncTextArea({ forceSync: !!refreshOptions.forceSync });
+        renderPlaylistSourcePreview(serializePlaylistItems(items), preview);
         renderPlaylistDnDList(dnd, items, (newOrder) => {
             items = ensureOrderedPlaylistItems(newOrder || []);
-            refresh();
+            refresh({ forceSync: true });
         }, {
             onRemove: (removeIndex) => {
                 items.splice(removeIndex, 1);
-                refresh();
+                refresh({ forceSync: true });
+            },
+            onRename: (renameIndex, nextTitle) => {
+                if (!items[renameIndex]) return;
+                items[renameIndex].title = String(nextTitle || '').replace(/\s+/g, ' ').trim();
+                syncTextArea();
+                renderPlaylistSourcePreview(serializePlaylistItems(items), preview);
             }
         });
         updatePlaylistBuilderCounter(counter, items);
@@ -15671,8 +15682,19 @@ function setupPlaylistSourceBuilder(options = {}) {
         clearTimeout(parseTimer);
         parseTimer = setTimeout(() => {
             items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
-            refresh();
+            refresh({ forceSync: false });
         }, 220);
+    });
+    on(textarea, 'blur', () => {
+        items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
+        refresh({ forceSync: true });
+    });
+    on(textarea, 'paste', () => {
+        clearTimeout(parseTimer);
+        parseTimer = setTimeout(() => {
+            items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
+            refresh({ forceSync: false });
+        }, 90);
     });
 
     const handleImport = async () => {
@@ -15755,11 +15777,11 @@ function setupPlaylistSourceBuilder(options = {}) {
 
     on(clearBtn, 'click', () => {
         items = [];
-        refresh();
+        refresh({ forceSync: true });
         setPlaylistImportStatus(importStatus, 'Cleared all playlist sources.', 'warning');
     });
 
-    refresh();
+    refresh({ forceSync: true });
 
     return {
         getItems() {
@@ -15767,11 +15789,11 @@ function setupPlaylistSourceBuilder(options = {}) {
         },
         setItems(nextItems = []) {
             items = ensureOrderedPlaylistItems(nextItems);
-            refresh();
+            refresh({ forceSync: true });
         },
         clear() {
             items = [];
-            refresh();
+            refresh({ forceSync: true });
         },
         destroy() {
             clearTimeout(parseTimer);
@@ -15836,59 +15858,97 @@ function renderPlaylistDnDList(container, items = [], onReorder = null, options 
     if (!container) return;
     container.innerHTML = '';
     if (!items.length) {
-        container.innerHTML = '<p class="text-xs text-gray-500">No valid items to reorder yet.</p>';
+        container.innerHTML = '<p class="text-xs text-gray-500">No valid items yet. Paste raw sources or add videos manually.</p>';
         return;
     }
+
     const onRemove = typeof options.onRemove === 'function' ? options.onRemove : null;
-    let dragIndex = -1;
-    const list = document.createElement('div');
-    list.className = 'space-y-2';
+    const onRename = typeof options.onRename === 'function' ? options.onRename : null;
+
+    const reorderTo = (fromIndex, toIndex) => {
+        if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= items.length || toIndex >= items.length) return;
+        const reordered = items.slice();
+        const moved = reordered.splice(fromIndex, 1)[0];
+        reordered.splice(toIndex, 0, moved);
+        if (typeof onReorder === 'function') {
+            onReorder(ensureOrderedPlaylistItems(reordered));
+        }
+    };
+
+    const wrap = document.createElement('div');
+    wrap.className = 'video-admin-items-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'video-admin-items-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th class="video-admin-col-index">#</th>
+                <th class="video-admin-col-title">Video Title</th>
+                <th class="video-admin-col-source">Source</th>
+                <th class="video-admin-col-provider">Type</th>
+                <th class="video-admin-col-actions">Order / Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector('tbody');
 
     items.forEach((item, idx) => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-2.5 py-2.5 cursor-move shadow-sm transition-colors hover:border-blue-200';
-        row.draggable = true;
-        row.setAttribute('data-dnd-index', String(idx));
-        const displayTitle = cleanPlaylistItemTitle(item.title || '') || item.sourceUrl || '';
-        const sourceUrl = String(item.watchUrl || item.sourceUrl || '').replace(/^https?:\/\//i, '');
-        const providerBadge = item.provider === 'abyss' ? 'Abyss' : (item.type === 'youtube_playlist' ? 'YT playlist' : 'YT video');
+        const row = document.createElement('tr');
+        row.className = 'video-admin-items-row';
+        const displayTitle = String(item?.title || '').replace(/\s+/g, ' ').trim();
+        const sourceUrl = String(item?.sourceUrl || item?.watchUrl || '').trim();
+        const sourceLabel = sourceUrl.replace(/^https?:\/\//i, '');
+        const providerBadge = item?.type === 'youtube_playlist' ? 'YT Playlist' : (item?.provider === 'abyss' ? 'Abyss' : 'YT Video');
+
         row.innerHTML = `
-            <span class="text-xs text-gray-500 w-6 text-center">${idx + 1}</span>
-            <span class="text-sm font-medium text-gray-700 flex-1 min-w-0">
-                <span class="block truncate">${escapeHTML(displayTitle)}</span>
-                <span class="block truncate text-[11px] text-gray-500">${escapeHTML(sourceUrl)}</span>
-            </span>
-            <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">${providerBadge}</span>
-            ${onRemove ? '<button type="button" data-remove-item class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" title="Remove item"><i class="fas fa-times text-[10px]"></i></button>' : ''}
+            <td class="video-admin-cell-index">${idx + 1}</td>
+            <td class="video-admin-cell-title"><input type="text" class="video-admin-row-title-input" data-item-title placeholder="Rename video title"></td>
+            <td class="video-admin-cell-source"><span class="video-admin-row-source" title="${escapeHTML(sourceUrl)}">${escapeHTML(sourceLabel || '-')}</span></td>
+            <td class="video-admin-cell-provider"><span class="video-admin-row-provider">${providerBadge}</span></td>
+            <td class="video-admin-cell-actions">
+                <div class="video-admin-row-actions">
+                    <button type="button" data-move-up class="video-admin-row-btn" ${idx === 0 ? 'disabled' : ''} title="Move up"><i class="fas fa-arrow-up"></i></button>
+                    <button type="button" data-move-down class="video-admin-row-btn" ${idx === items.length - 1 ? 'disabled' : ''} title="Move down"><i class="fas fa-arrow-down"></i></button>
+                    ${onRemove ? '<button type="button" data-remove-item class="video-admin-row-btn video-admin-row-btn-danger" title="Remove"><i class="fas fa-trash"></i></button>' : ''}
+                </div>
+            </td>
         `;
-        row.addEventListener('dragstart', () => { dragIndex = idx; row.classList.add('opacity-50'); });
-        row.addEventListener('dragend', () => { dragIndex = -1; row.classList.remove('opacity-50'); });
-        row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('ring-2', 'ring-blue-300'); });
-        row.addEventListener('dragleave', () => row.classList.remove('ring-2', 'ring-blue-300'));
-        row.addEventListener('drop', (e) => {
-            e.preventDefault();
-            row.classList.remove('ring-2', 'ring-blue-300');
-            const dropIndex = idx;
-            if (dragIndex < 0 || dropIndex === dragIndex) return;
-            const moved = items.splice(dragIndex, 1)[0];
-            items.splice(dropIndex, 0, moved);
-            items.forEach((it, i) => { it.order = i; });
-            renderPlaylistDnDList(container, items, onReorder, options);
-            if (typeof onReorder === 'function') onReorder(items);
-        });
-        if (onRemove) {
-            const removeButton = row.querySelector('[data-remove-item]');
-            if (removeButton) {
-                removeButton.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onRemove(idx);
+
+        const titleInput = row.querySelector('[data-item-title]');
+        if (titleInput) {
+            titleInput.value = displayTitle;
+            if (onRename) {
+                titleInput.addEventListener('input', () => {
+                    onRename(idx, titleInput.value);
                 });
             }
         }
-        list.appendChild(row);
+
+        row.querySelector('[data-move-up]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            reorderTo(idx, idx - 1);
+        });
+
+        row.querySelector('[data-move-down]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            reorderTo(idx, idx + 1);
+        });
+
+        if (onRemove) {
+            row.querySelector('[data-remove-item]')?.addEventListener('click', (event) => {
+                event.preventDefault();
+                onRemove(idx);
+            });
+        }
+
+        tbody.appendChild(row);
     });
-    container.appendChild(list);
+
+    wrap.appendChild(table);
+    container.appendChild(wrap);
 }
 
 function normalizePlaylistItems(playlist) {
@@ -16332,7 +16392,7 @@ async function editPlaylist(id, currentTitle) {
                 </section>
                 <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Playlist Sources</label>
-                    <textarea id="edit-playlist-url" rows="5" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/80 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="One source per line. Optional title format: title | url">${escapeHTML(curItemsText)}</textarea>
+                    <textarea id="edit-playlist-url" rows="5" spellcheck="false" autocapitalize="off" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/80 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="One source per line. Optional title format: title | url">${escapeHTML(curItemsText)}</textarea>
                     <div class="video-admin-builder-grid">
                         <div class="video-admin-builder-card">
                             <label for="edit-playlist-import-url" class="video-admin-field-label">Import YouTube Playlist</label>
@@ -16349,11 +16409,18 @@ async function editPlaylist(id, currentTitle) {
                                 <input id="edit-playlist-manual-source" type="text" placeholder="YouTube, abyss/short.icu, or iframe" class="video-admin-input flex-1">
                                 <button id="edit-playlist-add-source-btn" type="button" class="video-admin-action-btn video-admin-action-btn-alt">Add</button>
                             </div>
+                            <p class="text-xs text-slate-500 mt-2">The playback table auto-builds from raw paste and each row title can be renamed inline.</p>
                         </div>
                     </div>
                     <div class="video-admin-builder-toolbar mt-2">
-                        <span id="edit-playlist-builder-count" class="video-admin-counter-chip">0 item(s)</span>
-                        <button id="edit-playlist-clear-sources-btn" type="button" class="video-admin-clear-btn">Clear</button>
+                        <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <i class="fas fa-table"></i>
+                            <span>Playback Table</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="edit-playlist-builder-count" class="video-admin-counter-chip">0 item(s)</span>
+                            <button id="edit-playlist-clear-sources-btn" type="button" class="video-admin-clear-btn">Clear</button>
+                        </div>
                     </div>
                     <div id="edit-playlist-dnd" class="video-admin-dnd-list"></div>
                     <div id="edit-playlist-preview" class="video-admin-preview-shell"></div>
@@ -16799,10 +16866,19 @@ function openPlaylistViewerModal(playlist, items) {
     let sidebarSearchTerm = '';
     let sidebarSortMode = 'default';
     let youtubePlayerInstance = null;
+    let autoplayPollTimer = null;
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const maxIndex = Math.max(items.length - 1, 0);
 
+    const clearAutoplayPoll = () => {
+        if (autoplayPollTimer != null) {
+            window.clearInterval(autoplayPollTimer);
+            autoplayPollTimer = null;
+        }
+    };
+
     const cleanupYouTubePlayer = () => {
+        clearAutoplayPoll();
         if (youtubePlayerInstance && typeof youtubePlayerInstance.destroy === 'function') {
             try {
                 youtubePlayerInstance.destroy();
@@ -16856,7 +16932,8 @@ function openPlaylistViewerModal(playlist, items) {
                 const item = items[idx];
                 const title = cleanPlaylistItemTitle(item?.title || '') || (item?.provider === 'abyss' ? 'Abyss video' : 'YouTube video');
                 const provider = item?.provider || '';
-                const haystack = `${title} ${provider}`.toLowerCase();
+                const source = String(item?.sourceUrl || item?.watchUrl || '').replace(/^https?:\/\//i, '');
+                const haystack = `${title} ${provider} ${source}`.toLowerCase();
                 return haystack.includes(term);
             });
         }
@@ -16939,6 +17016,14 @@ function openPlaylistViewerModal(playlist, items) {
         const isYouTubeEmbed = /youtube\.com\/embed|youtube-nocookie\.com\/embed/i.test(src);
         if (!isYouTubeEmbed || !frame?.id) return;
 
+        const goToNextVideo = () => {
+            if (!autoplayEnabled) return;
+            if (attemptId !== renderAttempt) return;
+            if (activeIndex >= maxIndex) return;
+            activeIndex += 1;
+            renderActive();
+        };
+
         try {
             const YT = await ensureYouTubeIframeApiReady();
             if (!YT || !YT.Player || attemptId !== renderAttempt) return;
@@ -16946,12 +17031,27 @@ function openPlaylistViewerModal(playlist, items) {
 
             youtubePlayerInstance = new YT.Player(frame.id, {
                 events: {
+                    onReady: () => {
+                        clearAutoplayPoll();
+                        autoplayPollTimer = window.setInterval(() => {
+                            if (!youtubePlayerInstance || attemptId !== renderAttempt) {
+                                clearAutoplayPoll();
+                                return;
+                            }
+                            if (!autoplayEnabled) return;
+                            try {
+                                const state = youtubePlayerInstance.getPlayerState();
+                                if (state === YT.PlayerState.ENDED) {
+                                    clearAutoplayPoll();
+                                    goToNextVideo();
+                                }
+                            } catch (_) {}
+                        }, 850);
+                    },
                     onStateChange: (event) => {
-                        if (!autoplayEnabled) return;
-                        if (attemptId !== renderAttempt) return;
-                        if (event?.data === YT.PlayerState.ENDED && activeIndex < maxIndex) {
-                            activeIndex += 1;
-                            renderActive();
+                        if (event?.data === YT.PlayerState.ENDED) {
+                            clearAutoplayPoll();
+                            goToNextVideo();
                         }
                     }
                 }
