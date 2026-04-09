@@ -244,7 +244,7 @@ let toolsTimerState = {
     breakDurationMinutes: 5,
     soundEnabled: true,
     timerTheme: 'blue',
-    clockDisplayMode: 'both',
+    clockDisplayMode: 'analog',
     pipVisible: false,
     pipBounds: { left: null, top: null, width: 260, height: 148 },
     isBreakMode: false,
@@ -258,8 +258,11 @@ let toolsTimerPipDrag = {
     active: false,
     pointerId: null,
     offsetX: 0,
-    offsetY: 0
+    offsetY: 0,
+    snapSide: null
 };
+const TOOLS_TIMER_PIP_SNAP_MARGIN = 8;
+const TOOLS_TIMER_PIP_SNAP_THRESHOLD = 56;
 const STREAK_NEW_TAG_END_DATE_UTC = Date.UTC(2026, 3, 12, 0, 0, 0, 0); // Show through Apr 11, 2026
 const AVATAR_SLOT_OPTIONS = ['🔥', '🚀', '🧠', '📚', '⚡', '🎯', '🦉', '🧪', '🧩', '🏆', '🌟', '💡'];
 const AVATAR_ONBOARDING_SNOOZE_KEY_PREFIX = 'gcsemate_avatar_onboarding_snooze_until:';
@@ -21448,7 +21451,16 @@ window.closeImageCropModal = function() {
     };
 };
 
+function shouldHideKeyboardShortcutHintsOnMobile() {
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const coarsePointer = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    return coarsePointer || viewportWidth <= 820;
+}
+
 window.showKeyboardShortcuts = function() {
+    if (shouldHideKeyboardShortcutHintsOnMobile()) {
+        return;
+    }
     const modal = document.getElementById('keyboard-shortcuts-modal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -23178,7 +23190,7 @@ function saveToolsState() {
             breakDurationMinutes: toolsTimerState.breakDurationMinutes,
             soundEnabled: toolsTimerState.soundEnabled,
             timerTheme: toolsTimerState.timerTheme,
-            clockDisplayMode: toolsTimerState.clockDisplayMode,
+            clockDisplayMode: 'analog',
             pipVisible: !!toolsTimerState.pipVisible,
             pipBounds: safePipBounds,
             isBreakMode: toolsTimerState.isBreakMode,
@@ -23224,7 +23236,7 @@ function loadToolsState() {
             : 5;
         toolsTimerState.soundEnabled = parsed.soundEnabled !== false;
         toolsTimerState.timerTheme = ['blue', 'sunset', 'forest', 'midnight', 'aurora', 'rose'].includes(parsed.timerTheme) ? parsed.timerTheme : 'blue';
-        toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(parsed.clockDisplayMode) ? parsed.clockDisplayMode : 'both';
+        toolsTimerState.clockDisplayMode = 'analog';
         toolsTimerState.pipVisible = !!parsed.pipVisible;
         const parsedBounds = parsed.pipBounds || {};
         toolsTimerState.pipBounds = {
@@ -23293,23 +23305,14 @@ function updateToolsTimerClockDisplay() {
     const minuteHand = document.getElementById('tools-timer-clock-minute');
     const secondHand = document.getElementById('tools-timer-clock-second');
 
-    const displayMode = ['both', 'digital', 'analog'].includes(toolsTimerState.clockDisplayMode)
-        ? toolsTimerState.clockDisplayMode
-        : 'both';
+    const displayMode = 'analog';
 
+    toolsTimerState.clockDisplayMode = displayMode;
     if (wrap) wrap.dataset.clockDisplay = displayMode;
-    if (analog) analog.classList.toggle('hidden', displayMode === 'digital');
-    if (digital) digital.classList.toggle('hidden', displayMode === 'analog');
+    if (analog) analog.classList.remove('hidden');
+    if (digital) digital.classList.add('hidden');
 
     const now = new Date();
-    if (digital) {
-        digital.textContent = now.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
-    }
 
     if (hourHand && minuteHand && secondHand) {
         const seconds = now.getSeconds();
@@ -23334,10 +23337,40 @@ function getToolsTimerStatusText() {
     return toolsTimerState.isRunning ? `${modeLabel} in progress` : 'Ready to focus';
 }
 
+function resolveToolsTimerPipSnapSide(bounds = {}) {
+    const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
+    const margin = TOOLS_TIMER_PIP_SNAP_MARGIN;
+    const width = Math.max(220, Math.min(420, Number(bounds.width) || 260));
+    const left = Number.isFinite(bounds.left) ? Number(bounds.left) : margin;
+    const right = left + width;
+
+    const distanceLeft = Math.abs(left - margin);
+    const distanceRight = Math.abs((viewportWidth - margin) - right);
+    const bestSide = distanceLeft <= distanceRight ? 'left' : 'right';
+    const bestDistance = Math.min(distanceLeft, distanceRight);
+
+    return bestDistance <= TOOLS_TIMER_PIP_SNAP_THRESHOLD ? bestSide : null;
+}
+
+function updateToolsTimerPipSnapZones({ visible = false, activeSide = null } = {}) {
+    const zones = document.getElementById('tools-timer-pip-snap-zones');
+    if (!zones) return;
+
+    if (!visible) {
+        zones.classList.add('hidden');
+    } else {
+        zones.classList.remove('hidden');
+    }
+
+    zones.querySelectorAll('.tools-timer-pip-snap-zone').forEach((zone) => {
+        zone.classList.toggle('is-active', visible && activeSide && zone.dataset.snapSide === activeSide);
+    });
+}
+
 function clampToolsTimerPipBounds(bounds = {}) {
     const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
     const viewportHeight = Math.max(260, window.innerHeight || document.documentElement.clientHeight || 260);
-    const margin = 8;
+    const margin = TOOLS_TIMER_PIP_SNAP_MARGIN;
 
     const width = Math.max(220, Math.min(420, Number(bounds.width) || 260));
     const height = Math.max(130, Math.min(280, Number(bounds.height) || 148));
@@ -23395,13 +23428,13 @@ function snapToolsTimerPipToEdge() {
     const rect = pip.getBoundingClientRect();
     const viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 320);
     const viewportHeight = Math.max(260, window.innerHeight || document.documentElement.clientHeight || 260);
-    const margin = 8;
-
-    const distanceLeft = Math.abs(rect.left - margin);
-    const distanceRight = Math.abs((viewportWidth - margin) - rect.right);
-    const snappedLeft = distanceLeft <= distanceRight
+    const margin = TOOLS_TIMER_PIP_SNAP_MARGIN;
+    const snapSide = resolveToolsTimerPipSnapSide({ left: rect.left, width: rect.width });
+    const snappedLeft = snapSide === 'left'
         ? margin
-        : Math.max(margin, viewportWidth - rect.width - margin);
+        : (snapSide === 'right'
+            ? Math.max(margin, viewportWidth - rect.width - margin)
+            : rect.left);
     const snappedTop = Math.min(
         Math.max(margin, rect.top),
         Math.max(margin, viewportHeight - rect.height - margin)
@@ -23414,10 +23447,12 @@ function snapToolsTimerPipToEdge() {
         height: rect.height
     });
 
-    pip.classList.add('is-snapping');
+    if (snapSide) pip.classList.add('is-snapping');
     applyToolsTimerPipBounds();
     saveToolsState();
-    setTimeout(() => pip.classList.remove('is-snapping'), 220);
+    if (snapSide) {
+        setTimeout(() => pip.classList.remove('is-snapping'), 220);
+    }
 }
 
 function onToolsTimerPipPointerMove(event) {
@@ -23440,6 +23475,10 @@ function onToolsTimerPipPointerMove(event) {
     pip.style.top = `${Math.round(next.top)}px`;
     pip.style.width = `${Math.round(next.width)}px`;
     pip.style.height = `${Math.round(next.height)}px`;
+
+    const snapSide = resolveToolsTimerPipSnapSide(next);
+    toolsTimerPipDrag.snapSide = snapSide;
+    updateToolsTimerPipSnapZones({ visible: true, activeSide: snapSide });
 }
 
 function endToolsTimerPipDrag(pointerId = null) {
@@ -23448,6 +23487,7 @@ function endToolsTimerPipDrag(pointerId = null) {
 
     toolsTimerPipDrag.active = false;
     toolsTimerPipDrag.pointerId = null;
+    toolsTimerPipDrag.snapSide = null;
 
     const pip = document.getElementById('tools-timer-pip');
     if (pip) pip.classList.remove('is-dragging');
@@ -23455,6 +23495,8 @@ function endToolsTimerPipDrag(pointerId = null) {
     window.removeEventListener('pointermove', onToolsTimerPipPointerMove);
     window.removeEventListener('pointerup', onToolsTimerPipPointerUp);
     window.removeEventListener('pointercancel', onToolsTimerPipPointerUp);
+
+    updateToolsTimerPipSnapZones({ visible: false, activeSide: null });
 
     rememberToolsTimerPipBoundsFromDom();
     snapToolsTimerPipToEdge();
@@ -23476,8 +23518,10 @@ function onToolsTimerPipPointerDown(event) {
     toolsTimerPipDrag.pointerId = event.pointerId;
     toolsTimerPipDrag.offsetX = event.clientX - rect.left;
     toolsTimerPipDrag.offsetY = event.clientY - rect.top;
+    toolsTimerPipDrag.snapSide = null;
 
     pip.classList.add('is-dragging');
+    updateToolsTimerPipSnapZones({ visible: true, activeSide: null });
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch (_) {}
 
     window.addEventListener('pointermove', onToolsTimerPipPointerMove);
@@ -23523,6 +23567,9 @@ function setToolsTimerPipVisible(visible, { save = true } = {}) {
         initializeToolsTimerPip();
     }
     toolsTimerState.pipVisible = !!visible;
+    if (!toolsTimerState.pipVisible) {
+        updateToolsTimerPipSnapZones({ visible: false, activeSide: null });
+    }
     if (toolsTimerState.pipVisible) applyToolsTimerPipBounds();
     updateToolsTimerPipUI();
     if (save) saveToolsState();
@@ -23813,7 +23860,7 @@ function updateToolsTimerUI() {
     if (breakLengthSelect) breakLengthSelect.value = String(toolsTimerState.breakDurationMinutes || 5);
     if (soundToggle) soundToggle.checked = toolsTimerState.soundEnabled !== false;
     if (timerThemeSelect) timerThemeSelect.value = toolsTimerState.timerTheme || 'blue';
-    if (clockDisplaySelect) clockDisplaySelect.value = toolsTimerState.clockDisplayMode || 'both';
+    if (clockDisplaySelect) clockDisplaySelect.value = 'analog';
 
     const modeConfig = isStopwatch ? TOOLS_TIMER_MODES.stopwatch : (TOOLS_TIMER_MODES[getTimerModeFromState()] || TOOLS_TIMER_MODES.pomodoro);
 
@@ -26368,9 +26415,7 @@ function initializeToolsPage() {
         }
         if (clockDisplaySelect && !clockDisplaySelect.dataset.boundClockDisplay) {
             clockDisplaySelect.addEventListener('change', () => {
-                toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(clockDisplaySelect.value)
-                    ? clockDisplaySelect.value
-                    : 'both';
+                toolsTimerState.clockDisplayMode = 'analog';
                 saveToolsState();
                 updateToolsTimerUI();
             });
@@ -26615,9 +26660,7 @@ function initializeToolsPage() {
 
     if (clockDisplaySelect && !clockDisplaySelect.dataset.boundClockDisplay) {
         clockDisplaySelect.addEventListener('change', () => {
-            toolsTimerState.clockDisplayMode = ['both', 'digital', 'analog'].includes(clockDisplaySelect.value)
-                ? clockDisplaySelect.value
-                : 'both';
+            toolsTimerState.clockDisplayMode = 'analog';
             saveToolsState();
             updateToolsTimerUI();
         });

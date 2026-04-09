@@ -1319,7 +1319,7 @@
                                             <i class="fas fa-remove-format"></i>
                                         </button>
                                         <div class="w-px h-6 bg-gray-300"></div>
-                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-purple-50 hover:border-purple-400 transition-colors" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts (Ctrl+?)">
+                                        <button type="button" class="px-3 py-1.5 text-sm font-semibold border-2 border-gray-300 rounded hover:bg-purple-50 hover:border-purple-400 transition-colors mobile-hide-keyboard-shortcuts" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts (Ctrl+?)">
                                             <i class="fas fa-keyboard"></i>
                                         </button>
                                     </div>
@@ -1735,23 +1735,17 @@
                                 </div>
                                 <div class="timer-clock-shell mt-5">
                                     <div class="timer-clock-toolbar">
-                                        <label for="tools-timer-clock-display" class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-600">Clock</label>
-                                        <select id="tools-timer-clock-display" class="tools-select px-3 py-2 rounded-lg border border-gray-300/70 bg-white/90 text-sm">
-                                            <option value="both">Digital + Analog</option>
-                                            <option value="digital">Digital only</option>
-                                            <option value="analog">Analog only</option>
-                                        </select>
+                                        <span class="timer-clock-mode" aria-live="polite">Analog clock</span>
                                         <button id="tools-timer-pip-toggle" class="px-3 py-2 rounded-lg bg-white/90 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-50 transition-colors">Open Mini Timer</button>
                                     </div>
                                     <p class="timer-clock-help">Mini Timer stays synced and auto-opens while running when you switch to another GCSEMate tab.</p>
-                                    <div id="tools-timer-clock-wrap" class="timer-clock-wrap" data-clock-display="both">
+                                    <div id="tools-timer-clock-wrap" class="timer-clock-wrap" data-clock-display="analog">
                                         <div id="tools-timer-analog-clock" class="tools-timer-analog-clock" aria-hidden="true">
                                             <span class="tools-timer-analog-hand hour" id="tools-timer-clock-hour"></span>
                                             <span class="tools-timer-analog-hand minute" id="tools-timer-clock-minute"></span>
                                             <span class="tools-timer-analog-hand second" id="tools-timer-clock-second"></span>
                                             <span class="tools-timer-analog-center"></span>
                                         </div>
-                                        <p id="tools-timer-digital-clock" class="tools-timer-digital-clock">00:00:00</p>
                                     </div>
                                 </div>
                                 <div class="tools-timer-settings-grid mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-left">
@@ -3476,7 +3470,7 @@
                 </div>
                 <div id="help-page" class="page hidden p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
                     <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Help & Frequently Asked Questions</h2>
-                        <div class="bg-white/60 border border-white/30 backdrop-blur-lg rounded-xl p-4 mb-4">
+                        <div class="bg-white/60 border border-white/30 backdrop-blur-lg rounded-xl p-4 mb-4 mobile-hide-keyboard-shortcuts">
                             <div class="flex flex-col gap-3">
                                 <div>
                                     <h3 class="text-lg font-bold text-gray-800">Keyboard shortcuts</h3>
@@ -3517,7 +3511,7 @@
                                 <p>Use the colour picker in the top-right of the header (desktop) to pick your accent colour. Your choice is saved on this device. Click Reset to return to the default blue.</p>
                             </div>
                         </div>
-                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg">
+                        <div class="faq-item bg-white/50 border border-white/30 backdrop-blur-lg rounded-xl shadow-lg mobile-hide-keyboard-shortcuts">
                             <div class="faq-question flex justify-between items-center p-5 cursor-pointer">
                                 <h3 class="font-semibold text-lg text-gray-800">Are there keyboard shortcuts?</h3>
                                 <svg class="faq-arrow w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -3789,6 +3783,10 @@
                 <button type="button" onclick="contactSupportAfterCheckout()" class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-6 py-3 font-bold text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100">Contact support</button>
             </div>
         </div>
+    </div>
+    <div id="tools-timer-pip-snap-zones" class="tools-timer-pip-snap-zones hidden" aria-hidden="true">
+        <div class="tools-timer-pip-snap-zone left" data-snap-side="left"></div>
+        <div class="tools-timer-pip-snap-zone right" data-snap-side="right"></div>
     </div>
     <div id="tools-timer-pip" class="tools-timer-pip hidden" aria-live="polite" role="status">
         <div id="tools-timer-pip-header" class="tools-timer-pip-header">
