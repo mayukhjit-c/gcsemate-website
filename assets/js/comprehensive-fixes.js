@@ -6,7 +6,11 @@
 (function () {
     'use strict';
 
-    console.log('🔧 Loading comprehensive bug fixes...');
+    // Dev-only logger: logs only on localhost or dev/staging hosts
+    const DEBUG_ENABLED = (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || /(^|\.)dev\.|staging/.test(window.location.hostname)));
+    function debugLog(...args) { if (DEBUG_ENABLED) { console.log(...args); } }
+
+    debugLog('🔧 Loading comprehensive bug fixes...');
 
     // ==========================================
     // FIX 1: Modal Content Pre-loading System
@@ -261,7 +265,7 @@
      *
      */
     function initializeFixes() {
-        console.log('✅ Applying bug fixes...');
+        debugLog('✅ Applying bug fixes...');
 
         // Fix existing elements
         fixCardStyling();
@@ -284,7 +288,7 @@
             }
         });
 
-        console.log('✅ All bug fixes applied successfully!');
+                debugLog('✅ All bug fixes applied successfully!');
     }
 
     // Wait for DOM to be ready
@@ -336,5 +340,5 @@
         }
     });
 
-    console.log('🎉 GCSEMate bug fixes loaded successfully!');
+    debugLog('🎉 GCSEMate bug fixes loaded successfully!');
 })();

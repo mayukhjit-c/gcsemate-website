@@ -6,6 +6,10 @@
 // Unauthorized copying, reproduction, or distribution is strictly prohibited.
 
 // --- APP STATE---
+// Dev-only logger: logs only on localhost or dev/staging hosts
+const DEBUG_ENABLED = (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || /(^|\.)dev\.|staging/.test(window.location.hostname)));
+function debugLog(...args) { if (DEBUG_ENABLED) { console.log(...args); } }
+
 let currentUser = null;
 let isGapiReady = false;
 let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
@@ -1480,7 +1484,7 @@ class WebsiteValidator {
     
     async runAllTests() {
         this.results = [];
-        console.log('🧪 Running website validation tests...');
+        debugLog('🧪 Running website validation tests...');
         
         for (const test of this.tests) {
             try {
@@ -1492,7 +1496,7 @@ class WebsiteValidator {
                 });
                 
                 const status = result.passed ? 'PASS' : 'FAIL';
-                console.log(`${status} ${test.name}: ${result.message}`);
+                debugLog(`${status} ${test.name}: ${result.message}`);
             } catch (error) {
                 this.results.push({
                     name: test.name,
@@ -1500,19 +1504,19 @@ class WebsiteValidator {
                     message: `Test failed with error: ${error.message}`,
                     timestamp: new Date().toISOString()
                 });
-                console.log(`FAIL ${test.name}: Test failed with error: ${error.message}`);
+                debugLog(`FAIL ${test.name}: Test failed with error: ${error.message}`);
             }
         }
         
         const passed = this.results.filter(r => r.passed).length;
         const total = this.results.length;
         
-        console.log(`\nTest Results: ${passed}/${total} tests passed`);
-        
+        debugLog(`\nTest Results: ${passed}/${total} tests passed`);
+
         if (passed === total) {
-            console.log('All tests passed! Website is bug-free and ready for production.');
+            debugLog('All tests passed! Website is bug-free and ready for production.');
         } else {
-            console.log('Some tests failed. Please review the issues above.');
+            debugLog('Some tests failed. Please review the issues above.');
         }
         
         return this.results;
@@ -3517,7 +3521,7 @@ function initializeRealtimeTracking() {
     // Track page visibility changes
     trackPageVisibility();
     
-    console.log('Real-time tracking initialized');
+    debugLog('Real-time tracking initialized');
 }
 
 // Heartbeat system for real-time status
@@ -4025,8 +4029,8 @@ async function runTrackingDiagnostics() {
 
         adminDiagnostics.trackingStatus = diagnostics;
         
-        // Log diagnostics to console for debugging
-        console.log('🔍 Tracking Diagnostics:', diagnostics);
+        // Log diagnostics to console for debugging (dev-only)
+        debugLog('🔍 Tracking Diagnostics:', diagnostics);
         
         // Update diagnostic UI if visible
         updateDiagnosticUI(diagnostics);
@@ -5489,7 +5493,7 @@ auth.onAuthStateChanged(async (user) => {
                 // [DEV] Force admin for local development/testing to ensure dashboard works
                 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
                     currentUser.role = 'admin';
-                    console.log('Dev mode: Admin role forced');
+                    debugLog('Dev mode: Admin role forced');
                 }
 
                 // Ensure allowlisted admins have the admin role synced

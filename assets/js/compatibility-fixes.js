@@ -7,6 +7,10 @@
 (function () {
     'use strict';
 
+    // Dev-only logger: logs only on localhost or dev/staging hosts
+    const DEBUG_ENABLED = (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || /(^|\.)dev\.|staging/.test(window.location.hostname)));
+    function debugLog(...args) { if (DEBUG_ENABLED) { console.log(...args); } }
+
     // ═══════════════════════════════════════════════════════════════
     // SECTION 1: Browser Detection & Compatibility
     // ═══════════════════════════════════════════════════════════════
@@ -556,7 +560,7 @@
             FormFix.init();
             ScrollFix.init();
 
-            console.log('✓ GCSEMate compatibility fixes loaded');
+            debugLog('✓ GCSEMate compatibility fixes loaded');
         } catch (err) {
             console.error('Error initializing DOM fixes:', err);
         }
