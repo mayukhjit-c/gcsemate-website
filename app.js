@@ -11,6 +11,16 @@ const DEBUG_ENABLED = (typeof window !== 'undefined' && window.location && (wind
 function debugLog(...args) { if (DEBUG_ENABLED) { console.log(...args); } }
 
 let currentUser = null;
+try {
+    Object.defineProperty(window, 'currentUser', {
+        configurable: true,
+        get() {
+            return currentUser;
+        }
+    });
+} catch (_) {
+    window.currentUser = currentUser;
+}
 let isGapiReady = false;
 let path = [{ name: 'Root', id: '1lxL66wl3EJw07yfzYM-ime_SqFV7s9dc' }];
 let currentFolderFiles = [];
@@ -403,13 +413,22 @@ function syncQuickThemeToggles(themeMode = 'auto') {
         });
 }
 
+function hasSubmittedFeedback() {
+    try {
+        return localStorage.getItem('gcsemate_feedback_used') === '1';
+    } catch (_) {
+        return false;
+    }
+}
+
 function applyFeedbackWidgetVisibility() {
     const dismissed = (() => {
         try { return localStorage.getItem('gcsemate_feedback_hidden') === '1'; } catch (_) { return false; }
     })();
-    document.body.classList.toggle('feedback-widget-hidden', dismissed);
+    const unavailable = !currentUser?.uid || hasSubmittedFeedback();
+    document.body.classList.toggle('feedback-widget-hidden', dismissed || unavailable);
     const dismissButton = document.getElementById('feedback-dismiss-button');
-    if (dismissButton) dismissButton.classList.toggle('hidden', dismissed);
+    if (dismissButton) dismissButton.classList.toggle('hidden', dismissed || unavailable);
 }
 
 function dismissFeedbackWidget() {
@@ -5492,6 +5511,10 @@ auth.onAuthStateChanged(async (user) => {
             const profileDoc = await db.collection('users').doc(user.uid).get();
             if (profileDoc.exists) {
                 currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...profileDoc.data() };
+                try {
+                    window.dispatchEvent(new Event('gcsemate-current-user-changed'));
+                } catch (_) {}
+                try { applyFeedbackWidgetVisibility(); } catch (_) {}
                 
                 // [DEV] Force admin for local development/testing to ensure dashboard works
                 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -5574,6 +5597,10 @@ auth.onAuthStateChanged(async (user) => {
 
                     const createdProfile = await db.collection('users').doc(user.uid).get();
                     currentUser = { uid: user.uid, email: user.email, emailVerified: user.emailVerified, ...(createdProfile.data() || {}) };
+                    try {
+                        window.dispatchEvent(new Event('gcsemate-current-user-changed'));
+                    } catch (_) {}
+                    try { applyFeedbackWidgetVisibility(); } catch (_) {}
 
                     initializeAppState();
                     try { configureStripePricingTableIdentity(); } catch (_) {}
@@ -5643,6 +5670,10 @@ auth.onAuthStateChanged(async (user) => {
         // User is signed out.
         isResolvingAuthenticatedSession = false;
         currentUser = null;
+        try {
+            window.dispatchEvent(new Event('gcsemate-current-user-changed'));
+        } catch (_) {}
+        try { applyFeedbackWidgetVisibility(); } catch (_) {}
         stopAvatarOnboardingLuckySpin();
         avatarOnboardingState.syncing = false;
         avatarOnboardingState.dismissedForSession = false;
@@ -18014,9 +18045,62 @@ function getUpcomingExamEvents(limit = 3) {
     return safeLimit ? sorted.slice(0, safeLimit) : sorted;
 }
 
+function isSameLocalDay(left, right) {
+    if (!(left instanceof Date) || Number.isNaN(left.getTime())) return false;
+    if (!(right instanceof Date) || Number.isNaN(right.getTime())) return false;
+    return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+}
+
+function getDashboardStudentFirstName(user = currentUser) {
+    const rawName = String(user?.displayName || user?.name || user?.fullName || user?.email || 'there').trim();
+    if (!rawName) return 'there';
+    const nameSource = rawName.includes('@') ? rawName.split('@')[0] : rawName;
+    return (nameSource.split(/\s+/)[0] || 'there').trim() || 'there';
+}
+
+function buildDashboardExamNote(primaryExam, upcomingExams) {
+    const noteTargetDate = new Date();
+    noteTargetDate.setHours(0, 0, 0, 0);
+    const todaysExams = upcomingExams.filter((exam) => isSameLocalDay(exam.dateObj, noteTargetDate));
+    const studentName = getDashboardStudentFirstName();
+    const isAfterThreePm = new Date().getHours() >= 15;
+    const pluralToday = todaysExams.length > 1;
+    const title = String(primaryExam?.title || 'your next exam').trim() || 'your next exam';
+
+    if (todaysExams.length > 0) {
+        if (isAfterThreePm) {
+            if (pluralToday) {
+                return `${studentName}, your exams today are probably behind you now. That was a full day, and you have earned a proper reset.`;
+            }
+            return `${studentName}, I hope ${title} went well today. You have done the hard part, so switch into recovery mode and let the effort count.`;
+        }
+
+        if (pluralToday) {
+            return `${studentName}, you have ${todaysExams.length} exams today. Keep your pace steady, trust the revision you have done, and take each paper one at a time.`;
+        }
+
+        return `${studentName}, ${title} is today. Stay calm, trust your preparation, and let the work you have done carry you through.`;
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const daysUntilExam = Math.max(0, Math.ceil((primaryExam.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    if (daysUntilExam === 1) {
+        return `Tomorrow is the day, ${studentName}. Keep the revision sharp tonight and arrive ready to start strong.`;
+    }
+
+    if (daysUntilExam <= 3) {
+        return `${studentName}, ${title} is only ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Keep the final revision tight and finish each session with purpose.`;
+    }
+
+    return `${studentName}, you have a little runway before ${title}. Use it to build confidence one focused session at a time.`;
+}
+
 function renderDashboardExamCalendarCard() {
     const titleEl = document.getElementById('dashboard-next-exam-title');
     const metaEl = document.getElementById('dashboard-next-exam-meta');
+    const noteEl = document.getElementById('dashboard-next-exam-note');
     const listEl = document.getElementById('dashboard-next-exam-list');
     const pinEl = document.getElementById('dashboard-next-exam-pin');
     if (!titleEl || !metaEl || !listEl) return;
@@ -18049,6 +18133,9 @@ function renderDashboardExamCalendarCard() {
     if (!primary) {
         titleEl.textContent = 'No upcoming exams yet';
         metaEl.textContent = 'Add exam events in Calendar to see your next deadline here.';
+        if (noteEl) {
+            noteEl.textContent = 'Add exam events in Calendar to see a personalised countdown here.';
+        }
         listEl.innerHTML = '<p class="dashboard-exam-empty">No additional exams queued.</p>';
         setPinnedDashboardExamId('');
         setSelectedDashboardExamId('');
@@ -18069,6 +18156,9 @@ function renderDashboardExamCalendarCard() {
 
     titleEl.textContent = primary.title || 'Upcoming exam';
     metaEl.textContent = `${primary.dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • ${dayText}${primary.isGlobal ? ' • Global' : ''}${isPrimaryPinned ? ' • Pinned' : (isPrimarySelected ? ' • Selected' : '')}`;
+    if (noteEl) {
+        noteEl.textContent = buildDashboardExamNote(primary, ordered);
+    }
 
     if (pinEl) {
         pinEl.classList.remove('hidden');
@@ -26013,7 +26103,7 @@ async function fetchAndRenderToolsJoke(forceRefresh = false) {
 function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
     const elements = getQuoteElements();
     const safeQuoteText = (quoteText || '').trim();
-    const renderedQuote = safeQuoteText ? `"${safeQuoteText}"` : 'No quote available right now.';
+    const renderedQuote = safeQuoteText || 'A fresh study boost is loading right now.';
     if (elements.loadingTextEl) elements.loadingTextEl.textContent = renderedQuote;
     if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `- ${quoteAuthor}` : '';
     if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
@@ -26038,7 +26128,7 @@ async function fetchAndRenderDailyQuote(forceRefresh = false) {
         } catch (_) {}
     }
 
-    applyQuoteToUI('Curating a quote for today...', '', 'Loading quote...');
+    applyQuoteToUI('Preparing a useful study boost for today...', '', 'Loading...');
 
     const endpoints = [
         'https://thequoteshub.com/api/today',
@@ -26059,7 +26149,7 @@ async function fetchAndRenderDailyQuote(forceRefresh = false) {
     }
 
     if (!payload?.text) {
-        applyQuoteToUI('Quote is taking a short break. Please try again in a moment.', '', 'Quote unavailable');
+        applyQuoteToUI('A quick study boost is taking a short break. Please try again in a moment.', '', 'Loading...');
         if (lastError) logError(lastError, 'Fetch Daily Quote');
         return;
     }
