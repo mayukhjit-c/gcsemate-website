@@ -161,7 +161,7 @@ This is a private repository. For contributions, please contact the repository o
 
 ## License
 
-Copyright © 2025 Mayukhjit Chakraborty. All rights reserved.
+Copyright © 2026 Mayukhjit Chakraborty. All rights reserved.
 
 ## Support
 

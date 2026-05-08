@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
+  <script>
+    (function () {
+      function isBlockedClientEvent(event) {
+        var target = event && event.target;
+        var src = String((target && (target.src || target.href)) || '');
+        var message = String((event && event.message) || (event && event.reason && event.reason.message) || '');
+        return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|pagead2|googlesyndication|beacon\.min\.js|adsbygoogle/i.test(src);
+      }
+
+      window.addEventListener('error', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+
+      window.addEventListener('unhandledrejection', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+    })();
+  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSRF8YLS2N"></script>
   <script>

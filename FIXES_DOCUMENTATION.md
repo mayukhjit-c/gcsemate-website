@@ -586,7 +586,7 @@ These fixes apply automatically:
 
 - **Developer:** GitHub Copilot (Claude Sonnet 4.5)
 - **Project:** GCSEMate Website
-- **Date:** 2025
+- **Date:** 2026
 - **Purpose:** Critical bug fixes and UX improvements
 
 ---
@@ -597,6 +597,6 @@ This code is part of the GCSEMate project. See LICENSE.txt for details.
 
 ---
 
-**Last Updated:** January 2025
+**Last Updated:** January 2026
 **Status:** ✅ All fixes applied and tested
 **Next Review:** Monitor user feedback

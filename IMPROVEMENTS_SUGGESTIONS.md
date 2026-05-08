@@ -329,5 +329,5 @@ This section has been archived — the AI Tutor feature is no longer part of the
 
 ---
 
-*Generated based on codebase analysis - January 2025*
+*Generated based on codebase analysis - January 2026*
 

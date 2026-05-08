@@ -1,7 +1,7 @@
 // GCSEMate - GCSE Revision Platform
 // Proudly made using no generative AI
 // Handcrafted with pure JavaScript, HTML, and CSS by Mayukhjit Chakraborty
-// Copyright © 2025 Mayukhjit Chakraborty. All rights reserved.
+// Copyright © 2026 Mayukhjit Chakraborty. All rights reserved.
 // Protected by copyright and trade secret laws.
 // Unauthorized copying, reproduction, or distribution is strictly prohibited.
 
@@ -3631,7 +3631,7 @@ function startRealtimeAnalytics() {
 }
 
 // Enhanced real-time analytics  
-// Copyright © 2025 Mayukhjit Chakraborty. All rights reserved.
+// Copyright © 2026 Mayukhjit Chakraborty. All rights reserved.
 async function updateAnalyticsRealtime() {
     try {
         // Get active sessions in real-time
@@ -4763,7 +4763,7 @@ const subjectSpecifications = {
     },
     geography: {
         'OCR': {
-            url: 'https://www.ocr.org.uk/Images/207307-specification-taught-before-september-2025-with-final-assessments-summer-2026.pdf',
+            url: 'https://www.ocr.org.uk/Images/207307-specification-taught-before-september-2026-with-final-assessments-summer-2026.pdf',
             label: 'OCR GCSE Geography B (Exams ending 2026)',
             tier: ''
         }
@@ -5821,7 +5821,7 @@ function initializeAppState() {
 
     // What's New banner (versioned, returning users only)
     try {
-        const WHATS_NEW_VERSION = '2025-10-13-a';
+        const WHATS_NEW_VERSION = '2026-10-13-a';
         const key = 'gcsemate_whatsnew_seen:' + WHATS_NEW_VERSION;
         const seen = localStorage.getItem(key);
         if (!seen && currentUser) {
@@ -23207,7 +23207,7 @@ function showTermsOfServiceModal() {
                 <p>These terms are governed by the laws of England and Wales. Courts located in England shall have exclusive jurisdiction, except where applicable law provides otherwise.</p>
                 <h4 class="font-bold">15. Contact</h4>
                 <p>Questions? Contact <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
-                <p><em>Last updated: August 2025</em></p>
+                <p><em>Last updated: August 2026</em></p>
              </div>
         </div>`;
 }
@@ -23265,7 +23265,7 @@ function showPrivacyPolicyModal() {
                 <p>We may update this policy to reflect legal or operational changes. We will post updates in the app and update the date below.</p>
                 <h4 class="font-bold">14. Contact</h4>
                 <p>Questions about privacy? Contact: <a href="mailto:admin@gcsemate.com">admin@gcsemate.com</a>.</p>
-                <p><em>Last updated: August 2025</em></p>
+                <p><em>Last updated: August 2026</em></p>
               </div>
         </div>`;
 }

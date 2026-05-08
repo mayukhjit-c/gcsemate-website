@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
+  <script>
+    (function () {
+      function isBlockedClientEvent(event) {
+        var target = event && event.target;
+        var src = String((target && (target.src || target.href)) || '');
+        var message = String((event && event.message) || (event && event.reason && event.reason.message) || '');
+        return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|pagead2|googlesyndication|beacon\.min\.js|adsbygoogle/i.test(src);
+      }
+
+      window.addEventListener('error', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+
+      window.addEventListener('unhandledrejection', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+    })();
+  </script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSRF8YLS2N"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -479,7 +501,7 @@
         <h1 class="legal-title">The rules for using GCSEMate without surprises.</h1>
         <p class="legal-lead">These terms explain what you can expect from GCSEMate, what we expect from users, and how paid access, account security, and content usage are handled across the platform.</p>
         <div class="legal-meta">
-          <div class="legal-meta-chip"><strong>Last updated:</strong> August 2025</div>
+          <div class="legal-meta-chip"><strong>Last updated:</strong> August 2026</div>
           <div class="legal-meta-chip"><strong>Applies to:</strong> GCSEMate web platform</div>
           <div class="legal-meta-chip"><strong>Support:</strong> admin@gcsemate.com</div>
         </div>

@@ -161,7 +161,7 @@ async function fetchContinuationItems(token, apiKey, context) {
     context: context || {
       client: {
         clientName: 'WEB',
-        clientVersion: '2.20250301.00.00',
+        clientVersion: '2.20260301.00.00',
         hl: 'en',
         gl: 'US'
       }
@@ -326,7 +326,7 @@ function extractInnertubeContext(html) {
   return {
     client: {
       clientName: 'WEB',
-      clientVersion: '2.20250301.00.00',
+      clientVersion: '2.20260301.00.00',
       hl: 'en',
       gl: 'US'
     }

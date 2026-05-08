@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
+  <script>
+    (function () {
+      function isBlockedClientEvent(event) {
+        var target = event && event.target;
+        var src = String((target && (target.src || target.href)) || '');
+        var message = String((event && event.message) || (event && event.reason && event.reason.message) || '');
+        return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|pagead2|googlesyndication|beacon\.min\.js|adsbygoogle/i.test(src);
+      }
+
+      window.addEventListener('error', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+
+      window.addEventListener('unhandledrejection', function (event) {
+        if (!isBlockedClientEvent(event)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+    })();
+  </script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSRF8YLS2N"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -470,7 +492,7 @@
         <h1 class="legal-title">How GCSEMate handles your data, clearly.</h1>
         <p class="legal-lead">This policy explains what information GCSEMate collects, why it is used, how long it is kept, and what rights you have over it. The goal is transparency, not legal fog.</p>
         <div class="legal-meta">
-          <div class="legal-meta-chip"><strong>Last updated:</strong> August 2025</div>
+          <div class="legal-meta-chip"><strong>Last updated:</strong> August 2026</div>
           <div class="legal-meta-chip"><strong>Region:</strong> UK-focused service</div>
           <div class="legal-meta-chip"><strong>Contact:</strong> admin@gcsemate.com</div>
         </div>
