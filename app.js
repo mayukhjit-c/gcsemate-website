@@ -11393,16 +11393,36 @@ function populateUserSelector() {
 }
 
 let bankHolidaysData = null;
+let bankHolidaysPromise = null;
 async function fetchBankHolidays() {
-    if (bankHolidaysData) return;
+    if (bankHolidaysData) return bankHolidaysData;
+    if (bankHolidaysPromise) return bankHolidaysPromise;
     try {
-        const res = await fetch('https://www.gov.uk/bank-holidays.json');
-        const data = await res.json();
-        bankHolidaysData = data['england-and-wales'].events;
+        bankHolidaysPromise = fetch('https://www.gov.uk/bank-holidays.json')
+            .then((res) => res.json())
+            .then((data) => {
+                bankHolidaysData = data?.['england-and-wales']?.events || [];
+                return bankHolidaysData;
+            })
+            .catch((e) => {
+                console.error('Error fetching bank holidays:', e);
+                bankHolidaysData = [];
+                return bankHolidaysData;
+            })
+            .finally(() => {
+                bankHolidaysPromise = null;
+            });
+        return bankHolidaysPromise;
     } catch (e) {
         console.error('Error fetching bank holidays:', e);
         bankHolidaysData = [];
+        bankHolidaysPromise = null;
+        return bankHolidaysData;
     }
+}
+
+function getBankHolidayForDate(dateStr) {
+    return bankHolidaysData?.find((holiday) => holiday.date === dateStr) || null;
 }
 
 // Load calendar for selected month
@@ -11454,7 +11474,7 @@ async function loadCalendarMonth() {
 
         // Check for bank holidays
         const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const holiday = bankHolidaysData?.find(h => h.date === dateStr);
+        const holiday = getBankHolidayForDate(dateStr);
         if (holiday) {
             const hEl = document.createElement('div');
             hEl.className = 'text-[10px] sm:text-xs bg-blue-100 text-blue-800 rounded p-0.5 mt-1 truncate w-full text-left';
@@ -17803,6 +17823,14 @@ let calendarGlobalEvents = {};
 function renderCalendar(userEvents, globalEvents) {
     if (userEvents) calendarUserEvents = userEvents;
     if (globalEvents) calendarGlobalEvents = globalEvents;
+    if (!bankHolidaysData && !bankHolidaysPromise) {
+        fetchBankHolidays().then(() => {
+            const calendarGrid = document.getElementById('calendar-grid');
+            if (calendarGrid) {
+                renderCalendar(calendarUserEvents, calendarGlobalEvents);
+            }
+        });
+    }
     const calendarGrid = document.getElementById('calendar-grid');
     const monthYearHeader = document.getElementById('month-year-header');
     const yearSelect = document.getElementById('calendar-year-select');
@@ -17865,6 +17893,23 @@ function renderCalendar(userEvents, globalEvents) {
         if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
             dayEl.classList.add('today', 'ring-2', 'ring-blue-500', 'ring-offset-1', 'bg-blue-50');
             dayNumber.classList.add('text-blue-700');
+        }
+
+        const holiday = getBankHolidayForDate(dateKey);
+        if (holiday) {
+            dayEl.classList.add('has-holiday');
+
+            const holidayTag = document.createElement('div');
+            holidayTag.className = 'calendar-holiday-tag';
+            holidayTag.textContent = 'Holiday';
+            holidayTag.title = holiday.title;
+            dayEl.appendChild(holidayTag);
+
+            const holidayName = document.createElement('div');
+            holidayName.className = 'calendar-holiday-name';
+            holidayName.textContent = holiday.title;
+            holidayName.title = holiday.title;
+            dayEl.appendChild(holidayName);
         }
         
         const filterVal = document.getElementById('calendar-category-filter')?.value || 'all';

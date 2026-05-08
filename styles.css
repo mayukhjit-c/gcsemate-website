@@ -2301,6 +2301,40 @@ transform: translateX(-50%); width: 6px; height: 6px;
     border-radius: 50%; background-color: rgb(var(--accent-500));
         }
 
+        .calendar-day.has-holiday {
+            background-color: rgba(254, 243, 199, 0.55);
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .calendar-day.has-holiday:hover {
+            background-color: rgba(253, 230, 138, 0.6);
+            border-color: rgba(245, 158, 11, 0.55);
+        }
+
+        .calendar-holiday-tag {
+            margin-top: auto;
+            align-self: flex-start;
+            padding: 0.12rem 0.45rem;
+            border-radius: 9999px;
+            background: rgba(217, 119, 6, 0.12);
+            color: rgb(146, 64, 14);
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .calendar-holiday-name {
+            margin-top: 0.25rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            line-height: 1.15;
+            color: rgb(120, 53, 15);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
     /* Low-spec mode: trade blur for speed */
     .low-spec .backdrop-blur,
     .low-spec .backdrop-blur-sm,
