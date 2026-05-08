@@ -26070,15 +26070,56 @@ function normalizeJokePayload(payload, fallbackType = 'general') {
     };
 }
 
+async function readApiResponseBody(response) {
+    const text = await response.text();
+    try {
+        return JSON.parse(text);
+    } catch (_) {
+        return text;
+    }
+}
+
 async function fetchJokeFromApi(type = 'any') {
     const normalizedType = String(type || 'any').trim().toLowerCase();
-    const url = normalizedType === 'any'
-        ? 'https://official-joke-api.appspot.com/random_joke'
-        : `https://official-joke-api.appspot.com/jokes/${encodeURIComponent(normalizedType)}/random`;
+    if (normalizedType === 'programming') {
+        const response = await fetch('https://geek-jokes.sameerkumar.website/api?format=json', { method: 'GET', cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await readApiResponseBody(response);
+        const jokeText = String(payload?.joke || payload?.text || payload || '').trim();
+        if (!jokeText) throw new Error('Invalid programming joke payload');
+        return {
+            id: 0,
+            type: 'programming',
+            setup: 'Programming joke',
+            punchline: jokeText
+        };
+    }
 
+    if (normalizedType === 'any' || normalizedType === 'general') {
+        const response = await fetch('https://icanhazdadjoke.com/', {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json',
+                'User-Agent': 'GCSEMate/1.0 (study tools)'
+            }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await readApiResponseBody(response);
+        const jokeText = String(payload?.joke || payload?.text || payload || '').trim();
+        if (!jokeText) throw new Error('Invalid dad joke payload');
+        return {
+            id: String(payload?.id || '').trim() || 0,
+            type: 'dad',
+            setup: 'Dad joke',
+            punchline: jokeText
+        };
+    }
+
+    const url = `https://official-joke-api.appspot.com/jokes/${encodeURIComponent(normalizedType)}/random`;
     const response = await fetch(url, { method: 'GET', cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
+    const payload = await readApiResponseBody(response);
     const normalized = normalizeJokePayload(payload, normalizedType === 'any' ? 'general' : normalizedType);
     if (!normalized) throw new Error('Invalid joke payload');
     return normalized;
@@ -27053,7 +27094,6 @@ function initializeToolsPage() {
     const calcShiftBtn = document.getElementById('tools-calc-shift');
     const calcAngleMode = document.getElementById('tools-calc-angle-mode');
     const calcFormatSelect = document.getElementById('tools-calc-format');
-    const memeRefreshBtn = document.getElementById('tools-meme-refresh');
     const quoteRefreshBtn = document.getElementById('tools-quote-refresh');
     const jokeRefreshBtn = document.getElementById('tools-joke-refresh');
     const jokeTypeSelect = document.getElementById('tools-joke-type');
@@ -27231,28 +27271,6 @@ function initializeToolsPage() {
         }
         if (calcAngleMode) calcAngleMode.addEventListener('change', updateScientificCalculatorResult);
         if (calcFormatSelect) calcFormatSelect.addEventListener('change', updateScientificCalculatorResult);
-        if (memeRefreshBtn) {
-            memeRefreshBtn.addEventListener('click', async () => {
-                setButtonBusy(memeRefreshBtn, true, 'Loading...');
-                try {
-                    await fetchAndRenderDailyMeme(true);
-                    recordUserInteraction('tools_meme_refresh', { target: 'meme', important: true });
-                } finally {
-                    setButtonBusy(memeRefreshBtn, false);
-                }
-            });
-        }
-        if (quoteRefreshBtn) {
-            quoteRefreshBtn.addEventListener('click', async () => {
-                setButtonBusy(quoteRefreshBtn, true, 'Loading...');
-                try {
-                    await fetchAndRenderDailyQuote(true);
-                    recordUserInteraction('tools_quote_refresh', { target: 'quote', important: true });
-                } finally {
-                    setButtonBusy(quoteRefreshBtn, false);
-                }
-            });
-        }
         if (jokeRefreshBtn) {
             jokeRefreshBtn.addEventListener('click', async () => {
                 setButtonBusy(jokeRefreshBtn, true, 'Loading...');
@@ -27427,9 +27445,13 @@ function initializeToolsPage() {
     else restoreCachedFlashcards();
 
     updateToolsTimerUI();
-    fetchAndRenderDailyMeme(false);
     fetchAndRenderDailyQuote(false);
     fetchAndRenderToolsJoke(false);
+    if (document.readyState === 'complete') {
+        updateFooterCarbonFootprint();
+    } else {
+        window.addEventListener('load', updateFooterCarbonFootprint, { once: true });
+    }
     loadToolsNotes();
     loadToolsWheelOptions();
     updateCustomTimerInputs(toolsTimerState.customDurationSeconds);
@@ -28492,6 +28514,48 @@ function syncFooterToggleButton() {
     button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     icon.className = collapsed ? 'fas fa-expand-alt' : 'fas fa-compress-alt';
     label.textContent = collapsed ? 'Expand footer' : 'Collapse footer';
+}
+
+function getPageTransferBytes() {
+    try {
+        const entries = performance?.getEntriesByType?.('resource') || [];
+        const navigationEntry = performance?.getEntriesByType?.('navigation')?.[0] || null;
+        const resourceBytes = entries.reduce((sum, entry) => sum + Math.max(0, Number(entry.transferSize || entry.encodedBodySize || 0)), 0);
+        const navigationBytes = navigationEntry ? Math.max(0, Number(navigationEntry.transferSize || navigationEntry.encodedBodySize || 0)) : 0;
+        const totalBytes = resourceBytes + navigationBytes;
+        if (totalBytes > 0) return Math.round(totalBytes);
+    } catch (_) {}
+    try {
+        return Math.max(0, Math.round((document.documentElement?.outerHTML?.length || 0) * 2));
+    } catch (_) {
+        return 0;
+    }
+}
+
+async function updateFooterCarbonFootprint() {
+    const footprintEl = document.getElementById('footer-carbon-footprint');
+    if (!footprintEl) return;
+
+    const bytes = getPageTransferBytes();
+    if (!bytes) {
+        footprintEl.textContent = 'Estimated carbon footprint unavailable right now.';
+        return;
+    }
+
+    footprintEl.textContent = 'Calculating site carbon footprint...';
+
+    try {
+        const response = await fetch(`https://api.websitecarbon.com/data?bytes=${bytes}&green=0`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const grams = Number(payload?.gco2e ?? payload?.gco2 ?? 0);
+        const rating = payload?.rating ? ` • Rating ${String(payload.rating).toUpperCase()}` : '';
+        if (!Number.isFinite(grams)) throw new Error('Invalid carbon payload');
+        footprintEl.textContent = `Estimated carbon footprint: ${grams.toFixed(2)} gCO2e per page load${rating}.`;
+    } catch (error) {
+        footprintEl.textContent = 'Estimated carbon footprint unavailable right now.';
+        try { logError(error, 'Website Carbon Fetch'); } catch (_) {}
+    }
 }
 
 function toggleFooterCollapsePreference() {
