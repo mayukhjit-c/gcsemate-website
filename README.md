@@ -1,7 +1,5 @@
 # GCSEMate - GCSE Revision Platform
 
-**Proudly made using no generative AI** - This entire project was handcrafted with pure JavaScript, HTML, and CSS.
-
 GCSEMate is a comprehensive GCSE revision platform designed to help students efficiently access and organize revision materials. Created by Mayukhjit Chakraborty, the platform provides a streamlined interface for students to browse subjects, access past papers, watch educational videos, and read blog posts.
 
 ## Features
