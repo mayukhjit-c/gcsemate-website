@@ -18080,20 +18080,67 @@ function buildDashboardExamNote(primaryExam, upcomingExams) {
     const isAfterThreePm = new Date().getHours() >= 15;
     const pluralToday = todaysExams.length > 1;
     const title = String(primaryExam?.title || 'your next exam').trim() || 'your next exam';
+    
+    // Motivational messages pool for variety
+    const todayAfternoonMessages = [
+        `${studentName}, your exams today are probably behind you now. That was a full day, and you have earned a proper reset.`,
+        `${studentName}, you crushed it today! Time to recharge - your brain has earned this break.`,
+        `${studentName}, whatever happened today is done. You gave it your best, and that's what matters. Rest up!`,
+        `${studentName}, exam mode: OFF. Recovery mode: ON. You've earned this downtime.`
+    ];
+    
+    const todaySingleAfternoonMessages = [
+        `${studentName}, I hope ${title} went well today. You have done the hard part, so switch into recovery mode and let the effort count.`,
+        `${studentName}, ${title} is in the books! Whatever the result, you showed up and that's huge.`,
+        `${studentName}, one down! Take a breath - you just completed something important today.`
+    ];
+    
+    const todayMorningMessagesPlural = [
+        `${studentName}, you have ${todaysExams.length} exams today. Keep your pace steady, trust the revision you have done, and take each paper one at a time.`,
+        `${studentName}, multiple exams today? You've got this. One at a time, stay focused, and remember how far you've come.`,
+        `${studentName}, it's a marathon day with ${todaysExams.length} exams. Pace yourself, stay calm, and tackle them one by one.`
+    ];
+    
+    const todayMorningMessagesSingle = [
+        `${studentName}, ${title} is today. Stay calm, trust your preparation, and let the work you have done carry you through.`,
+        `${studentName}, today's the day for ${title}. You're ready. Breathe deep and show them what you know!`,
+        `${studentName}, all your hard work leads to this moment. Walk into ${title} with confidence - you've earned it.`
+    ];
+    
+    const tomorrowMessages = [
+        `Tomorrow is the day, ${studentName}. Keep the revision sharp tonight and arrive ready to start strong.`,
+        `${studentName}, tomorrow you show what you're made of. Tonight: light review, good rest, and trust your prep.`,
+        `One more sleep until ${title}, ${studentName}. You're prepared, you're capable, and you're going to nail this.`,
+        `${studentName}, tomorrow's exam is your chance to shine. Get good rest tonight - you've done the work!`
+    ];
+    
+    const fewDaysMessages = [
+        `${studentName}, ${title} is only ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Keep the final revision tight and finish each session with purpose.`,
+        `${studentName}, you're in the final stretch! ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} until ${title}. Make every study session count.`,
+        `Almost there, ${studentName}! ${title} is ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Stay focused and finish strong.`,
+        `${studentName}, the countdown is on: ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} to ${title}. You're ready for this - keep pushing!`
+    ];
+    
+    const runwayMessages = [
+        `${studentName}, you have a little runway before ${title}. Use it to build confidence one focused session at a time.`,
+        `${studentName}, ${title} is coming up. You've got time to strengthen your weak spots - use it wisely!`,
+        `Plenty of time before ${title}, ${studentName}. Build momentum now so you walk in feeling unstoppable.`,
+        `${studentName}, the clock is ticking toward ${title}. Every session you complete now is confidence you'll have later.`
+    ];
 
     if (todaysExams.length > 0) {
         if (isAfterThreePm) {
             if (pluralToday) {
-                return `${studentName}, your exams today are probably behind you now. That was a full day, and you have earned a proper reset.`;
+                return todayAfternoonMessages[Math.floor(Math.random() * todayAfternoonMessages.length)];
             }
-            return `${studentName}, I hope ${title} went well today. You have done the hard part, so switch into recovery mode and let the effort count.`;
+            return todaySingleAfternoonMessages[Math.floor(Math.random() * todaySingleAfternoonMessages.length)];
         }
 
         if (pluralToday) {
-            return `${studentName}, you have ${todaysExams.length} exams today. Keep your pace steady, trust the revision you have done, and take each paper one at a time.`;
+            return todayMorningMessagesPlural[Math.floor(Math.random() * todayMorningMessagesPlural.length)];
         }
 
-        return `${studentName}, ${title} is today. Stay calm, trust your preparation, and let the work you have done carry you through.`;
+        return todayMorningMessagesSingle[Math.floor(Math.random() * todayMorningMessagesSingle.length)];
     }
 
     const now = new Date();
@@ -18101,14 +18148,14 @@ function buildDashboardExamNote(primaryExam, upcomingExams) {
     const daysUntilExam = Math.max(0, Math.ceil((primaryExam.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
     if (daysUntilExam === 1) {
-        return `Tomorrow is the day, ${studentName}. Keep the revision sharp tonight and arrive ready to start strong.`;
+        return tomorrowMessages[Math.floor(Math.random() * tomorrowMessages.length)];
     }
 
     if (daysUntilExam <= 3) {
-        return `${studentName}, ${title} is only ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Keep the final revision tight and finish each session with purpose.`;
+        return fewDaysMessages[Math.floor(Math.random() * fewDaysMessages.length)];
     }
 
-    return `${studentName}, you have a little runway before ${title}. Use it to build confidence one focused session at a time.`;
+    return runwayMessages[Math.floor(Math.random() * runwayMessages.length)];
 }
 
 function renderDashboardExamCalendarCard() {

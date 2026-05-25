@@ -341,7 +341,7 @@
     <a id="skip-link" href="#landing-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[20001] focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white">Skip to main content</a>
     <div class="fixed inset-0 -z-50 bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
     <!-- Loading Overlay -->
-    <div id="app-loading" class="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-white/95 transition-opacity duration-300" aria-live="polite" aria-label="Loading GCSEMate">
+    <div id="app-loading" class="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 transition-opacity duration-500" aria-live="polite" aria-label="Loading GCSEMate">
         <div class="app-loading-ambient" aria-hidden="true">
             <span class="app-loading-orb app-loading-orb--one"></span>
             <span class="app-loading-orb app-loading-orb--two"></span>
@@ -349,7 +349,7 @@
         </div>
         <div class="app-loading-shell">
             <div class="app-loading-brandmark">
-                <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-14 w-auto mx-auto rounded-xl animate-logo" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
+                <img src="gcsemate%20new.png" alt="GCSEMate Logo" class="h-16 w-auto mx-auto rounded-xl animate-logo" onerror="this.onerror=null; this.src='https://i.imghippo.com/files/IxF8202tcg.jpg';">
             </div>
             <div class="app-splash-indicator" aria-hidden="true">
                 <span class="app-splash-ring"></span>
@@ -359,8 +359,8 @@
             </div>
             <p class="app-loading-caption">Preparing your GCSEMate workspace</p>
             <p class="app-loading-subcaption">Checking your account and syncing your latest progress.</p>
-            <p id="loading-quote" class="mt-4 max-w-md mx-auto text-center text-sm font-semibold text-slate-600">Preparing something useful for today...</p>
-            <p id="loading-joke" class="mt-2 max-w-md mx-auto text-center text-xs text-slate-500">Loading a quick study break...</p>
+            <p id="loading-quote" class="mt-4 max-w-md mx-auto text-center text-sm font-semibold text-blue-100">Preparing something useful for today...</p>
+            <p id="loading-joke" class="mt-2 max-w-md mx-auto text-center text-xs text-blue-200">Loading a quick study break...</p>
         </div>
     </div>
     <script>
@@ -2382,8 +2382,10 @@
                         <h2 class="text-3xl font-bold text-gray-800">Useful Links & Resources</h2>
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1 sm:flex-initial">
+                                <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fas fa-search text-sm" aria-hidden="true"></i>
+                                </span>
                                 <input id="links-search-input" type="search" placeholder="Search links..." class="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" aria-label="Search links">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none leading-none"></i>
                             </div>
                             <select id="links-filter-type" class="px-3 py-2 rounded-lg border border-gray-300/70 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                 <option value="all">All Types</option>

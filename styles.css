@@ -455,7 +455,7 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
 
         #app-loading {
             overflow: hidden;
-            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0f9ff 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #312e81 100%);
         }
 
         .app-loading-shell {
@@ -466,22 +466,23 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             border-radius: 1.5rem;
             padding: 2.5rem 2rem 2rem;
             text-align: center;
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(226, 232, 240, 0.8);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .app-loading-ambient {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
         .app-loading-orb {
             position: absolute;
             border-radius: 9999px;
-            filter: blur(40px);
-            opacity: 0.4;
+            filter: blur(60px);
+            opacity: 0.3;
             animation: splashOrbFloat 13s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate;
         }
 
@@ -490,7 +491,7 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             height: 14rem;
             left: -4rem;
             top: 10%;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.4), transparent 70%);
         }
 
         .app-loading-orb--two {
@@ -498,7 +499,7 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             height: 16rem;
             right: -5rem;
             top: 20%;
-            background: radial-gradient(circle, rgba(147, 51, 234, 0.2), transparent 70%);
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.3), transparent 70%);
             animation-delay: -4s;
         }
 
@@ -507,7 +508,7 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             height: 12rem;
             left: calc(50% - 6rem);
             bottom: -6rem;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.3), transparent 70%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.5), transparent 70%);
             animation-delay: -8s;
         }
 
@@ -522,9 +523,9 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             width: fit-content;
             padding: 1rem 1.25rem;
             border-radius: 1.25rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.9));
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            box-shadow: 0 10px 40px -20px rgba(37, 99, 235, 0.3);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px -20px rgba(37, 99, 235, 0.5);
         }
 
         .app-splash-indicator {
@@ -538,8 +539,8 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             position: absolute;
             inset: 0;
             border-radius: 9999px;
-            border: 2.5px solid rgba(226, 232, 240, 0.6);
-            border-top-color: rgb(37, 99, 235);
+            border: 2.5px solid rgba(255, 255, 255, 0.2);
+            border-top-color: rgb(96, 165, 250);
             animation: splashSpin 1s ease-in-out infinite;
         }
 
@@ -548,8 +549,8 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             width: 0.5rem;
             height: 0.5rem;
             border-radius: 9999px;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.6);
             opacity: 0.9;
             animation: splashDotPulse 1.4s ease-in-out infinite;
         }
@@ -577,23 +578,23 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             font-size: 1.05rem;
             font-weight: 800;
             letter-spacing: 0.01em;
-            color: #0f172a;
+            color: #f8fafc;
         }
 
         .app-loading-subcaption {
             margin-top: 0.4rem;
             font-size: 0.85rem;
             font-weight: 600;
-            color: #64748b;
+            color: #bfdbfe;
         }
 
         .app-loading-shell #loading-quote {
             margin-top: 1.25rem;
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            background: linear-gradient(135deg, rgba(239, 246, 255, 0.5), rgba(248, 250, 252, 0.5));
-            color: #1e40af;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.1));
+            color: #dbeafe;
             font-weight: 700;
             font-size: 0.9rem;
         }
@@ -601,7 +602,7 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
         .app-loading-shell #loading-joke {
             margin-top: 0.75rem;
             font-weight: 600;
-            color: #64748b;
+            color: #93c5fd;
             font-size: 0.8rem;
         }
 
