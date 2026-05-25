@@ -2705,7 +2705,6 @@ async function initializeUserTracking() {
         // Update daily stats
         const streakState = await syncUserStreakState('login');
         userActivityTracker.dailyStats.studyStreak = Number(streakState?.current || 0);
-        renderDashboardStreakLeaderboard();
         userActivityTracker.dailyStats.loginCount++;
         await updateDailyStats();
         
@@ -3177,7 +3176,6 @@ async function saveAvatarFromOnboarding() {
         avatarOnboardingState.dismissedForSession = false;
         updateWelcomeMessage();
         try { await upsertStreakLeaderboardEntry(); } catch (_) {}
-        renderDashboardStreakLeaderboard();
         setAvatarOnboardingVisible(false);
         setAvatarOnboardingMessage('');
     } catch (error) {
@@ -5573,7 +5571,6 @@ auth.onAuthStateChanged(async (user) => {
                         try { initializeAppState(); } catch(_){}
                     }
                     updateWelcomeMessage();
-                    renderDashboardStreakLeaderboard();
                     updateInlineUpsellBanner();
                     // Update AI Tutor navigation visibility
                     updateAITutorNavVisibility();
@@ -5642,7 +5639,6 @@ auth.onAuthStateChanged(async (user) => {
                             try { initializeAppState(); } catch(_){ }
                         }
                         updateWelcomeMessage();
-                        renderDashboardStreakLeaderboard();
                         updateInlineUpsellBanner();
                         updateAITutorNavVisibility();
                     });
@@ -5789,7 +5785,6 @@ function initializeAppState() {
     mainApp.style.display = 'flex';
     mainApp.classList.add('fade-in');
     updateWelcomeMessage();
-    renderDashboardStreakLeaderboard();
     setupRealtimeListeners();
     startClock();
     hideAppLoading();
@@ -7263,30 +7258,7 @@ function setupRealtimeListeners() {
         LESSON_USER_COMPLETION_MAP.clear();
     }
 
-    if (unsubscribeStreakLeaderboard) { try { unsubscribeStreakLeaderboard(); } catch (_) {} }
-    unsubscribeStreakLeaderboard = db.collection('streakLeaderboard')
-        .orderBy('studyStreak', 'desc')
-        .limit(25)
-        .onSnapshot(snapshot => {
-            streakLeaderboardRows = [];
-            snapshot.forEach(doc => {
-                const data = doc.data() || {};
-                streakLeaderboardRows.push({
-                    id: doc.id,
-                    userId: data.userId || doc.id,
-                    displayName: data.displayName || 'Learner',
-                    avatarEmoji: sanitizeAvatarEmojiInput(data.avatarEmoji || ''),
-                    profilePictureURL: data.profilePictureURL || '',
-                    studyStreak: Math.max(0, Number(data.studyStreak || 0)),
-                    bestStudyStreak: Math.max(0, Number(data.bestStudyStreak || 0)),
-                    streakLastActiveDate: data.streakLastActiveDate || ''
-                });
-            });
-            renderDashboardStreakLeaderboard(streakLeaderboardRows);
-        }, error => {
-            logError(error, 'Streak Leaderboard');
-            renderDashboardStreakLeaderboard(streakLeaderboardRows);
-        });
+    // Streak leaderboard listener removed as part of streak system removal
 
     // Listen for user-specific events
     unsubscribeUserEvents = db.collection('users').doc(currentUser.uid).collection('events')
@@ -9374,7 +9346,6 @@ window.applyProfilePictureCrop = async function() {
             currentUser.profilePictureURL = downloadURL;
             updateProfilePictureInUI(downloadURL);
             try { await upsertStreakLeaderboardEntry(); } catch (_) {}
-            renderDashboardStreakLeaderboard();
             
             await logUserActivity('profile_picture_upload', {
                 fileName: profileCropState.originalFile.name,
@@ -9586,7 +9557,6 @@ async function removeProfilePicture() {
         clearAvatarEmojiSelection(targetInputId);
         updateWelcomeMessage();
         try { await upsertStreakLeaderboardEntry(); } catch (_) {}
-        renderDashboardStreakLeaderboard();
         showToast('Avatar removed. Pick a new one anytime.', 'success');
     } catch (error) {
         logError(error, 'Remove Avatar Emoji');
@@ -14402,7 +14372,6 @@ async function renderDashboard() {
     const subjectGrid = document.getElementById('subject-grid');
     if (!subjectGrid) return;
     renderDashboardExamCalendarCard();
-    renderDashboardStreakLeaderboard();
     // Render skeleton loader
     let skeletonHTML = '';
     for (let i = 0; i < 10; i++) {
