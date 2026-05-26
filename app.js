@@ -15352,6 +15352,7 @@ function createPlaylistCard(playlist) {
     card.className = `video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(59,130,246,0.28)]${playlistStarred ? ' video-playlist-card-starred' : ''}`;
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
+    const accessMeta = getPlaylistAccessMeta(playlist);
     const itemCount = Array.isArray(playlist?.items) ? playlist.items.length : (playlist?.url ? 1 : 0);
 
     const tags = (playlist.tags || []).map(t => escapeHTML(t)).slice(0, 5);
@@ -15363,9 +15364,15 @@ function createPlaylistCard(playlist) {
         <div class="relative flex flex-1 flex-col p-5">
             <div class="mb-4 flex items-start justify-between gap-3">
                 <div class="space-y-2 min-w-0">
-                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
-                        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
-                        <span>${escapeHTML(sourceMeta.label)}</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                            <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                            <span>${escapeHTML(sourceMeta.label)}</span>
+                        </div>
+                        <div class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] shadow-sm ${escapeHTML(accessMeta.badgeClass)}">
+                            <span class="h-2 w-2 rounded-full bg-current"></span>
+                            <span>${escapeHTML(accessMeta.label)}</span>
+                        </div>
                     </div>
                     <h3 class="text-lg font-extrabold leading-snug text-slate-900 line-clamp-2">${escapeHTML(playlist.title)}</h3>
                     <p class="text-sm font-medium text-slate-500">${subjectLabel}</p>
@@ -15384,6 +15391,7 @@ function createPlaylistCard(playlist) {
 
             <div class="mb-4 flex flex-wrap gap-2">
                 ${playlist.creatorName ? `<span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">By ${escapeHTML(playlist.creatorName)}</span>` : ''}
+                <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${escapeHTML(accessMeta.badgeClass)}">${escapeHTML(accessMeta.subtitle)}</span>
                 <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHTML(subtitle)}</span>
                 ${playlist.hasAds ? `<span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">Popup-prone host</span>` : ''}
             </div>
@@ -15478,6 +15486,92 @@ function extractIframeSrcs(raw) {
     return all;
 }
 
+function normalizeAbyssSourceUrl(rawValue) {
+    const raw = String(rawValue || '').trim();
+    if (!raw) return '';
+
+    try {
+        const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+        const urlObj = new URL(candidate);
+        const host = urlObj.hostname.toLowerCase();
+        if (host === 'short.icu' || host.endsWith('.short.icu')) {
+            urlObj.hostname = 'abyssplayer.com';
+            return urlObj.toString();
+        }
+    } catch (_) {}
+
+    return raw;
+}
+
+function normalizePlaylistAccessTier(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'free' || normalized === 'freemium' || normalized === 'paid') return normalized;
+    return '';
+}
+
+function getPlaylistItemProvider(item = {}) {
+    const explicitProvider = String(item?.provider || '').trim().toLowerCase();
+    if (explicitProvider) return explicitProvider;
+
+    const source = normalizeAbyssSourceUrl(item?.sourceUrl || item?.embedUrl || item?.watchUrl || '');
+    const youtubeData = parseYoutubeUrl(source);
+    if (youtubeData?.type === 'youtube_video' || youtubeData?.type === 'youtube_playlist') return 'youtube';
+
+    try {
+        const host = new URL(source).hostname.toLowerCase();
+        if (host === 'abyssplayer.com' || host.endsWith('.abyssplayer.com') || host === 'abyss.to' || host.endsWith('.abyss.to')) {
+            return 'abyss';
+        }
+    } catch (_) {}
+
+    return '';
+}
+
+function inferPlaylistAccessTier(items = []) {
+    const providers = new Set((items || []).map(item => getPlaylistItemProvider(item)).filter(Boolean));
+    const hasYoutube = providers.has('youtube');
+    const hasAbyss = providers.has('abyss');
+
+    if (hasYoutube && hasAbyss) return 'freemium';
+    if (hasAbyss) return 'paid';
+    return 'free';
+}
+
+function getPlaylistAccessTier(playlist) {
+    const explicitTier = normalizePlaylistAccessTier(playlist?.accessTier || playlist?.status || playlist?.tier);
+    if (explicitTier) return explicitTier;
+    return inferPlaylistAccessTier(normalizePlaylistItems(playlist));
+}
+
+function getPlaylistAccessMeta(playlist) {
+    const tier = getPlaylistAccessTier(playlist);
+    if (tier === 'paid') {
+        return {
+            tier,
+            label: 'PAID',
+            subtitle: 'Abyss links only',
+            accent: 'from-rose-500/15 via-white to-red-400/10',
+            badgeClass: 'bg-rose-50 text-rose-700 border-rose-200'
+        };
+    }
+    if (tier === 'freemium') {
+        return {
+            tier,
+            label: 'FREEMIUM',
+            subtitle: 'Mixed YouTube + Abyss',
+            accent: 'from-violet-500/15 via-white to-sky-400/10',
+            badgeClass: 'bg-violet-50 text-violet-700 border-violet-200'
+        };
+    }
+    return {
+        tier: 'free',
+        label: 'FREE',
+        subtitle: 'YouTube only',
+        accent: 'from-emerald-500/15 via-white to-sky-400/10',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    };
+}
+
 function cleanPlaylistItemTitle(title) {
     return String(title || '')
         .replace(/\.(mp4|webm|mkv|mov|m4v)$/i, '')
@@ -15493,8 +15587,8 @@ function splitPlaylistEntry(rawValue) {
 
     const left = raw.slice(0, pipeIndex).trim();
     const right = raw.slice(pipeIndex + 1).trim();
-    const looksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)/i.test(right);
-    const leftLooksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)/i.test(left);
+    const looksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyssplayer\.com|www\.abyssplayer\.com|abyss\.to|www\.abyss\.to)/i.test(right);
+    const leftLooksLikeSource = /^(<iframe\b|https?:\/\/|\/\/|short\.icu|www\.short\.icu|abyssplayer\.com|www\.abyssplayer\.com|abyss\.to|www\.abyss\.to)/i.test(left);
 
     if (looksLikeSource && !leftLooksLikeSource) {
         return { title: cleanPlaylistItemTitle(left), sourceText: right };
@@ -15532,12 +15626,13 @@ function parsePlaylistSourceInput(rawValue) {
             candidate = `https:${candidate}`;
         }
         if (!/^https?:\/\//i.test(candidate)) {
-            if (/^(short\.icu|www\.short\.icu|abyss\.to|www\.abyss\.to)\//i.test(candidate)) {
+            if (/^(short\.icu|www\.short\.icu|abyssplayer\.com|www\.abyssplayer\.com|abyss\.to|www\.abyss\.to)\//i.test(candidate)) {
                 candidate = `https://${candidate}`;
-            } else if (/^(short\.icu|abyss\.to)$/i.test(candidate)) {
+            } else if (/^(short\.icu|www\.short\.icu|abyssplayer\.com|www\.abyssplayer\.com|abyss\.to|www\.abyss\.to)$/i.test(candidate)) {
                 candidate = `https://${candidate}`;
             }
         }
+        candidate = normalizeAbyssSourceUrl(candidate);
         const urlObj = new URL(candidate);
         if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') return null;
         normalizedUrl = urlObj.toString();
@@ -16072,7 +16167,18 @@ function renderPlaylistDnDList(container, items = [], onReorder = null, options 
 }
 
 function normalizePlaylistItems(playlist) {
-    if (Array.isArray(playlist?.items) && playlist.items.length) return playlist.items;
+    if (Array.isArray(playlist?.items) && playlist.items.length) {
+        return playlist.items.map((item, idx) => ({
+            ...item,
+            id: item?.id || `legacy-item-${playlist.id || 'playlist'}-${idx}`,
+            sourceUrl: normalizeAbyssSourceUrl(item?.sourceUrl || ''),
+            embedUrl: normalizeAbyssSourceUrl(item?.embedUrl || ''),
+            watchUrl: normalizeAbyssSourceUrl(item?.watchUrl || ''),
+            provider: item?.provider || getPlaylistItemProvider(item),
+            order: typeof item?.order === 'number' ? item.order : idx,
+            title: cleanPlaylistItemTitle(item?.title || '')
+        }));
+    }
     if (!playlist?.url && playlist?.playlistId) {
         const legacyId = String(playlist.playlistId || '').trim();
         if (!legacyId) return [];
@@ -16092,9 +16198,9 @@ function normalizePlaylistItems(playlist) {
         order: 0,
         type: parsed.type,
         provider: parsed.provider,
-        sourceUrl: parsed.sourceUrl,
-        embedUrl: parsed.embedUrl,
-        watchUrl: parsed.watchUrl,
+        sourceUrl: normalizeAbyssSourceUrl(parsed.sourceUrl),
+        embedUrl: normalizeAbyssSourceUrl(parsed.embedUrl),
+        watchUrl: normalizeAbyssSourceUrl(parsed.watchUrl),
         videoId: parsed.id || playlist.playlistId || null
     }];
 }
@@ -16159,7 +16265,7 @@ async function renderManagePlaylistsPage() {
     const search = document.getElementById('manage-search')?.value?.toLowerCase() || '';
     const selectAll = document.getElementById('manage-select-all');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-gray-500">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-sm text-gray-500">Loading...</td></tr>';
     try {
         const snapshot = await db.collection('videoPlaylists').orderBy('createdAt','desc').get();
         const rows = [];
@@ -16170,17 +16276,19 @@ async function renderManagePlaylistsPage() {
             rows.push(p);
         });
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-gray-600">No playlists found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-sm text-gray-600">No playlists found.</td></tr>';
             return;
         }
         tbody.innerHTML = '';
         rows.forEach(p => {
+            const accessMeta = getPlaylistAccessMeta(p);
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="p-2"><input class="manage-select gcse-checkbox" data-id="${p.id}" type="checkbox"></td>
                 <td class="p-2">${escapeHTML(p.title || '(untitled)')}</td>
                 <td class="p-2">${escapeHTML(p.subject || '')}</td>
                 <td class="p-2">${(p.tags||[]).map(t=>`<span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 mr-1">${escapeHTML(t)}</span>`).join('')}</td>
+                <td class="p-2"><span class="inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold ${escapeHTML(accessMeta.badgeClass)}">${escapeHTML(accessMeta.label)}</span></td>
                 <td class="p-2">${p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-GB') : ''}</td>
                 <td class="p-2">
                     <button onclick="editPlaylist('${p.id}', '${(p.title||'').replace(/'/g, "\\'")}')" class="px-2 py-1 rounded bg-blue-600 text-white text-sm mr-2">Edit</button>
@@ -16192,7 +16300,7 @@ async function renderManagePlaylistsPage() {
         attachManageTableHandlers();
     } catch (e) {
         console.error('Could not load playlists', e);
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-sm text-red-600">Error loading playlists.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-sm text-red-600">Error loading playlists.</td></tr>';
     }
 }
 
@@ -16430,6 +16538,7 @@ async function handleAddPlaylist() {
             title: title,
             playlistType: first.type,
             embedSource: first.provider,
+            accessTier: inferPlaylistAccessTier(items),
             subject: (document.getElementById('playlist-subject')?.value || '').trim(),
             tags: (document.getElementById('playlist-tags')?.value || '').split(/[\s,]+/).map(t=>t.trim()).filter(Boolean),
             description: (document.getElementById('playlist-notes')?.value || '').trim(),
@@ -16480,6 +16589,7 @@ async function editPlaylist(id, currentTitle) {
         const curNotes = data.description || '';
         const curCreatorName = data.creatorName || '';
         const curHasAds = !!data.hasAds;
+        const curAccessTier = getPlaylistAccessTier({ id, ...data, items: curItems });
         modal.innerHTML = `
         <div class="video-admin-modal-card bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-5xl p-6 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
             <div class="mb-3 flex items-center gap-2">
@@ -16503,6 +16613,13 @@ async function editPlaylist(id, currentTitle) {
                     <input id="edit-playlist-tags" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTags)}" />
                     <label class="block text-sm font-semibold text-slate-700 mb-1 mt-2">Creator Name</label>
                     <input id="edit-playlist-creator" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curCreatorName)}" placeholder="Auto if empty" />
+                    <label class="block text-sm font-semibold text-slate-700 mb-1 mt-2">Access Status</label>
+                    <select id="edit-playlist-access-tier" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="free" ${curAccessTier === 'free' ? 'selected' : ''}>Free</option>
+                        <option value="freemium" ${curAccessTier === 'freemium' ? 'selected' : ''}>Freemium</option>
+                        <option value="paid" ${curAccessTier === 'paid' ? 'selected' : ''}>Paid</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">YouTube items stay free. Abyss items are paid. Mixed playlists should be marked freemium.</p>
                     <label class="mt-2 flex items-center text-sm text-amber-900 select-none rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                         <input id="edit-playlist-has-ads" type="checkbox" class="gcse-checkbox" ${curHasAds ? 'checked' : ''}>
                         <span class="ml-2">Mark as ad-heavy/popup-prone</span>
@@ -16587,13 +16704,14 @@ async function editPlaylist(id, currentTitle) {
         const newTagsRaw = (document.getElementById('edit-playlist-tags').value || '').split(/[,\s]+/).map(t=>t.trim()).filter(Boolean);
         const newNotes = document.getElementById('edit-playlist-notes').value.trim();
         const newCreatorRaw = document.getElementById('edit-playlist-creator').value.trim();
-        const newHasAds = !!document.getElementById('edit-playlist-has-ads')?.checked;
         if (!newTitle) return showToast('Title is required', 'error');
         const parsedItems = editSourceBuilder && typeof editSourceBuilder.getItems === 'function'
             ? ensureOrderedPlaylistItems(editSourceBuilder.getItems())
             : parsePlaylistItemsInput(urlInputEl?.value || '');
         if (!parsedItems.length) return showToast('Please enter valid sources (YouTube/abyss URLs or iframe snippets).', 'error');
         if (urlInputEl) urlInputEl.value = serializePlaylistItems(parsedItems);
+        const newAccessTier = normalizePlaylistAccessTier(document.getElementById('edit-playlist-access-tier')?.value) || inferPlaylistAccessTier(parsedItems);
+        const newHasAds = !!document.getElementById('edit-playlist-has-ads')?.checked;
 
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -16608,6 +16726,7 @@ async function editPlaylist(id, currentTitle) {
                 url: first.sourceUrl,
                 playlistType: first.type,
                 embedSource: first.provider,
+                accessTier: newAccessTier,
                 items: parsedItems,
                 hasAds: newHasAds,
                 creatorName: finalCreator,
@@ -16806,7 +16925,8 @@ function showVideoPreplayWarningModal(item, itemIndex, totalItems) {
 }
 
 async function handlePlaylistClick(playlist) {
-    if (currentUser.tier === 'free') {
+    const accessTier = getPlaylistAccessTier(playlist);
+    if ((currentUser?.tier || 'free') === 'free' && accessTier === 'paid') {
         openUpgradeModal('To watch revision video playlists, please upgrade to our Pro plan.');
         return;
     }
@@ -16845,7 +16965,7 @@ function getItemEmbedUrl(item) {
     if (item.type === 'youtube_video' && item.videoId) return `https://www.youtube.com/embed/${encodeURIComponent(item.videoId)}?modestbranding=1&rel=0&playsinline=1`;
     if (item.type === 'youtube_playlist' && item.videoId) return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(item.videoId)}&modestbranding=1&rel=0&playsinline=1`;
 
-    const candidate = item.embedUrl || item.sourceUrl || '';
+    const candidate = normalizeAbyssSourceUrl(item.embedUrl || item.sourceUrl || '');
     const parsedYoutube = parseYoutubeUrl(candidate);
     if (parsedYoutube?.type === 'youtube_video' && parsedYoutube.id) {
         return `https://www.youtube.com/embed/${encodeURIComponent(parsedYoutube.id)}?modestbranding=1&rel=0&playsinline=1`;
@@ -16885,16 +17005,16 @@ function getAdFallbackUrl(item) {
     if (item.type === 'youtube_playlist' && item.videoId) {
         return `https://www.youtube.com/playlist?list=${encodeURIComponent(item.videoId)}`;
     }
-    const parsed = parseYoutubeUrl(item.sourceUrl || item.embedUrl || '');
+    const parsed = parseYoutubeUrl(normalizeAbyssSourceUrl(item.sourceUrl || item.embedUrl || ''));
     if (parsed?.watchUrl) return parsed.watchUrl;
-    return item.sourceUrl || item.embedUrl || '';
+    return normalizeAbyssSourceUrl(item.sourceUrl || item.embedUrl || '');
 }
 
 const resolvedVideoSourceCache = new Map();
 
 async function resolveExternalVideoSource(item) {
     if (!item) return null;
-    const source = String(item.sourceUrl || item.embedUrl || '').trim();
+    const source = String(normalizeAbyssSourceUrl(item.sourceUrl || item.embedUrl || '')).trim();
     if (!source) return null;
     if (item.provider !== 'abyss') return null;
 
@@ -16935,8 +17055,8 @@ async function getResolvedItemPlayback(item) {
 
     // Keep Abyss playback fully direct for host compatibility.
     return {
-        embedUrl: item.embedUrl || item.sourceUrl || defaultEmbed,
-        watchUrl: item.watchUrl || item.sourceUrl || defaultWatch,
+        embedUrl: normalizeAbyssSourceUrl(item.embedUrl || item.sourceUrl || defaultEmbed),
+        watchUrl: normalizeAbyssSourceUrl(item.watchUrl || item.sourceUrl || defaultWatch),
         wasResolved: false,
         mode: 'abyss_direct'
     };
