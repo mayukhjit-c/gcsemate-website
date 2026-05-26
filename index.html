@@ -1124,7 +1124,8 @@
                          <h3 class="text-xl font-semibold mb-4">Add New Video Playlist</h3>
                          <form id="add-playlist-form" class="space-y-6 mt-4" onsubmit="event.preventDefault(); handleAddPlaylist();">
                              <input id="playlist-title" type="text" placeholder="Playlist Title (e.g., 'AQA Physics Paper 1')" required class="w-full p-3 rounded-lg border-gray-300/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Enter a descriptive title for the playlist">
-                            <textarea id="playlist-url" rows="6" placeholder="Raw sources (one per line). Format: optional title | source URL" required spellcheck="false" autocapitalize="off" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" data-tooltip="Paste mixed YouTube and abyss sources in order, one per line"></textarea>
+                             <textarea id="playlist-url" rows="6" placeholder="Paste one source per line. Example: Title | https://youtu.be/..." required spellcheck="false" autocapitalize="off" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" data-tooltip="Paste mixed YouTube and abyss sources in order, one per line"></textarea>
+                             <p class="text-xs leading-5 text-slate-500">Paste a batch of lines, then click Parse Sources to rebuild the table. The text box stays as your paste buffer; the table is what gets saved.</p>
                              <section class="video-admin-builder-panel rounded-2xl border border-white/70 bg-white/65 p-4">
                                  <div class="video-admin-builder-grid">
                                      <div class="video-admin-builder-card">
@@ -1150,12 +1151,13 @@
                                          <i class="fas fa-list-ol"></i>
                                          <span>Playback Table</span>
                                      </div>
-                                     <div class="flex items-center gap-2">
+                                     <div class="flex items-center gap-2 flex-wrap justify-end">
                                          <span id="playlist-builder-count" class="video-admin-counter-chip">0 item(s)</span>
+                                         <button id="playlist-apply-sources-btn" type="button" class="video-admin-action-btn video-admin-action-btn-alt" data-tooltip="Parse the pasted sources into the table">Parse Sources</button>
                                          <button id="playlist-clear-sources-btn" type="button" class="video-admin-clear-btn">Clear</button>
                                      </div>
                                  </div>
-                                 <div id="playlist-source-dnd" class="video-admin-dnd-list mt-3" aria-live="polite"></div>
+                                 <div id="playlist-source-dnd" class="video-admin-dnd-list mt-3 max-h-[360px] overflow-y-auto" aria-live="polite"></div>
                              </section>
                              <input id="playlist-subject" type="text" placeholder="Subject (e.g., Physics, Maths)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Associate a subject to this playlist">
                              <input id="playlist-tags" type="text" placeholder="Tags (comma-separated, e.g., 'AQA,Paper1,GCSE')" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Add tags to help filtering">

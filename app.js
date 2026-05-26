@@ -15899,11 +15899,13 @@ function setupPlaylistSourceBuilder(options = {}) {
     const addTitleInput = options.addTitleId ? document.getElementById(options.addTitleId) : null;
     const addBtn = options.addBtnId ? document.getElementById(options.addBtnId) : null;
     const clearBtn = options.clearBtnId ? document.getElementById(options.clearBtnId) : null;
+    const applyBtn = options.applyBtnId ? document.getElementById(options.applyBtnId) : null;
     const listeners = [];
 
     let items = Array.isArray(options.initialItems) && options.initialItems.length
         ? ensureOrderedPlaylistItems(options.initialItems)
         : ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
+    let tableMutatedSinceParse = false;
 
     const on = (el, type, handler) => {
         if (!el) return;
@@ -15911,32 +15913,35 @@ function setupPlaylistSourceBuilder(options = {}) {
         listeners.push(() => el.removeEventListener(type, handler));
     };
 
-    const syncTextArea = (syncOptions = {}) => {
-        const forceSync = !!syncOptions.forceSync;
-        const serialized = serializePlaylistItems(items);
-        const isEditingRawText = document.activeElement === textarea;
-        if (isEditingRawText && !forceSync) {
-            return;
+    const parseCurrentSources = (sourceText = textarea.value || '') => {
+        const parsedItems = ensureOrderedPlaylistItems(parsePlaylistItemsInput(sourceText));
+        if (!parsedItems.length && String(sourceText || '').trim()) {
+            setPlaylistImportStatus(importStatus, 'No valid sources were detected yet. Keep the last good table or try Parse Sources again.', 'warning');
+            return items;
         }
-        if (textarea.value !== serialized) textarea.value = serialized;
+        items = parsedItems;
+        tableMutatedSinceParse = false;
+        refresh();
+        return items;
     };
 
     const refresh = (refreshOptions = {}) => {
         items = ensureOrderedPlaylistItems(items);
-        syncTextArea({ forceSync: !!refreshOptions.forceSync });
         renderPlaylistSourcePreview(serializePlaylistItems(items), preview);
         renderPlaylistDnDList(dnd, items, (newOrder) => {
             items = ensureOrderedPlaylistItems(newOrder || []);
+            tableMutatedSinceParse = true;
             refresh({ forceSync: true });
         }, {
             onRemove: (removeIndex) => {
                 items.splice(removeIndex, 1);
+                tableMutatedSinceParse = true;
                 refresh({ forceSync: true });
             },
             onRename: (renameIndex, nextTitle) => {
                 if (!items[renameIndex]) return;
                 items[renameIndex].title = String(nextTitle || '').replace(/\s+/g, ' ').trim();
-                syncTextArea();
+                tableMutatedSinceParse = true;
                 renderPlaylistSourcePreview(serializePlaylistItems(items), preview);
             }
         });
@@ -15950,6 +15955,7 @@ function setupPlaylistSourceBuilder(options = {}) {
         const merged = mergePlaylistItems(items, [newItem]);
         const changed = merged.length !== items.length || merged.some((entry, idx) => entry?.title !== items[idx]?.title);
         items = merged;
+        tableMutatedSinceParse = true;
         refresh();
         return changed;
     };
@@ -15958,20 +15964,21 @@ function setupPlaylistSourceBuilder(options = {}) {
     on(textarea, 'input', () => {
         clearTimeout(parseTimer);
         parseTimer = setTimeout(() => {
-            items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
-            refresh({ forceSync: false });
+            parseCurrentSources(textarea.value || '');
         }, 220);
     });
     on(textarea, 'blur', () => {
-        items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
-        refresh({ forceSync: true });
+        parseCurrentSources(textarea.value || '');
     });
     on(textarea, 'paste', () => {
         clearTimeout(parseTimer);
         parseTimer = setTimeout(() => {
-            items = ensureOrderedPlaylistItems(parsePlaylistItemsInput(textarea.value || ''));
-            refresh({ forceSync: false });
+            parseCurrentSources(textarea.value || '');
         }, 90);
+    });
+    on(applyBtn, 'click', () => {
+        parseCurrentSources(textarea.value || '');
+        setPlaylistImportStatus(importStatus, `Parsed ${items.length} source${items.length === 1 ? '' : 's'} into the table.`, 'success');
     });
 
     const handleImport = async () => {
@@ -16054,23 +16061,32 @@ function setupPlaylistSourceBuilder(options = {}) {
 
     on(clearBtn, 'click', () => {
         items = [];
-        refresh({ forceSync: true });
+        tableMutatedSinceParse = true;
+        refresh();
         setPlaylistImportStatus(importStatus, 'Cleared all playlist sources.', 'warning');
     });
 
-    refresh({ forceSync: true });
+    refresh();
 
     return {
         getItems() {
             return ensureOrderedPlaylistItems(items.slice());
         },
+        parseCurrentSources(sourceText = textarea.value || '') {
+            return parseCurrentSources(sourceText);
+        },
+        hasTableChangesSinceParse() {
+            return tableMutatedSinceParse;
+        },
         setItems(nextItems = []) {
             items = ensureOrderedPlaylistItems(nextItems);
-            refresh({ forceSync: true });
+            tableMutatedSinceParse = true;
+            refresh();
         },
         clear() {
             items = [];
-            refresh({ forceSync: true });
+            tableMutatedSinceParse = true;
+            refresh();
         },
         destroy() {
             clearTimeout(parseTimer);
@@ -16098,6 +16114,7 @@ function initializeAddPlaylistBuilder() {
         addTitleId: 'playlist-manual-title',
         addBtnId: 'playlist-add-source-btn',
         clearBtnId: 'playlist-clear-sources-btn',
+        applyBtnId: 'playlist-apply-sources-btn',
         titleInputId: 'playlist-title'
     });
 }
@@ -16573,9 +16590,13 @@ async function handleAddPlaylist() {
     const builder = window.__addPlaylistSourceBuilder;
     
     const title = titleInput.value.trim();
-    const items = builder && typeof builder.getItems === 'function'
+    const rawTextItems = ensureOrderedPlaylistItems(parsePlaylistItemsInput(urlInput.value.trim()));
+    const builderItems = builder && typeof builder.getItems === 'function'
         ? ensureOrderedPlaylistItems(builder.getItems())
-        : parsePlaylistItemsInput(urlInput.value.trim());
+        : [];
+    const items = builder && typeof builder.hasTableChangesSinceParse === 'function' && builder.hasTableChangesSinceParse()
+        ? builderItems
+        : (rawTextItems.length ? rawTextItems : builderItems);
     const url = serializePlaylistItems(items);
     if (urlInput) urlInput.value = url;
 
@@ -16653,7 +16674,7 @@ async function editPlaylist(id, currentTitle) {
         const curHasAds = !!data.hasAds;
         const curAccessTier = getPlaylistAccessTier({ id, ...data, items: curItems });
         modal.innerHTML = `
-        <div class="video-admin-modal-card bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-5xl p-6 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
+        <div class="video-admin-modal-card bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-6xl p-5 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
             <div class="mb-3 flex items-center gap-2">
                 <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
                 <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate admin videos</span>
@@ -16665,8 +16686,8 @@ async function editPlaylist(id, currentTitle) {
                 </div>
                 <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Admin editor</span>
             </div>
-            <div class="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)]">
-                <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4">
+            <div class="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
+                <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Title</label>
                     <input id="edit-playlist-title" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHTML(curTitle)}" />
                     <label class="block text-sm font-semibold text-slate-700 mb-1 mt-2">Subject</label>
@@ -16689,9 +16710,10 @@ async function editPlaylist(id, currentTitle) {
                     <label class="block text-sm font-semibold text-slate-700 mb-1 mt-2">Admin Notes</label>
                     <textarea id="edit-playlist-notes" rows="4" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Notes about this playlist">${escapeHTML(curNotes)}</textarea>
                 </section>
-                <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4">
+                <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Playlist Sources</label>
-                    <textarea id="edit-playlist-url" rows="5" spellcheck="false" autocapitalize="off" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/80 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="One source per line. Optional title format: title | url">${escapeHTML(curItemsText)}</textarea>
+                    <textarea id="edit-playlist-url" rows="5" spellcheck="false" autocapitalize="off" class="w-full px-3 py-2 rounded-lg border border-gray-300/60 bg-white/80 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Paste one source per line. Example: Title | https://youtu.be/...">${escapeHTML(curItemsText)}</textarea>
+                    <p class="text-xs leading-5 text-slate-500">Paste a batch of lines, then click Parse Sources to rebuild the table. The text box stays as your paste buffer; the table is what gets saved.</p>
                     <div class="video-admin-builder-grid">
                         <div class="video-admin-builder-card">
                             <label for="edit-playlist-import-url" class="video-admin-field-label">Import YouTube Playlist</label>
@@ -16716,16 +16738,17 @@ async function editPlaylist(id, currentTitle) {
                             <i class="fas fa-table"></i>
                             <span>Playback Table</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
                             <span id="edit-playlist-builder-count" class="video-admin-counter-chip">0 item(s)</span>
+                            <button id="edit-playlist-apply-sources-btn" type="button" class="video-admin-action-btn video-admin-action-btn-alt">Parse Sources</button>
                             <button id="edit-playlist-clear-sources-btn" type="button" class="video-admin-clear-btn">Clear</button>
                         </div>
                     </div>
-                    <div id="edit-playlist-dnd" class="video-admin-dnd-list"></div>
+                    <div id="edit-playlist-dnd" class="video-admin-dnd-list max-h-[360px] overflow-y-auto"></div>
                     <div id="edit-playlist-preview" class="video-admin-preview-shell"></div>
                 </section>
             </div>
-            <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-200">
+            <div class="sticky bottom-0 flex flex-wrap justify-end gap-2 mt-5 pt-4 border-t border-slate-200 bg-white/95 backdrop-blur-sm">
                 <button id="edit-cancel" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Cancel</button>
                 <button id="edit-save" class="px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">Save Changes</button>
             </div>
@@ -16748,6 +16771,7 @@ async function editPlaylist(id, currentTitle) {
         addTitleId: 'edit-playlist-manual-title',
         addBtnId: 'edit-playlist-add-source-btn',
         clearBtnId: 'edit-playlist-clear-sources-btn',
+        applyBtnId: 'edit-playlist-apply-sources-btn',
         titleInputId: 'edit-playlist-title',
         initialItems: curItems
     });
@@ -16767,11 +16791,14 @@ async function editPlaylist(id, currentTitle) {
         const newNotes = document.getElementById('edit-playlist-notes').value.trim();
         const newCreatorRaw = document.getElementById('edit-playlist-creator').value.trim();
         if (!newTitle) return showToast('Title is required', 'error');
-        const parsedItems = editSourceBuilder && typeof editSourceBuilder.getItems === 'function'
+        const rawTextItems = ensureOrderedPlaylistItems(parsePlaylistItemsInput(urlInputEl?.value || ''));
+        const builderItems = editSourceBuilder && typeof editSourceBuilder.getItems === 'function'
             ? ensureOrderedPlaylistItems(editSourceBuilder.getItems())
-            : parsePlaylistItemsInput(urlInputEl?.value || '');
+            : [];
+        const parsedItems = editSourceBuilder && typeof editSourceBuilder.hasTableChangesSinceParse === 'function' && editSourceBuilder.hasTableChangesSinceParse()
+            ? builderItems
+            : (rawTextItems.length ? rawTextItems : builderItems);
         if (!parsedItems.length) return showToast('Please enter valid sources (YouTube/abyss URLs or iframe snippets).', 'error');
-        if (urlInputEl) urlInputEl.value = serializePlaylistItems(parsedItems);
         const newAccessTier = normalizePlaylistAccessTier(document.getElementById('edit-playlist-access-tier')?.value) || inferPlaylistAccessTier(parsedItems);
         const newHasAds = !!document.getElementById('edit-playlist-has-ads')?.checked;
 
