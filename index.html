@@ -1,13 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en-GB" itemscope itemtype="https://schema.org/EducationalOrganization">
 <head>
-        <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-        <script type="text/javascript">
-            aclib.runAutoTag({
-                zoneId: 'mfekecg8y5',
-            });
-        </script>
         <script src="https://iamcdn.net/players/replace-domain.js"></script>
         <script>
             (function () {
@@ -1047,6 +1040,14 @@
             </div>
         </div>
         <main id="page-content" class="flex-grow overflow-y-auto bg-transparent" role="main">
+            <!-- Banner Ad Container - Visually Separated -->
+            <div id="banner-ad-container" class="hidden mx-4 sm:mx-6 mt-4 mb-2 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50 shadow-lg px-5 py-4 relative overflow-hidden" aria-label="Advertisement">
+                <div class="absolute top-0 left-0 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-br-lg z-10">ADVERTISEMENT</div>
+                <div class="mt-6 ad-banner-slot min-h-[90px] flex items-center justify-center">
+                    <!-- Banner ad script will inject here -->
+                </div>
+            </div>
+            
             <div id="inline-upsell-banner" class="hidden mx-4 sm:mx-6 mt-4 mb-2 rounded-2xl border border-blue-200/60 bg-white/70 backdrop-blur-lg text-blue-900 shadow-md px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-start gap-3">
                     <div class="flex-shrink-0 mt-0.5"><i class="fas fa-bolt text-blue-600"></i></div>
@@ -4337,6 +4338,101 @@
         }
     })();
     </script>
+
+    <!-- Banner Ad Script - Only for non-Pro/non-Admin users -->
+    <script>
+    (function() {
+        // Check if user has Pro tier or Admin role
+        function shouldShowAds() {
+            if (typeof window.currentUser !== 'undefined' && window.currentUser) {
+                var user = window.currentUser;
+                var tier = String(user.tier || '').toLowerCase();
+                var role = String(user.role || '').toLowerCase();
+                // Pro users and Admins get no ads
+                if (tier === 'paid' || tier === 'pro' || role === 'admin') {
+                    return false;
+                }
+            }
+            // Show ads for free users and when no user is logged in
+            return true;
+        }
+
+        function loadBannerAd() {
+            if (!shouldShowAds()) {
+                return;
+            }
+
+            var adContainer = document.getElementById('banner-ad-container');
+            if (!adContainer) return;
+
+            // Show the ad container
+            adContainer.classList.remove('hidden');
+
+            // Load the banner ad script dynamically
+            var d = document;
+            var s = d.createElement('script');
+            s.settings = {};
+            s.src = "//untimely-hello.com/b.XMVGsOd/G/lz0/YgWCca/QeUmi9Iu/ZAUNl/kOPSTscgwcO/D/Ey1bM/TOMftiN-zqAa4vMFTlU/xqNDwq";
+            s.async = true;
+            s.referrerPolicy = 'no-referrer-when-downgrade';
+            
+            var adSlot = adContainer.querySelector('.ad-banner-slot');
+            if (adSlot) {
+                adSlot.appendChild(s);
+            }
+        }
+
+        // Try to load ad when user state is known
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadBannerAd);
+        } else {
+            loadBannerAd();
+        }
+
+        // Also listen for user authentication changes
+        document.addEventListener('gcsemate-current-user-changed', function() {
+            var adContainer = document.getElementById('banner-ad-container');
+            if (!adContainer) return;
+
+            if (!shouldShowAds()) {
+                adContainer.classList.add('hidden');
+            } else {
+                adContainer.classList.remove('hidden');
+            }
+        });
+    })();
+    </script>
+
+    <!-- Ad Notification Modal - Informs users about ads and upgrade option -->
+    <div id="ad-notification-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="ad-modal-title">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md mx-4 p-6 transform transition-all scale-100">
+            <div class="flex items-start gap-3 mb-4">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <i class="fas fa-bullhorn text-orange-600 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 id="ad-modal-title" class="text-xl font-bold text-gray-900">Supporting Free Education</h3>
+                </div>
+            </div>
+            <p class="text-gray-700 mb-4">
+                GCSEMate offers free revision resources supported by advertisements. You're seeing this ad because you're on the free tier.
+            </p>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p class="text-sm text-blue-800 font-semibold">
+                    <i class="fas fa-bolt text-blue-600 mr-1"></i>
+                    Upgrade to Pro for just £1/month to remove all ads and unlock premium features!
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('ad-notification-modal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
+                    Close
+                </button>
+                <button onclick="showPage('checkout-page'); document.getElementById('ad-notification-modal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
