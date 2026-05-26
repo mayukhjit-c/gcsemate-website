@@ -4134,7 +4134,7 @@
                                 experimentalAutoDetectLongPolling: !forceLongPolling,
                                 experimentalForceLongPolling: forceLongPolling,
                                 useFetchStreams: false
-                            });
+                            }, { merge: true });
                             window.__firestoreSettingsApplied = true;
                         }
                     } catch (e) {

@@ -18073,13 +18073,20 @@ function getDashboardStudentFirstName(user = currentUser) {
 }
 
 function buildDashboardExamNote(primaryExam, upcomingExams) {
+    const safeUpcomingExams = Array.isArray(upcomingExams) ? upcomingExams : [];
+    const examDate = primaryExam?.dateObj instanceof Date ? primaryExam.dateObj : new Date(primaryExam?.dateObj || primaryExam?.date || Date.now());
     const noteTargetDate = new Date();
     noteTargetDate.setHours(0, 0, 0, 0);
-    const todaysExams = upcomingExams.filter((exam) => isSameLocalDay(exam.dateObj, noteTargetDate));
+    const todaysExams = safeUpcomingExams.filter((exam) => isSameLocalDay(exam.dateObj, noteTargetDate));
     const studentName = getDashboardStudentFirstName();
     const isAfterThreePm = new Date().getHours() >= 15;
     const pluralToday = todaysExams.length > 1;
     const title = String(primaryExam?.title || 'your next exam').trim() || 'your next exam';
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const examTime = Number.isFinite(examDate?.getTime?.()) ? examDate.getTime() : now.getTime();
+    const daysAway = Math.max(0, Math.ceil((examTime - now.getTime()) / (1000 * 60 * 60 * 24)));
     
     // Motivational messages pool for variety
     const todayAfternoonMessages = [
@@ -18115,10 +18122,10 @@ function buildDashboardExamNote(primaryExam, upcomingExams) {
     ];
     
     const fewDaysMessages = [
-        `${studentName}, ${title} is only ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Keep the final revision tight and finish each session with purpose.`,
-        `${studentName}, you're in the final stretch! ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} until ${title}. Make every study session count.`,
-        `Almost there, ${studentName}! ${title} is ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} away. Stay focused and finish strong.`,
-        `${studentName}, the countdown is on: ${daysUntilExam} day${daysUntilExam === 1 ? '' : 's'} to ${title}. You're ready for this - keep pushing!`
+        `${studentName}, ${title} is only ${daysAway} day${daysAway === 1 ? '' : 's'} away. Keep the final revision tight and finish each session with purpose.`,
+        `${studentName}, you're in the final stretch! ${daysAway} day${daysAway === 1 ? '' : 's'} until ${title}. Make every study session count.`,
+        `Almost there, ${studentName}! ${title} is ${daysAway} day${daysAway === 1 ? '' : 's'} away. Stay focused and finish strong.`,
+        `${studentName}, the countdown is on: ${daysAway} day${daysAway === 1 ? '' : 's'} to ${title}. You're ready for this - keep pushing!`
     ];
     
     const runwayMessages = [
@@ -18143,16 +18150,12 @@ function buildDashboardExamNote(primaryExam, upcomingExams) {
         return todayMorningMessagesSingle[Math.floor(Math.random() * todayMorningMessagesSingle.length)];
     }
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const daysUntilExam = Math.max(0, Math.ceil((primaryExam.dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-
-    if (daysUntilExam === 1) {
-        return tomorrowMessages[Math.floor(Math.random() * tomorrowMessages.length)];
+    if (daysAway === 1) {
+            return tomorrowMessages[Math.floor(Math.random() * tomorrowMessages.length)];
     }
 
-    if (daysUntilExam <= 3) {
-        return fewDaysMessages[Math.floor(Math.random() * fewDaysMessages.length)];
+    if (daysAway <= 3) {
+            return fewDaysMessages[Math.floor(Math.random() * fewDaysMessages.length)];
     }
 
     return runwayMessages[Math.floor(Math.random() * runwayMessages.length)];
