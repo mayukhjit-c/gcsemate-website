@@ -15564,7 +15564,7 @@ function parsePlaylistSourceInput(rawValue) {
     } catch (_) {
         return null;
     }
-    const isAbyssHost = host === 'short.icu' || host.endsWith('.short.icu') || host === 'abyss.to' || host.endsWith('.abyss.to');
+    const isAbyssHost = host === 'abyssplayer.com' || host.endsWith('.abyssplayer.com') || host === 'abyss.to' || host.endsWith('.abyss.to');
     if (isAbyssHost) {
         return {
             type: 'external_embed',
@@ -15872,7 +15872,7 @@ function setupPlaylistSourceBuilder(options = {}) {
 
         const parsed = parsePlaylistSourceInput(rawSource);
         if (!parsed) {
-            setPlaylistImportStatus(importStatus, 'Source not recognized. Use YouTube, abyss/short.icu, or iframe src.', 'error');
+            setPlaylistImportStatus(importStatus, 'Source not recognized. Use YouTube, abyssplayer.com/abyss.to, or iframe src.', 'error');
             return;
         }
 
@@ -16109,7 +16109,7 @@ function renderPlaylistSourcePreview(rawValue, previewEl) {
     previewEl.innerHTML = '';
     const parsedItems = parsePlaylistItemsInput(rawValue);
     if (!parsedItems.length) {
-        previewEl.innerHTML = `<div class="text-sm text-yellow-600">Enter one or more sources: YouTube video/playlist URLs, abyss.to/short.icu links, or iframe snippets.</div>`;
+        previewEl.innerHTML = `<div class="text-sm text-yellow-600">Enter one or more sources: YouTube video/playlist URLs, abyssplayer.com/abyss.to links, or iframe snippets.</div>`;
         return;
     }
     const first = parsedItems[0];
@@ -16526,7 +16526,7 @@ async function editPlaylist(id, currentTitle) {
                             <label for="edit-playlist-manual-source" class="video-admin-field-label">Add Single Source</label>
                             <input id="edit-playlist-manual-title" type="text" placeholder="Optional display title" class="video-admin-input mb-2">
                             <div class="video-admin-inline-row">
-                                <input id="edit-playlist-manual-source" type="text" placeholder="YouTube, abyss/short.icu, or iframe" class="video-admin-input flex-1">
+                                <input id="edit-playlist-manual-source" type="text" placeholder="YouTube, abyssplayer.com/abyss.to, or iframe" class="video-admin-input flex-1">
                                 <button id="edit-playlist-add-source-btn" type="button" class="video-admin-action-btn video-admin-action-btn-alt">Add</button>
                             </div>
                             <p class="text-xs text-slate-500 mt-2">The playback table auto-builds from raw paste and each row title can be renamed inline.</p>
