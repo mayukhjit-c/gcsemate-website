@@ -15644,7 +15644,7 @@ function cleanPlaylistItemTitle(title) {
 function splitPlaylistEntry(rawValue) {
     const raw = String(rawValue || '').trim();
     if (!raw) return { title: '', sourceText: '' };
-    const pipeIndex = raw.indexOf('|');
+    const pipeIndex = raw.lastIndexOf('|');
     if (pipeIndex === -1) return { title: '', sourceText: raw };
 
     const left = raw.slice(0, pipeIndex).trim();
