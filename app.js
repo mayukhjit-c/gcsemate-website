@@ -15961,21 +15961,6 @@ function setupPlaylistSourceBuilder(options = {}) {
     };
 
     let parseTimer;
-    on(textarea, 'input', () => {
-        clearTimeout(parseTimer);
-        parseTimer = setTimeout(() => {
-            parseCurrentSources(textarea.value || '');
-        }, 220);
-    });
-    on(textarea, 'blur', () => {
-        parseCurrentSources(textarea.value || '');
-    });
-    on(textarea, 'paste', () => {
-        clearTimeout(parseTimer);
-        parseTimer = setTimeout(() => {
-            parseCurrentSources(textarea.value || '');
-        }, 90);
-    });
     on(applyBtn, 'click', () => {
         parseCurrentSources(textarea.value || '');
         setPlaylistImportStatus(importStatus, `Parsed ${items.length} source${items.length === 1 ? '' : 's'} into the table.`, 'success');
@@ -16598,7 +16583,6 @@ async function handleAddPlaylist() {
         ? builderItems
         : (rawTextItems.length ? rawTextItems : builderItems);
     const url = serializePlaylistItems(items);
-    if (urlInput) urlInput.value = url;
 
     if (!title || !items.length) {
         messageEl.textContent = 'Please fill in both title and video sources.';
