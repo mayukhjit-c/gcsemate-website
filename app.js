@@ -7159,6 +7159,7 @@ function setupRealtimeListeners() {
             snapshot.forEach(doc => {
                 playlists.push({ id: doc.id, ...doc.data() });
             });
+            backfillVideoPlaylists(playlists);
             renderVideosPage(playlists);
         }, async err => {
             logError(err, 'Video Playlists');
@@ -7171,6 +7172,7 @@ function setupRealtimeListeners() {
                     playlists.push({ id: doc.id, ...doc.data() });
                 });
                 window.__videoPlaylistsLoading = false;
+                backfillVideoPlaylists(playlists);
                 renderVideosPage(sortPlaylistsByNewest(playlists));
                 setVideosStatusMessage('Live updates for playlists are temporarily unavailable. Showing a fallback list.');
             } catch (fallbackErr) {
@@ -15570,6 +15572,66 @@ function getPlaylistAccessMeta(playlist) {
         accent: 'from-emerald-500/15 via-white to-sky-400/10',
         badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     };
+}
+
+function buildPlaylistBackfillUpdate(playlist = {}) {
+    const items = normalizePlaylistItems(playlist);
+    const inferredTier = inferPlaylistAccessTier(items);
+    const currentTier = normalizePlaylistAccessTier(playlist.accessTier || playlist.status || playlist.tier);
+    const updateData = {};
+
+    if (!currentTier || currentTier !== inferredTier) {
+        updateData.accessTier = inferredTier;
+    }
+
+    const normalizedItems = items.map((item, idx) => ({
+        ...item,
+        sourceUrl: normalizeAbyssSourceUrl(item?.sourceUrl || ''),
+        embedUrl: normalizeAbyssSourceUrl(item?.embedUrl || ''),
+        watchUrl: normalizeAbyssSourceUrl(item?.watchUrl || ''),
+        order: typeof item?.order === 'number' ? item.order : idx,
+        provider: item?.provider || getPlaylistItemProvider(item)
+    }));
+
+    const serializedItems = JSON.stringify(normalizedItems);
+    const currentItems = JSON.stringify(Array.isArray(playlist.items) ? playlist.items : []);
+    if (serializedItems !== currentItems) {
+        updateData.items = normalizedItems;
+    }
+
+    const normalizedTopLevelUrl = normalizeAbyssSourceUrl(playlist.url || '');
+    if (normalizedTopLevelUrl && normalizedTopLevelUrl !== String(playlist.url || '').trim()) {
+        updateData.url = normalizedTopLevelUrl;
+    }
+
+    return Object.keys(updateData).length ? updateData : null;
+}
+
+async function backfillVideoPlaylists(playlists = []) {
+    if (!Array.isArray(playlists) || !playlists.length) return;
+    if (window.__videoPlaylistsBackfillInFlight) return;
+    window.__videoPlaylistsBackfillInFlight = true;
+
+    try {
+        const docsToUpdate = playlists
+            .map((playlist) => ({ playlist, updateData: buildPlaylistBackfillUpdate(playlist) }))
+            .filter(entry => entry.updateData);
+
+        if (!docsToUpdate.length) return;
+
+        const batch = db.batch();
+        docsToUpdate.forEach(({ playlist, updateData }) => {
+            batch.update(db.collection('videoPlaylists').doc(playlist.id), {
+                ...updateData,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+        await batch.commit();
+    } catch (error) {
+        console.warn('Playlist backfill skipped', error);
+    } finally {
+        window.__videoPlaylistsBackfillInFlight = false;
+    }
 }
 
 function cleanPlaylistItemTitle(title) {
