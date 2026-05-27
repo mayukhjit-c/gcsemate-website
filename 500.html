@@ -7,7 +7,7 @@
         var target = event && event.target;
         var src = String((target && (target.src || target.href)) || '');
         var message = String((event && event.message) || (event && event.reason && event.reason.message) || '');
-        return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|pagead2|googlesyndication|beacon\.min\.js|adsbygoogle/i.test(src);
+        return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|beacon\.min\.js/i.test(src);
       }
 
       window.addEventListener('error', function (event) {

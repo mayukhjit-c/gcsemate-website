@@ -12,7 +12,6 @@ const filesToCopy = [
     'index.html',
     '404.html',
     '500.html',
-    'ads.txt',
     'robots.txt',
     'sitemap.xml',
     'humans.txt',

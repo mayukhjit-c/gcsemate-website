@@ -8,7 +8,7 @@
                     var target = event && event.target;
                     var src = String((target && (target.src || target.href)) || '');
                     var message = String((event && event.message) || (event && event.reason && event.reason.message) || '');
-                    return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|pagead2|googlesyndication|beacon\.min\.js|adsbygoogle/i.test(src);
+                    return /ERR_BLOCKED_BY_CLIENT|blocked by client|Failed to fetch/i.test(message + ' ' + src) || /googletagmanager|beacon\.min\.js/i.test(src);
                 }
 
                 window.addEventListener('error', function (event) {
@@ -53,31 +53,6 @@
                 }
             })();
         </script>
-<meta name="google-adsense-account" content="ca-pub-8588267906235843">
-<script>
-    (function () {
-        var scriptLoaded = false;
-
-        function loadAdsScript() {
-            if (scriptLoaded) return;
-            scriptLoaded = true;
-
-            var script = document.createElement('script');
-            script.async = true;
-            script.crossOrigin = 'anonymous';
-            script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8588267906235843';
-            document.head.appendChild(script);
-        }
-
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadAdsScript, { timeout: 5000 });
-        } else {
-            window.addEventListener('load', function () {
-                setTimeout(loadAdsScript, 1000);
-            }, { once: true });
-        }
-    })();
-</script>
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer-when-downgrade" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
@@ -308,7 +283,7 @@
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://apis.google.com" crossorigin>
-    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- External CSS -->
@@ -1041,17 +1016,6 @@
             </div>
         </div>
         <main id="page-content" class="flex-grow overflow-y-auto bg-transparent" role="main">
-            <!-- Banner Ad Container - Visually Separated & Compact -->
-            <div id="banner-ad-container" class="hidden mx-4 sm:mx-6 mt-4 mb-2 rounded-xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50 shadow-lg px-3 sm:px-4 py-2 sm:py-3 relative overflow-hidden max-w-fit mx-auto" aria-label="Advertisement">
-                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-3 py-0.5 rounded-b-lg z-10 whitespace-nowrap">ADVERTISEMENT</div>
-                <div class="mt-5 ad-banner-slot min-h-[90px] flex items-center justify-center">
-                    <!-- Banner ad script will inject here -->
-                </div>
-                <div class="text-[9px] sm:text-[10px] text-amber-800 mt-2 text-center leading-tight opacity-80">
-                    GCSEMate does not endorse or support any information in the ads, and accepts no responsibility for any misinformation spread from these ads. It is up to the user's discretion to interact with them.
-                </div>
-            </div>
-            
             <div id="inline-upsell-banner" class="hidden mx-4 sm:mx-6 mt-4 mb-2 rounded-2xl border border-blue-200/60 bg-white/70 backdrop-blur-lg text-blue-900 shadow-md px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-start gap-3">
                     <div class="flex-shrink-0 mt-0.5"><i class="fas fa-bolt text-blue-600"></i></div>
@@ -1175,7 +1139,7 @@
                              <input id="playlist-creator" type="text" placeholder="Creator name (optional, auto-detected for YouTube)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Leave blank to auto-detect from YouTube or default to Mayukhjit Chakraborty for abyss">
                              <label class="flex items-center text-sm text-amber-900 select-none rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                                  <input id="playlist-has-ads" type="checkbox" class="gcse-checkbox">
-                                 <span class="ml-2">Mark this playlist as ad-heavy/popup-prone</span>
+                                 <span class="ml-2">Mark this playlist as an external host that may open new tabs</span>
                              </label>
                              <textarea id="playlist-notes" rows="3" placeholder="Admin notes about this playlist (optional)" class="w-full p-3 rounded-lg border-gray-300/50 bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-tooltip="Internal notes shown in playlist details"></textarea>
                             <div id="add-playlist-preview" class="mt-3 video-admin-preview-shell"></div>
@@ -2924,7 +2888,9 @@
                                         <img id="admin-account-profile-picture" src="" alt="Admin avatar" class="w-20 h-20 rounded-full border-2 border-gray-300 shadow-sm">
                                         <span id="admin-account-profile-picture-emoji" class="avatar-emoji-pill avatar-emoji-account hidden" aria-hidden="true"></span>
                                     </div>
-                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'admin-settings-avatar', preferAdmin: true })" class="w-full px-3 py-2 mb-3 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">Choose Avatar</button>
+                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'admin-settings-avatar', preferAdmin: true })" class="w-full px-3 py-2 mb-2 border border-indigo-600 text-indigo-600 text-sm font-semibold rounded-lg hover:bg-indigo-50 transition-colors">Choose Avatar</button>
+                                    <button type="button" onclick="showProfilePictureUploadModal()" class="w-full px-3 py-2 mb-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">Upload Picture</button>
+                                    <button type="button" onclick="removeProfilePicture()" class="w-full px-3 py-2 mb-3 border border-red-600 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors">Remove Picture</button>
                                     <div class="rounded-lg border border-gray-200 bg-white/80 p-3">
                                         <label for="admin-avatar-emoji" class="block text-sm font-semibold text-gray-700 mb-2">Avatar Emoji</label>
                                         <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -2976,8 +2942,14 @@
                                     </div>
                                 </div>
                                 <div class="flex-1">
-                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'user-settings-avatar' })" class="px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                                    <button type="button" onclick="openAvatarPickerFromProfile({ source: 'user-settings-avatar' })" class="px-3 py-2 border border-indigo-600 text-indigo-600 text-sm font-semibold rounded-lg hover:bg-indigo-50 transition-colors">
                                         Choose Avatar
+                                    </button>
+                                    <button type="button" onclick="showProfilePictureUploadModal()" class="ml-2 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                                        Upload Picture
+                                    </button>
+                                    <button type="button" onclick="removeProfilePicture()" class="ml-2 px-3 py-2 border border-red-600 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors">
+                                        Remove Picture
                                     </button>
                                     <p class="text-xs text-gray-500 mt-1">Your avatar icon appears in the header and leaderboard.</p>
                                 </div>
@@ -4432,101 +4404,7 @@
     });
     </script>
 
-    <!-- Banner Ad Script - Only for non-Pro/non-Admin users -->
-    <script>
-    (function() {
-        // Check if user has Pro tier or Admin role
-        function shouldShowAds() {
-            if (typeof window.currentUser !== 'undefined' && window.currentUser) {
-                var user = window.currentUser;
-                var tier = String(user.tier || '').toLowerCase();
-                var role = String(user.role || '').toLowerCase();
-                // Pro users and Admins get no ads
-                if (tier === 'paid' || tier === 'pro' || role === 'admin') {
-                    return false;
-                }
-            }
-            // Show ads for free users and when no user is logged in
-            return true;
-        }
-
-        function loadBannerAd() {
-            if (!shouldShowAds()) {
-                return;
-            }
-
-            var adContainer = document.getElementById('banner-ad-container');
-            if (!adContainer) return;
-
-            // Show the ad container
-            adContainer.classList.remove('hidden');
-
-            // Load the banner ad script dynamically
-            var d = document;
-            var s = d.createElement('script');
-            s.settings = {};
-            s.src = "//untimely-hello.com/b.XMVGsOd/G/lz0/YgWCca/QeUmi9Iu/ZAUNl/kOPSTscgwcO/D/Ey1bM/TOMftiN-zqAa4vMFTlU/xqNDwq";
-            s.async = true;
-            s.referrerPolicy = 'no-referrer-when-downgrade';
-            
-            var adSlot = adContainer.querySelector('.ad-banner-slot');
-            if (adSlot) {
-                adSlot.appendChild(s);
-            }
-        }
-
-        // Try to load ad when user state is known
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadBannerAd);
-        } else {
-            loadBannerAd();
-        }
-
-        // Also listen for user authentication changes
-        document.addEventListener('gcsemate-current-user-changed', function() {
-            var adContainer = document.getElementById('banner-ad-container');
-            if (!adContainer) return;
-
-            if (!shouldShowAds()) {
-                adContainer.classList.add('hidden');
-            } else {
-                adContainer.classList.remove('hidden');
-            }
-        });
-    })();
-    </script>
-
-    <!-- Ad Notification Modal - Informs users about ads and upgrade option -->
-    <div id="ad-notification-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="ad-modal-title">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md mx-4 p-6 transform transition-all scale-100">
-            <div class="flex items-start gap-3 mb-4">
-                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                    <i class="fas fa-bullhorn text-orange-600 text-lg"></i>
-                </div>
-                <div class="flex-1">
-                    <h3 id="ad-modal-title" class="text-xl font-bold text-gray-900">Supporting Free Education</h3>
-                </div>
-            </div>
-            <p class="text-gray-700 mb-4">
-                GCSEMate offers free revision resources supported by advertisements. You're seeing this ad because you're on the free tier.
-            </p>
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p class="text-sm text-blue-800 font-semibold">
-                    <i class="fas fa-bolt text-blue-600 mr-1"></i>
-                    Upgrade to Pro for just £1/month to remove all ads and unlock premium features!
-                </p>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('ad-notification-modal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
-                    Close
-                </button>
-                <button onclick="showPage('checkout-page'); document.getElementById('ad-notification-modal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
-                    Upgrade to Pro
-                </button>
-            </div>
-        </div>
-    </div>
-
+    <!-- External Link Popup Modal - Forces user to open link before closing -->
     <!-- External Link Popup Modal - Forces user to open link before closing -->
     <div id="external-link-popup-modal" class="hidden fixed inset-0 z-[10001] flex items-center justify-center bg-black/70 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="popup-modal-title" aria-describedby="popup-modal-description">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg mx-4 p-8 transform transition-all scale-100 border-4 border-yellow-400">
