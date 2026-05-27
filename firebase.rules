@@ -272,18 +272,20 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create, update: if isAdmin() &&
         // Only allow a controlled set of fields so clients cannot inject arbitrary data.
-        request.resource.data.keys().hasOnly(['title','playlistId','playlistType','embedSource','subject','tags','url','items','createdAt','createdBy','updatedAt','description','creatorName','hasAds']) &&
+        request.resource.data.keys().hasOnly(['title','playlistId','playlistType','embedSource','subject','category','tags','url','items','createdAt','createdBy','updatedAt','description','creatorName','hasAds','accessTier']) &&
         // Basic type checks
         request.resource.data.title is string &&
         (!request.resource.data.keys().hasAny(['playlistId']) || request.resource.data.playlistId == null || request.resource.data.playlistId is string) &&
         (!request.resource.data.keys().hasAny(['playlistType']) || request.resource.data.playlistType in ['youtube_playlist','youtube_video','external_embed']) &&
         (!request.resource.data.keys().hasAny(['embedSource']) || request.resource.data.embedSource in ['youtube','abyss']) &&
         (!request.resource.data.keys().hasAny(['subject']) || request.resource.data.subject == null || request.resource.data.subject is string) &&
+        (!request.resource.data.keys().hasAny(['category']) || request.resource.data.category == null || request.resource.data.category is string) &&
         (!request.resource.data.keys().hasAny(['url']) || request.resource.data.url == null || request.resource.data.url is string) &&
-        (!request.resource.data.keys().hasAny(['items']) || (request.resource.data.items is list && request.resource.data.items.size() <= 400)) &&
+        (!request.resource.data.keys().hasAny(['items']) || (request.resource.data.items is list && request.resource.data.items.size() <= 600)) &&
         (!request.resource.data.keys().hasAny(['description']) || request.resource.data.description == null || request.resource.data.description is string) &&
         (!request.resource.data.keys().hasAny(['creatorName']) || request.resource.data.creatorName == null || request.resource.data.creatorName is string) &&
         (!request.resource.data.keys().hasAny(['hasAds']) || request.resource.data.hasAds is bool) &&
+        (!request.resource.data.keys().hasAny(['accessTier']) || request.resource.data.accessTier == null || request.resource.data.accessTier is string) &&
         // tags must be a list (may be empty); limit size for safety
         (request.resource.data.tags is list) &&
         request.resource.data.tags.size() <= 50;

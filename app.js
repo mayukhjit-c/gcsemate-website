@@ -8967,8 +8967,8 @@ async function viewUserTracking(userId) {
 
 // Profile Picture Upload Functions
 async function uploadProfilePicture(file) {
-    showToast('Profile photo uploads have been removed. Use avatar picker instead.', 'info');
-    openAvatarPickerFromProfile({ source: 'legacy-profile-upload' });
+    if (!file) return;
+    openProfilePictureCropModal(file);
 }
 
 function openAvatarPickerFromProfile({ source = 'profile', preferAdmin = false } = {}) {
@@ -9050,10 +9050,6 @@ let profileCropState = {
 };
 
 window.openProfilePictureCropModal = function(file) {
-    showToast('Profile photo uploads have been removed. Use avatar picker instead.', 'info');
-    openAvatarPickerFromProfile({ source: 'legacy-crop-modal' });
-    return;
-
     profileCropState.originalFile = file;
     const modal = document.getElementById('profile-picture-crop-modal');
     const canvas = document.getElementById('profile-crop-canvas');
@@ -9323,14 +9319,15 @@ window.applyProfilePictureCrop = async function() {
         try {
             const formData = new FormData();
             const fileForUpload = compressedFile instanceof Blob ? compressedFile : croppedFile;
-            formData.append('file', fileForUpload);
-            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-            formData.append('tags', `profile,user-${currentUser.uid}`);
+            formData.append('key', '6d207e02198a847aa98d0a2a901485a5');
+            formData.append('action', 'upload');
+            formData.append('source', fileForUpload);
+            formData.append('format', 'json');
             
-            const response = await fetch(
-                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-                { method: 'POST', body: formData }
-            );
+            const response = await fetch('https://freeimage.host/api/1/upload', {
+                method: 'POST',
+                body: formData
+            });
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -9338,7 +9335,10 @@ window.applyProfilePictureCrop = async function() {
             }
             
             const data = await response.json();
-            const downloadURL = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:low,w_400,h_400,c_fill/');
+            if (data.status_code !== 200) {
+                throw new Error(data.error?.message || `Upload failed with status_code ${data.status_code}`);
+            }
+            const downloadURL = data.image.url;
             
             await db.collection('users').doc(currentUser.uid).update({
                 profilePictureURL: downloadURL,
@@ -9454,9 +9454,6 @@ function bindAvatarUploadClickTargets() {
 }
 
 function showProfilePictureUploadModal() {
-    openAvatarPickerFromProfile({ source: 'legacy-profile-upload-modal' });
-    return;
-
     if (!currentUser) {
         showToast('Please log in to upload a profile picture', 'error');
         return;
@@ -9532,9 +9529,6 @@ function showProfilePictureUploadModal() {
 }
 
 async function handleProfilePictureUpload() {
-    openAvatarPickerFromProfile({ source: 'legacy-handle-profile-upload' });
-    return;
-
     const fileInput = document.getElementById('profile-picture-input');
     const file = fileInput.files[0];
     
@@ -15351,7 +15345,7 @@ function setupPlaylistFilters() {
 function createPlaylistCard(playlist) {
     const card = document.createElement('div');
     const playlistStarred = isPlaylistStarred(playlist);
-    card.className = `video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(59,130,246,0.28)]${playlistStarred ? ' video-playlist-card-starred' : ''}`;
+    card.className = `video-playlist-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] transition-[transform,box-shadow,border-color] duration-200 ease-out motion-reduce:transition-none transform-gpu${playlistStarred ? ' video-playlist-card-starred' : ''}`;
     card.addEventListener('click', () => handlePlaylistClick(playlist));
     const sourceMeta = getPlaylistSourceMeta(playlist);
     const accessMeta = getPlaylistAccessMeta(playlist);
@@ -16658,11 +16652,12 @@ async function editPlaylist(id, currentTitle) {
         const curHasAds = !!data.hasAds;
         const curAccessTier = getPlaylistAccessTier({ id, ...data, items: curItems });
         modal.innerHTML = `
-        <div class="video-admin-modal-card bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-6xl p-5 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
+        <div class="video-admin-modal-card relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-6xl p-5 md:p-7 fade-in overflow-hidden max-h-[92vh] overflow-y-auto">
             <div class="mb-3 flex items-center gap-2">
                 <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
                 <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate admin videos</span>
             </div>
+            <button id="edit-playlist-close" type="button" class="video-modal-close-btn absolute right-4 top-4" aria-label="Close edit playlist modal"><i class="fas fa-times"></i></button>
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="text-2xl font-black tracking-tight text-slate-900">Edit Playlist</h3>
@@ -16766,6 +16761,10 @@ async function editPlaylist(id, currentTitle) {
         modal.style.display = 'none';
     };
 
+    document.getElementById('edit-playlist-close')?.addEventListener('click', () => {
+        document.getElementById('edit-cancel')?.click();
+    });
+
     document.getElementById('edit-save').onclick = async () => {
         const saveBtn = document.getElementById('edit-save');
         const newTitle = document.getElementById('edit-playlist-title').value.trim();
@@ -16837,11 +16836,12 @@ function deletePlaylist(id, playlistTitle = '') {
 
     const safeTitle = escapeHTML(String(playlistTitle || '').trim() || 'this playlist');
     modal.innerHTML = `
-        <div class="video-admin-delete-modal bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-lg p-6 fade-in">
+        <div class="video-admin-delete-modal relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-lg p-6 fade-in">
             <div class="mb-3 flex items-center gap-2">
                 <img src="gcsemate%20new.png" alt="GCSEMate" class="h-7 w-auto">
                 <span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">GCSEMate admin videos</span>
             </div>
+            <button id="delete-playlist-close" type="button" class="video-modal-close-btn absolute right-4 top-4" aria-label="Close delete playlist modal"><i class="fas fa-times"></i></button>
             <div class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-red-100 text-red-600">
                 <i class="fas fa-trash"></i>
             </div>
@@ -16861,6 +16861,8 @@ function deletePlaylist(id, playlistTitle = '') {
 
     const cancelBtn = document.getElementById('delete-playlist-cancel');
     const confirmBtn = document.getElementById('delete-playlist-confirm');
+    const closeBtn = document.getElementById('delete-playlist-close');
+    if (closeBtn) closeBtn.onclick = closeModal;
     if (cancelBtn) cancelBtn.onclick = closeModal;
 
     if (confirmBtn) {
@@ -16956,11 +16958,12 @@ function showVideoPreplayWarningModal(item, itemIndex, totalItems) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         modal.innerHTML = `
-            <div class="video-admin-delete-modal bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-xl p-6 fade-in">
+            <div class="video-admin-delete-modal relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-xl p-6 fade-in">
                 <div class="flex items-center gap-3 mb-3">
                     <img src="gcsemate%20new.png" alt="GCSEMate" class="h-8 w-auto">
                     <span class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Playback warning</span>
                 </div>
+                <button id="video-warning-close" type="button" class="video-modal-close-btn absolute right-4 top-4" aria-label="Close playback warning"><i class="fas fa-times"></i></button>
                 <h3 class="text-xl font-black text-slate-900">Before playing this video</h3>
                 <p class="mt-2 text-sm text-slate-700">Video <span class="font-semibold">${label}</span> (${indexText}) is hosted by <span class="font-semibold">${isAbyss ? 'an external ad-supported source' : 'a third-party embed provider'}</span>.</p>
                 <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -16993,6 +16996,7 @@ function showVideoPreplayWarningModal(item, itemIndex, totalItems) {
 
         modal.querySelector('#video-warning-cancel')?.addEventListener('click', () => finish(false));
         modal.querySelector('#video-warning-continue')?.addEventListener('click', () => finish(true));
+        modal.querySelector('#video-warning-close')?.addEventListener('click', () => finish(false));
         modal.addEventListener('click', onBackdropClick);
     });
 }
@@ -17482,7 +17486,7 @@ function openPlaylistViewerModal(playlist, items) {
                         ${isAdminUser() ? `<button id="playlist-viewer-delete" type="button" class="video-player-nav-btn"><i class="fas fa-trash"></i><span>Delete</span></button>` : ''}
                         <button id="playlist-viewer-prev" type="button" class="video-player-nav-btn"><i class="fas fa-chevron-left"></i><span>Prev</span></button>
                         <button id="playlist-viewer-next" type="button" class="video-player-nav-btn"><span>Next</span><i class="fas fa-chevron-right"></i></button>
-                        <button id="playlist-viewer-close" type="button" class="video-player-close-btn">Close</button>
+                        <button id="playlist-viewer-close" type="button" class="video-player-close-btn" aria-label="Close playlist viewer"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
                 <div class="video-player-layout">

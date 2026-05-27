@@ -925,13 +925,12 @@ const VideoPlaylistEditor = {
         modal.className =
             'fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm';
         modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <button type="button" onclick="document.getElementById('edit-playlist-modal').remove()" aria-label="Close edit playlist modal" class="video-modal-close-btn absolute right-4 top-4">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4 pr-12">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Edit Playlist</h3>
-                    <button onclick="document.getElementById('edit-playlist-modal').remove()"
-                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
                 <form id="edit-playlist-form" class="p-6 space-y-4" onsubmit="event.preventDefault(); VideoPlaylistEditor.savePlaylist('${playlist.id}');">
                     <div>
