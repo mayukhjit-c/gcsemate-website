@@ -1962,44 +1962,6 @@ window.copyAllErrorsToClipboard = function() {
 };
 
 // Enhanced performance utilities
-// Enhanced debounce with immediate option
-function debounce(func, wait, immediate = false) {
-    return function executedFunction(...args) {
-        const later = () => {
-            const timeout = debounceTimers.get(func);
-            clearTimeout(timeout);
-            if (!immediate) func(...args);
-        };
-        const callNow = immediate && !debounceTimers.has(func);
-        clearTimeout(debounceTimers.get(func));
-        debounceTimers.set(func, setTimeout(later, wait));
-        if (callNow) func(...args);
-    };
-}
-
-// Enhanced throttle with leading and trailing calls
-function throttle(func, limit) {
-    let inThrottle;
-    let lastFunc;
-    let lastRan;
-    
-    return function executedFunction(...args) {
-        if (!inThrottle) {
-            func(...args);
-            lastRan = Date.now();
-            inThrottle = true;
-        } else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(() => {
-                if ((Date.now() - lastRan) >= limit) {
-                    func(...args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
-        }
-    };
-}
-
 // Request Animation Frame manager for smooth animations
 class RAFManager {
     constructor() {
@@ -12834,75 +12796,6 @@ const toastLoopGuard = {
     lastErrorAt: 0,
     repeatedErrorCount: 0
 };
-function showToast(message, type = 'info', duration = 4000) {
-    if (type === 'error') {
-        const now = Date.now();
-        const normalizedMessage = String(message || '').trim();
-        const isSameError = normalizedMessage && normalizedMessage === toastLoopGuard.lastErrorMessage;
-        const isRapidRepeat = isSameError && (now - toastLoopGuard.lastErrorAt) < 1800;
-
-        if (isRapidRepeat) {
-            toastLoopGuard.repeatedErrorCount += 1;
-            if (toastLoopGuard.repeatedErrorCount >= 3) {
-                console.warn('[toast] Error toast suppressed to avoid loops:', normalizedMessage);
-                return;
-            }
-        } else {
-            toastLoopGuard.repeatedErrorCount = 0;
-        }
-
-        toastLoopGuard.lastErrorMessage = normalizedMessage;
-        toastLoopGuard.lastErrorAt = now;
-    }
-    if (toastLoopGuard.renderFailures >= toastLoopGuard.maxRenderFailures) {
-        return;
-    }
-
-    try {
-        const toastContainer = document.getElementById('toast-container') || createToastContainer();
-        
-        const toast = document.createElement('div');
-        const bgColor = {
-            'success': 'bg-green-600',
-            'error': 'bg-red-600',
-            'warning': 'bg-yellow-600',
-            'info': 'bg-blue-600'
-        }[type] || 'bg-blue-600';
-        
-        const icon = {
-            'success': '✓',
-            'error': '✕',
-            'warning': '⚠',
-            'info': 'ℹ'
-        }[type] || 'ℹ';
-        
-        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 mb-3 transform translate-x-full transition-all duration-300 ease-out gpu-accelerated`;
-        toast.innerHTML = `
-            <span class="text-lg font-bold">${icon}</span>
-            <span class="flex-1">${message}</span>
-            <button class="text-white hover:text-gray-200 ml-2" onclick="this.parentElement.remove()">×</button>
-        `;
-        
-        toastContainer.appendChild(toast);
-        
-        // Trigger slide-in animation
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 10);
-        
-        // Auto remove
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.classList.add('translate-x-full', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }
-        }, duration);
-    } catch (err) {
-        toastLoopGuard.renderFailures++;
-        console.warn('Toast rendering failed; suppressing further toast attempts.', err);
-    }
-}
-
 function createToastContainer() {
     const container = document.createElement('div');
     container.id = 'toast-container';
