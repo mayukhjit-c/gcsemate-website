@@ -1,42 +1,48 @@
-# Tailwind CSS Build Instructions
+# GCSEMate – Build Instructions
 
-## Quick Setup (Recommended)
+## One-time setup
 
-To build Tailwind CSS for production and remove the CDN warning:
-
-1. **Install Node.js** (if not already installed)
-   - Download from: https://nodejs.org/
-
-2. **Install dependencies:**
+1. Install Node.js 18+ (https://nodejs.org/)
+2. From the project root:
    ```bash
    npm install
    ```
+   This installs the new build tools: **esbuild** (JS/CSS minify) and
+   **html-minifier-terser** (HTML minify), alongside your existing deps.
 
-3. **Build Tailwind CSS:**
-   ```bash
-   npm run build:css
-   ```
-
-4. **Deploy** - The `tailwind.css` file will now contain all compiled utilities.
-
-## Development Mode
-
-To watch for changes and auto-rebuild:
+## Production build
 
 ```bash
-npm run watch:css
+npm run build
 ```
 
-## What This Does
+This runs two steps:
 
-- Scans `index.html` and `app.js` for Tailwind classes
-- Compiles only the utilities you actually use
-- Creates a minified `tailwind.css` file
-- Removes the production warning
+1. `build:css` – compiles Tailwind utilities into `tailwind.css` (purges unused
+   classes, removes the CDN console warning).
+2. `build:js` (`node build.js`) – produces an optimised **`dist/`** folder:
+   - Mirrors the entire project (images, `assets/`, `functions/`, subpages,
+     rules) so nothing is missed.
+   - Minifies every `.js` with esbuild and **drops `console.*` / `debugger`**
+     from the app bundle (banners in `security.js` and logging in `sw.js` are
+     preserved on purpose).
+   - Minifies every `.css` with esbuild.
+   - Minifies every `.html` (collapses whitespace, inlines/minifies inline CSS
+     & JS, strips comments).
+   - Appends a content-hash `?v=<hash>` to the local `app.js`, `styles.css`,
+     `tailwind.css`, and `security.js` references in your HTML so browsers fetch
+     fresh files immediately after each deploy — without breaking long caches.
+   - Bumps the service-worker cache name to the new build hash.
 
-## Current Status
+## Deploy
 
-The site currently uses a fallback to the Tailwind CDN if `tailwind.css` is not built or is empty. This ensures the site works immediately, but shows a console warning.
+Deploy the generated **`dist/`** folder (not the source root).
+The dev notes (`README.md`, `*_DOCUMENTATION.md`, `todo.md`, etc.) and tooling
+configs are intentionally excluded from `dist/`.
 
-After building, the warning will disappear and you'll have a production-ready, optimized CSS file.
+## Local development
 
+```bash
+npm run dev        # Vite dev server on http://localhost:3000
+npm run watch:css  # rebuild tailwind.css on change
+```

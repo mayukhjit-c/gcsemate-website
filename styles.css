@@ -89,8 +89,6 @@
             z-index: -30;
             filter: blur(26px);
             opacity: 0.55;
-            will-change: transform, opacity;
-            animation: ambientFloat 20s ease-in-out infinite alternate;
         }
 
         body::before {
@@ -107,13 +105,8 @@
             width: 28rem;
             height: 28rem;
             background: radial-gradient(circle, rgba(var(--accent-100), 0.9) 0%, rgba(var(--accent-50), 0.12) 60%, transparent 78%);
-            animation-delay: -8s;
         }
 
-        @keyframes ambientFloat {
-            0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.44; }
-            100% { transform: translate3d(3.5vw, -2vh, 0) scale(1.08); opacity: 0.64; }
-        }
 
         body.dark-theme #app-loading,
         body.dark-theme #mobile-menu,
@@ -353,7 +346,6 @@ scroll-behavior: inherit;
                 radial-gradient(circle at 50% 92%, rgba(96,165,250,0.22) 0%, transparent 55%),
                 linear-gradient(180deg, #eff6ff 0%, #dbeafe 38%, #eff6ff 100%);
             background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-            animation: landingGradientDrift 18s ease-in-out infinite alternate;
             overflow: hidden;
         }
 
@@ -363,14 +355,6 @@ scroll-behavior: inherit;
             background-size: auto;
         }
 
-        @keyframes landingGradientDrift {
-            0% {
-                background-position: 0% 0%, 100% 0%, 50% 0%;
-            }
-            100% {
-                background-position: 100% 40%, 0% 20%, 50% 100%;
-            }
-        }
 
         /* Landing spacing + responsiveness polish */
         #landing-page header { padding-top: 0.25rem; padding-bottom: 0.25rem; margin-bottom: 0; }
@@ -488,7 +472,6 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             border-radius: 9999px;
             filter: blur(54px);
             opacity: 0.22;
-            animation: splashOrbFloat 13s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate;
         }
 
         .app-loading-orb--one {
@@ -505,7 +488,6 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             right: -5rem;
             top: 20%;
             background: radial-gradient(circle, rgba(191, 219, 254, 0.9), transparent 70%);
-            animation-delay: -4s;
         }
 
         .app-loading-orb--three {
@@ -514,13 +496,8 @@ animation: dot-pulse 1.4s ease-in-out infinite both;
             left: calc(50% - 6rem);
             bottom: -6rem;
             background: radial-gradient(circle, rgba(37, 99, 235, 0.22), transparent 70%);
-            animation-delay: -8s;
         }
 
-        @keyframes splashOrbFloat {
-            0% { transform: translate3d(0, 0, 0) scale(1); }
-            100% { transform: translate3d(2vw, -2vh, 0) scale(1.08); }
-        }
 
         .app-loading-brandmark {
             position: relative;
@@ -11926,4 +11903,3 @@ will-change: transform;
             background: rgba(15, 23, 42, 0.45);
             touch-action: none;
         }
-

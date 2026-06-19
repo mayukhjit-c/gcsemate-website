@@ -1,22 +1,43 @@
 # Cloudflare Pages Headers
-# Remove strict MIME type checking to allow flexible content serving
 
 /*
   X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
 
+# Hashed/cache-busted assets (refs carry ?v=<hash>) can be cached hard.
 /*.js
   Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
 /*.css
   Content-Type: text/css; charset=utf-8
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
+# HTML must always revalidate so new deploys (and new ?v= hashes) are seen.
 /*.html
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+# The service worker must never be cached.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.png
+  Cache-Control: public, max-age=2592000
+
+/*.jpg
+  Cache-Control: public, max-age=2592000
+
+/*.svg
+  Cache-Control: public, max-age=2592000
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
 
 /fixes/*.js
   Content-Type: application/javascript; charset=utf-8
 
 /functions/api/*.js
   Content-Type: application/javascript; charset=utf-8
-
