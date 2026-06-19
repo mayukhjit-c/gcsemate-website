@@ -26239,7 +26239,8 @@ function applyJokeToUI(joke, statusText = 'Joke loaded') {
     const typeLabel = joke?.type ? String(joke.type).replace(/-/g, ' ') : 'any';
     if (elements.loadingJokeEl) {
         if (joke?.setup && joke?.punchline) {
-            elements.loadingJokeEl.textContent = `Quick break: ${joke.setup} ${joke.punchline}`;
+            const jokeLine = `${joke.setup} ${joke.punchline}`.replace(/\s+/g, ' ').trim();
+            elements.loadingJokeEl.textContent = jokeLine.length > 110 ? jokeLine.slice(0, 107) + '…' : jokeLine;
         } else {
             elements.loadingJokeEl.textContent = 'Loading a quick study break...';
         }
@@ -26299,7 +26300,8 @@ function applyQuoteToUI(quoteText, quoteAuthor, statusText = 'Quote loaded') {
     const elements = getQuoteElements();
     const safeQuoteText = (quoteText || '').trim();
     const renderedQuote = safeQuoteText || 'A fresh study boost is loading right now.';
-    if (elements.loadingTextEl) elements.loadingTextEl.textContent = renderedQuote;
+    const loadingQuote = renderedQuote.length > 110 ? renderedQuote.slice(0, 107) + '…' : renderedQuote;
+    if (elements.loadingTextEl) elements.loadingTextEl.textContent = loadingQuote;
     if (elements.loadingAuthorEl) elements.loadingAuthorEl.textContent = quoteAuthor ? `- ${quoteAuthor}` : '';
     if (elements.toolsStatusEl) elements.toolsStatusEl.textContent = statusText;
     if (elements.toolsTextEl) elements.toolsTextEl.textContent = renderedQuote;

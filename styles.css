@@ -11927,3 +11927,28 @@ will-change: transform;
             touch-action: none;
         }
 
+
+
+/* ============================================================
+   Performance & motion optimizations (appended)
+   Tame heavy decorative ambient loops; reduce mobile jank.
+   ============================================================ */
+/* Promote the always-animating decorative layers to their own
+   GPU layer so they don't repaint surrounding content. */
+body::after,
+#landing-page { will-change: transform, opacity; }
+
+/* On phones, stop the heaviest decorative loops entirely and
+   shorten the loading-orb cycle to cut continuous repaint cost. */
+@media (max-width: 768px) {
+  body::after { animation: none !important; }
+  #landing-page { animation: none !important; }
+  .app-loading-orb { animation-duration: 2.2s !important; }
+}
+
+/* Honour reduced-motion for the heaviest loops at every breakpoint. */
+@media (prefers-reduced-motion: reduce) {
+  body::after,
+  #landing-page,
+  .app-loading-orb { animation: none !important; }
+}
